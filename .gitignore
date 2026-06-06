@@ -1,0 +1,41 @@
+# ──────────────────────────────────────────────────────────────────────────
+# Copyrighted game data — NEVER commit. Bring your own legally-owned disc.
+# ──────────────────────────────────────────────────────────────────────────
+# Original executable (PS-X EXE)
+SLUS_013_*.23
+SLUS01323*
+*.exe
+
+# Disc image / extracted assets / RAM dumps (all derived from the game)
+*.bin
+*.iso
+*.img
+*.idx
+*.T
+*.STR
+*.XA
+*.TIM
+*.TMD
+*.VAB
+fdat_*
+overlay_*
+
+# Ghidra projects (contain disassembly of the copyrighted executable)
+*.gpr
+*.rep/
+*.lock
+*.gzf
+
+# ──────────────────────────────────────────────────────────────────────────
+# Build artifacts (regenerable from source)
+# ──────────────────────────────────────────────────────────────────────────
+*.o
+*.elf
+*.map
+
+# ──────────────────────────────────────────────────────────────────────────
+# Misc
+# ──────────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.DS_Store
