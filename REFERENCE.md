@@ -1,0 +1,328 @@
+# AC1 (SLUS-01323) Reverse-Engineering Reference
+
+A consolidated map of what's been reverse-engineered so far: functions, RAM
+addresses, the `.T` container format, FDAT entry-201 (the text/menu overlay),
+the name-entry engine, the patch pipeline, and disc sector locations.
+
+All addresses are for the **North American release, `SLUS-01323` (v1.1)**.
+They will **not** match other regions/revisions.
+
+> This is factual interoperability documentation. It contains no game code,
+> assets, or data — only addresses, offsets, and behavioral descriptions.
+
+---
+
+## 1. Target & memory map
+
+- **Executable:** `SLUS-01323`, PS-X EXE, ~166 KB, MIPS R3000A little-endian.
+- **Load base:** `0x80011000`  •  **Entry point:** `0x80011E6C`  •  **Text end:** `0x8003A000`
+- First `0xE6C` bytes of the EXE are data tables (file-path table, debug
+  strings, audio paths), not code.
+- **BSS clear:** `0x80039CB8`–`0x8004ADA0`.
+
+| Region | Range | Notes |
+| --- | --- | --- |
+| RAM (kernel) | `80000000`–`80010FFF` | BIOS / kernel |
+| CODE (EXE) | `80011000`–`80039FFF` | the SLUS executable |
+| RAM | `8003A000`–`801FFFFF` | heap, BSS, **runtime overlays** |
+
+SDK: PSY-Q/libps late-1996 build (`bios.c v1.81 1996/12/16`). SN Systems CRT0
+(startup symbol `start` / `__SN_ENTRY_POINT`). ~1056 Ghidra functions total
+(~616 SDK-named, ~440 game-specific).
+
+---
+
+## 2. Boot & main loop
+
+```
+BIOS → start (0x80011E6C)
+  → InitHeap(0x8004ADA4, …)
+  → main (0x80011F28)
+      → __main()                      C++ static constructors
+      → wmemset / FUN_80015538        word-fill (custom memset, by 4 bytes)
+      → CdInit()
+      → InitPAD / _bu_init / StartPAD
+      → FUN_80016F28(0)               memory-card init
+      → FUN_800122A8()                GAME LOOP (infinite)
+```
+
+### Game loop — `FUN_800122A8`
+```
+ResetGraph / SetDispMask / SetFogNearFar / ClearImage
+load_T_file(1..0x13, names)           load all .T assets
+
+outer loop (forever):
+  wmemset(workspace, 0, size)
+  read_T_entry(FDAT, 0xC9, workspace)  initial FDAT state (entry 201)
+  FUN_8009B414()                       OVERLAY — runtime-loaded code
+  inner loop:
+    switch DAT_80039C5E:                game mode flag (0/1/2)
+      0 → read_T_entry(FDAT, 0xCA)
+      1 → read_T_entry(FDAT, 0xCB)
+      2 → read_T_entry(FDAT, 0xCC)
+    (*DAT_8004ADA4)()                   FN POINTER — current state handler
+    loop while result != 0
+```
+- `DAT_80039C5E` — game mode (0/1/2; title/menu/mission).
+- `DAT_8004ADA4` — function pointer to the active state handler.
+
+---
+
+## 3. The `.T` container format (CONFIRMED)
+
+Each `.T` file is a sector-based container:
+- **Sector 0** (2048 B): TOC = packed `ushort` array of sector offsets.
+  Entry *i* spans sectors `TOC[i]‥TOC[i+1]-1`.
+  - **Caveat (MENU_TIM.T):** `ushort[0]` is the **entry count** (122), and real
+    offsets start at `ushort[1]`. Don't treat `ushort[0]` as the first offset.
+- **Sectors 1+**: entry payloads.
+
+**Loaders / helpers:**
+| Name | Address | Role |
+| --- | --- | --- |
+| `load_T_file` | `FUN_80016678` | read TOC header, register file in global table |
+| `read_T_entry` | `FUN_800165E4` | read entry *i* from disc into RAM (verifies checksum) |
+| `read_sectors` | `FUN_80016328` | raw CD sector read |
+| seek/CdRead | `FUN_80015A08` | CD seek helper |
+| `wmemset` | `FUN_80015538` | word-fill (ptr, value, word_count) |
+| checksum verify | `FUN_80015B24` | see §6 |
+
+**Global file-record table** at `0x8004A2A8`, 12-byte stride per file
+(`+0x0` CdlLOC, `+0x4` size, `+0x8` reserved). TOC pointer for file *id* at
+`0x8004A2A4 + id*12`. mxt_head_work allocator pointer `DAT_8004A394`.
+
+### File IDs (from `load_T_file(id, path)`)
+```
+1  COM/RTIM.T     6  MS/MENU_VAB.T   11 MS/BST_T.T    16 MS/COMP_T.T
+2  COM/FDAT.T     7  MS/CORE_T.T     12 MS/BWL_T.T    17 MS/SPEC_T.T
+3  (stage PA*.T)  8  MS/LEG_T.T      13 MS/BWR_T.T    18 MS/GENE_T.T
+4  MS/MENU_TIM.T  9  MS/ARMS_T.T     14 MS/WEL_T.T    19 MS/MIS.T
+5  MS/MENU_TMD.T  10 MS/HEAD_T.T     15 MS/WER_T.T
+```
+
+### FDAT.T entry indices
+| Entry | Dec | Role |
+| --- | --- | --- |
+| `0xC9` | 201 | initial/common state setup — **the text/menu code overlay** |
+| `0xCA` | 202 | game-mode-0 state handler |
+| `0xCB` | 203 | game-mode-1 state handler |
+| `0xCC` | 204 | game-mode-2 state handler |
+
+FDAT.T has ≥205 entries; part-stat / mission tables are in lower-numbered entries.
+
+---
+
+## 4. FDAT entry 201 — the text/menu overlay
+
+Entry 201 (`0xC9`) is a code+data overlay loaded to **`0x8004ADA0`**.
+- Disc: sectors **12475–12740** within FDAT (265 sectors, 542,720 B).
+- Flat offset in extracted FDAT.T: **25,548,800** (`12475 × 2048`).
+- Trailing checksum word at flat **26,091,516** (see §6).
+
+### Rendering functions (in the overlay)
+| Function | RAM addr | Entry-201 offset | Notes |
+| --- | --- | --- | --- |
+| `draw_char` | `0x800660C4` | `+0x1B324` | one glyph → `SPRT_VAR` (GP0 0x64) |
+| `draw_string` | `0x8006599C` | `+0x1ABFC` | Shift-JIS walker; `>` (0x3E) terminator |
+| `draw_kanji` | `0x80065DBC` | `+0x1B01C` | 2-byte SJIS path (dead in USA build) |
+| (only `draw_string` caller) | `0x8009C1FC` | — | the menu command queue processor |
+
+**Font texture** (MENU_TIM.T, embedded in entry 0 at file off `0x2E20`):
+256×192 4bpp, VRAM (448,0) → **tpage 0x0007**; CLUT (368,224) → **CBA 0x3817**
+(menu white), CLUT (352,240) → **CBA 0x3C16** (HUD colour).
+
+**Glyph mapping:** `col = (code-0x20)&0x1F`, `U = col*8`, `row = (code-1)>>5`.
+
+| size_mode | glyph | V formula | x-adv |
+| --- | --- | --- | --- |
+| 0 LARGE | 8×16 | `row*16` | 8 |
+| 8 | 8×8 | `row*8+48` | 8 |
+| 6 | 6×8 | `row*8+72` | 6 |
+| 4 | 4×8 | `row*8+96` (+4 y) | 4 |
+
+**Font texture V-band map (USA build — NONE of it is dead):**
+`V0-47` LARGE, `V48-71` SMALL8, `V72-95` SMALL6, `V96-119` **SMALL4 (real)**,
+`V120-191` **pre-baked English word-art** (MISSION/MAIL/GARAGE/RANKING/SHOP/SYSTEM).
+
+**`draw_string` escape codes** (inline in the string):
+| byte | effect |
+| --- | --- |
+| `>` 0x3E | terminator |
+| 0x0D | CR: x=x_start, y+=16, skip next byte |
+| `;` | newline: x=x_start, y+=16 (mode0) / +8 (modes 4/6/8) |
+| space 0x20 | x+=8, no glyph |
+| `{`+d / `}`+d | x −= d / x += d |
+| `^`+d | size_mode = d |
+| `~` | y −= 4 |
+| `@`+d | palette = d |
+
+**FontCtx fields:** `+0x08` zone (0–20 → style 0–9), `+0x0C` `str`, `+0x14`
+z_depth, `+0x16` render_mode (`0x0015` → fixed colour, else GTE NCCS), `+0x18`
+`ot[]` OT bases (per font_variant), `+0x48` x, `+0x4C` y.
+
+**Key globals:** `prim_ptr` `0x801EF6CC`, `font_variant` `0x801EF6C8`, font
+metrics base `0x801BCE88` (stride `style*100 + variant*103512`).
+
+---
+
+## 5. Name-entry engine (pilot / AC name)
+
+Command dispatch: queue processor `0x8009C1FC` switches on cmd type at
+`struct+0x0A` → 8 renderers (type7 = `draw_string` `0x8006599C`; type6 = GTE
+renderer `0x80059B50`).
+
+| Element | Address | Notes |
+| --- | --- | --- |
+| PILOT NAME entry ref | `0x800811F8` | entry-201 file off `0x36458` |
+| AC NAME entry | `0x800865FC` | entry-201 file off `0x3B85C` |
+| append routine | `0x80081950` | `rowstr + col*2`, **2-byte stride** |
+| 5-row grid loop | `0x800814A0` | grid table `0x800B85F4` |
+| 7-loop | `0x800810B0` | |
+| state jump table | `0x8004C89C` | 5 states |
+| label drawer | `0x8005D80C` | type7 |
+| grid blit helpers | `0x8005CB94`, `0x8005D15C` | MoveImage VRAM blit |
+
+**Cursor state** (per-screen struct `a1`): `+25` mode (`0x41`='A' → AC name,
+else pilot), `+26` length (0–8), `+30` column, `+31` row.
+
+**Name buffers (MAIN exe RAM):** AC name `0x80031BD4`, PILOT name `0x80031BE6`,
+`>`-terminated, written at `len*2` (2-byte SJIS). Display uses `draw_string`, so
+whatever bytes are stored render directly.
+
+**Active grid rows** are 2-byte full-width Latin (row1 `0x8004C854`, row2
+`0x8004C840`); the `0x8004C700` kana strings are leftover JP, not the live grid.
+
+---
+
+## 6. Overlay checksum — **CRITICAL GOTCHA**
+
+**Every** container entry loaded via `read_T_entry` (`FUN_800165E4`) carries a
+**trailing 32-bit checksum word**. The loader spins forever ("NOW LOADING" hang)
+on mismatch. Confirmed on FDAT entry 201 **and** MENU_TIM.T entry 0; assume it
+applies to all `.T` containers.
+
+```c
+// FUN_80015B24 @ main EXE 0x80015B24
+sum = 0x12345678;                      // seed
+for (i = 0; i < nwords - 1; i++)       // nwords = nsectors * 0x200
+    sum += word[i];                    // 32-bit wrapping add
+ok = (sum == word[nwords - 1]);        // trailing word = stored checksum
+// read_T_entry loops while !ok  → infinite hang on mismatch
+```
+
+**Recipe (any entry spanning sectors `toc[i]‥toc[i+1]-1`):**
+`nwords = (toc[i+1]-toc[i]) * 512;`
+`checksum = 0x12345678 + Σ word[0 … nwords-2];`
+write it to `toc[i]*2048 + nwords*4 - 4`.
+
+- **FDAT entry 201:** trailing word @ flat `26,091,516`. Original `0x52BC6907`.
+  Automated in `patch_draw_string.py → fix_overlay_checksum()`.
+- **MENU_TIM.T entry 0:** base file off `0x800`, trailing word @ `0x117FC`.
+  Automated in `build_pdigits.py → fix_entry0_checksum()`.
+
+**Hang signature:** breakpoints never fire, registers frozen, only the stack
+(~`0x801FFEB0`+) churns (CPU in the loader retry-spin, VBlank IRQ touching stack).
+If an overlay edit hangs at load, suspect the checksum **first**.
+
+---
+
+## 7. Build & inject pipeline (CONFIRMED working)
+
+```sh
+# Compile (note: -march=r3000 REQUIRES -mfp32)
+mipsel-linux-gnu-gcc -march=r3000 -mips1 -mfp32 -EL -G0 -O2 \
+  -ffreestanding -fno-builtin -fno-pic -mno-abicalls \
+  -Wl,--section-start=.text=0x8006599C -Wl,-e,<fn> \
+  -Wl,--defsym=draw_char=0x800660C4 -nostdlib -o out.elf src.c
+mipsel-linux-gnu-objcopy -O binary --only-section=.text out.elf out.bin
+```
+- `objcopy` needs `--only-section=.text` (else "huge negative file offset").
+- Linker emits a leading 4-byte `nop` at `_ftext`; strip it when patching
+  (extract from the real symbol offset) — **except** when the code has a
+  position-dependent in-image table (e.g. packed `fmet[]`), then keep it.
+
+**Patch + inject:**
+1. Write the function bytes at its flat offset in `fdat_extracted.T`, NOP-pad
+   (`0x00000000`) to the region end.
+2. `fix_overlay_checksum()` (§6).
+3. `psxinject "<bin>" GG/COM/FDAT.T fdat_extracted.T` — replacement file must
+   equal the original size (keep entry 201 at 265 sectors). Use forward slashes,
+   no leading slash. EDC/ECC handled by psxinject.
+
+---
+
+## 8. Farsi localization status
+
+- **Renderer works** — `draw_string` byte `>=0x80` → `draw_farsi` → `SPRT_VAR`
+  from a packed `fmet[]` table. Start menu translated (بازی جدید / ادامه), bold
+  Noto Sans Arabic, RTL right-aligned (new escape `\x01 <signed byte>`).
+- **128-glyph inventory** (`farsi_glyphs.py`): 32 Persian letters (D=4 forms,
+  R=2 forms) + آ + lam-alef(2) + 10 digits, bytes `0x80–0xFF`. Space stays `0x20`.
+- **Shaping:** build-time `farsi_shape.py` (+ validated runtime port
+  `farsi_runtime_shape.py` / `farsi_name_shape.c`). Emits glyphs in RTL draw
+  order, so the L→R `draw_string` renders correct RTL unchanged.
+- **Open issue (VRAM conflict):** overwriting font rows `V96-191` broke the
+  name-entry grid (2-byte SJIS) and garage word-art — that region is **not**
+  dead. Fix = relocate Farsi glyphs to separate VRAM/tpage and restore originals.
+- **Full-Farsi name keyboard** (planned): store *shaped* draw-order bytes in the
+  existing name buffer so every display site works unchanged; change only the
+  name-edit append routine (`col*2 → col*1`) + grid rows + cursor bounds.
+
+See `AC1_TEXT_SYSTEM.md` for the full text/menu system writeup.
+
+---
+
+## 9. Disc layout (key files & sectors)
+
+`SLUS-01323` v1.1, 2352-B/sector image. Sector ranges:
+
+| File | Sectors | Size | Role |
+| --- | --- | --- | --- |
+| `SYSTEM.CNF` | 38 | 69 B | boot config (`BOOT = cdrom:\SLUS_013.23`) |
+| `SLUS_013.23` | 39–121 | 166 KB | **main executable** |
+| `GG/COM/FDAT.T` | 72189–85330 | 26.9 MB | game logic, part stats, menus, **text overlay (entry 201)** |
+| `GG/COM/RTIM.T` | 85331–93643 | 17 MB | runtime TIM textures |
+| `GG/MS/ARMS_T.T` | 93645–95437 | 3.7 MB | arms textures |
+| `GG/MS/CORE_T.T` | 95732–96164 | 887 KB | core textures |
+| `GG/MS/HEAD_T.T` | 96229–96709 | 985 KB | head textures |
+| `GG/MS/LEG_T.T` | 96710–100294 | 7.3 MB | leg textures (largest MS asset) |
+| `GG/MS/MENU_TIM.T` | 100295–101035 | 1.5 MB | menu UI textures (**font in entry 0**) |
+| `GG/MS/MENU_TMD.T` | 101036–101818 | 1.6 MB | menu 3D models (TMD) |
+| `GG/MS/MENU_VAB.T` | 101819–101919 | 207 KB | menu sound bank (VAB) |
+| `GG/MS/MIS.T` | 101920–103449 | 3.1 MB | mission data |
+| `GG/P0–P2/PA00–PA57.T` | 103637+ | ~750–900 KB ea | 58 stage/arena map packs |
+| `GG/STR/ACED1-5.STR` | 131042–157931 | 4–14 MB ea | 5 ending FMVs |
+| `GG/STR/ACOPA/B.STR` | 157932–176401 | 20+18 MB | opening cutscene (2 parts) |
+| `GG/STR/DEMOPLAY.STR` | 176402–192619 | 33 MB | attract/demo video |
+| `GG/STR/STAFF.STR` | 192620–209137 | 34 MB | staff roll |
+| `GG/BGM/BGM00-01.XA` | 124+ | ~43+41 MB | stereo BGM (8-ch interleaved) |
+| `GG/BGM/CPU00-23,10-13,20-23.XA` | — | ~3 MB ea | CPU arena music (mono, 16-ch) |
+
+---
+
+## 10. Quick address index
+
+| Symbol | Address | |
+| --- | --- | --- |
+| entry point `start` | `0x80011E6C` | EXE |
+| `main` | `0x80011F28` | EXE |
+| game loop | `0x800122A8` | EXE |
+| `load_T_file` | `0x80016678` | EXE |
+| `read_T_entry` | `0x800165E4` | EXE |
+| `read_sectors` | `0x80016328` | EXE |
+| `wmemset` | `0x80015538` | EXE |
+| checksum verify | `0x80015B24` | EXE |
+| file-record table | `0x8004A2A8` | EXE RAM |
+| game-mode flag | `0x80039C5E` | EXE RAM |
+| state-handler fn ptr | `0x8004ADA4` | EXE RAM |
+| entry-201 overlay base | `0x8004ADA0` | RAM |
+| `draw_char` | `0x800660C4` | overlay |
+| `draw_string` | `0x8006599C` | overlay |
+| `draw_kanji` | `0x80065DBC` | overlay |
+| menu queue processor | `0x8009C1FC` | overlay |
+| name append routine | `0x80081950` | overlay |
+| AC name buffer | `0x80031BD4` | EXE RAM |
+| PILOT name buffer | `0x80031BE6` | EXE RAM |
+| `prim_ptr` | `0x801EF6CC` | RAM |
+| `font_variant` | `0x801EF6C8` | RAM |
+| font metrics base | `0x801BCE88` | RAM |

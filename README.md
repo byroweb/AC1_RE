@@ -22,6 +22,7 @@ regions/revisions are not supported and addresses will not match.
 | `farsi_*.py` | Glyph baking, texture atlas, and runtime-shaping tooling |
 | `extract_fdat.py`, `patch_draw_string.py` | Container extraction & patch build helpers |
 | `ghidra_scripts/` | Ghidra (Jython) scripts — e.g. importing runtime overlays |
+| `REFERENCE.md` | **RE reference** — functions, addresses, `.T` format, checksum, sectors |
 | `AC1_TEXT_SYSTEM.md` | Documentation of the game's text/menu system |
 
 ## How it works (safe distribution model)
