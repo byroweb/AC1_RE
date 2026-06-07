@@ -41,12 +41,28 @@ PATCHES = {
     0x80083A28: bytes.fromhex(
         "7c00828c00000000960045901a80013c002905007800022423104500"
         "607322a488000224231045000800e003007522a4"),
+    # NOTE: box X via caller 0x8005C284 'lh a0,0xe(s2)' is REJECTED — 0x8005C2A8 is
+    # a GENERIC W=144 box builder (boot test: the memory-card SLOT boxes moved too).
+    # Clean fix needs the PILOT box's descriptor X source (per-element), TODO task #6.
+
+    # label type 7->6 @0x8005D868 REJECTED — boot test: shared type-7 constructor,
+    # broke the memory-card SLOT labels (ran past their \0). Needs a name-screen-
+    # SPECIFIC type flip on the label element (0x801A73E8) post-construction. TODO.
+    # (string patch also held back until the type flip is label-specific)
+    # keyboard SPC/END row: strptr table @0x800B8608, entry[3]=0x800823D4 ("SPC END").
+    # relocate "فاصله تمام" into free overlay space 0x800820E8 and repoint the entry.
+    0x800820E8: bytes.fromhex("eddeb581cd20e081e28b3e"),     # فاصله تمام >
+    0x800B8614: bytes.fromhex("e8200880"),                  # ptr -> 0x800820E8
 }
 # expected ORIGINAL bytes (safety check before patching)
 EXPECT = {
     0x80083A28: bytes.fromhex(
         "7c00828c000000009600459008000224ff00a330030062140011050007"
         "00052400110500080042240800e003480082ac"),
+    0x8005D868: bytes.fromhex("07000324"),     # addiu v1, zero, 7
+    0x8004C6F4: bytes.fromhex("50494c4f54204e414d45"),   # "PILOT NAME"
+    0x800820E8: bytes.fromhex("0000000000000000000000"),  # free (zeros)
+    0x800B8614: bytes.fromhex("d4230880"),               # -> 0x800823D4
 }
 
 def patch_T():

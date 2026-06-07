@@ -90,9 +90,17 @@ void cursor_update_rtl(void)            /* a0 = cursor element (unused here) */
  *     Shaped (farsi-translate skill): فاصله = ED DE B5 81 CD ; تمام = E0 81 E2 8B.
  * ======================================================================== */
 #define KEYROW_SPCEND_STRPTR ((u32 *)0x801a4c24)   /* element 0x801A4C18 +0x0c */
-/* "فاصله تمام>" : EDDEB581CD 20 E081E28B 3E  (relocate to a free slot, e.g. one
- * found via find_free_ram; live demo used 0x800820E8). */
-static const u8 KEY_FASELE_TAMAM[] = {
+/* BAKED (clean, per-element): the 8 keyboard rows draw from a strptr TABLE at
+ * 0x800B8608 (setup loop @0x80081340: lw a0,table+i*4). SPC/END is row i=3, so
+ * table[3] @0x800B8614 = 0x800823D4 ("SPC END>"). Bake = write "فاصله تمام>"
+ * into free overlay space 0x800820E8 and repoint table[3] -> 0x800820E8. The row
+ * is already type 6 (Farsi renderer), so no type change and no other-screen risk.
+ * (Visual re-confirm pending an empty memory-card slot to reach New Game name
+ * entry; the name screen itself renders these rows fine.) */
+#define KEYROW_TABLE      0x800b8608
+#define KEYROW_SPCEND_TAB 0x800b8614            /* table[3] -> relocate target   */
+#define SPCEND_RELOC      0x800820e8            /* free entry-201 space          */
+static const u8 KEY_FASELE_TAMAM[] = {          /* فاصله ' ' تمام '>'            */
     0xED,0xDE,0xB5,0x81,0xCD, 0x20, 0xE0,0x81,0xE2,0x8B, 0x3e
 };
 
@@ -112,6 +120,13 @@ static const u8 KEY_FASELE_TAMAM[] = {
 #define LABEL_TYPE   ((u16 *)0x801a73f2) /* +0x0a : set 7 -> 6                  */
 #define LABEL_STR    ((u8  *)0x8004c6f4) /* shaped bytes go here                */
 #define LABEL_X      ((s16 *)0x801a7530) /* +0x48 (right-align: still tuning)   */
+/* BUILDER (found via write-wp on 0x801a73f2): the label is made by a type-7
+ * text constructor that HARDCODES type 7 at 0x8005D868 'addiu v1,zero,7'
+ * (then 'sh v1,0xa(v0)'), strptr stored at 0x8005D88C. Patching that immediate
+ * 7->6 is REJECTED: it's a SHARED type-7 builder — boot test garbled the
+ * memory-card SLOT / "Load saved data?" labels (type-6 runs past their \0).
+ * Clean fix = name-screen-SPECIFIC flip of element 0x801A73E8's +0x0a to 6
+ * (post-construction, e.g. a hook in the name-screen setup ~0x80081xxx). */
 
 /* "نام خلبان" draw-order glyph bytes from farsi_runtime_shape (atlas-matched,
  * validated == build-time shaper). See the farsi-translate skill to regenerate. */
