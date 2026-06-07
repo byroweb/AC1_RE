@@ -44,3 +44,9 @@ __pycache__/
 shots/
 *.lock~
 *.lock
+
+# Memory-card saves (player data)
+*.mcs
+*.mcd
+*.gme
+*.sav

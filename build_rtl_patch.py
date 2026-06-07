@@ -37,10 +37,23 @@ def flat(rt): return E201_FLAT + (rt - BASE)
 
 # --- the patches (runtime addr -> bytes). Single source of truth. ---------
 PATCHES = {
-    # cursor.update() rewrite: right-justify name + reversed cursor (see farsi_name_rtl.c)
+    # cursor.update() rewrite: right-justify name + reversed cursor (see farsi_name_rtl.c).
+    # ALSO tail-jumps to cursext (0x80082130) to set the label type=6 every frame —
+    # the proven post-build label fix (live poke of 0x801A73F2=6). This method only
+    # runs on the name screen, so it is the perfect name-screen-specific hook.
+    # Last word is `j 0x80082130` (was `jr ra`); delay slot `sh v0,0x7500` unchanged.
     0x80083A28: bytes.fromhex(
         "7c00828c00000000960045901a80013c002905007800022423104500"
-        "607322a488000224231045000800e003007522a4"),
+        "607322a488000224231045004c080208007522a4"),
+    # cursext: at==0x801A0000 still held from cursor.update; set label type=6 AND
+    # right-justify the label (X=72 puts نام خلبان's right edge inside the box), return.
+    0x80082130: bytes.fromhex(
+        "06000224"   # addiu v0,zero,6
+        "f27322a4"   # sh   v0,0x73F2(at)    ; *(0x801A73F2) label type = 6
+        "48000224"   # addiu v0,zero,72
+        "307422a4"   # sh   v0,0x7430(at)    ; *(0x801A7430) label X = 72 (right-justify)
+        "0800e003"   # jr   ra
+        "00000000"), # nop
     # NOTE: box X via caller 0x8005C284 'lh a0,0xe(s2)' is REJECTED — 0x8005C2A8 is
     # a GENERIC W=144 box builder (boot test: the memory-card SLOT boxes moved too).
     # Clean fix needs the PILOT box's descriptor X source (per-element), TODO task #6.
@@ -51,8 +64,46 @@ PATCHES = {
     # (string patch also held back until the type flip is label-specific)
     # keyboard SPC/END row: strptr table @0x800B8608, entry[3]=0x800823D4 ("SPC END").
     # relocate "فاصله تمام" into free overlay space 0x800820E8 and repoint the entry.
-    0x800820E8: bytes.fromhex("eddeb581cd20e081e28b3e"),     # فاصله تمام >
+    # 5 spaces between the words so SPC(فاصله) and END(تمام) read as two distinct keys.
+    0x800820E8: bytes.fromhex("eddeb581cd2020202020e081e28b3e"),  # فاصله _____ تمام >
     0x800B8614: bytes.fromhex("e8200880"),                  # ptr -> 0x800820E8
+
+    # NOTE: a blanket per-glyph keyboard shift (byte2 of each row's spacer glyphs)
+    # was tried 2026-06-07 and REVERTED — it pushed the whole alphabet too far left
+    # and threw glyphs like ا (alef) out of their cells. The original spacing only
+    # needs minor per-glyph tweaks, applied surgically (not a blanket offset).
+    # Each row is a 1-byte glyph string: visible letter (>=0x80) + two variable-width
+    # blank spacer glyphs (byte1=Y, byte2=X advance). To nudge ONE letter right,
+    # shrink its byte2 spacer; left, grow it. Rows: 0x80082340 (top), 0x80082374.
+
+    # --- PILOT NAME box -> right + label -> نام خلبان (name-screen-SPECIFIC hooks) -
+    # Both the box and the label are built by SHARED constructors (patching them
+    # directly broke the memory-card screens). Instead, install two trampolines in
+    # free overlay space that act ONLY on the PILOT NAME element, keyed on a unique
+    # argument, then fall through unchanged for every other caller.
+    #
+    # BOX: caller @0x8005C290 loads X/Y/W/H from descriptor s2 then jal box_init.
+    #   Replace `lh a3,0x14(s2)` with `j boxhook`; boxhook redoes the load, and if
+    #   a1(Y)==178 (only the PILOT NAME box) forces a0(X)=168 (right-edge align to
+    #   the keyboard panel: 24+288-144). Other boxes (keyboard Y=40, card slots) pass.
+    0x80082108: bytes.fromhex(
+        "14004786"   # lh   a3,0x14(s2)      ; displaced
+        "b2000124"   # addiu at,zero,178     ; Y of PILOT NAME box
+        "0200a114"   # bne  a1,at,+2         ; if Y!=178 skip override
+        "00000000"   # nop
+        "a8000424"   # addiu a0,zero,168     ; X = 312-144
+        "a6700108"   # j    0x8005C298       ; return
+        "00000000"), # nop
+    0x8005C290: bytes.fromhex("42080208"),  # j 0x80082108 (boxhook)
+
+    # alef nudges (user review): ا and آ sat too far left. Both are the LAST glyph
+    # in their row, so shrinking their X-spacer nudges them right with no cascade.
+    0x80082372: bytes.fromhex("38"),  # ا (row0 last) X-spacer 0x3d->0x38 (~+2px)
+    0x800823A5: bytes.fromhex("2c"),  # آ (row1 last) X-spacer 0x31->0x2c (~+2px)
+
+    # (label type flip is done by cursext above, tail-called from cursor.update)
+    # shaped "نام خلبان" + 0x3e terminator into the (runtime type-6) label slot
+    0x8004C6F4: bytes.fromhex("e48184de9f20e081e53e"),
 }
 # expected ORIGINAL bytes (safety check before patching)
 EXPECT = {
@@ -60,9 +111,21 @@ EXPECT = {
         "7c00828c000000009600459008000224ff00a330030062140011050007"
         "00052400110500080042240800e003480082ac"),
     0x8005D868: bytes.fromhex("07000324"),     # addiu v1, zero, 7
+    0x8005D86C: bytes.fromhex("0a0043a4"),     # sh v1, 0xa(v0)
+    0x8005C290: bytes.fromhex("14004786"),     # lh a3, 0x14(s2)
+    0x80082108: bytes.fromhex("00"*28),        # free (boxhook target)
+    0x80082372: bytes.fromhex("3d"),           # ا X-spacer (stock)
+    0x800823A5: bytes.fromhex("31"),           # آ X-spacer (stock)
+    0x80082130: bytes.fromhex("00"*24),        # free (cursext target)
     0x8004C6F4: bytes.fromhex("50494c4f54204e414d45"),   # "PILOT NAME"
-    0x800820E8: bytes.fromhex("0000000000000000000000"),  # free (zeros)
+    0x800820E8: bytes.fromhex("000000000000000000000000000000"),  # free (15 zeros)
     0x800B8614: bytes.fromhex("d4230880"),               # -> 0x800823D4
+    0x80082340: bytes.fromhex(  # row0 original (ص ش س ژ ز ر ذ د خ ح چ ج ث ت پ ب ا)
+        "b47b31b07d30ac7d30aa7d3ba87d3ba67d3ba47d3aa27d3a9e7d389a7d38"
+        "967d38927d388e7d348a7d34867d34827d34807d3d3e"),
+    0x80082374: bytes.fromhex(  # row1 original (ض ط ظ ع غ ف ق ک گ ل م ن و ه ی آ)
+        "2020f27d3dee7d36ea7d3ae87d3ae47d37e07d39dc7d37d87d35d47d35"
+        "d07d36cc7d34c87d39c47d39c07d36bc7d36b87b313e"),
 }
 
 def patch_T():
