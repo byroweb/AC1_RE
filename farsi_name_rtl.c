@@ -119,7 +119,9 @@ static const u8 KEY_FASELE_TAMAM[] = {          /* فاصله ' ' تمام '>'  
 #define LABEL_ELEM   0x801a73e8
 #define LABEL_TYPE   ((u16 *)0x801a73f2) /* +0x0a : set 7 -> 6                  */
 #define LABEL_STR    ((u8  *)0x8004c6f4) /* shaped bytes go here                */
-#define LABEL_X      ((s16 *)0x801a7530) /* +0x48 (right-align: still tuning)   */
+#define LABEL_X      ((s16 *)0x801a7430) /* +0x48 (NOT 0x7530 — earlier typo). */
+/* RIGHT-JUSTIFY label: type-6 draws LTR from X=left edge; set X=72 (0x48) so
+ * نام خلبان's right edge sits just inside the box's right border. Verified live. */
 /* BUILDER (found via write-wp on 0x801a73f2): the label is made by a type-7
  * text constructor that HARDCODES type 7 at 0x8005D868 'addiu v1,zero,7'
  * (then 'sh v1,0xa(v0)'), strptr stored at 0x8005D88C. Patching that immediate
