@@ -39,3 +39,8 @@ overlay_*
 __pycache__/
 *.pyc
 .DS_Store
+
+# Screenshots & Ghidra locks
+shots/
+*.lock~
+*.lock
