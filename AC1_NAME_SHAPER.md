@@ -131,7 +131,48 @@ as a (zero-initialised) data table and copied it. Zero-runs are NOT necessarily
 free code space. Only regions proven by a clean boot (here: the shaper blocks
 0x800BC740 and 0x80081F70) are safe; verify any new placement by booting.
 
-## TODO
+## Memory-card round-trip — PROVEN (2026-06-08)
 
-- Trace the confirm→memory-card save copy (write-wp `0x80031BE6`) to prove the
-  shaped bytes round-trip on reload.
+Goal: prove the shaped Farsi pilot name survives a save→memory-card→reload cycle
+with **no byte transform** (so any display site renders it identically forever).
+
+**Setup.** Booted `[RTL]` disc, registered pilot name سلام (`e0 f5 ad 3e`,
+`>`-terminated) at the name screen, beat the Raven test mission, reached the
+garage data menu (SAVE DATA / LOAD DATA / …).
+
+### Write side (RAM → card), verbatim
+- Card slot 0 file `BASCUS-94182A` (BIOS title `ARMOREDCORE01 SORTY000`, 1 block
+  / 8192 B). Reading the raw save with the DuckStation MCP and byte-searching:
+  the pilot name appears **verbatim** as `e0 f5 ad 3e` at **offset 0x216**, in the
+  same zero-padded layout as the in-RAM pilot record. So the serializer
+  block-copies the pilot record to the card with no charset/ASCII transform.
+- A read-watch on `0x80031BE6` did **not** fire during the save → the serializer
+  reads from a *staging copy*, not the live name-entry buffer. Live save-staging
+  copies of the name were found at `0x8011D5EA / 0x8011D62A / 0x8011E46E /
+  0x8011E4AE` (two records × two copies); these mirror what lands on the card.
+
+### Read side (card → RAM, across a power cycle), verbatim
+- **Full power-cycle test** (the gold standard): `shutdown_system` →
+  `boot_game [RTL]`. Right after boot, a RAM search for `e0 f5 ad 3e` returned
+  **zero** matches (clean slate).
+- Entering Scenario → **ادامه (Continue)** → SLOT 1 → LOAD DATA already pulls the
+  card data into RAM (preview buffers `0x800E95AE / 0x800E95EE / 0x801F50AA`
+  reappear with `e0 f5 ad 3e`).
+- Confirming "Load the saved data? YES" populates the durable pilot buffer:
+  `0x80031BE6` went **empty (`3e`) → `e0 f5 ad 3e`**, and the game-state copy
+  `0x801F50AA` = `e0 f5 ad 3e`. Loaded straight into the garage (Ravens' Nest),
+  no crash. Same bytes `draw_string` already renders as سلام ⇒ round-trip closed:
+  **RAM → card → (cold boot) → RAM, byte-identical.**
+
+### Gotcha logged
+Wiping the live name with `ff ff ff ff` clobbered the `0x3e` (`>`) terminator, so
+`draw_string` ran off the end hunting for a terminator and **hung** the game
+(`internal_frame` frozen). When corrupting a name buffer for a test, keep a `0x3e`
+terminator (or restore one) — never leave the string unterminated.
+
+### Tooling added
+`tools/ac1_mcp_input.py` — does the DuckStation MCP Streamable-HTTP handshake and
+fires a frame-timed `input_sequence`. Default = 2 Start presses; **use a ~2 s
+(120-frame) gap** to step demo-reel → title → main menu reliably (a 1 s gap is too
+fast and the attract/demo reel re-arms). The title screen is the only demo-reel
+race; once in a menu there's no idle-timeout pressure.
