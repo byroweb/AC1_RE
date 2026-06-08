@@ -35,6 +35,79 @@ DATA_SIZE   = 2048
 
 def flat(rt): return E201_FLAT + (rt - BASE)
 
+# --- Farsi name shaper integration (compiled from C at build time) ----------
+# Placement (all in VERIFIED-free overlay padding; see AC1_NAME_SHAPER.md):
+#   shape_name code   -> 0x800BC740 (436B padding block)
+#   shape_name tables -> 0x80081F70 (200B padding block)
+#   name_input_handler-> 0x80082190 (432B; ends exactly at the row-0 keyboard
+#                        glyph string @0x80082340 -- DO NOT exceed)
+#   ordinal SELTAB    -> 0x8004C700 (replaces the old glyph-byte selection table)
+# The trampoline @0x80082168 (jal 0x80082190; j 0x800823F4) is already in the .T.
+SHAPE_CODE   = 0x800BC740
+SHAPE_TABLES = 0x80081F70
+HANDLER      = 0x80082190
+SELTAB_ADDR  = 0x8004C700
+SHAPE_NAME_ENTRY = 0x800BC740      # nm: shape_name lands here (16-aligned, no pad)
+DRAW_CONFIRM = 0x8005D8D4
+
+# Ordinal selection table: 4 rows x 17 cols. 0..32 letter ordinals
+# (farsi_runtime_shape.KEYBOARD order), 33 space, 34..43 Persian digits ۰..۹,
+# 0xFC END, 0xFF blank. Derived by translating the live glyph SELTAB letter->ordinal.
+SELTAB = bytes.fromhex(
+    "100f0e0d0c0b0a09080706050403020100"   # row0: ص..ا  (col0..16)
+    "ff201f1e1d1c1b1a191817161514131211"   # row1: blank, آ..ض
+    "ffffffffffffff22232425262728292a2b"   # row2: digits ۰..۹ (col7..16)
+    "2121fcfcffffffffffffffffffffffffff")  # row3: space,space,END,END,blank...
+
+def _compile_shaper():
+    """Compile farsi_name_shape.c (split code/tables) + farsi_name_input.c into
+    flat overlay binaries; return {addr: bytes}. Raises on toolchain error."""
+    import subprocess, tempfile
+    GCC = "mipsel-linux-gnu-gcc"; OBJCOPY = "mipsel-linux-gnu-objcopy"
+    CFLAGS = ("-march=r3000 -mips1 -mfp32 -EL -G0 -Os -falign-functions=4 "
+              "-ffreestanding -fno-builtin -fno-pic -mno-abicalls -nostdlib").split()
+    d = tempfile.mkdtemp()
+    # shaper: code @SHAPE_CODE, const tables @SHAPE_TABLES (absolute refs resolve)
+    lds = os.path.join(d, "shaper.ld")
+    with open(lds, "w") as f:
+        f.write(f"ENTRY(shape_name)\nSECTIONS {{\n"
+                f"  .text 0x{SHAPE_CODE:08X} : {{ *(.text) *(.text.*) }}\n"
+                f"  .rodata 0x{SHAPE_TABLES:08X} : {{ *(.rodata) *(.rodata.*) "
+                f"*(.data) *(.data.*) *(.sdata*) *(.srodata*) }}\n"
+                f"  /DISCARD/ : {{ *(.reginfo) *(.MIPS.abiflags) *(.pdr) "
+                f"*(.comment) *(.note.*) *(.gnu*) }}\n}}\n")
+    elf = os.path.join(d, "shaper.elf")
+    subprocess.run([GCC, *CFLAGS, "-T", lds, "-o", elf,
+                    os.path.join(HERE, "farsi_name_shape.c")], check=True)
+    code = os.path.join(d, "code.bin"); tab = os.path.join(d, "tab.bin")
+    subprocess.run([OBJCOPY, "-O", "binary", "-j", ".text", elf, code], check=True)
+    subprocess.run([OBJCOPY, "-O", "binary", "-j", ".rodata", elf, tab], check=True)
+    # handler @HANDLER, bound to shape_name + draw_confirm absolute addresses
+    hlds = os.path.join(d, "h.ld")
+    with open(hlds, "w") as f:
+        f.write(f"ENTRY(name_input_handler)\nSECTIONS {{\n"
+                f"  .text 0x{HANDLER:08X} : {{ *(.text) *(.text.*) *(.rodata) "
+                f"*(.rodata.*) *(.data) *(.data.*) }}\n"
+                f"  /DISCARD/ : {{ *(.reginfo) *(.MIPS.abiflags) *(.pdr) "
+                f"*(.comment) *(.note.*) *(.gnu*) }}\n}}\n")
+    helf = os.path.join(d, "h.elf")
+    subprocess.run([GCC, *CFLAGS, "-T", hlds,
+                    f"-Wl,--defsym=shape_name=0x{SHAPE_NAME_ENTRY:08X}",
+                    f"-Wl,--defsym=draw_confirm=0x{DRAW_CONFIRM:08X}",
+                    "-o", helf, os.path.join(HERE, "farsi_name_input.c")], check=True)
+    hbin = os.path.join(d, "h.bin")
+    subprocess.run([OBJCOPY, "-O", "binary", "-j", ".text", helf, hbin], check=True)
+    code_b = open(code, "rb").read(); tab_b = open(tab, "rb").read()
+    hbin_b = open(hbin, "rb").read()
+    # size guards: handler must not reach the row-0 glyph string at 0x80082340
+    assert HANDLER + len(hbin_b) <= 0x80082340, f"handler too big: {len(hbin_b)}B"
+    assert SHAPE_CODE + len(code_b) <= 0x800BC8EA, f"shape code too big: {len(code_b)}B"
+    assert SHAPE_TABLES + len(tab_b) <= 0x80082038, f"shape tables too big: {len(tab_b)}B"
+    print(f"  compiled shaper code {len(code_b)}B, tables {len(tab_b)}B, "
+          f"handler {len(hbin_b)}B")
+    return {SHAPE_CODE: code_b, SHAPE_TABLES: tab_b, HANDLER: hbin_b,
+            SELTAB_ADDR: SELTAB}
+
 # --- the patches (runtime addr -> bytes). Single source of truth. ---------
 PATCHES = {
     # cursor.update() rewrite: right-justify name + reversed cursor (see farsi_name_rtl.c).
@@ -163,6 +236,14 @@ def reinsert():
                 f'  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n')
 
 if __name__ == "__main__":
+    print("0) compile + merge Farsi name shaper")
+    _shaper = _compile_shaper()
+    PATCHES.update(_shaper)
+    # shape code/tables land in verified-zero padding -> EXPECT zeros. The handler
+    # (0x80082190) and SELTAB (0x8004C700) overwrite the prior name-handler bake
+    # already in fdat_extracted.T, so they are intentionally NOT EXPECT-checked.
+    EXPECT[SHAPE_CODE]   = b"\x00" * len(_shaper[SHAPE_CODE])
+    EXPECT[SHAPE_TABLES] = b"\x00" * len(_shaper[SHAPE_TABLES])
     print("1) patch .T"); patch_T()
     print("2) reinsert into BIN copy"); reinsert()
     print(f"DONE -> {CUE_OUT}")

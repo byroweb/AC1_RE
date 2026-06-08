@@ -65,6 +65,7 @@ int shape_name(const unsigned char *toks, int n, unsigned char *out)
     int m = 0;
     int i = 0;
     int k;
+    int prev_conn = 0;   /* running: did the previous emitted unit connect left? */
 
     while (i < n) {
         unsigned char o = toks[i];
@@ -72,6 +73,7 @@ int shape_name(const unsigned char *toks, int n, unsigned char *out)
         /* non-letter literal: emit verbatim, breaks the join run */
         if (!IS_LETTER(o)) {
             tmp[m++] = LITERALS[o - NLET];
+            prev_conn = 0;
             i++;
             continue;
         }
@@ -79,14 +81,14 @@ int shape_name(const unsigned char *toks, int n, unsigned char *out)
         {
             unsigned char fl = LTAB_FLAGS[o];
             int dual      = fl & F_DUAL;
-            int prev_let  = (i > 0)     && IS_LETTER(toks[i - 1]);
             int next_let  = (i + 1 < n) && IS_LETTER(toks[i + 1]);
-            int prev_conn = prev_let && (LTAB_FLAGS[toks[i - 1]] & F_DUAL);
             int next_conn = dual && next_let;
 
-            /* lam + alef(+madda) mandatory ligature */
+            /* lam + alef(+madda) mandatory ligature. Alef is right-joining, so
+               the unit after the ligature never connects left (prev_conn = 0). */
             if ((fl & F_LAM) && next_let && (LTAB_FLAGS[toks[i + 1]] & F_ALEF)) {
                 tmp[m++] = prev_conn ? LAMALEF_FINA : LAMALEF_ISOL;
+                prev_conn = 0;
                 i += 2;
                 continue;
             }
@@ -95,6 +97,8 @@ int shape_name(const unsigned char *toks, int n, unsigned char *out)
                 tmp[m++] = 0x80 + LTAB_ISOL[o] + DOFF[(prev_conn << 1) | (next_conn ? 1 : 0)];
             else
                 tmp[m++] = 0x80 + LTAB_ISOL[o] + (prev_conn ? 1 : 0);
+            /* the next letter connects left iff this one is dual-joining */
+            prev_conn = dual ? 1 : 0;
             i++;
         }
     }

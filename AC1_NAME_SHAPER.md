@@ -1,0 +1,101 @@
+# AC1 Farsi pilot-name shaper — runtime contextual shaping in name entry
+
+Status: **DONE & validated on the baked disc** (2026-06-07). Typing Persian on the
+pilot/AC name screen now joins contextually (init/medi/fina forms + lam-alef
+ligature) and reads right-to-left, persisted into the existing name buffer as
+shaped draw-order glyph bytes. Boots clean (no NOW-LOADING hang), renders, types.
+
+## Data flow
+
+```
+keypress (Cross) ─▶ name_input_handler @0x80082190 (overlay)
+                      ├─ tok = SELTAB[row*17 + col]        (ordinal token)
+                      ├─ LOGBUF[TYPED_LEN++] = tok          (logical scratch)
+                      ├─ shape_name(LOGBUF, TYPED_LEN, NAME)  jal 0x800BC740
+                      │     └─ contextual forms + lam-alef, RTL draw order, '>' term
+                      └─ cur[0x1a] = shaped glyph count n    (=0x801A28EE)
+cursor.update @0x80083A28 reads n ─▶ name_X = 136-n*16, cursor_X = 120-n*16
+```
+
+## Hook (already baked into fdat_extracted.T from a prior session)
+
+- Trampoline `@0x80082168`: loads `a2 = *(0x801A2568)` (buttons), `a0 = cur`,
+  `a1 = parent`, `jal 0x80082190` (handler), then `j 0x800823F4` (outer epilogue).
+  Handler `ra = 0x80082180`.
+- Live-verified on the name screen: `cur = 0x801A28D4`, `parent = 0x801A2858`.
+
+## The count field (the one open question from planning — RESOLVED)
+
+`cur[0x1a]` == `0x801A28EE` is the count the **baked RTL cursor patch**
+(`0x80083A28`) reads to right-justify the name:
+`cursor_X (0x801A7360) = 120 - n*16`, `name_X (0x801A7500) = 136 - n*16`
+(verified live: n=1 → 104 / 120). The handler therefore writes the **shaped**
+glyph count there (differs from the typed-key count when lam-alef collapses 2→1).
+The typed-key count is kept separately in `TYPED_LEN` (scratch `0x8004C74C`) and
+resynced to 0 whenever `cur[0x1a]==0` (engine clears it on entry / full backspace).
+
+## Placement (all in VERIFIED-free overlay padding)
+
+| Piece              | Addr        | Size  | Block / limit |
+|--------------------|-------------|-------|---------------|
+| `shape_name` code  | 0x800BC740  | 400 B | 436 B padding block (ends 0x800BC8EA) |
+| `shape_name` tables| 0x80081F70  | 96 B  | 200 B padding block (ends 0x80082038) |
+| `name_input_handler`| 0x80082190 | ≤432 B| **must end ≤ 0x80082340** (row-0 keyboard glyph string) |
+| ordinal `SELTAB`   | 0x8004C700  | 68 B  | overwrites old glyph-byte table |
+
+`shape_name`'s code and const tables are at *different* addresses (split linker
+script); the code references the tables via absolute `lui/addiu`, resolved at link.
+Because 0x800BC740 is 16-aligned the entry has no leading pad; callers bind to it.
+
+### WARNING — `0x80065DBC` is NOT reclaimable
+The plan assumed `draw_kanji @0x80065DBC` (776 B) was dead. It is **not**: that
+region is the packed `fmet[]` font-metrics table read every frame by
+`draw_string`/`draw_farsi`. Overwriting it garbles all on-screen glyphs (the font
+atlas bleeds through). Caught by a live inject test; relocated to the padding
+blocks above. Keep `0x80065DBC..0x800660C4` untouched.
+
+## Ordinal SELTAB layout (4 rows × 17 cols)
+
+Tokens: `0..32` letter ordinals (`farsi_runtime_shape.KEYBOARD` order: 0=alef …
+32=alef-madda), `33` space, `34..43` Persian digits ۰..۹, `0xFC` END, `0xFF` blank.
+Derived by translating the live glyph SELTAB letter-by-letter to its ordinal.
+
+```
+row0: 10 0f 0e 0d 0c 0b 0a 09 08 07 06 05 04 03 02 01 00   ص..ا
+row1: ff 20 1f 1e 1d 1c 1b 1a 19 18 17 16 15 14 13 12 11   blank, آ..ض
+row2: ff*7  22 23 24 25 26 27 28 29 2a 2b                   digits ۰..۹ (col7..16)
+row3: 21 21 fc fc ff*13                                     space×2, END×2
+```
+Fixes a latent bug: the old glyph-byte SELTAB stored digits ۶/۹ as `0xFC`/`0xFF`,
+colliding with the handler's END/blank sentinels. Ordinal tokens avoid that.
+
+## Build
+
+`build_rtl_patch.py` compiles `farsi_name_shape.c` (split code/tables) and
+`farsi_name_input.c` (bound to `shape_name=0x800BC740`, `draw_confirm=0x8005D8D4`)
+with `mipsel-linux-gnu-gcc -march=r3000 -mips1 -mfp32 -Os -falign-functions=4 …`,
+merges the 4 patches, recomputes the entry-201 checksum (seed 0x12345678 + word
+sum), and reinserts FDAT sectors → `Armored Core (v1.1) [RTL].bin`.
+Size guards assert the handler ends ≤ 0x80082340 and the shaper pieces fit.
+
+## Validation (2026-06-07)
+
+1. `shape_name` direct-call on console (سلام ords → `E0 F5 AD`, n=3, lam-alef).
+2. Deterministic handler call (cursor (0,0)=ص → LOGBUF=0x10, name=`B4 3E`).
+3. Live keypresses: typed ص×3 → `B7 B6 B5` (fina-medi-init); typed سلام →
+   LOGBUF `0e 1a 00 1b`, name `E0 F5 AD 3E`, rendered joined in the box.
+4. **Baked disc, fresh boot**: Scenario → بازی جدید → name screen (no hang),
+   typed سلام → "سلام" rendered with lam-alef ligature; Circle backspace reshapes.
+
+## TODO — default cursor position (user request, not yet baked)
+
+The engine parks the cursor off-grid at entry: `col=16, row=7`
+(`0x801A28F2`/`0x801A28F3`), a cell that maps outside the 4×17 SELTAB → selecting
+it yields garbage. Desired default: ALEF = `col=16, row=0` (SELTAB[16]=alef).
+A handler-side snap was tried but the handler is already at its 432 B ceiling, so
+this must be a 1-byte init patch (`row 7 → 0`). The init writer was not located
+statically (the keyboard-cursor *selection state* init is separate from the cursor
+*box* element constructed at `0x80083984`; that constructor sets +0x48/+0x74 but
+not +0x1e/+0x1f). On the name screen Circle = backspace (not back-out), so catch
+the init with a write-watch on `0x801A28F3` while entering name entry via a path
+that re-inits the element. Until then: press **Up** once to leave the park cell.
