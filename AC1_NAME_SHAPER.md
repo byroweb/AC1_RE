@@ -87,15 +87,23 @@ Size guards assert the handler ends ≤ 0x80082340 and the shaper pieces fit.
 4. **Baked disc, fresh boot**: Scenario → بازی جدید → name screen (no hang),
    typed سلام → "سلام" rendered with lam-alef ligature; Circle backspace reshapes.
 
-## TODO — default cursor position (user request, not yet baked)
+## Default cursor position — FIXED (baked + validated)
 
-The engine parks the cursor off-grid at entry: `col=16, row=7`
-(`0x801A28F2`/`0x801A28F3`), a cell that maps outside the 4×17 SELTAB → selecting
-it yields garbage. Desired default: ALEF = `col=16, row=0` (SELTAB[16]=alef).
-A handler-side snap was tried but the handler is already at its 432 B ceiling, so
-this must be a 1-byte init patch (`row 7 → 0`). The init writer was not located
-statically (the keyboard-cursor *selection state* init is separate from the cursor
-*box* element constructed at `0x80083984`; that constructor sets +0x48/+0x74 but
-not +0x1e/+0x1f). On the name screen Circle = backspace (not back-out), so catch
-the init with a write-watch on `0x801A28F3` while entering name entry via a path
-that re-inits the element. Until then: press **Up** once to leave the park cell.
+The engine parked the cursor off-grid at entry: `col=16, row=7`
+(`0x801A28F2`/`0x801A28F3`), a cell outside the 4×17 SELTAB → selecting it yielded
+garbage. The selection-state init lives at `0x80081144`:
+`addiu v0,zero,16; sb v0,0x9a(s3)` (col) then `addiu v0,zero,7` `@0x8008114C`;
+`sb v0,0x9b(s3)` `@0x80081160` writes row to `0x801A28F3` (s3=0x801A2858, the
+parent/state struct). Found via a write-watch on `0x801A28F3` during a fresh
+name-screen build (caught at PC 0x80081164).
+
+Fix = 1-byte patch on the addiu immediate: `0x8008114C: 07 → 00`
+(`addiu v0,zero,7` → `addiu v0,zero,0`), so the cursor starts on **ALEF**
+(col 16, row 0 = SELTAB[16]). Verified on a fresh boot: `0x801A28F2 == 0x0010`
+(col16,row0), highlight on ا, and Cross there types `80 3E` (alef isolated) — no
+more parking-cell garbage. In `build_rtl_patch.py` PATCHES as `0x8008114C: 00`.
+
+## TODO
+
+- Trace the confirm→memory-card save copy (write-wp `0x80031BE6`) to prove the
+  shaped bytes round-trip on reload.

@@ -177,6 +177,12 @@ PATCHES = {
     # (label type flip is done by cursext above, tail-called from cursor.update)
     # shaped "نام خلبان" + 0x3e terminator into the (runtime type-6) label slot
     0x8004C6F4: bytes.fromhex("e48184de9f20e081e53e"),
+
+    # name-entry default cursor: the init @0x80081144 sets col=16 (0x9a(s3)) and
+    # @0x8008114C `addiu v0,zero,7` -> row=7 (0x9b(s3)=0x801A28F3), parking the
+    # cursor off-grid. Change the row immediate 7->0 so it starts on ALEF (col16,
+    # row0 = SELTAB[16]). 1-byte patch on the addiu immediate (LE low byte).
+    0x8008114C: bytes.fromhex("00"),   # addiu v0,zero,7 -> addiu v0,zero,0
 }
 # expected ORIGINAL bytes (safety check before patching)
 EXPECT = {
@@ -191,6 +197,7 @@ EXPECT = {
     0x800823A5: bytes.fromhex("31"),           # آ X-spacer (stock)
     0x80082130: bytes.fromhex("00"*24),        # free (cursext target)
     0x8004C6F4: bytes.fromhex("50494c4f54204e414d45"),   # "PILOT NAME"
+    0x8008114C: bytes.fromhex("07"),   # addiu v0,zero,7 (cursor default row)
     0x800820E8: bytes.fromhex("000000000000000000000000000000"),  # free (15 zeros)
     0x800B8614: bytes.fromhex("d4230880"),               # -> 0x800823D4
     0x80082340: bytes.fromhex(  # row0 original (ص ش س ژ ز ر ذ د خ ح چ ج ث ت پ ب ا)
