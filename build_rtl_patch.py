@@ -49,6 +49,11 @@ HANDLER      = 0x80082190
 SELTAB_ADDR  = 0x8004C700
 SHAPE_NAME_ENTRY = 0x800BC740      # nm: shape_name lands here (16-aligned, no pad)
 DRAW_CONFIRM = 0x8005D8D4
+NAME_XPOS    = 0x80081FD0           # right-justify routine, in the proven 200B
+                                    # padding block right after the shaper tables
+                                    # (the 261B block @0x800BEB53 is a boot table -
+                                    # overwriting it hangs boot; do NOT use it)
+CURSOR_UPDATE = 0x80083A28          # repointed to `j NAME_XPOS`
 
 # Ordinal selection table: 4 rows x 17 cols. 0..32 letter ordinals
 # (farsi_runtime_shape.KEYBOARD order), 33 space, 34..43 Persian digits ۰..۹,
@@ -97,16 +102,36 @@ def _compile_shaper():
                     "-o", helf, os.path.join(HERE, "farsi_name_input.c")], check=True)
     hbin = os.path.join(d, "h.bin")
     subprocess.run([OBJCOPY, "-O", "binary", "-j", ".text", helf, hbin], check=True)
+    # name_xpos: proportional right-justify (sums fmet adv). HAND-ASSEMBLED (GCC
+    # -Os emitted ~192B; the asm is 96B to fit the 200B block tail). Tail-jumps to
+    # cursext for the label fix.
+    AS = "mipsel-linux-gnu-as"; LD = "mipsel-linux-gnu-ld"
+    xlds = os.path.join(d, "x.ld")
+    with open(xlds, "w") as f:
+        f.write(f"ENTRY(name_xpos)\nSECTIONS {{ .text 0x{NAME_XPOS:08X} : "
+                f"{{ *(.text) }} /DISCARD/ : {{ *(.reginfo) *(.pdr) "
+                f"*(.MIPS.abiflags) *(.comment) }} }}\n")
+    xo = os.path.join(d, "x.o"); xelf = os.path.join(d, "x.elf")
+    xbin = os.path.join(d, "x.bin")
+    subprocess.run([AS, "-march=r3000", "-mips1", "-EL", "-o", xo,
+                    os.path.join(HERE, "farsi_name_xpos.s")], check=True)
+    subprocess.run([LD, "-EL", "-T", xlds, "-o", xelf, xo], check=True)
+    subprocess.run([OBJCOPY, "-O", "binary", "-j", ".text", xelf, xbin], check=True)
     code_b = open(code, "rb").read(); tab_b = open(tab, "rb").read()
-    hbin_b = open(hbin, "rb").read()
+    hbin_b = open(hbin, "rb").read(); xbin_b = open(xbin, "rb").read()
     # size guards: handler must not reach the row-0 glyph string at 0x80082340
     assert HANDLER + len(hbin_b) <= 0x80082340, f"handler too big: {len(hbin_b)}B"
     assert SHAPE_CODE + len(code_b) <= 0x800BC8EA, f"shape code too big: {len(code_b)}B"
     assert SHAPE_TABLES + len(tab_b) <= 0x80082038, f"shape tables too big: {len(tab_b)}B"
+    assert NAME_XPOS + len(xbin_b) <= 0x80082038, f"name_xpos too big: {len(xbin_b)}B"
+    assert SHAPE_TABLES + len(tab_b) <= NAME_XPOS, "shaper tables collide with name_xpos"
     print(f"  compiled shaper code {len(code_b)}B, tables {len(tab_b)}B, "
-          f"handler {len(hbin_b)}B")
+          f"handler {len(hbin_b)}B, name_xpos {len(xbin_b)}B")
+    # repoint cursor.update -> `j NAME_XPOS; nop` (+ nop pad to original 48B span)
+    j = 0x08000000 | ((NAME_XPOS >> 2) & 0x03FFFFFF)
+    cur_upd = struct.pack("<I", j) + b"\x00" * 44
     return {SHAPE_CODE: code_b, SHAPE_TABLES: tab_b, HANDLER: hbin_b,
-            SELTAB_ADDR: SELTAB}
+            SELTAB_ADDR: SELTAB, NAME_XPOS: xbin_b, CURSOR_UPDATE: cur_upd}
 
 # --- the patches (runtime addr -> bytes). Single source of truth. ---------
 PATCHES = {
@@ -251,6 +276,9 @@ if __name__ == "__main__":
     # already in fdat_extracted.T, so they are intentionally NOT EXPECT-checked.
     EXPECT[SHAPE_CODE]   = b"\x00" * len(_shaper[SHAPE_CODE])
     EXPECT[SHAPE_TABLES] = b"\x00" * len(_shaper[SHAPE_TABLES])
+    EXPECT[NAME_XPOS]    = b"\x00" * len(_shaper[NAME_XPOS])
+    # CURSOR_UPDATE (0x80083A28) overwrites the prior RTL cursor.update with a jump
+    # to name_xpos; its EXPECT is the stock original (already in EXPECT dict).
     print("1) patch .T"); patch_T()
     print("2) reinsert into BIN copy"); reinsert()
     print(f"DONE -> {CUE_OUT}")

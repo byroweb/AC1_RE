@@ -103,6 +103,34 @@ Fix = 1-byte patch on the addiu immediate: `0x8008114C: 07 → 00`
 (col16,row0), highlight on ا, and Cross there types `80 3E` (alef isolated) — no
 more parking-cell garbage. In `build_rtl_patch.py` PATCHES as `0x8008114C: 00`.
 
+## Proportional right-justify — FIXED (baked + validated)
+
+The baked RTL cursor patch reserved a FIXED 16 px/glyph (`name_X = 136 − n·16`),
+but `draw_string` renders Farsi name glyphs PROPORTIONALLY (`x += fmet[gidx].adv`,
+advances 3..14 px; alef is only 3 px). So the rendered string was far narrower
+than reserved and DRIFTED LEFT as it grew. `fmet` is at runtime `0x80065DA0`
+(6-byte entries `u,v,w,h,dydx,adv`; adv at +5).
+
+Fix: `farsi_name_xpos.s` (`name_xpos`) sums the actual `fmet` advances over the
+`>`-terminated name buffer and anchors the right edge at x=136:
+`name_X = 136 − Σadv`, `cursor_X = name_X − 16`, then tail-jumps to `cursext`
+(0x80082130) for the per-frame label fix. cursor.update `0x80083A28` is repointed
+to `j name_xpos`. Verified on a fresh boot: 2 alefs → name_X=130, 4 alefs → 124,
+سلام → 110 — right edge pinned at **136** in every case; سلام renders tight and
+flush at the box's right border.
+
+Hand-assembled (96 B): GCC `-Os` emitted ~192 B which did not fit. Placed at
+**0x80081FD0**, the proven-free tail of the 200 B padding block that already holds
+the shaper tables (0x80081F70).
+
+### WARNING — the 261 B "zero block" at 0x800BEB53 is a BOOT TABLE, not free
+First attempt put `name_xpos` at 0x800BEB60 (a 261 B zero run). The disc HUNG at
+boot: `internal_frame_number` frozen while `frame_number` advanced, PC in garbage,
+the stack flooded with `name_xpos`'s own code bytes — boot code reads that region
+as a (zero-initialised) data table and copied it. Zero-runs are NOT necessarily
+free code space. Only regions proven by a clean boot (here: the shaper blocks
+0x800BC740 and 0x80081F70) are safe; verify any new placement by booting.
+
 ## TODO
 
 - Trace the confirm→memory-card save copy (write-wp `0x80031BE6`) to prove the
