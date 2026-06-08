@@ -172,7 +172,24 @@ COEXIST with the atlas → put words in **free VRAM tpage 11** and redirect the 
 - Upload-hook free space CONFIRMED: ~573B padding @ **0x800CF35F** (entry-201 tail before
   checksum @0x847FC). Enough for read_T_entry + LoadImage(RECT{704,128,128/4? ,72}) + flag.
   (Other small free runs: 0x800CEB58/128B, 0x800BC5B6/130B. AVOID 0x800BEB53 = boot table.)
-## BUILD RECIPE (execute-ready, 2026-06-08)
+## ✅ SHIPPED (2026-06-08) — crisp Farsi titles baked & cold-boot verified
+The on-disc storage problem (100%-full disc, fragmented/unsafe overlay space) was
+solved by a **zero-code "dead-kanji repurpose"**:
+- The USA build still LOADS the Japanese kanji font sheet (**MENU_TIM.T entry 4**,
+  256×256 4bpp @ VRAM **(576,256)**) but never RENDERS kanji → dead resident texture.
+- `title_build.py`: overwrite entry-4's top 72 rows with the six 128×24 Farsi word
+  cells (img @file 0x7F220), fix entry-4 checksum (@0x9F7FC), inject. Then write the
+  6 retargeted descriptors @0x800B6E4C (tpage **0x39** = VRAM(576,256); /tmp/desc_kanji.bin)
+  into FDAT entry-201, fix the entry-201 checksum, inject. **No overlay code, no upload
+  hook, no MENU_TIM size change.** Operates on top of the existing [RTL] disc (preserves
+  the name shaper). Backup: `[RTL].bin.pre-title.bak`.
+- Cold-boot verified: all 6 titles render crisp (گاراژ·رده‌بندی·ایمیل·سیستم·مأموریت·فروشگاه),
+  name atlas + Farsi menus intact, no NOW-LOADING hang. Shots docs/screens/baked_title_*.png.
+  Baked-disc hub save state = DuckStation slot 6.
+- Position left at the original (90,72) for v1 — user said tweak letter placement later
+  (source x@0x801A3810 y@0x801A3814; centered look was 112,86).
+
+## BUILD RECIPE (execute-ready, 2026-06-08) — historical; superseded by title_build.py above
 Disc is 100% packed (no free sectors in MENU_TIM or FDAT) → store words IN the overlay
 (entry-201), which we already rebuild+checksum (zero risk to other assets).
 - **Words data:** 6 words pack to ~1167B @1bpp (tight). Reclaimable overlay space:
