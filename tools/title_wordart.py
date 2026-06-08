@@ -52,7 +52,44 @@ def fit_pt(word):
             return pt
     return 10
 
+def build_inputs(band_path='/tmp/title_band2.raw', desc_path='/tmp/desc_kanji2.bin'):
+    """Generate the disc build inputs for title_build.py.
+
+    Layout: a 256x240 4bpp band = 6 stacked 40px rows (one word per row, by
+    category id). Each word's ink is centred at x=CX so that, drawn by the hub
+    title sprite (fixed screen origin x=90) from a w=144 descriptor, it lands on
+    the measured carousel icon centre (x≈169). Descriptors target the dead kanji
+    sheet's VRAM (tpage 0x39 = (576,256)); CLUT 0x3817 (white).
+    """
+    BANDW, CELL_H, ROWS = 256, 40, 6
+    CX, CYO = 80, 26                         # word centre x=80 -> screen ~169 (icon centre)
+    ROWB = BANDW // 2
+    band = bytearray(ROWB * CELL_H * ROWS)
+    def setpx(x, y, i):
+        o = y*ROWB + (x//2); b = band[o]
+        band[o] = (b & 0xF0)|(i & 0xF) if x % 2 == 0 else (b & 0x0F)|((i & 0xF) << 4)
+    for cid in range(6):
+        fa = WORDS[cid][1]; pt = fit_pt(fa); S = 4
+        big = Image.new('L', (BANDW*S, CELL_H*S), 0)
+        ImageDraw.Draw(big).text((CX*S, CYO*S), fa, fill=255,
+                                 font=ImageFont.truetype(FONT, pt*S), anchor='mm')
+        cell = big.resize((BANDW, CELL_H), Image.LANCZOS).point(lambda v: 255 if v >= THRESHOLD else 0)
+        for yy in range(CELL_H):
+            for xx in range(BANDW):
+                if cell.getpixel((xx, yy)): setpx(xx, cid*CELL_H + yy, 1)
+    open(band_path, 'wb').write(bytes(band))
+    import struct
+    desc = bytearray()
+    for cid in range(6):                     # u=0, v=cid*40, clut, w=144, h=40, tpage 0x39
+        desc += bytes([0, cid*CELL_H]) + struct.pack('<HHHI', 0x3817, 144, CELL_H, 0x39)
+    open(desc_path, 'wb').write(desc)
+    print(f'wrote {band_path} ({len(band)}B) + {desc_path} ({len(desc)}B)')
+
+
 if __name__ == '__main__':
+    import sys
+    if '--build' in sys.argv:
+        build_inputs(); raise SystemExit
     cells = {}
     for cid, (en, fa) in WORDS.items():
         pt = fit_pt(fa)

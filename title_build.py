@@ -20,8 +20,8 @@ HERE   = os.path.dirname(os.path.abspath(__file__))
 BIN    = "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1) [RTL].bin"
 MENU_SRC = "/tmp/MENU_TIM_original.T"          # pristine MENU_TIM (== retail, verified)
 FDAT_SRC = os.path.join(HERE, "fdat_patched.T")# current FDAT (has the name shaper)
-BAND   = "/tmp/title_band.raw"                 # 256x72 4bpp word band (9216B)
-DESC   = "/tmp/desc_kanji.bin"                 # 6x12B descriptors, tpage 0x39
+BAND   = "/tmp/title_band2.raw"                # 256x240 4bpp word band (30720B), centered layout
+DESC   = "/tmp/desc_kanji2.bin"                # 6x12B descriptors, tpage 0x39, w=144 h=40 v=cid*40
 
 SECTOR=2352; DOFF=24; DSIZE=2048; SEED=0x12345678
 
@@ -62,8 +62,9 @@ def main():
     bak = BIN + ".pre-title.bak"
     if not os.path.exists(bak): shutil.copyfile(BIN, bak); print("backup ->", bak)
 
-    band = open(BAND, "rb").read();  assert len(band)==9216
+    band = open(BAND, "rb").read();  assert len(band)==30720
     desc = open(DESC, "rb").read();  assert len(desc)==72
+    assert E4_IMG + len(band) <= 0x87220, "band overruns entry-4 image"
 
     # 1) MENU_TIM entry 4
     menu = bytearray(open(MENU_SRC, "rb").read())

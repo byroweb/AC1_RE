@@ -186,8 +186,14 @@ solved by a **zero-code "dead-kanji repurpose"**:
 - Cold-boot verified: all 6 titles render crisp (گاراژ·رده‌بندی·ایمیل·سیستم·مأموریت·فروشگاه),
   name atlas + Farsi menus intact, no NOW-LOADING hang. Shots docs/screens/baked_title_*.png.
   Baked-disc hub save state = DuckStation slot 6.
-- Position left at the original (90,72) for v1 — user said tweak letter placement later
-  (source x@0x801A3810 y@0x801A3814; centered look was 112,86).
+- **Centering (v2):** the title element X (90) is allocated at a varying RAM address and
+  written once at init (not a patchable static const), so instead of moving the sprite the
+  words are positioned WITHIN the texture. Layout changed to a **1-col × 6-row band, 144×40
+  cells** (tools/title_wordart.py build_inputs); each word's ink is centred at cell-x **CX=80**
+  so it lands on the measured carousel **icon centre x≈169** (arrow midpoint, measured from the
+  framebuffer; the spinning 3D icon pollutes naive centroids — use the right arrow @207 +
+  left arrow @132). Descriptors: u=0, v=cid*40, w=144, h=40, tpage 0x39. Cold-boot verified
+  centred. Rebuild: `python3 tools/title_wordart.py --build && python3 title_build.py`.
 
 ## BUILD RECIPE (execute-ready, 2026-06-08) — historical; superseded by title_build.py above
 Disc is 100% packed (no free sectors in MENU_TIM or FDAT) → store words IN the overlay
