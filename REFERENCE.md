@@ -108,7 +108,17 @@ Each `.T` file is a sector-based container:
 | `0xCB` | 203 | game-mode-1 state handler |
 | `0xCC` | 204 | game-mode-2 state handler |
 
-FDAT.T has ≥205 entries; part-stat / mission tables are in lower-numbered entries.
+FDAT.T has 205 entries (count-first TOC); part-stat / mission tables are in
+lower-numbered entries; entry 201 (`0xC9`) holds the UI/menu **text** corpus
+(~16k chars, `>`-terminated ASCII — see `docs/DISC_TEXT_INVENTORY.md`).
+
+### Mission text (`MIS.T`) — CRACKED
+`MIS.T` is a count-first `.T` container (884 hdr, 883 entries) holding the entire
+mission corpus: **entry 0** = mission-name array (0x20-byte stride, index = mission
+number); per-mission **briefing/objective** text blocks (50, each begins with a
+`Requester:` entry); plus 194 100×100 8bpp thumbnail TIMs. All text is ASCII and
+`draw_string`-renderable. Full layout in `docs/MIS_FORMAT.md`; disc-wide text map
+in `docs/DISC_TEXT_INVENTORY.md`. Tools: `tools/{build_filemap,extract_t,scan_text}.py`.
 
 ---
 
@@ -289,8 +299,8 @@ See `AC1_TEXT_SYSTEM.md` for the full text/menu system writeup.
 | `GG/MS/MENU_TIM.T` | 100295–101035 | 1.5 MB | menu UI textures (**font in entry 0**) |
 | `GG/MS/MENU_TMD.T` | 101036–101818 | 1.6 MB | menu 3D models (TMD) |
 | `GG/MS/MENU_VAB.T` | 101819–101919 | 207 KB | menu sound bank (VAB) |
-| `GG/MS/MIS.T` | 101920–103449 | 3.1 MB | mission data |
-| `GG/P0–P2/PA00–PA57.T` | 103637+ | ~750–900 KB ea | 58 stage/arena map packs |
+| `GG/MS/MIS.T` | 101920–103449 | 3.1 MB | **mission text corpus** + 194 thumbnail TIMs (see `docs/MIS_FORMAT.md`) |
+| `GG/P0–P3/PA00–PA71.T` | 103637–126704 | ~700–900 KB ea | **72** stage/map packs — geometry/textures, **no text** (`docs/PA_FORMAT.md`) |
 | `GG/STR/ACED1-5.STR` | 131042–157931 | 4–14 MB ea | 5 ending FMVs |
 | `GG/STR/ACOPA/B.STR` | 157932–176401 | 20+18 MB | opening cutscene (2 parts) |
 | `GG/STR/DEMOPLAY.STR` | 176402–192619 | 33 MB | attract/demo video |

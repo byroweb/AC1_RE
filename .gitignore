@@ -55,3 +55,8 @@ shots/
 docs/screens/menu_font_*.png
 docs/screens/wordart_band_*.png
 docs/screens/vram_full_*.png
+
+# Extracted game text & inventories (derived copyrighted game content — never distribute)
+disc_map/*_text.txt
+disc_map/text_inventory.csv
+disc_map/extracted/
