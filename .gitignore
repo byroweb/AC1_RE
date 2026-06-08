@@ -50,3 +50,8 @@ shots/
 *.mcd
 *.gme
 *.sav
+
+# Raw VRAM/texture decodes (derived game assets) — local diagnostics only
+docs/screens/menu_font_*.png
+docs/screens/wordart_band_*.png
+docs/screens/vram_full_*.png
