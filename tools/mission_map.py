@@ -35,7 +35,7 @@ def spawns(buf):
     out = []
     for i in range(ln // REC):
         hw = struct.unpack_from("<20h", buf, off + i * REC)
-        x, y, z, rot, typ, blk = hw[2], hw[3], hw[4], hw[7], hw[9], hw[1]
+        x, y, z, blk, rot, typ = hw[2], hw[3], hw[4], hw[5], hw[7], hw[9]
         if (x, y, z, typ) == (0, 0, 0, 0) and blk == 0:
             continue                      # empty slot
         out.append(dict(i=i, x=x, y=y, z=z, blk=blk, rot=rot, typ=typ))
