@@ -20,28 +20,45 @@ uint16 sector offsets (×2048), duplicate offsets = zero-length entries.
 | **1** | 2048 B **offset directory** — `u32[1]`=0x39 count, then an ascending uint16 pointer table into a record region. TBD. |
 | **2 … N** | **Size-prefixed geometry blocks** (112 of them in PA00). |
 
-## Geometry block layout (PARTIAL — verified on PA00 entry 2)
+## Geometry block layout (CONFIRMED — RE'd from walker FUN_800574D8, validated PA00/PA20)
 ```
 u32[0]  = block size in bytes  (== entry length)              CONFIRMED
 u32[1]  = 0
-u32[2]  = sub-object count? (0x0c)                            hypothesis
-u32[3..5] = small counts (1,3,3)
-then (offset,count) sub-section descriptors, e.g.:
-  (0x1218, 122)  -> VERTEX array
-  (0x15e8, 103)  -> PRIMITIVE array
-  ...
+u32[2]  = block[+8] = small offset O to the sub-object section CONFIRMED
+            (the walker is called with a0 = block + block[+8])
 ```
-- **Vertices** @0x1218, 122 × **8-byte** records = `int16 x, y, z, flag`.
-  Decoded coords are plausible model space: X −150..1287, Y −690..9216,
-  Z −222..3600. And `0x1218 + 122*8 = 0x15E8` lands exactly on the next
-  sub-section → stride/count CONFIRMED. (4th int16 is a flag/normal-index, not
-  always 0.) Decode with `tools/pa_parse.py … --verts 0x1218 122`.
-- **Sub-section layout corrected:** the block holds **per-sub-object** vertex
-  pools followed by **variable-length primitive records** (the earlier "fixed
-  8-byte primitive @0x15e8" note was a misread — 0x15e8 is int16 coordinate data,
-  not primitives). Real primitive-record runs are interleaved after each
-  sub-object's vertices (e.g. PA00 entry 2 @**0x1960**, 12 records; PA20 entry 3
-  @**0x6c**, 171 records). Decode with `tools/pa_parse.py … --prims 0x1960 12`.
+The sub-object SECTION begins at `block + block[+8]`:
+```
+secbase = block + block[+8]            (PA00 e2: block[+8]=0x0c -> secbase=+0x0c)
+secbase[+8]  = u32  SUB-OBJECT COUNT                          CONFIRMED
+secbase[+12] = SUB-OBJECT TABLE  (stride 28)                  CONFIRMED
+```
+**Relocation base** for every in-table offset = `secbase + 12` (the walker does
+`field += a0+12`, a0=secbase). So a stored offset O maps to file offset `O + block[+8] + 12`.
+
+### Sub-object descriptor (28 bytes — CONFIRMED from relocation walker)
+| off | size | field |
+| --- | --- | --- |
+| +0x00 | u32 | **VERTEX-POOL offset** (relocated; ×nothing — int16 xyzw stride 8) |
+| +0x04 | u32 | **VERTEX COUNT** |
+| +0x08 | u32 | 2nd-pool offset (colour/normal pool, relocated) |
+| +0x0e | u16 | **FLAGS**: `0x8000`=terminate/skip sub-object; `0x4000`=skip reloc; low 9 bits = prim-count addend |
+| +0x10 | u32 | **PRIMITIVE-STREAM offset** (relocated) — the walk start `t0` |
+| +0x14 | u16 | **PRIM count base** |
+| +0x18 | u32 | 4th pool offset (relocated) |
+
+**Primitive-record count walked** = `u16[+0x14] + (FLAGS & 0x1ff) − 1`.
+
+- **Vertices** = the +0 pool, `int16 x,y,z,flag` stride 8 (4th int16 = flag/normal).
+- The walks land EXACTLY on section boundaries. PA00 entry 2 (3 sub-objects):
+  - sub0: vtx@**0x1230** ×122, prim@**0x6c** ×163 → ends at 0x1218 (just before next pool)
+  - sub1: vtx@0x1a4c ×14,  prim@0x1950 ×12  → ends 0x1a38
+  - sub2: vtx@0x1f54 ×44,  prim@0x1b24 ×35  → ends 0x1f34
+  Every decoded index is `< pool size` (max == count−1). **Note:** the earlier doc's
+  "vertices @0x1218" was off by the +0x18 relocation; the true pool base is 0x1230.
+- Decode the table + export with **`tools/pa_obj.py … --entry N`** (prints the table,
+  walks each sub-object, validates index ranges). Per-sub-object pools confirm that
+  vertex indices are POOL-RELATIVE (each sub-object is a separate OBJ group `o subN`).
 
 ### Primitive record (CONFIRMED — RE'd from overlay + byte-validated)
 Variable-length, 32-bit aligned. Walked by reading `byte[1]` (length in **words**):
@@ -71,8 +88,19 @@ Vertex-index offset & count per type (record-relative; validated PA00+PA20):
 
 Validation: every decoded index is `< pool size`, distinct per face, and the record
 walk lands exactly on the next sub-section (PA00 e2 → 0x1a4c; PA20 e3 → 0x20c).
-In textured records the halfword immediately before the vertex indices is a
-**sequential per-poly running index** (0,1,2,…).
+
+**Running-counter vs real index (RESOLVED):** in textured records a halfword
+*sequential per-poly running counter* (0,1,2,…) appears in the shading region, NOT
+in the vertex-index slots — the vidx offsets in the table above already point past
+it at the *real* pool-relative indices (proven: at those offsets every index is
+`< vtx_cnt` and `max == vtx_cnt−1`, with 0 out-of-range across PA00 e2 + PA20 e3 for
+flat/textured types). The relocation handlers (jump table `0x8004B184`) confirm which
+halfwords are geometry: in each handler `a1 = record+4`; halfwords shifted **`<<3`
+(×8)** are XYZ-pool vertex indices, **`<<4` (×16)** are colour/normal-pool indices.
+For the **gouraud** types `0x34`/`0x3c` the handlers interleave vtx/colour indices
+(stride 4 from record+0x14/+0x10) but a residual ~5–30% of records still index OOR —
+an extra shading word is suspected; the exporter drops any face with an OOR index so
+the mesh stays valid. (0x34/0x3c vidx layout = **TENTATIVE**; needs DuckStation bp.)
 
 ### Geometry walker / renderer (CONFIRMED — entry-202 overlay)
 | Function | Addr | Role |
@@ -104,15 +132,27 @@ The mission code is **FDAT entry 202** (`0xCA`), an overlay at base `0x8004ADA0`
   `half[block+4]>>2` / `half[block+6]>>2`, `+0x04`=index). This CONFIRMS the block
   header's halfword count fields are real geometry element counts.
 
+## OBJ exporter (DONE — `tools/pa_obj.py`)
+`tools/pa_obj.py GG/P0/PA00.T --entry 2 [--sub N] [-o out.obj]` decodes the stride-28
+sub-object table, reads each sub-object's int16 vertex pool, walks its variable-length
+primitive stream, triangulates quads, and writes a Wavefront `.obj` (one `o subN` group
+per sub-object; output to `disc_map/`, gitignored). Validated:
+- **PA00 entry 2:** 3 sub-objects → 180 verts / 322 tris, bbox X[-150..150] Y[-690..-515]
+  Z[-222..165], **100% of verts referenced by faces** (coherent, no orphans),
+  0 out-of-range face indices in the OBJ.
+- **PA20 (GG/P1) entry 3:** 277 verts / 510 tris, bbox X[-111..111] Y[-675..-519]
+  Z[-189..180].
+- **PA00 entry 21** (21 sub-objects): 554 verts / 853 tris; all OBJ face indices valid.
+Meshes are X-symmetric (±150/±111) at part scale → these blocks are AC-part / object
+meshes, not whole-stage hulls. Faces with an out-of-range index (gouraud 0x34/0x3c
+edge cases) are dropped so output is always a valid mesh.
+
 ## Next steps (to fully crack + render)
-1. **Per-sub-object vertex pool boundaries:** decode the stride-28 sub-header at
-   block `+12` (read by walker `0x800574D8`) to know where each sub-object's vertex
-   pool / primitive run begins, so a generic ripper doesn't have to scan for the
-   `XX 0N 00 2T` record signature. (Indices are pool-relative, so this is needed
-   for a faithful OBJ export.)
-2. **OBJ export:** with the vertex array (int16 x,y,z) + per-type primitive decode
-   now confirmed, write `tools/pa_obj.py` to emit a mesh and eyeball a stage.
-3. **DuckStation ground-truth (optional):** breakpoint emitter `0x8005A57C`, confirm
-   the screen-space verts it submits match a decoded record — and resolve the
-   trailing per-face flag word + the UV/tpage exact bitfields.
+1. **Gouraud vidx (0x34/0x3c):** breakpoint emitter `0x8005A57C` in DuckStation to
+   nail the exact vertex-index slot for these two types (handler shows interleaved
+   vtx/colour but a residual ~5–30% index OOR — likely an extra shading word).
+2. **Textures/UVs:** decode the UV+clut(`0x7980`)/tpage(`0x009b`) shading words into
+   real CLUT/tpage coords + a TIM source so the OBJ can carry a material.
+3. **Stage assembly:** entry 0 / entry 1 directory → how blocks place into a full map
+   (the per-block bboxes are part-scale; the map header must position them).
 4. Port walker `0x800574D8` + emitter `0x8005A57C` into PSXmod as **AC1mod**.

@@ -60,3 +60,5 @@ docs/screens/vram_full_*.png
 disc_map/*_text.txt
 disc_map/text_inventory.csv
 disc_map/extracted/
+# Exported meshes derived from game geometry (tools/pa_obj.py output) — never distribute
+disc_map/*.obj
