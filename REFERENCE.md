@@ -435,3 +435,58 @@ Decoder: `tools/pa_parse.py … --prims OFF CNT`.
 | display-struct pool (16×0x170) | `0x801A2828` | RAM |
 | display-slot index base (for ÷44 magic) | `0x801A26B8` | RAM |
 | free display-slot allocator | `0x80078A2C` | overlay |
+
+---
+
+## 12. Mission runtime — descriptor, MT spawn, timer, objectives (RE 2026-06-08)
+
+Full writeup: **`docs/MISSION_SYSTEM.md`**. Tool: `tools/mission_parse.py`. All in
+the entry-202 overlay (base `0x8004ADA0`).
+
+**Per-mission data = FDAT entry PAIR (file id 2):** mission N →
+- **entry `2N`** = the **objective object** (relocatable MIPS code+data loaded to
+  `0x801C4B40`; starts with a **method vtable**; objective logic is per-mission
+  CODE, not a global enum).
+- **entry `2N+1`** = the **chunk stream** (`[u32 len][payload]…`), walked by the
+  scene loader **`FUN_8004F508`**. **Chunk 12 = 256×40-byte MT/object spawn table**
+  → `FUN_80073B74` → instance table `0x8019FAB8`.
+
+**Spawn record (40 B = 20×int16):** `hw0-2`=X,Y,Z; **`hw3`=geometry block index**
+(→ instance `+0x0A`, `-1`=none); **`hw7`=object/MT type id**; `hw5`=rot (hyp);
+`hw8..19`=per-type params (hyp). Binding via `FUN_80078B14` (PA_HEADER §setup).
+
+**Timer:** displayed `0x8019F52C` (frames, MM:SS HUD via ÷3600 magic); set by
+script **cmd 4** / `FUN_8008A778`. End-anim counter `0x8019F52A`. Per-frame driver
+**`FUN_8008AB68`** → timer state machine **`FUN_8008A8F8`** (state 60 special).
+Timer-tick handler (`~0x8004C4F0`) forces FAIL on expiry. Timer struct `0x801D0B40`.
+
+**Objective / success-fail:** result FLAGS word **`0x8019F524`** — bit `0x100`=
+**SUCCESS**, `0x200`=**FAIL** — read at mission exit (`0x8004C69C`) → result code
+**`0x80048610`** (1=success,2=fail). End primitive **`FUN_8004C318(a0)`** writes the
+flag + arms the 100-frame exit fade (`0x8019F528`). Objective-step primitive
+**`FUN_8008A80C`** drives progress counter `DAT_8009079C` (terminal at 36). Script
+VM **`FUN_8008A0B0`** + 10-entry jump table **`0x8004C164`** (cmd4=set-timer,
+cmd8=success-if-`FUN_80052A2C(99)`, cmd5=flag 0x80, timer-tick=0x200). A secondary
+data-driven VM (`0x8008BAF8`) can set flags from the script stream.
+
+| Symbol | Address | |
+| --- | --- | --- |
+| mission scene loader | `0x8004F508` | overlay |
+| mission control block ptr→objective object | `0x8019F51C` | RAM |
+| objective object load addr | `0x801C4B40` | RAM |
+| result/objective FLAGS word | `0x8019F524` | RAM |
+| mission-END seq counter (→exit) | `0x8019F528` | RAM |
+| timer-mode / end-anim counter | `0x8019F52A` | RAM |
+| **displayed mission TIMER (frames)** | `0x8019F52C` | RAM |
+| mission result code (1=ok,2=fail) | `0x80048610` | EXE RAM |
+| objective step counter | `0x8009079C` | RAM |
+| mission number / phase byte | `0x800411F8` | RAM |
+| timer-display struct | `0x801D0B40` | RAM |
+| **mission-end primitive (set flag+fade)** | `0x8004C318` | overlay |
+| objective-step primitive (advance) | `0x8008A80C` | overlay |
+| per-frame mission driver | `0x8008AB68` | overlay |
+| timer/end state machine | `0x8008A8F8` | overlay |
+| mission script interpreter | `0x8008A0B0` | overlay |
+| mission script jump table (10 cmds) | `0x8004C164` | overlay |
+| timer set helper (cmd 4) | `0x8008A778` | overlay |
+| "MISSION TIMER" / "#Location Now" strings | `0x8004ADB0` / `0x8004C1AC` | overlay |
