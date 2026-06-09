@@ -384,9 +384,27 @@ with `tools/extract_t.py` (FDAT entry 202) → load at vma `0x8004ADA0`.
   on `(type & 0xFD)` → tri/quad/gouraud/textured branches, fetches transformed
   screen XY from pool (`s6 + idx`), backface-tests, builds POLY packets and OT-links
   them. Matrix-driven variant `FUN_80058B04` (called from `0x5D618`/`0x5E1C8`).
-- **`FUN_80078B14`** — per-object setup: reads the 44-byte record table `0x8019F538`,
-  computes block index via `÷44` magic-multiply (`0xE9BD37A7`), fills a ~0x168-byte
-  display struct that the emitter consumes.
+- **`FUN_80078B14`** — per-object setup: copies an object-template record into a
+  ~0x168-byte display struct. The `÷44` magic-multiply (`0xE9BD37A7`) on
+  `(a0 − 0x801A26B8)` computes the **display-slot index (1..16)** — *not* a block index
+  (corrects the earlier note). The **block index is template field `a1[+0x0A]`**;
+  it indexes the 44-byte record table (`blkrec = 0x8019F538 + a1[+0x0A]*44`) and the
+  work-RAM geometry ptr `blkrec[+0x28]` is copied to `display[+0x80]`.
+
+**Entry-0 / entry-1 + slot binding (RE 2026-06-08 — see `docs/PA_HEADER.md`):** the
+PA loader reads **entry 1 FIRST** (the placement directory) — `read_T_entry(0,1,dest)`
+@`0x8004F244` — and the registrar stores it as block record **[0]** (the table at
+`0x8019F538` therefore holds the directory, not the 112 geometry blocks). **Entry 0**
+= `used / sig 0x03072D39 / 4-ptr table (+0x08) / typed object-index list (+0x1C)`; the
+list is `count(0x71)` then `(blockID<<8)|subtype` entries (45 `0xNN08` block-roster
+entries + paired `0xNN03`/`0xNN02` group entries) and is **byte-identical across
+PA00/PA07/PA20** → fixed slot roster. **Entry 1** = `used / count 57 / uint16 ptr
+table (+0x08)` to 57 placement records (marker `0x012C/0x0352` + int16 transform
+vectors), table also byte-identical across files. The object-instance table at
+`0x8019FAB8` (256×44, init `FUN_80073B74`) is filled from the **mission** file (id 2),
+and each instance's field `+0x0A` selects its PA geometry block → **slots are
+data-driven but authored from a fixed template**. Header dumper: `tools/pa_parse.py
+… --header`.
 
 **Primitive record (CONFIRMED):** variable length, `reclen = 4 + byte[1]*4`;
 `byte[3]&0xBC` = type (0x80 bit = textured). Layout = word0 / shading block (flat =
@@ -409,5 +427,11 @@ Decoder: `tools/pa_parse.py … --prims OFF CNT`.
 | PA primitive emitter (matrix variant) | `0x80058B04` | overlay |
 | stage/area number byte | `0x8004121B` | RAM |
 | PA path template `"P0\PA00.T"` | `0x8008D928` | overlay |
-| PA record table (stride 44) | `0x8019F538` | RAM |
+| PA block record table (stride 44; [0]=entry-1 dir) | `0x8019F538` | RAM |
 | PA dest-ptr holder | `0x8019F520` | RAM |
+| PA loader top-level caller (a0=0) | `0x8004FA00` | overlay |
+| object-instance template table init | `0x80073B74` | overlay |
+| object-instance template table (256×44) | `0x8019FAB8` | RAM |
+| display-struct pool (16×0x170) | `0x801A2828` | RAM |
+| display-slot index base (for ÷44 magic) | `0x801A26B8` | RAM |
+| free display-slot allocator | `0x80078A2C` | overlay |

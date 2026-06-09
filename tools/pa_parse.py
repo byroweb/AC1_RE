@@ -169,11 +169,52 @@ def decode_prims(e, off, cnt):
     print(f"  end offset = 0x{o:x}")
 
 
+def dump_header(entries):
+    """Decode entry-0 master header + entry-1 placement directory.
+
+    See docs/PA_HEADER.md. Entry 0: used/sig/4-ptr table + a count-led typed
+    object-index list of (blockID<<8)|subtype entries (byte-identical across PA
+    files = the fixed slot roster). Entry 1: 57-record placement directory with a
+    uint16 pointer table at +0x08.
+    """
+    e0, e1 = entries[0], entries[1]
+    used0, sig = struct.unpack_from("<II", e0, 0)
+    print(f"--- entry 0 (master header) len={len(e0)} ---")
+    print(f"  used=0x{used0:x}  sig=0x{sig:08x}"
+          f"{'  (OK)' if sig == 0x03072d39 else '  (UNEXPECTED)'}")
+    ptrs = struct.unpack_from("<4I", e0, 8)
+    names = ["A->flags", "B->list", "C->offdir", "D->vectors"]
+    print("  ptr table @+0x08:", "  ".join(f"{n}=0x{p:x}" for n, p in zip(names, ptrs)))
+    lst_off = ptrs[1] if ptrs[1] else 0x1c
+    cnt = struct.unpack_from("<H", e0, lst_off)[0]
+    print(f"  typed object-index list @0x{lst_off:x}: count={cnt}")
+    items = [struct.unpack_from("<H", e0, lst_off + 2 + 2 * i)[0] for i in range(cnt)]
+    # phase A = leading run of 0xNN08 block-roster entries; phase B = the rest
+    na = 0
+    while na < len(items) and (items[na] & 0xff) == 0x08:
+        na += 1
+    phaseA = items[:na]
+    print(f"    phase A (subtype 0x08, block roster): {len(phaseA)} entries: "
+          + " ".join(f"{v >> 8:02x}" for v in phaseA))
+    rest = items[na:]
+    print(f"    phase B (subtype 0x03/0x02 pairs): {len(rest)} u16: "
+          + " ".join(f"{v >> 8:02x}.{v & 0xff:02x}" for v in rest[:24])
+          + (" ..." if len(rest) > 24 else ""))
+
+    used1, rcount = struct.unpack_from("<II", e1, 0)
+    print(f"--- entry 1 (placement directory) len={len(e1)} ---")
+    print(f"  used=0x{used1:x}  record count={rcount}")
+    tab = [struct.unpack_from("<H", e1, 8 + 2 * i)[0] for i in range(rcount)]
+    print("  uint16 ptr table @+0x08:", " ".join(f"{p:04x}" for p in tab))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("path")
     ap.add_argument("--entry", type=int)
     ap.add_argument("-v", "--verbose", action="store_true")
+    ap.add_argument("--header", action="store_true",
+                    help="decode entry-0 master header + entry-1 directory (PA_HEADER.md)")
     ap.add_argument("--verts", nargs=2, metavar=("OFF", "CNT"),
                     help="decode int16 vertex array at OFF (hex ok) for CNT verts")
     ap.add_argument("--prims", nargs=2, metavar=("OFF", "CNT"),
@@ -181,6 +222,10 @@ def main():
     args = ap.parse_args()
 
     entries = load_container(args.path)
+    if args.header:
+        print(f"=== {args.path} ===")
+        dump_header(entries)
+        return
     if args.entry is None:
         summary(entries)
         return
