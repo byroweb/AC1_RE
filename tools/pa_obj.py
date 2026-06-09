@@ -53,14 +53,14 @@ RAW, OFF, DATA = 2352, 24, 2048
 # ~5-30% of records still index OOR — extra shading word suspected; faces with any
 # OOR index are dropped at export, so the mesh stays valid).
 PRIM_VERTS = {
-    0x20: (0x08, 3),   # flat tri        len 16   CONFIRMED
-    0x28: (0x08, 4),   # flat quad       len 20   CONFIRMED
+    0x20: (0x0a, 3),   # flat tri    (skip per-poly counter hw) CONFIRMED
+    0x28: (0x0a, 4),   # flat quad   (skip per-poly counter hw) CONFIRMED
     0x24: (0x12, 3),   # textured tri    len 24   CONFIRMED
-    0x2c: (0x14, 4),   # textured quad   len 32   CONFIRMED
-    0x34: (0x12, 3),   # gouraud/tex tri len 28   tentative
-    0x3c: (0x12, 4),   # gouraud/tex quad len 36  tentative
-    0xa0: (0x08, 3), 0xa8: (0x08, 4),
-    0xa4: (0x12, 3), 0xac: (0x14, 4),
+    0x2c: (0x16, 4),   # textured quad (skip counter hw)        CONFIRMED
+    0x34: (0x14, 3),   # gouraud/tex tri (offset tentative)     tentative
+    0x3c: (0x14, 4),   # gouraud/tex quad (offset tentative)    tentative
+    0xa0: (0x0a, 3), 0xa8: (0x0a, 4),
+    0xa4: (0x12, 3), 0xac: (0x16, 4),
     0xb4: (0x12, 3), 0xbc: (0x12, 4),
 }
 TEXTURED = lambda t: bool(t & 0x80) or t in (0x24, 0x2c, 0x34, 0x3c)
@@ -186,9 +186,9 @@ def export(block, subs_filter, out_path):
                 lines.append(f"f {g[0]} {g[1]} {g[2]}")
                 total_f += 1
             elif len(g) == 4:
-                # triangulate quad (PSX quad winding 0-1-2 / 0-2-3 -> use 0,1,2,3)
+                # PSX 4-pt polys use Z/N order (diagonal = v1-v2): (0,1,2)+(1,3,2)
                 lines.append(f"f {g[0]} {g[1]} {g[2]}")
-                lines.append(f"f {g[0]} {g[2]} {g[3]}")
+                lines.append(f"f {g[1]} {g[3]} {g[2]}")
                 total_f += 2
         vbase += nv
         total_v += nv

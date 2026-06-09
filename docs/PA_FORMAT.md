@@ -79,12 +79,20 @@ Vertex-index offset & count per type (record-relative; validated PA00+PA20):
 
 | type | shading | verts | reclen | first index @ |
 | --- | --- | --- | --- | --- |
-| 0x20 | flat | 3 | 16 | +0x08 |
-| 0x28 | flat | 4 | 20 | +0x08 |
+| 0x20 | flat | 3 | 16 | **+0x0a** |
+| 0x28 | flat | 4 | 20 | **+0x0a** |
 | 0x24 | textured | 3 | 24 | +0x12 |
-| 0x2c | textured | 4 | 32 | +0x14 |
-| 0x34 | textured/gouraud | 3 | 28 | +0x12 |
-| 0x3c | textured | 4 | 36 | +0x12 |
+| 0x2c | textured | 4 | 32 | **+0x16** |
+| 0x34 | textured/gouraud | 3 | 28 | +0x14 (tentative) |
+| 0x3c | textured | 4 | 36 | +0x14 (tentative) |
+
+**CORRECTION (2026-06-08, visual RE via AC1mod):** every record begins with a
+**per-poly running-counter halfword** (0,1,2,…); the real vertex indices follow it.
+The first-index offsets were each one halfword too early for 0x20/0x28/0x2c (they
+read the counter as a vertex -> in-range but wrong topology -> spiky meshes).
+Skipping the counter (offsets above) makes blocks decode as **clean recognizable
+solids** (AC/mech parts), validated by rendering PA00/PA20/PA40. Quads triangulate
+in PSX Z/N order `(0,1,2)+(1,3,2)`, not a `(0,1,2)+(0,2,3)` fan.
 
 Validation: every decoded index is `< pool size`, distinct per face, and the record
 walk lands exactly on the next sub-section (PA00 e2 → 0x1a4c; PA20 e3 → 0x20c).
