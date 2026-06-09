@@ -43,14 +43,18 @@ plan so it isn't lost.
 
 ## Compute split (where things run)
 Claude Code runs on a thin laptop (i7-10510U, 15 GB RAM, integrated GPU); a
-dedicated PC (Intel Arc A750, i7-12700, 64 GB RAM) on the LAN does the heavy work.
-- **Arc PC:** the AC1mod **3D viewer / mesh renderer** (the GPU's main payoff),
-  texture/TIM decode at scale, local-LLM passes (`tools/llm_local.py`,
-  agent `ac1-re-local-helper`), and big batch sweeps. Possibly DuckStation too.
-- **Laptop:** orchestration, single-file edits, mipsel compile/inject, git, Ghidra/
-  DuckStation MCP control, targeted scripts.
-So: build the viewer/renderer to run on the Arc PC; keep the RE/edit tooling
-laptop-light. See memory `feedback_ac1_compute_offload`.
+dedicated PC (Intel Arc A750, i7-12700, 64 GB RAM) on the LAN handles only the
+genuinely heavy jobs.
+- **Laptop (default — including the viewer):** the **AC1mod 3D viewer runs here.**
+  PS1-class geometry is a few hundred polys + small textures; integrated graphics
+  render it trivially — no Arc PC needed to look at models. Also: all RE/edit
+  tooling, mipsel compile/inject, git, MCP control, normal-res emulation.
+- **Arc PC (offload only when heavy):** local-LLM passes (`tools/llm_local.py`,
+  agent `ac1-re-local-helper`), large batch jobs (mass texture decode, whole-disc
+  sweeps), and enhanced/heavy DuckStation if needed.
+So: build the viewer to run **on the laptop**; reach for the Arc PC only for LLM
+inference or batches big enough to choke the laptop. See memory
+`feedback_ac1_compute_offload`.
 
 ## Suggested next concrete step
 Build the **`.T` repacker** (gap 1) — it unlocks *every* edit path (text, then
