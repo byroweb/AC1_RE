@@ -164,3 +164,16 @@ edge cases) are dropped so output is always a valid mesh.
 3. **Stage assembly:** entry 0 / entry 1 directory → how blocks place into a full map
    (the per-block bboxes are part-scale; the map header must position them).
 4. Port walker `0x800574D8` + emitter `0x8005A57C` into PSXmod as **AC1mod**.
+
+
+## Scene assembly (world-coordinate finding, 2026-06-08)
+A PA file's **environment geometry blocks are authored directly in WORLD
+coordinates** — merging them unmodified reconstructs the actual stage layout
+(verified: PA40 assembles into a bilaterally-symmetric facility floor plan; top-down
+view shows a clear designed level). Blocks whose bbox exceeds ~±12000 are the
+**object / MT / effect slots** (incl. the universal e125+ gouraud "effect" slots):
+they share a LOCAL origin and are positioned **per-instance by mission data** (object
+template + entry-1 placement vectors, see docs/PA_HEADER.md / docs/MISSION_SYSTEM.md),
+not by their own coords. AC1mod's `scene_mesh()` / CLI `--scene` merges the in-range
+(world-coord) blocks to show the stage; precise MT placement awaits the mission-runtime
+decode.
