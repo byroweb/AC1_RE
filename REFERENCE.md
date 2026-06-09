@@ -365,16 +365,40 @@ with `tools/extract_t.py` (FDAT entry 202) → load at vma `0x8004ADA0`.
   (`= halfword[block+4]>>2` and `halfword[block+6]>>2`), `+0x04` = block index.
 - Dest-ptr holder `0x8019F520`; per-PA state base `0x8019F518`.
 
-**Open:** the per-frame **geometry walker/renderer** that reads the `+0x28` buffers
-to emit GPU primitives (the size-prefixed vertex/primitive blocks of
-`docs/PA_FORMAT.md`). Find via xrefs to record table `0x8019F538` once entry 202 is
-in Ghidra, or trace live in DuckStation (breakpoint GPU poly submission).
+**Geometry walker / renderer (RE 2026-06-08 — see `docs/PA_FORMAT.md`):**
+- **`FUN_800574D8`** — relocation walker. Per stride-28 sub-header (block `+12`),
+  dispatches each primitive record through jump table **`0x8004B184`** (157 entries,
+  index = `((firstword>>24 & 0xBC) − 0x20)`, 16 distinct handlers @ `0x800575C0`…
+  `0x80057944`); converts raw vertex indices → byte offsets (×8 into stride-8
+  transformed-vertex pool, ×16 into colour/normal pool). One-time, in place.
+- **`FUN_80057C44`** — per-sub-object (124-byte stride) bbox transform + NCLIP cull.
+- **`FUN_8005A57C`** — per-frame **primitive emitter** (the GPU walker). Dispatches
+  on `(type & 0xFD)` → tri/quad/gouraud/textured branches, fetches transformed
+  screen XY from pool (`s6 + idx`), backface-tests, builds POLY packets and OT-links
+  them. Matrix-driven variant `FUN_80058B04` (called from `0x5D618`/`0x5E1C8`).
+- **`FUN_80078B14`** — per-object setup: reads the 44-byte record table `0x8019F538`,
+  computes block index via `÷44` magic-multiply (`0xE9BD37A7`), fills a ~0x168-byte
+  display struct that the emitter consumes.
+
+**Primitive record (CONFIRMED):** variable length, `reclen = 4 + byte[1]*4`;
+`byte[3]&0xBC` = type (0x80 bit = textured). Layout = word0 / shading block (flat =
+1 RGB+code word `c8 c8 c8 cc`; textured = UV+clut, UV+tpage, UV…) / N uint16 vertex
+indices / optional flag word. Index offsets per type: 0x20→+8(3v), 0x28→+8(4v),
+0x24→+0x12(3v), 0x2c→+0x14(4v), 0x34→+0x12(3v), 0x3c→+0x12(4v). Validated on
+PA00 e2 @0x1960 and PA20 e3 @0x6c (indices in-range, walk hits next section).
+Decoder: `tools/pa_parse.py … --prims OFF CNT`.
 
 | Symbol | Address | |
 | --- | --- | --- |
 | mission overlay (entry 202) base | `0x8004ADA0` | overlay |
 | PA stage loader | `0x8004F1A8` | overlay |
 | PA resource registrar | `0x80073AD8` | overlay |
+| PA per-object setup (reads record table) | `0x80078B14` | overlay |
+| PA relocation walker | `0x800574D8` | overlay |
+| PA primitive jump table (157) | `0x8004B184` | overlay |
+| PA sub-object cull/transform | `0x80057C44` | overlay |
+| **PA primitive emitter (GPU walker)** | `0x8005A57C` | overlay |
+| PA primitive emitter (matrix variant) | `0x80058B04` | overlay |
 | stage/area number byte | `0x8004121B` | RAM |
 | PA path template `"P0\PA00.T"` | `0x8008D928` | overlay |
 | PA record table (stride 44) | `0x8019F538` | RAM |

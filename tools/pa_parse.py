@@ -30,8 +30,9 @@ RAW, OFF, DATA = 2352, 24, 2048
 
 def load_container(path):
     fm = json.load(open(FILEMAP))
-    rec = next((r for r in fm["files"] if r["path"] == path
-                or r["path"].endswith("/" + path)), None)
+    rec = next((r for r in fm["files"]
+                if r.get("path") == path
+                or (r.get("path") or "").endswith("/" + path)), None)
     if not rec:
         sys.exit(f"not in filemap: {path}")
     blob = bytearray()
@@ -96,6 +97,78 @@ def decode_verts(e, off, cnt):
         print(f"  end offset = 0x{off + cnt*8:x}")
 
 
+# --- Primitive record decode (RE'd from overlay emitter 0x8005A57C, relocation
+#     walker 0x800574D8, jump table 0x8004B184). ---------------------------------
+# Each record: byte[1] = record length in 32-bit words (record bytes = 4+words*4);
+# byte[3] = primitive type, masked with 0xBC (so 0x02 toggles a variant and the
+# 0x80 bit = textured). The renderer dispatches on (type & 0xFD) ⇒ {0x24,0x2c,
+# 0x34,0x3c} flat/gouraud, {0xa4,0xac,...} textured.  Per type, certain record
+# halfwords are VERTEX indices: in the *on-disc* file they are raw small indices,
+# which the relocation pass (0x800574D8) multiplies (×8 for the stride-8 transformed
+# vertex pool / ×16 for the colour-normal pool) into byte offsets. We decode the
+# raw on-disc form here and report vertex indices for range-checking.
+#
+# Primitive record byte layout (CONFIRMED by disasm + byte-validation on PA00/PA20):
+#   byte[0] = (#verts*2)+ (3..5)  small length tag        byte[1] = record length in WORDS
+#   byte[3] = primitive type (the renderer masks it 0xBC; 0x80 bit = textured)
+#   then the per-vertex *shading* block:
+#     FLAT  (0x20/0x28): one RGB+code word  "RR GG BB cc" at +4
+#     TEX   (0x24/0x2c/0x34/0x3c): UV0+clut, UV1+tpage, UV2 (+UV3) words at +4..
+#   then N VERTEX INDICES (uint16 each) into this sub-object's vertex pool,
+#   then an optional trailing per-face flag word (often 0).
+# (vidx_off, nverts) per type — record-relative byte offset of the first index.
+# Verified: PA00 e2 @0x1960 (flat quads), PA20 e3/e10/e13/e16 (textured tris+quads).
+PRIM_VERTS = {
+    0x20: (0x08, 3),   # flat tri        len 16
+    0x28: (0x08, 4),   # flat quad       len 20
+    0x24: (0x12, 3),   # textured tri    len 24
+    0x2c: (0x14, 4),   # textured quad   len 32
+    0x34: (0x12, 3),   # gouraud/tex tri len 28
+    0x3c: (0x12, 4),   # textured quad   len 36
+    # textured-variant high types share the same tail-index layout:
+    0xa0: (0x08, 3), 0xa8: (0x08, 4),
+    0xa4: (0x12, 3), 0xac: (0x14, 4),
+    0xb4: (0x12, 3), 0xbc: (0x12, 4),
+}
+
+
+def decode_prims(e, off, cnt):
+    print(f"primitive stream @0x{off:x} (walk by byte[1]=word-length, "
+          f"type=byte[3]&0xbc):")
+    o = off
+    seen = 0
+    types = collections.Counter()
+    maxidx = -1
+    while seen < cnt and o + 4 <= len(e):
+        b0, b1, b2, b3 = e[o], e[o + 1], e[o + 2], e[o + 3]
+        words = b1
+        reclen = 4 + words * 4
+        if reclen < 4 or o + reclen > len(e):
+            print(f"  @0x{o:04x}  STOP (reclen {reclen} OOB)")
+            break
+        typ = b3 & 0xbc
+        info = PRIM_VERTS.get(typ)
+        vstr = ""
+        if info:
+            voff, nv = info
+            vidx = []
+            for k in range(nv):
+                p = o + voff + 2 * k
+                if p + 2 <= len(e):
+                    vidx.append(struct.unpack_from("<H", e, p)[0])
+            vstr = f"  verts={vidx}"
+            maxidx = max([maxidx] + vidx)
+        types[typ] += 1
+        raw = " ".join(f"{x:02x}" for x in e[o:o + min(reclen, 24)])
+        if seen < 16:
+            print(f"  @0x{o:04x} type=0x{typ:02x} words={words} len={reclen}"
+                  f"{vstr}   [{raw}]")
+        o += reclen
+        seen += 1
+    print(f"  decoded {seen} records;  types={dict(types)};  max vert-index={maxidx}")
+    print(f"  end offset = 0x{o:x}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("path")
@@ -103,6 +176,8 @@ def main():
     ap.add_argument("-v", "--verbose", action="store_true")
     ap.add_argument("--verts", nargs=2, metavar=("OFF", "CNT"),
                     help="decode int16 vertex array at OFF (hex ok) for CNT verts")
+    ap.add_argument("--prims", nargs=2, metavar=("OFF", "CNT"),
+                    help="decode primitive record stream at OFF (hex ok) for CNT records")
     args = ap.parse_args()
 
     entries = load_container(args.path)
@@ -113,6 +188,8 @@ def main():
     print(f"=== {args.path} entry {args.entry} (len {len(e)}) ===")
     if args.verts:
         decode_verts(e, int(args.verts[0], 0), int(args.verts[1], 0))
+    elif args.prims:
+        decode_prims(e, int(args.prims[0], 0), int(args.prims[1], 0))
     else:
         dump_block_header(e, 24 if args.verbose else 12)
 
