@@ -49,14 +49,25 @@ handlers don't apply. KFModTool's `datahandlers/model.h` is still the best
 **reference** for PSX primitive semantics (flags: single/double-sided, gouraud,
 textured, translucent; SVECTOR vertices) when reverse-engineering AC1's variant.
 
+## Loader & registrar (RE 2026-06-08 — see REFERENCE.md §11)
+The mission code is **FDAT entry 202** (`0xCA`), an overlay at base `0x8004ADA0`
+(extract with `tools/extract_t.py`; not in the entry-201 Ghidra DB).
+- **`FUN_8004F1A8`** builds the path from template `"P0\PA00.T"` (@`0x8008D928`)
+  using stage byte `DAT_8004121B`, then `load_T_file(0, path)` — **PA loads into
+  file slot 0** — and `read_T_entry(0, 1, dest)` to grab entry 1 (offset directory)
+  before the geometry blocks (entries 2..N).
+- **`FUN_80073AD8`** registers each block: copies it to mxt work RAM and stores a
+  **44-byte record** at table `0x8019F538` (`+0x28`=ptr, `+0x00`/`+0x02`=counts from
+  `half[block+4]>>2` / `half[block+6]>>2`, `+0x04`=index). This CONFIRMS the block
+  header's halfword count fields are real geometry element counts.
+
 ## Next steps (to fully crack + render)
-1. **Ghidra:** find the PA-block parser — start at the `load_T_file(3,…)` caller,
-   follow to the function that walks size-prefixed blocks and the (offset,count)
-   sub-section table; that code names every field.
-2. **DuckStation MCP:** load a mission, breakpoint the GPU primitive submission
-   (GP0 poly commands) / the geometry walker, and watch which block bytes feed
-   each vertex/primitive — ground-truths the static decode.
-3. Decode the primitive record (vertex indices + texture/colour) → export OBJ →
-   confirm a recognizable stage mesh.
-4. Port the walker + TMD-style renderer into PSXmod as **AC1mod**
-   (`docs/AC1MOD_VISION.md`).
+1. **Find the geometry walker/renderer:** the per-frame function that reads the
+   registered `+0x28` buffers and emits GPU primitives. Locate via xrefs to the
+   record table `0x8019F538` once entry 202 is imported into Ghidra at `0x8004ADA0`.
+2. **DuckStation MCP:** load a mission, breakpoint GPU poly submission (GP0
+   commands) / the walker, watch which block bytes feed each vertex/primitive —
+   ground-truths the primitive-record decode.
+3. Decode the primitive record (vertex indices + texture/colour/tpage) → export OBJ
+   → confirm a recognizable stage mesh.
+4. Port the walker + renderer into PSXmod as **AC1mod** (`docs/AC1MOD_VISION.md`).

@@ -93,12 +93,15 @@ Each `.T` file is a sector-based container:
 
 ### File IDs (from `load_T_file(id, path)`)
 ```
-1  COM/RTIM.T     6  MS/MENU_VAB.T   11 MS/BST_T.T    16 MS/COMP_T.T
-2  COM/FDAT.T     7  MS/CORE_T.T     12 MS/BWL_T.T    17 MS/SPEC_T.T
-3  (stage PA*.T)  8  MS/LEG_T.T      13 MS/BWR_T.T    18 MS/GENE_T.T
+0  (stage PA*.T)  6  MS/MENU_VAB.T   11 MS/BST_T.T    16 MS/COMP_T.T
+1  COM/RTIM.T     7  MS/CORE_T.T     12 MS/BWL_T.T    17 MS/SPEC_T.T
+2  COM/FDAT.T     8  MS/LEG_T.T      13 MS/BWR_T.T    18 MS/GENE_T.T
 4  MS/MENU_TIM.T  9  MS/ARMS_T.T     14 MS/WEL_T.T    19 MS/MIS.T
 5  MS/MENU_TMD.T  10 MS/HEAD_T.T     15 MS/WER_T.T
 ```
+The game loop (`FUN_800122a8`) registers ids 1,2,4–0x13 permanently. **The current
+stage `PA##.T` is loaded into file slot 0** (`load_T_file(0, "Pn\PAnn.T")`) by the
+mission overlay — *not* id 3 (earlier guess corrected by RE; see §11).
 
 ### FDAT.T entry indices
 | Entry | Dec | Role |
@@ -336,3 +339,43 @@ See `AC1_TEXT_SYSTEM.md` for the full text/menu system writeup.
 | `prim_ptr` | `0x801EF6CC` | RAM |
 | `font_variant` | `0x801EF6C8` | RAM |
 | font metrics base | `0x801BCE88` | RAM |
+
+---
+
+## 11. Mission overlay & PA##.T loader (RE 2026-06-08)
+
+The in-mission code is **FDAT entry 202 (`0xCA`)**, a 286,720-byte overlay loaded
+to the same base as entry 201 (**`0x8004ADA0`**); it is therefore *not* in the
+entry-201 Ghidra DB and must be imported separately for deeper work. Extract it
+with `tools/extract_t.py` (FDAT entry 202) → load at vma `0x8004ADA0`.
+
+**PA stage loader** — `FUN_8004F1A8` (overlay):
+- Reads stage/area number from byte `DAT_8004121B`, formats the path template
+  `"P0\PA00.T"` (stored at `0x8008D928`) in place → `"Pn\PAnn.T"`.
+- `load_T_file(0, path)` — **stage PA file uses file slot 0** (corrects §3).
+- `read_T_entry(0, 1, dest)` — loads PA **entry 1** (the offset directory) first;
+  later sites read the geometry blocks (entries 2..N).
+- Calls the **resource registrar** `FUN_80073AD8(record, dest, index)`.
+
+**Resource registrar** — `FUN_80073AD8` (overlay):
+- `memcpy`-allocs each PA block into mxt work RAM (`jal 0x8002A480`, allocator ptr
+  `DAT_801A5DB8`), word-aligns the allocator.
+- Writes a **44-byte record** into the table at `0x8019F538` (stride 44, indexed by
+  block #): `+0x28` = work-RAM pointer, `+0x00`/`+0x02` = element counts
+  (`= halfword[block+4]>>2` and `halfword[block+6]>>2`), `+0x04` = block index.
+- Dest-ptr holder `0x8019F520`; per-PA state base `0x8019F518`.
+
+**Open:** the per-frame **geometry walker/renderer** that reads the `+0x28` buffers
+to emit GPU primitives (the size-prefixed vertex/primitive blocks of
+`docs/PA_FORMAT.md`). Find via xrefs to record table `0x8019F538` once entry 202 is
+in Ghidra, or trace live in DuckStation (breakpoint GPU poly submission).
+
+| Symbol | Address | |
+| --- | --- | --- |
+| mission overlay (entry 202) base | `0x8004ADA0` | overlay |
+| PA stage loader | `0x8004F1A8` | overlay |
+| PA resource registrar | `0x80073AD8` | overlay |
+| stage/area number byte | `0x8004121B` | RAM |
+| PA path template `"P0\PA00.T"` | `0x8008D928` | overlay |
+| PA record table (stride 44) | `0x8019F538` | RAM |
+| PA dest-ptr holder | `0x8019F520` | RAM |
