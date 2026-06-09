@@ -54,6 +54,14 @@ such file looked the same: we were defaulting to the largest slot.)
   skeleton is data-driven vs. hardcoded?
 - Identity of the **universal sliver slots** (e125+) — sprites/effects? Needs the
   prim-type / sprite-primitive decode.
+
+  PARTIAL (this session): e125+ are **gouraud-heavy** (types 0x34/0x3c), and gouraud
+  records **interleave vertex + per-vertex-colour indices** — the 4 quad vertices are
+  at byte offsets 0x14,0x18,0x1c,0x20 (stride 4, skipping the colour halfword), not a
+  contiguous run. Decoding that way recovers ~150 faces, but some sub-objects still
+  yield outlier coords (±32640) → these universal slots use a different sub-object
+  layout (special effect/sky/sprite objects?). Full decode needs the header semantics
+  + likely a DuckStation emitter trace.
 - Map slot index → game object type (AC part? MT? prop? effect?) once the header
   semantics are known.
 
