@@ -177,3 +177,37 @@ template + entry-1 placement vectors, see docs/PA_HEADER.md / docs/MISSION_SYSTE
 not by their own coords. AC1mod's `scene_mesh()` / CLI `--scene` merges the in-range
 (world-coord) blocks to show the stage; precise MT placement awaits the mission-runtime
 decode.
+
+
+## Sub-object internal anatomy (deep dive 2026-06-08)
+A geometry block is a list of **sub-objects** (the parts of an articulated object, or
+the pieces of a stage). Each 28-byte sub-object descriptor (table at
+`block + block[+8] + 12`; all offsets below relative to that reloc base):
+
+| off | type | field |
+| --- | --- | --- |
+| +0x00 | u32 | vertex-pool offset |
+| +0x04 | u32 | vertex count |
+| +0x08 | u32 | **normal-pool** offset (pool2) |
+| +0x0c | u16 | **normal count** |
+| +0x0e | u16 | flags (0x8000 = skip/terminate) |
+| +0x10 | u32 | primitive-stream offset |
+| +0x14 | u16 | primitive count (base; + (flags&0x1ff) − 1) |
+| +0x16 | u16 | pool4 count/param |
+| +0x18 | u32 | pool4 offset (small, ~8 B/sub-object; purpose TBD) |
+
+On-disk order within a sub-object: **[primitive stream][vertices][normals][pool4]**.
+- **Vertices** = int16 `x,y,z,flag`, 8 B each.
+- **Normals** = int16 unit vectors, 8 B each, **every vector length == 4096** (PSX
+  fixed-point 1.0) — CONFIRMED on PA00 e2 (103 normals) + e19. There are MORE normals
+  than vertices (e.g. 30 normals / 22 verts) → **per-face-corner normals for smooth
+  (Gouraud) lighting**. The renderer had been ignoring these and flat-shading from
+  computed face normals; the models actually ship full lighting data.
+- The textured/gouraud primitive records carry both a vertex index (into the ×8
+  vertex pool) and a colour/normal index (into the normal pool) — see
+  `docs/PA_HEADER.md` walker notes.
+
+**Takeaway:** the big object blocks (21 sub-objects) are **complete articulated,
+fully-lit MT/AC models**, not loose triangles — vertices + per-corner normals +
+primitives per part. Still open: pool4's purpose, per-vertex colour vs normal index
+split, and texture image source (the PA loader's 8 conditional sub-resource loads).
