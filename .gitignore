@@ -62,3 +62,9 @@ disc_map/text_inventory.csv
 disc_map/extracted/
 # Exported meshes derived from game geometry (tools/pa_obj.py output) — never distribute
 disc_map/*.obj
+# Carved code overlays + their manifest (extracted game code) — never distribute
+disc_map/overlays/
+
+# Compiled reference-model binaries (regenerable via `make` in re/)
+re/build/
+build/

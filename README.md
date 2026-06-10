@@ -14,15 +14,18 @@ regions/revisions are not supported and addresses will not match.
 
 | Path | Description |
 | --- | --- |
+| `re/` | **Behavioral C reference models** — portable, host-side, *mutable* re-implementations of game subsystems (verified against your extracted data). Flagship: `re/ac1_mxt` (container + overlay + checksum). See `re/README.md` |
 | `font_render.c` | Reconstruction of the glyph renderer (`draw_char`) |
 | `string_render.c` | Reconstruction of the string renderer (`draw_string`) |
 | `farsi_name_shape.c` / `farsi_name_input.c` | Persian shaping + name-entry handling |
 | `farsi_table.h` | Persian glyph mapping table |
 | `psx_shim.h` | Minimal PSY-Q/libps type & macro shims for building patches |
 | `farsi_*.py` | Glyph baking, texture atlas, and runtime-shaping tooling |
+| `tools/` | Extraction/repack + RE tooling (`extract_overlay.py`, `extract_t.py`, `ghidra_overlay.sh` headless decompiler, …) |
 | `extract_fdat.py`, `patch_draw_string.py` | Container extraction & patch build helpers |
-| `ghidra_scripts/` | Ghidra (Jython) scripts — e.g. importing runtime overlays |
+| `ghidra_scripts/` | Ghidra scripts (Java + Jython) — overlay import, headless decompile/xref |
 | `REFERENCE.md` | **RE reference** — functions, addresses, `.T` format, checksum, sectors |
+| `docs/` | Subsystem write-ups — `MXT_LOADER.md`, `COMBAT_PHYSICS.md`, `MISSION_SYSTEM.md`, … |
 | `AC1_TEXT_SYSTEM.md` | Documentation of the game's text/menu system |
 
 ## How it works (safe distribution model)
