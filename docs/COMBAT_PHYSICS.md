@@ -165,21 +165,54 @@ Projectile struct (0xE0): `+0x10`=class/active (1=ballistic round, 2=missile,
 3=other), `+0x14`=think fn, `+0x18/19/1a/1b`=type / step / phase counters,
 `+0x06`=free marker (`-1`=free), `+0xB8..`=fine position / def copy.
 
-## 8. Damage model  (partial — OPEN)
-The HUD "AP" number (e.g. 4408 → 3624 after taking fire) is **not stored as that
-integer in any plain/fixed-point encoding** (verified: exhaustive int16/int32 and
-16.16 diffs of a pre/post-damage RAM pair found no value 4408→3624). Strong evidence
-it is **Armored Core per-part AP** — head/core/both-arms/both-legs each hold their
-own AP and the HUD shows the **sum** — so no single word matches the total, and a
-hit only decrements the struck part. Damage-vs-undamaged RAM diffing is also swamped
-by knockback (player pos `0x801A26C0` shifts), explosion/shrapnel objects, and the
-lighting/effect burst (uniform `1023→139` clusters in `0x80154xxx/0x80172xxx` are
-display/lighting, not AP).
-**Next (not yet done):** find the **damage-application** code instead of the storage
-— trap the projectile→AC collision (a round deactivates on impact; write-watch a
-round's active/lifetime field, or execute-bp the round think `0x800851A8` and follow
-the hit branch) → that routine reads the part-AP struct and the weapon-def damage
-(`weaponDef+0x0C ≈ 0x1E`), and spawns the "shrapnel" hit objects.
+## 8. Damage model  CONFIRMED (headless Ghidra + live-verified)
+
+### Why AP hid from every RAM search
+The HUD "AP" (e.g. 4408) is **stored at 4×** the displayed value, as a `u16` at
+**`playerAC + 0x160`** (`0x801A2818`). Live-verified: HUD 4408 ⇔ `0x801A2818 = 17632
+= 4408×4`. Searching for 4408/4184/3624 (or any sum) never matched because the real
+value is 17632/16736/14496. AP is a **single total pool**, *not* per-part.
+
+### The hit → damage chain
+1. **Projectile think `FUN_80083a10`** (installed at round`+0x14` by spawn
+   `FUN_80085E98` — note the per-type integrators like `0x800851A8` are *sub-steps*,
+   not the top-level think). Each frame it raycasts the round's path:
+   `hit = FUN_8006d534(world, round, Δ, nextPos)`.
+2. On a hit, **`FUN_800835e8(owner, hitObj, …)`** dispatches by object type:
+   AC-array range `[0x801A26B8, 0x801A3C48]` → `FUN_80075350`; other ranges →
+   the object's own vtable hit method.
+3. **`FUN_80075350(ac, atk, …)`** — the AC damage apply:
+   ```c
+   dmg = (ac == player) ? FUN_80075280(atk) << 1     // player defense calc, then ×2
+                        : FUN_800752f4(ac->tmpl[0x14], atk);  // enemy defense calc
+   u16 *AP = (u16*)(ac + 0x160);
+   *AP = (*AP < dmg) ? 0 : *AP - dmg;                 // subtract, clamp at 0
+   if (ac->hook[0x5c]) ac->hook[0x5c](ac, atk, …, dmg); // part-destroy / death FX
+   ```
+
+### Damage type & the part defenses
+The projectile carries a **damage descriptor**: `u16 attack` at `desc+2`, and the
+**damage type** in `desc[0] & 0x30` (`0x10` vs `0x20` = the two categories,
+shell / energy — which-is-which TBD via a `weaponDef 0x8008E530` check).
+
+- **Player** `FUN_80075280`: `def = (type==0x10 ? DAT_80041214 : type==0x20 ?
+  DAT_80041215 : none)`; if a type matched, `eff = (attack × def) >> 6`; then
+  `return (eff×2)/3`; the caller then `<<1`. The two bytes `DAT_80041214/15` are the
+  AC's **aggregate shell-def / energy-def** — the per-part defenses (core, legs,
+  arms, head) **aggregated at the garage** into one value per type (sum vs. average
+  vs. core-weighted is **UNVERIFIED** — see §6 "next targets" 0a). Lower byte ⇒ less
+  damage taken (`mult = def/64`). Live: `27` (type 0x10), `32` (type 0x20).
+- **Enemy** `FUN_800752f4`: a signed defense nibble in `ac->tmpl[0x14]` bits 8–11
+  (`def∈[-8..7]`); for type 0x20, `eff = attack × (8 − def)/8 + 1` (higher def ⇒ less).
+
+**So the answer to "how do part energy-def/shell-def factor in":** each frame part
+contributes a shell-def and energy-def; the garage **aggregates them per type**
+(exact combine UNVERIFIED, 0a) into the AC's two defense values; **only the player
+takes this part-derived path — every enemy AC uses a single template nibble
+`tmpl[0x14]` instead** (0b). On a hit the engine reduces the raw weapon `attack` by the
+defense **matching the weapon's damage type**, then subtracts the result from the
+single AP pool at `AC+0x160`. The `+0x5c` post-hit hook is where individual part
+loss / destruction visuals and the death sequence are driven.
 
 ## 7. Radar + lock-on (the shared target list)  CONFIRMED
 Radar and lock-on are driven by **one structure: the target list at `0x80041020`**
@@ -353,6 +386,24 @@ sites** inside `0x801C75BC`/its handlers (NOP the `sb …,0x41(ac)` transitions 
 setting the desired state), not a RAM freeze.
 
 ### Open / next targets
+0. **Player-defense producer + dispatch condition** (queued live-RE task):
+   - **(a) Trace who writes `DAT_80041214` (shell) / `DAT_80041215` (energy).**
+     Static: scan a RAM/exe dump for `sb/sh …,(0x41214|0x41215)` stores
+     (`(word & 0xFC00FFFF)==0xA0000000` for `sb` with the global offset) → that
+     site is the garage/build-assembly code that collapses the four parts
+     (head/core/arms/legs) into the two aggregate defense bytes. Goal: settle
+     **sum vs. average vs. core-weighted** — §8 currently *infers* "summed" but
+     this is **unverified**. Live ground-truth: in the garage, swap one part and
+     watch `0x80041214/15` change.
+   - **(b) Confirm the player-vs-enemy branch in `FUN_80075350`.** Verify it is
+     literally `ac == 0x801A26B8` (pointer/slot-0 compare) vs. a flag check — this
+     determines whether any enemy AC could ever be routed through the player
+     part-derived path `FUN_80075280` instead of the template-nibble path
+     `FUN_800752f4(ac->tmpl[0x14])`. Current finding (CONFIRMED structurally):
+     **all non-player ACs — incl. named Ravens with real builds — use the single
+     template nibble `tmpl[0x14]` bits 8–11, NOT a part-summed aggregate**; copying
+     a build onto an enemy would not change its defense without editing that nibble.
+   - Needs Ghidra (:8080) + DuckStation (:2346) back up.
 1. To force a behaviour state: find & NOP the `sb v,0x41(s1)` transition writes in
    `0x801C75BC` + handlers, then set `ac+0x41` once. Map states 0/8/9 handlers
    (`0x801C78CC`/`76E4`/`7798`) to behaviours (idle/evade/retreat).
