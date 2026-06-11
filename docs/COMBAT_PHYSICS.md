@@ -195,24 +195,76 @@ The projectile carries a **damage descriptor**: `u16 attack` at `desc+2`, and th
 **damage type** in `desc[0] & 0x30` (`0x10` vs `0x20` = the two categories,
 shell / energy — which-is-which TBD via a `weaponDef 0x8008E530` check).
 
-- **Player** `FUN_80075280`: `def = (type==0x10 ? DAT_80041214 : type==0x20 ?
-  DAT_80041215 : none)`; if a type matched, `eff = (attack × def) >> 6`; then
-  `return (eff×2)/3`; the caller then `<<1`. The two bytes `DAT_80041214/15` are the
-  AC's **aggregate shell-def / energy-def** — the per-part defenses (core, legs,
-  arms, head) **aggregated at the garage** into one value per type (sum vs. average
-  vs. core-weighted is **UNVERIFIED** — see §6 "next targets" 0a). Lower byte ⇒ less
-  damage taken (`mult = def/64`). Live: `27` (type 0x10), `32` (type 0x20).
-- **Enemy** `FUN_800752f4`: a signed defense nibble in `ac->tmpl[0x14]` bits 8–11
+- **Player** `0x80075280`: `def = (type==0x10 ? *0x80041214 : type==0x20 ?
+  *0x80041215 : none)`; if a type matched, `eff = (attack × def) >> 6`; then
+  `return (eff×2)/3`; the caller then `<<1`. The two bytes `0x80041214/15` are the
+  AC's **aggregate shell-def / energy-def**. Live-disasm CONFIRMED at these exact
+  addresses (`lbu v0,0x1214(0x8004)` / `0x1215`). Lower byte ⇒ less damage taken
+  (`mult = def/64`). Live: `27` (type 0x10), `32` (type 0x20).
+  **These two bytes are derived per-part defenses summed + scaled — see §8a.**
+- **Enemy** `0x800752f4`: a signed defense nibble in `ac->tmpl[0x14]` bits 8–11
   (`def∈[-8..7]`); for type 0x20, `eff = attack × (8 − def)/8 + 1` (higher def ⇒ less).
+  Live-disasm CONFIRMED: `lhu a0,0x14(tmpl)`, `andi a0,0xF00`, `srl 8`, sign-extend.
 
-**So the answer to "how do part energy-def/shell-def factor in":** each frame part
-contributes a shell-def and energy-def; the garage **aggregates them per type**
-(exact combine UNVERIFIED, 0a) into the AC's two defense values; **only the player
-takes this part-derived path — every enemy AC uses a single template nibble
-`tmpl[0x14]` instead** (0b). On a hit the engine reduces the raw weapon `attack` by the
-defense **matching the weapon's damage type**, then subtracts the result from the
-single AP pool at `AC+0x160`. The `+0x5c` post-hit hook is where individual part
+**So the answer to "how do part energy-def/shell-def factor in":** the per-part
+defenses are **summed across the equipped parts, then float-scaled + clamped** into
+the AC's two defense bytes at mission load (see §8a for the exact producer);
+**only the player takes this part-derived path — every enemy AC uses a single
+template nibble `tmpl[0x14]` instead** (see §8b). On a hit the engine reduces the raw
+weapon `attack` by the defense **matching the weapon's damage type**, then subtracts
+the result from the single AP pool at `AC+0x160`. The `+0x5c` post-hit hook is where individual part
 loss / destruction visuals and the death sequence are driven.
+
+> **Live-disasm note (2026-06-10):** decode these damage functions **only from an
+> in-mission state** (e.g. `load_state 10`). The `0x8007xxxx`/`0x8009xxxx` code is
+> swapped per overlay context — disassembling them from a menu/garage state shows a
+> *different* resident overlay (a jump-table dispatcher), which earlier looked like
+> the addresses were "offset." They are correct in-mission. All §8 finds were
+> re-verified live on the Farsi build; combat code is base-game and byte-identical
+> to the stock disc.
+
+### 8a. Player-defense PRODUCER  CONFIRMED (live write-watch trap)
+`0x80041214/15` are an **in-mission runtime global** (`0x0000` in the shop/menu),
+filled at **mission load** by a derived-stats builder at **`~0x8009D8xx … 0x8009DA4C`**.
+Trapped by write-watching `0x80041214` and driving slot 1 → arena. The math:
+```
+; integer SUM across equipped parts
+lbu  partID, 0(a0)                       ; equipped-part id (id list @ 0x80001A58..)
+lhu  s0, [0x800b9222 + id*stride]        ; part-table-A defense field
+lhu  v0, [0x800b9e22 + ...]  ; addu s0,s0,v0   ; += part B
+lhu  v0, [0x800b9522 + ...]  ; addu s0,s0,v0   ; += part C
+lhu  v1, [0x800b947a + ...]  ; (cond) addu s0,s0,v1 ; += optional part
+jal  0x800b63dc (a0=s0)                  ; int sum -> double
+;  ... softfloat chain: × ~1.15, ÷, consts 256.0 / 45.0 / ~pi(3.140625) ...
+;  clamp to ~[0,45]  (cmp vs 0.0 and 45.0 via 0x800b65bc/0x800b6770)
+jal  0x80026f94                          ; double -> int (trunc)
+sb   v0, 0x20(fp)   ; fp=0x800411F4 -> 0x80041214   ; shell-def byte (energy = parallel block -> +0x21)
+```
+**Answer to "are part defenses summed across the AC?": YES — summed, then
+float-scaled and clamped.** Raw per-part defense fields (from per-category stat
+tables in `0x800B9xxx`, indexed by the equipped-part-ID list at `0x80001A58+`) are
+integer-**summed**, the sum is run through a fixed float scaling curve (magic consts
+`1.15 / 256.0 / 45.0 / π`), clamped to ~`[0,45]`, and truncated to the byte. It is a
+**sum-then-scale-then-clamp**, not a raw sum, average, or single-part value. Builder
+runs at mission-load (not the garage). Live: shell sum→`27`, energy→`32`.
+> OPEN (minor): exact closed form of the float curve + the per-category strides /
+> which `0x800B9xxx` table is head/core/arms/legs; best decoded statically (label the
+> `0x800b5xxx`/`0x800b6xxx` softfloat ops) on the backup disc.
+
+### 8b. Player-vs-enemy DISPATCH  CONFIRMED (live disasm)
+The damage-apply `0x80075350` selects the defense path by a **hardcoded pointer
+compare against the player AC** (array slot 0):
+```
+0x80075374  lui   v0, 0x801a
+0x80075378  addiu v0, v0, 0x26B8     ; v0 = 0x801A26B8 = player AC
+0x8007537C  bne   s0, v0, enemy      ; ac != player -> enemy path
+0x80075384  jal   0x80075280         ; player path: part-derived def, dmg = ret<<1
+            (enemy) lw v0,0(ac); lhu a0,0x14(v0); jal 0x800752f4   ; tmpl[0x14] nibble, dmg = ret
+```
+Not a flag, not a team field — the literal address `0x801A26B8` is baked in. **Every
+non-player AC (named Ravens with full builds included) uses the `tmpl[0x14]` nibble
+path; only AC slot 0 (the player) ever gets the part-summed defense.** Copying a
+build onto an enemy would not change its toughness without editing that nibble.
 
 ## 7. Radar + lock-on (the shared target list)  CONFIRMED
 Radar and lock-on are driven by **one structure: the target list at `0x80041020`**
@@ -386,24 +438,14 @@ sites** inside `0x801C75BC`/its handlers (NOP the `sb …,0x41(ac)` transitions 
 setting the desired state), not a RAM freeze.
 
 ### Open / next targets
-0. **Player-defense producer + dispatch condition** (queued live-RE task):
-   - **(a) Trace who writes `DAT_80041214` (shell) / `DAT_80041215` (energy).**
-     Static: scan a RAM/exe dump for `sb/sh …,(0x41214|0x41215)` stores
-     (`(word & 0xFC00FFFF)==0xA0000000` for `sb` with the global offset) → that
-     site is the garage/build-assembly code that collapses the four parts
-     (head/core/arms/legs) into the two aggregate defense bytes. Goal: settle
-     **sum vs. average vs. core-weighted** — §8 currently *infers* "summed" but
-     this is **unverified**. Live ground-truth: in the garage, swap one part and
-     watch `0x80041214/15` change.
-   - **(b) Confirm the player-vs-enemy branch in `FUN_80075350`.** Verify it is
-     literally `ac == 0x801A26B8` (pointer/slot-0 compare) vs. a flag check — this
-     determines whether any enemy AC could ever be routed through the player
-     part-derived path `FUN_80075280` instead of the template-nibble path
-     `FUN_800752f4(ac->tmpl[0x14])`. Current finding (CONFIRMED structurally):
-     **all non-player ACs — incl. named Ravens with real builds — use the single
-     template nibble `tmpl[0x14]` bits 8–11, NOT a part-summed aggregate**; copying
-     a build onto an enemy would not change its defense without editing that nibble.
-   - Needs Ghidra (:8080) + DuckStation (:2346) back up.
+0. **Player-defense producer + dispatch condition** — **RESOLVED 2026-06-10**
+   (live write-watch trap, Farsi build). See **§8a** (producer) and **§8b** (dispatch).
+   - (a) DONE: `0x80041214/15` filled at mission-load by `~0x8009D8xx…0x8009DA4C`;
+     per-part defenses are integer-**summed** then float-scaled + clamped to a byte.
+   - (b) DONE: `0x80075350` selects via a **hardcoded `bne s0, 0x801A26B8`** — every
+     non-player AC uses the `tmpl[0x14]` nibble; only player slot 0 gets part defense.
+   - Minor follow-up (statically, ideally on the backup disc): exact closed form of
+     the float scaling curve + which `0x800B9xxx` table is head/core/arms/legs.
 1. To force a behaviour state: find & NOP the `sb v,0x41(s1)` transition writes in
    `0x801C75BC` + handlers, then set `ac+0x41` once. Map states 0/8/9 handlers
    (`0x801C78CC`/`76E4`/`7798`) to behaviours (idle/evade/retreat).
