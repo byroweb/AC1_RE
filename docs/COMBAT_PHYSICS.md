@@ -207,13 +207,13 @@ shell / energy — which-is-which TBD via a `weaponDef 0x8008E530` check).
   Live-disasm CONFIRMED: `lhu a0,0x14(tmpl)`, `andi a0,0xF00`, `srl 8`, sign-extend.
 
 **So the answer to "how do part energy-def/shell-def factor in":** the AC's two
-defense bytes are **derived from the equipped parts** at mission load — an integer
-accumulation of per-part fields run through a softfloat curve + clamp (see §8a for
-the producer). ⚠️ Whether that nets out to "more parts = tankier" depends on the
-curve's *sign*, which is **NOT yet decoded** — note the runtime makes `dmg ∝ def_byte`
-(lower byte = less damage), so the curve must invert the sum; see §8a's UNRESOLVED
-box. **Only the player takes this part-derived path — every enemy AC uses a single
-template nibble `tmpl[0x14]` instead** (see §8b). On a hit the engine reduces the raw
+defense bytes are **derived from the equipped parts** at mission load — per-part
+defense ratings are **summed**, then an inverting softfloat curve maps the sum to a
+**damage-transmission byte** (`≈ clamp(45 − sum/51, 0, 45)`; CONFIRMED live, §8a). So
+more/better parts → bigger sum → lower byte → **less damage** (`dmg ∝ def_byte`). The
+byte is inverse armor: 45 = no defense, 0 = immune. **Only the player takes this
+part-derived path — every enemy AC uses a single template nibble `tmpl[0x14]`
+instead** (see §8b). On a hit the engine reduces the raw
 weapon `attack` by the defense **matching the weapon's damage type**, then subtracts
 the result from the single AP pool at `AC+0x160`. The `+0x5c` post-hit hook is where individual part
 loss / destruction visuals and the death sequence are driven.
@@ -243,30 +243,35 @@ jal  0x800b63dc (a0=s0)                  ; int sum -> double
 jal  0x80026f94                          ; double -> int (trunc)
 sb   v0, 0x20(fp)   ; fp=0x800411F4 -> 0x80041214   ; shell-def byte (energy = parallel block -> +0x21)
 ```
-**Are part defenses summed across the AC? Partly confirmed:** there IS an integer
-accumulation (`addu s0,s0,v0` ×3–4) of per-part fields read from per-category tables
-in `0x800B9xxx` (indexed by the equipped-part-ID list at `0x80001A58+`), feeding a
-fixed softfloat curve (consts `1.15 / 256.0 / 45.0 / π`) → clamp ~`[0,45]` → trunc →
-byte. Builder runs at mission-load (not the garage). Live: shell→`27`, energy→`32`.
+**Are part defenses summed across the AC? YES — and the curve is DECREASING
+(CONFIRMED, live single-variable test 2026-06-11).** There is an integer accumulation
+(`addu s0,s0,v0` ×3–4) of per-part fields read from per-category tables in
+`0x800B9xxx` (indexed by the equipped-part-ID list at `0x80001A58+`); the int sum is
+converted to float (`jal 0x800b63dc`), run through the softfloat curve (consts
+`1.15 / 256.0 / 45.0 / π`), clamped to `[0,45]`, and truncated to the byte. Builder
+runs at mission-load, as a per-stat subroutine (`ret` to `0x8009D66C`).
 
-> ⚠️ **UNRESOLVED — curve direction (the part that actually answers "how does it
-> work"):** the runtime (`0x80075280`) makes `dmg ∝ attack × def_byte` — a *bigger*
-> byte means *more* damage taken (the byte is a damage-transmission/vulnerability
-> factor, **lower = tankier**). So if the producer were a plain bigger-is-bigger sum
-> of part defenses, better armor would yield a bigger byte ⇒ MORE damage — absurd.
-> Reconciliation must be one of:
->   1. the summed fields are a high=good defense rating and the float curve is
->      **decreasing** (e.g. `byte ≈ K − rating` / `K / rating`, clamped to [0,45]),
->      so good armor → low byte → low damage; **or**
->   2. the fields being summed are NOT protective defense (weight/other) and the real
->      def contribution is elsewhere.
-> NOT YET VERIFIED which. Prior wording here ("summed → tankier") was an over-claim:
-> the integer sum + float curve is observed, but the curve's **sign** was never
-> decoded, and that sign is the whole answer.
-> **To settle (cheap, live):** bump one part's source field in `0x800B9xxx`,
-> reload→arena, read the output byte — ↓ ⇒ case 1, ↑ ⇒ case 2. Then decode the
-> `0x800b5xxx`/`0x800b6xxx` softfloat ops statically (ideally on the backup disc) for
-> the exact closed form, plus which table is head/core/arms/legs.
+**The byte is INVERSE armor — a damage-transmission factor with ceiling 45 (no
+defense) and floor 0 (immune).** This reconciles with the runtime `dmg ∝ def_byte`:
+more/better parts → bigger sum → *lower* byte → less damage. Proven by injecting the
+integer sum at the `0x8009D990` conversion (`write_register s0`) and reading the
+stored byte:
+
+| injected part-defense sum (`s0`) | stored `def_byte` (0x80041214) |
+| --- | --- |
+| 300 | 38 |
+| 859 (this build's natural sum) | 27 |
+| 4096 | 0 (hit the floor) |
+
+Monotonic decreasing. Empirical fit ≈ **`def_byte = clamp(45 − sum/~51, 0, 45)`**
+(45 at sum 0 = max vulnerability; 0 for large sums = immunity). So the *summed
+quantity is a high=good defense rating* and the curve **inverts** it into the
+low=good runtime byte — earlier "case 1". Net effect on the player: each equipped
+part adds to a defense-rating sum, and higher total armor monotonically lowers
+incoming damage of that type.
+> OPEN (minor): exact closed form / constant of the float curve (the `~51` and the
+> `1.15/256/π` roles) + which `0x800B9xxx` table is head/core/arms/legs; decode the
+> `0x800b5xxx`/`0x800b6xxx` softfloat ops statically (ideally on the backup disc).
 
 ### 8b. Player-vs-enemy DISPATCH  CONFIRMED (live disasm)
 The damage-apply `0x80075350` selects the defense path by a **hardcoded pointer
@@ -457,10 +462,11 @@ setting the desired state), not a RAM freeze.
 ### Open / next targets
 0. **Player-defense producer + dispatch condition** — **RESOLVED 2026-06-10**
    (live write-watch trap, Farsi build). See **§8a** (producer) and **§8b** (dispatch).
-   - (a) PARTLY: `0x80041214/15` filled at mission-load by `~0x8009D8xx…0x8009DA4C`;
-     per-part fields are integer-summed then float-scaled + clamped to a byte. **Curve
-     sign UNRESOLVED** — runtime is `dmg ∝ def_byte` (lower=tankier), so the producer
-     must invert the sum; not yet verified (see §8a ⚠️ box).
+   - (a) DONE: `0x80041214/15` filled at mission-load by `~0x8009D8xx…0x8009DA4C`;
+     per-part defense ratings are summed, then an **inverting** softfloat curve maps
+     the sum → damage-transmission byte `≈ clamp(45 − sum/51, 0, 45)` (CONFIRMED live
+     by injecting the sum: 300→38, 859→27, 4096→0). Higher armor ⇒ lower byte ⇒ less
+     damage. Minor: exact float constant + which table is head/core/arms/legs.
    - (b) DONE: `0x80075350` selects via a **hardcoded `bne s0, 0x801A26B8`** — every
      non-player AC uses the `tmpl[0x14]` nibble; only player slot 0 gets part defense.
    - Minor follow-up (statically, ideally on the backup disc): exact closed form of
