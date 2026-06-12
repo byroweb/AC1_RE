@@ -16,7 +16,7 @@ disc sectors **103637–126704**, ~700–900 KB each.
 > per-file role is genuinely unresolved. Treat everything below as a validated **geometry
 > container/primitive format** (which is solid and file-verified), NOT proof that these
 > files are the playable levels. Resolving identity = the live `.T`-loader trace
-> (`FUN_800165E4`) during a real stage load. See `disc_map/trace/mission_stage_map.md`.
+> (`FUN_800165E4`) during a real stage load. See [mission_stage_map.md](../disc_map/trace/mission_stage_map.md).
 
 ## Container (CONFIRMED)
 Standard count-first `.T` container, identical mechanism to King's Field (verified

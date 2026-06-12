@@ -1,8 +1,8 @@
 # PA##.T entry-0 (master header) + entry-1 (object/placement directory)
 
-Target **SLUS-01323 (v1.1)**. Code-side companion to `docs/PA_FORMAT.md` (container +
-geometry blocks), `docs/PA_SLOTS.md` (empirical cross-file slot matrix), and
-`REFERENCE.md` §11 (loader addresses). Offsets verified on the **pristine** bin
+Target **SLUS-01323 (v1.1)**. Code-side companion to [PA_FORMAT.md](PA_FORMAT.md) (container +
+geometry blocks), [PA_SLOTS.md](PA_SLOTS.md) (empirical cross-file slot matrix), and
+[REFERENCE.md](REFERENCE.md) §11 (loader addresses). Offsets verified on the **pristine** bin
 against **PA00 / PA07 / PA20** (`GG/P0` + `GG/P1`). Overlay code = FDAT entry 202,
 base `0x8004ADA0`.
 

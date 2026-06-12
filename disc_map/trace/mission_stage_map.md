@@ -43,13 +43,13 @@ subsystem (different files and/or loader).
 - **C (sub-resource loader, 0x8004F2xx)** — the CODE trace is accurate, but its CONTEXT
   was mislabeled: it loads sub-resources into the **bootstrap/common (PA00) context**,
   not per-mission stage assembly. The addend→slot-category mapping is real behavior;
-  "how stages are assembled" is NOT what it shows. See caveat in subresource_loader_C.md.
+  "how stages are assembled" is NOT what it shows. See caveat in [subresource_loader_C.md](subresource_loader_C.md).
 - **D (block table 0x8019F538 binding)** — the runtime MECHANISM (instance[+0x0a] →
   block record → +0x28 geometry ptr) is real and was observed live, but only in the
   **training mission**, which is itself a PA00/common context. Whether real mission
   stages use the same path with other PA files is UNPROVEN.
 
-## Correct way to find the real stage loader (next session)
+## Correct way to find the real stage loader (open)
 The `.T` container loader is `FUN_800165E4` (MXT loader; called at 0x8004F244 for the
 bootstrap). EVERY `.T` load goes through it. Plan: arm an **execute breakpoint on
 `0x800165E4` BEFORE entering a real stage**, then drop into the mission; log each call's

@@ -2,10 +2,10 @@
 
 Target **SLUS-01323 (v1.1)**. The consolidated answer to "how does Armored Core 1
 load its levels?" — from the mission menu to walkable geometry on screen, every hop
-live-verified in DuckStation (2026-06-11/12). Companion docs: `MISSION_SYSTEM.md`
-(objective code, spawns), `PA_FORMAT.md` (geometry block internals), `MXT_LOADER.md`
-(.T containers). Trace logs + breadcrumbs: `disc_map/trace/PLACEMENT_SOLVED.md`,
-`mission_load_sequence.md`, `LEVELS_FOUND.md`.
+live-verified in DuckStation (2026-06-11/12). Companion docs: [MISSION_SYSTEM.md](MISSION_SYSTEM.md)
+(objective code, spawns), [PA_FORMAT.md](PA_FORMAT.md) (geometry block internals), [MXT_LOADER.md](MXT_LOADER.md)
+(.T containers). Trace logs + breadcrumbs: [PLACEMENT_SOLVED.md](../disc_map/trace/PLACEMENT_SOLVED.md),
+[mission_load_sequence.md](../disc_map/trace/mission_load_sequence.md), [LEVELS_FOUND.md](../disc_map/trace/LEVELS_FOUND.md).
 
 Notation: `CONFIRMED` = live-verified in the running game and/or byte-verified on
 disc. `HYPOTHESIS` = inferred, not yet ground-truthed.

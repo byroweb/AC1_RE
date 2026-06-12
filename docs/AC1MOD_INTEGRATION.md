@@ -10,8 +10,8 @@ port of this repo's authoritative PA decode in `tools/pa/pa_obj.py` /
 `tools/pa/pa_parse.py` — keep a single source of truth here and vendor/import it
 there, do not fork the logic. See:
 
-- `docs/PA_FORMAT.md` — the PA##.T container + primitive format (the decode being ported).
-- `docs/PA_HEADER.md` / `docs/PA_SLOTS.md` — header and slot structure.
+- [PA_FORMAT.md](PA_FORMAT.md) — the PA##.T container + primitive format (the decode being ported).
+- [PA_HEADER.md](PA_HEADER.md) / [PA_SLOTS.md](PA_SLOTS.md) — header and slot structure.
 
 Verification of the decode itself stays in this repo: `python3 tools/pa/pa_obj.py …`
 produces a mesh whose face indices are all valid and whose shape is recognizable in

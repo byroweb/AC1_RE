@@ -1,7 +1,7 @@
 # `GG/MS/MIS.T` — Mission data container (CRACKED)
 
 Target: **SLUS-01323 (v1.1)**. Disc sectors **101920–103449** (1530 sectors,
-3,133,440 B). Standard `.T` container (`REFERENCE.md` §3), **count-first** TOC.
+3,133,440 B). Standard `.T` container ([REFERENCE.md](REFERENCE.md) §3), **count-first** TOC.
 
 > Holds the **entire mission text corpus** — every mission name, briefing, and
 > objective screen — as plain `draw_string`-renderable text. This is the single

@@ -1,7 +1,7 @@
 # AC1 Mission Runtime — descriptor, MT spawn, timer, objectives
 
-Target **SLUS-01323 (v1.1)**. Code-side companion to `REFERENCE.md` §11/§12,
-`docs/PA_HEADER.md` (slot binding) and `docs/PA_FORMAT.md`. All addresses are in
+Target **SLUS-01323 (v1.1)**. Code-side companion to [REFERENCE.md](REFERENCE.md) §11/§12,
+[PA_HEADER.md](PA_HEADER.md) (slot binding) and [PA_FORMAT.md](PA_FORMAT.md). All addresses are in
 the **mission overlay = FDAT.T entry 202 (0xCA)**, loaded to base `0x8004ADA0`
 (extract with `tools/extract/extract_t.py`; not in the entry-201 Ghidra DB). Offsets
 verified on the **pristine** bin. Tool: `tools/mission/mission_parse.py`.

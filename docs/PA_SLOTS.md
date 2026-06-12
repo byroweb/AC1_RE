@@ -1,6 +1,6 @@
 # PA##.T slot structure (cross-file empirical analysis)
 
-Companion to `docs/PA_FORMAT.md`. PA files are not arbitrary bundles — every PA file
+Companion to [PA_FORMAT.md](PA_FORMAT.md). PA files are not arbitrary bundles — every PA file
 follows a **fixed slot skeleton**: a given `.T` entry index ("slot") holds the same
 *kind* of object in every file, with per-stage data. Found by analysing all 72 files
 with `tools/pa/pa_slots.py` (→ `disc_map/pa_slots.csv`). The *semantics* of each slot

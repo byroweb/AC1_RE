@@ -5,7 +5,7 @@
 > instancing). The "4-orientation LUT @ 0x801ad00c" below turned out to be the per-section
 > LIGHTING table (4 pre-rotated light-matrix variants). The level renders through a
 > previously unmapped path (`0x800639D8`/`0x80063B9C`), not the object paths below.
-> Full details: **`PLACEMENT_SOLVED.md`**. The log below is kept as the hunt record.
+> Full details: **[PLACEMENT_SOLVED.md](PLACEMENT_SOLVED.md)**. The log below is kept as the hunt record.
 
 The walkable level geometry is found (FDAT entry 2N+1, chunk 0 = PA-format blocks, see
 `LEVELS_FOUND.md`). The blocks are **local, stacked at the origin** and need a **per-section

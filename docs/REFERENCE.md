@@ -113,15 +113,15 @@ mission overlay — *not* id 3 (earlier guess corrected by RE; see §11).
 
 FDAT.T has 205 entries (count-first TOC); part-stat / mission tables are in
 lower-numbered entries; entry 201 (`0xC9`) holds the UI/menu **text** corpus
-(~16k chars, `>`-terminated ASCII — see `docs/DISC_TEXT_INVENTORY.md`).
+(~16k chars, `>`-terminated ASCII — see [DISC_TEXT_INVENTORY.md](DISC_TEXT_INVENTORY.md)).
 
 ### Mission text (`MIS.T`) — CRACKED
 `MIS.T` is a count-first `.T` container (884 hdr, 883 entries) holding the entire
 mission corpus: **entry 0** = mission-name array (0x20-byte stride, index = mission
 number); per-mission **briefing/objective** text blocks (50, each begins with a
 `Requester:` entry); plus 194 100×100 8bpp thumbnail TIMs. All text is ASCII and
-`draw_string`-renderable. Full layout in `docs/MIS_FORMAT.md`; disc-wide text map
-in `docs/DISC_TEXT_INVENTORY.md`. Tools: `tools/{build_filemap,extract_t,scan_text}.py`.
+`draw_string`-renderable. Full layout in [MIS_FORMAT.md](MIS_FORMAT.md); disc-wide text map
+in [DISC_TEXT_INVENTORY.md](DISC_TEXT_INVENTORY.md). Tools: `tools/{build_filemap,extract_t,scan_text}.py`.
 
 ---
 
@@ -281,7 +281,7 @@ mipsel-linux-gnu-objcopy -O binary --only-section=.text out.elf out.bin
   existing name buffer so every display site works unchanged; change only the
   name-edit append routine (`col*2 → col*1`) + grid rows + cursor bounds.
 
-See `AC1_TEXT_SYSTEM.md` for the full text/menu system writeup.
+See [AC1_TEXT_SYSTEM.md](AC1_TEXT_SYSTEM.md) for the full text/menu system writeup.
 
 ---
 

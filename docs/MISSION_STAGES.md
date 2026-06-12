@@ -1,8 +1,8 @@
 # AC1 Mission -> PA stage file + spawn block-index -> geometry resolution
 
-Target **SLUS-01323 (v1.1)**. Companion to `docs/MISSION_SYSTEM.md` (mission
-runtime), `docs/PA_HEADER.md` (slot binding), `docs/PA_FORMAT.md` (container) and
-`REFERENCE.md` §11/§12. All addresses in the **mission overlay = FDAT.T entry 202
+Target **SLUS-01323 (v1.1)**. Companion to [MISSION_SYSTEM.md](MISSION_SYSTEM.md) (mission
+runtime), [PA_HEADER.md](PA_HEADER.md) (slot binding), [PA_FORMAT.md](PA_FORMAT.md) (container) and
+[REFERENCE.md](REFERENCE.md) §11/§12. All addresses in the **mission overlay = FDAT.T entry 202
 (0xCA)**, base `0x8004ADA0` (extract `tools/extract/extract_t.py`, disassemble with
 `mipsel-linux-gnu-objdump … --adjust-vma=0x8004ADA0`). Offsets byte-verified on the
 **pristine** bin. Tool: `tools/mission/mission_stages.py` (reuses

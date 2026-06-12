@@ -46,7 +46,7 @@ The LOAD/SAVE list headers `NO. / AC NAME / SORTIES / CREDITS` and the confirm
 prompts (`Do you want to create new data?`, `Load the saved data?`, `YES/NO`) are
 also English and on the same screens.
 
-## Memory-card round-trip (already proven) — see AC1_NAME_SHAPER.md
+## Memory-card round-trip (already proven) — see [AC1_NAME_SHAPER.md](AC1_NAME_SHAPER.md)
 - Write side: card file holds `e0 f5 ad 3e` (سلام) **verbatim at offset 0x216**;
   serializer copies a staging record (live `0x80031BE6` read-watch never fires;
   staging copies @`0x8011D5EA/D62A/E46E/E4AE`). No transform.

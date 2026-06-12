@@ -40,7 +40,7 @@ reimpl) can. Localizing those needs a renderer patch and is OUT OF SCOPE here.
 draw_string — verified live, bytes computed in `tools/farsi/shape_data_labels.py`, not
 yet baked.) See that file if revisiting the font path.
 
-## Plan (next session)
+## Plan (future work)
 1. **Locate source.** Find the FDAT entry holding the title texture (candidate:
    `MS\MENU_TIM.T`; base-exe string table @0x80011018) and the per-word UV rects.
    Easiest: RE the title sprite draw (find the SPRT for the banner; read its
@@ -222,11 +222,11 @@ Disc is 100% packed (no free sectors in MENU_TIM or FDAT) → store words IN the
   tpage 0x27→0x2B) → patch x/y const → fix entry-201 checksum → build_rtl_patch → verify x6
   + confirm name screen intact.
 
-## Plan (next session) — SUPERSEDED by Option A above; kept for reference
+## Plan (SUPERSEDED by Option A above; kept for reference)
 - The DATA screen ([RTL] disc, save loaded from card, pilot سلام): Circle → hub
   carousel; Left/Right rotate categories; the title banner is the garbled text at
   the top.
-- Reach hub from cold boot: see `AC1_DATA_SCREEN.md` (demo-reel skip: 2 Start
+- Reach hub from cold boot: see [AC1_DATA_SCREEN.md](AC1_DATA_SCREEN.md) (demo-reel skip: 2 Start
   presses, 120-frame gap; tool `tools/ghidra/ac1_mcp_input.py`).
 - VRAM tooling: `dump_vram` (png/bin), `read_vram_region`. Today's dumps were in
   DuckStation's mcp cache (`vram_system.bin`, `vram_mission.bin`).

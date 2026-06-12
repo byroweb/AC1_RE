@@ -4,7 +4,7 @@ Target **SLUS-01323 (v1.1)**, pristine bin. All code addresses are in the
 in-mission overlay = **FDAT.T entry 202 (0xCA)**, loaded to base **0x8004ADA0**
 (extract `tools/extract/extract_t.py`; objdump
 `mipsel-linux-gnu-objdump -D -b binary -m mips:3000 -EL --adjust-vma=0x8004ADA0`).
-Companion to `docs/MISSION_SYSTEM.md` §2 (spawn table). Tool: `tools/mission/object_stats.py`.
+Companion to [MISSION_SYSTEM.md](MISSION_SYSTEM.md) §2 (spawn table). Tool: `tools/mission/object_stats.py`.
 
 Notation: **CONFIRMED** = byte/disasm-verified here. **HYPOTHESIS** = inferred,
 not yet ground-truthed in DuckStation.

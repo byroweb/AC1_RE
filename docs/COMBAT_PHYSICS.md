@@ -30,7 +30,7 @@ A fixed array of **510 slots × 0xD0 (208) bytes**:
 player transform code while moving; position fields track movement). Its first
 two words are shared-table pointers:
 `+0x00 = 0x8019FAB8` (MT/instance template table), `+0x04 = 0x8019F538`
-(geometry-block record table) — see `docs/MISSION_SYSTEM.md` / `PA_HEADER.md`.
+(geometry-block record table) — see [MISSION_SYSTEM.md](MISSION_SYSTEM.md) / [PA_HEADER.md](PA_HEADER.md).
 
 ### Player AC object layout (live-confirmed fields)
 | off | meaning | status |

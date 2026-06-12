@@ -1,6 +1,6 @@
 # LEVELS FOUND — walkable environment geometry is embedded in FDAT entry 2N+1 (2026-06-11)
 
-> **UPDATE 2026-06-12: placement SOLVED — see `PLACEMENT_SOLVED.md`.** Sections are
+> **UPDATE 2026-06-12: placement SOLVED — see [PLACEMENT_SOLVED.md](PLACEMENT_SOLVED.md).** Sections are
 > placed by TRANSLATION ONLY (chunk 7 of the same entry, 52-byte records); blocks are
 > pre-rotated on disc and reused (instancing). `assemble_levels.py` builds all 56 levels
 > with correct world layout. The "rotation+translation per block" speculation below was

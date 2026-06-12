@@ -6,11 +6,11 @@ project is to read/edit AC1 missions and maps, view models, and re-pack the disc
 
 This repo provides the format-RE foundation it builds on:
 
-- `docs/PA_FORMAT.md` / `docs/PA_HEADER.md` / `docs/PA_SLOTS.md` — PA##.T geometry
+- [PA_FORMAT.md](PA_FORMAT.md) / [PA_HEADER.md](PA_HEADER.md) / [PA_SLOTS.md](PA_SLOTS.md) — PA##.T geometry
   containers, headers, and the cross-file slot skeleton.
-- `docs/MIS_FORMAT.md` / `docs/MISSION_SYSTEM.md` / `docs/MISSION_STAGES.md` —
+- [MIS_FORMAT.md](MIS_FORMAT.md) / [MISSION_SYSTEM.md](MISSION_SYSTEM.md) / [MISSION_STAGES.md](MISSION_STAGES.md) —
   mission text, names, and stage/PA binding.
-- `docs/LEVEL_LOADING.md` — level section placement and assembly.
+- [LEVEL_LOADING.md](LEVEL_LOADING.md) — level section placement and assembly.
 - `tools/extract/` — disc file map (`build_filemap.py` → `disc_map/disc_files.json`),
   the `.T` container reader (`extract_t.py`), and text tooling.
 - `tools/pa/` — the authoritative PA geometry decoders (`pa_obj.py`, `pa_parse.py`,

@@ -1,6 +1,6 @@
 # Level-section PLACEMENT — SOLVED (2026-06-12)
 
-The open problem from `PLACEMENT_INVESTIGATION.md` is closed. **Per-section placement is
+The open problem from [PLACEMENT_INVESTIGATION.md](PLACEMENT_INVESTIGATION.md) is closed. **Per-section placement is
 TRANSLATION-ONLY, stored in a per-mission table on disc (FDAT entry 2N+1, chunk 7).**
 The geometry blocks are PRE-ROTATED on disc; sections are placed by adding a world
 translation. Blocks are REUSED across sections (instancing — e.g. Nassau Tunnel's east

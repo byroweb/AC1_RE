@@ -31,7 +31,7 @@ flagged renderable** by the existing renderer. That means the Farsi
 - `disc_map/text_inventory.csv` — the inventory.
 - `disc_map/MIS_T_text.txt`, `disc_map/FDAT_T_text.txt` — human-readable dumps for
   translators.
-- `docs/MIS_FORMAT.md`, `docs/PA_FORMAT.md` — cracked container layouts.
+- [MIS_FORMAT.md](MIS_FORMAT.md), [PA_FORMAT.md](PA_FORMAT.md) — cracked container layouts.
 
 ## Mission text ↔ mission number (linkage)
 No code table needed — the mapping is structural (confirmed in `MIS.T`):

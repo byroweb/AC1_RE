@@ -45,7 +45,7 @@ for i in 0..7:
 | 6 | 0x1223 | +108 | e108                      | 0xE6 |
 | 7 | 0x1224 | +142 | e142                      | 0xE7 |
 
-These bases line up **exactly** with the PA_SLOTS.md slot-category map (e2 / e10 / e44 /
+These bases line up **exactly** with the [PA_SLOTS.md](../../docs/PA_SLOTS.md) slot-category map (e2 / e10 / e44 /
 e60 / e125-165 effects, etc.). So **each sub-resource byte selects *which* entry within
 a category to pull into the stage** — i.e. the per-mission choice of MT model, object
 set, effect bank, etc. The main PA file supplies the environment; the 8 selectors pick
