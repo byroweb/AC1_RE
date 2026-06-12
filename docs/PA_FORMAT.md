@@ -81,10 +81,17 @@ Vertex-index offset & count per type (record-relative; validated PA00+PA20):
 | --- | --- | --- | --- | --- |
 | 0x20 | flat | 3 | 16 | **+0x0a** |
 | 0x28 | flat | 4 | 20 | **+0x0a** |
-| 0x24 | textured | 3 | 24 | +0x12 |
-| 0x2c | textured | 4 | 32 | **+0x16** |
-| 0x34 | textured/gouraud | 3 | 28 | +0x14 (tentative) |
-| 0x3c | textured | 4 | 36 | +0x14 (tentative) |
+| 0x24 | textured | 3 | 24 | +0x12 (stride 2) |
+| 0x2c | textured | 4 | 32 | **+0x16** (stride 2) |
+| 0x34 | gouraud tri | 3 | 28 | **+0x12, stride 4** (RESOLVED) |
+| 0x3c | gouraud quad | 4 | 36 | **+0x16, stride 4** (RESOLVED) |
+
+**Gouraud stride (RESOLVED 2026-06-11, live RE):** flat/textured types pack their
+vertex indices contiguously (stride 2). The **gouraud** types interleave
+`[normal_idx, vertex_idx]` pairs, so the vertex indices are **stride 4** (a per-vertex
+normal-pool index sits between each). Reading them contiguously (the old `+0x14`
+guess) picked up the ×8 normal indices as vertices → out of range. See
+`disc_map/trace/gouraud_slot_resolved.md`.
 
 **CORRECTION (2026-06-08, visual RE via AC1mod):** every record begins with a
 **per-poly running-counter halfword** (0,1,2,…); the real vertex indices follow it.
@@ -105,10 +112,14 @@ it at the *real* pool-relative indices (proven: at those offsets every index is
 flat/textured types). The relocation handlers (jump table `0x8004B184`) confirm which
 halfwords are geometry: in each handler `a1 = record+4`; halfwords shifted **`<<3`
 (×8)** are XYZ-pool vertex indices, **`<<4` (×16)** are colour/normal-pool indices.
-For the **gouraud** types `0x34`/`0x3c` the handlers interleave vtx/colour indices
-(stride 4 from record+0x14/+0x10) but a residual ~5–30% of records still index OOR —
-an extra shading word is suspected; the exporter drops any face with an OOR index so
-the mesh stays valid. (0x34/0x3c vidx layout = **TENTATIVE**; needs DuckStation bp.)
+For the **gouraud** types `0x34`/`0x3c` the handlers interleave `[normal, vertex]`
+index pairs: vertex slots (shifted `<<4`) are at **record+0x12/0x16/0x1a** (tri) and
+**record+0x16/0x1a/0x1e/0x22** (quad) — i.e. first vertex at +0x12 (tri) / +0x16
+(quad), **stride 4**; the per-vertex normal index sits 2 bytes before each. **RESOLVED
+2026-06-11** by disassembling the live relocation handlers (`0x80057674` tri /
+`0x800577a4` quad) in the running game; with the stride-4 layout, out-of-range gouraud
+faces drop from ~8% to **0 across all 72 PA files** (175,232 records). Validation:
+`disc_map/trace/gouraud_validate.py`; details in `disc_map/trace/gouraud_slot_resolved.md`.
 
 ### Geometry walker / renderer (CONFIRMED — entry-202 overlay)
 | Function | Addr | Role |
@@ -156,9 +167,11 @@ meshes, not whole-stage hulls. Faces with an out-of-range index (gouraud 0x34/0x
 edge cases) are dropped so output is always a valid mesh.
 
 ## Next steps (to fully crack + render)
-1. **Gouraud vidx (0x34/0x3c):** breakpoint emitter `0x8005A57C` in DuckStation to
-   nail the exact vertex-index slot for these two types (handler shows interleaved
-   vtx/colour but a residual ~5–30% index OOR — likely an extra shading word).
+1. ~~**Gouraud vidx (0x34/0x3c):**~~ **DONE 2026-06-11** — RE'd live from the relocation
+   handlers `0x80057674`/`0x800577a4`: gouraud verts are stride-4 (interleaved with
+   per-vertex normal indices), first vertex at record+0x12 (tri) / +0x16 (quad). 0
+   out-of-range across all 72 PA files. Fixed in `tools/pa_obj.py` + AC1mod
+   `core/pa_parser.py`.
 2. **Textures/UVs:** decode the UV+clut(`0x7980`)/tpage(`0x009b`) shading words into
    real CLUT/tpage coords + a TIM source so the OBJ can carry a material.
 3. **Stage assembly:** entry 0 / entry 1 directory → how blocks place into a full map

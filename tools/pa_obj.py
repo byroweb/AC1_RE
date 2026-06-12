@@ -43,25 +43,29 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FILEMAP = os.path.join(HERE, "disc_map", "disc_files.json")
 RAW, OFF, DATA = 2352, 24, 2048
 
-# Per primitive type (byte[3] & 0xBC): (vertex-index byte offset within record, #verts)
-# RE'd from the relocation walker (FUN_800574D8) per-type handlers (jump table
-# 0x8004B184) + byte-validation PA00/PA20. In each handler `a1 = record+4`; halfwords
-# shifted `<<3` (×8) are VERTEX-POOL (XYZ) indices, `<<4` (×16) are colour/normal-pool
-# indices. The `<<3` positions give the vertex-index offsets below.
+# Per primitive type (byte[3] & 0xBC): (first vertex-index byte offset, #verts, stride)
+# RE'd LIVE from the relocation-walker (FUN_800574D8) per-type handlers (jump table
+# 0x8004B184), disassembled from the running game (training mission, 2026-06-11) and
+# calibrated against the confirmed textured-tri 0x24. In each handler `a1 = record+4`;
+# halfwords shifted `<<4` (×16) are VERTEX-position indices (transformed pool, stride
+# 16); `<<3` (×8) are normal/colour-pool indices (stride 8). The `<<4` positions give
+# the vertex offsets below.
+#   - flat/textured types pack vertex indices CONTIGUOUSLY (stride 2).
+#   - GOURAUD 0x34/0x3c interleave [normal_idx, vertex_idx] pairs → vertex stride 4.
 # CONFIRMED (0 out-of-range on PA00 e2 + PA20 e3): 0x20,0x28,0x24,0x2c.
-# TENTATIVE (gouraud 0x34/0x3c: handler shows interleaved vtx/col but a residual
-# ~5-30% of records still index OOR — extra shading word suspected; faces with any
-# OOR index are dropped at export, so the mesh stays valid).
+# RESOLVED 2026-06-11 (was the 5-30% OOR bug — see disc_map/trace/gouraud_slot_resolved.md):
+# gouraud verts are stride-4 interleaved, not contiguous; old (0x14, n) read normal
+# indices as vertices → out of range.
 PRIM_VERTS = {
-    0x20: (0x0a, 3),   # flat tri    (skip per-poly counter hw) CONFIRMED
-    0x28: (0x0a, 4),   # flat quad   (skip per-poly counter hw) CONFIRMED
-    0x24: (0x12, 3),   # textured tri    len 24   CONFIRMED
-    0x2c: (0x16, 4),   # textured quad (skip counter hw)        CONFIRMED
-    0x34: (0x14, 3),   # gouraud/tex tri (offset tentative)     tentative
-    0x3c: (0x14, 4),   # gouraud/tex quad (offset tentative)    tentative
-    0xa0: (0x0a, 3), 0xa8: (0x0a, 4),
-    0xa4: (0x12, 3), 0xac: (0x16, 4),
-    0xb4: (0x12, 3), 0xbc: (0x12, 4),
+    0x20: (0x0a, 3, 2),   # flat tri    (skip per-poly counter hw) CONFIRMED
+    0x28: (0x0a, 4, 2),   # flat quad   (skip per-poly counter hw) CONFIRMED
+    0x24: (0x12, 3, 2),   # textured tri (flat normal)   len 24    CONFIRMED
+    0x2c: (0x16, 4, 2),   # textured quad (flat normal)            CONFIRMED
+    0x34: (0x12, 3, 4),   # gouraud tri  (per-vtx normal interleaved)  CONFIRMED live
+    0x3c: (0x16, 4, 4),   # gouraud quad (per-vtx normal interleaved)  CONFIRMED live
+    0xa0: (0x0a, 3, 2), 0xa8: (0x0a, 4, 2),
+    0xa4: (0x12, 3, 2), 0xac: (0x16, 4, 2),
+    0xb4: (0x12, 3, 2), 0xbc: (0x12, 4, 2),  # high-bit textured variants (stride unverified)
 }
 TEXTURED = lambda t: bool(t & 0x80) or t in (0x24, 0x2c, 0x34, 0x3c)
 
@@ -141,9 +145,9 @@ def read_prims(block, off, cnt):
             break
         info = PRIM_VERTS.get(typ)
         if info:
-            voff, nv = info
-            idx = [struct.unpack_from("<H", block, o + voff + 2 * k)[0]
-                   for k in range(nv) if o + voff + 2 * k + 2 <= len(block)]
+            voff, nv, stride = info
+            idx = [struct.unpack_from("<H", block, o + voff + stride * k)[0]
+                   for k in range(nv) if o + voff + stride * k + 2 <= len(block)]
             out.append((typ, idx))
             types[typ] += 1
         o += reclen
