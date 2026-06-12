@@ -70,3 +70,4 @@ disc_map/overlays/
 # Compiled reference-model binaries (regenerable via `make` in re/)
 re/build/
 build/
+disc_map/levels/
