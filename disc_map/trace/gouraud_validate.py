@@ -9,7 +9,7 @@ and count how many produce an out-of-range index (idx >= vtx_cnt). A correct
 layout should give ~0 OOR; the buggy one should give the 5-30% that were dropped.
 """
 import sys, os, struct, collections
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools", "pa"))
 import pa_obj
 
 OLD = {0x34: (0x14, 3, 2), 0x3c: (0x14, 4, 2)}

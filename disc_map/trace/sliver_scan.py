@@ -3,7 +3,7 @@
 FIXED gouraud decoder. For each entry: sub-objects, vertex total, bbox, coord
 extremes, and primitive-type histogram."""
 import sys, os, struct, collections
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools", "pa"))
 import pa_obj
 
 

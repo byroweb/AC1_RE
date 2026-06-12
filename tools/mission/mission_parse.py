@@ -23,9 +23,9 @@ Each 40-byte spawn record = 20 int16 halfwords:
   hw8..hw19   = per-type params (HP?, flags, link ids) HYPOTHESIS
 
 Usage:
-  tools/mission_parse.py --fdat disc_map/extracted/FDAT_T/entries  --mission 0
-  tools/mission_parse.py --stream disc_map/extracted/FDAT_T/entries/001.bin
-  tools/mission_parse.py --stream .../001.bin --spawns       # only chunk-12 table
+  tools/mission/mission_parse.py --fdat disc_map/extracted/FDAT_T/entries  --mission 0
+  tools/mission/mission_parse.py --stream disc_map/extracted/FDAT_T/entries/001.bin
+  tools/mission/mission_parse.py --stream .../001.bin --spawns       # only chunk-12 table
 """
 import argparse
 import os

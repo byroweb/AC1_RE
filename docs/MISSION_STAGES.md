@@ -3,9 +3,9 @@
 Target **SLUS-01323 (v1.1)**. Companion to `docs/MISSION_SYSTEM.md` (mission
 runtime), `docs/PA_HEADER.md` (slot binding), `docs/PA_FORMAT.md` (container) and
 `REFERENCE.md` §11/§12. All addresses in the **mission overlay = FDAT.T entry 202
-(0xCA)**, base `0x8004ADA0` (extract `tools/extract_t.py`, disassemble with
+(0xCA)**, base `0x8004ADA0` (extract `tools/extract/extract_t.py`, disassemble with
 `mipsel-linux-gnu-objdump … --adjust-vma=0x8004ADA0`). Offsets byte-verified on the
-**pristine** bin. Tool: `tools/mission_stages.py` (reuses
+**pristine** bin. Tool: `tools/mission/mission_stages.py` (reuses
 `tools/mission_parse.walk_chunks`).
 
 `CONFIRMED` = disasm/byte-verified here. `HYPOTHESIS` = inferred, not ground-truthed.
@@ -79,7 +79,7 @@ Chunk-11 record count == max `hw3` seen in chunk-12 spawns, every mission tested
 `1`=mobile enemies, `2`/`3`=prop groups) — consistent with “record [0] = stage,
 records [1..N] = mission models”.
 
-Run: `tools/mission_stages.py --fdat <entries-dir> --mission N`.
+Run: `tools/mission/mission_stages.py --fdat <entries-dir> --mission N`.
 
 ---
 
@@ -143,7 +143,7 @@ descriptor copied by that menu code. **This requires DuckStation ground-truth or
 deeper base-EXE menu trace to close** — it is NOT derivable from FDAT 2N/2N+1 alone.
 
 ### Practical mission -> PA table  (how to produce it)
-Because the byte is set at runtime, `tools/mission_stages.py` takes the stage byte
+Because the byte is set at runtime, `tools/mission/mission_stages.py` takes the stage byte
 from `--stage BYTE` or a ground-truth `--stagemap` JSON (`{mission: byte}`) and then
 prints the exact PA file(s) and the full block resolution. To build the verified
 table: in DuckStation, start each mission, read `0x8004121B` (and `0x8004121D..0x1224`)

@@ -22,10 +22,10 @@ flagged renderable** by the existing renderer. That means the Farsi
 ## Deliverables (this session)
 - `disc_map/disc_files.json` — exact file map (133 files) from the jPSXdec `.idx`,
   re-pointed at the **pristine** backup image.
-- `tools/build_filemap.py` — `.idx` → file map (validated vs `REFERENCE.md` §9).
-- `tools/extract_t.py` — generalized `.T` extractor (auto-detects count-first /
+- `tools/extract/build_filemap.py` — `.idx` → file map (validated vs `REFERENCE.md` §9).
+- `tools/extract/extract_t.py` — generalized `.T` extractor (auto-detects count-first /
   offset-first TOC, tolerates zero-length entries, dumps per-entry payloads).
-- `tools/scan_text.py` — `draw_string`-aware text scanner; **passes the FDAT-201
+- `tools/extract/scan_text.py` — `draw_string`-aware text scanner; **passes the FDAT-201
   ground-truth gate** (re-finds `NEW GAME`, `MISSION`, `RANKING`, `SYSTEM`;
   correctly *omits* GARAGE/MAIL/SHOP which are textures).
 - `disc_map/text_inventory.csv` — the inventory.
@@ -53,9 +53,9 @@ No code table needed — the mapping is structural (confirmed in `MIS.T`):
 
 ## Reproduce
 ```sh
-python3 tools/build_filemap.py
-python3 tools/extract_t.py --file GG/MS/MIS.T --toc-only
-python3 tools/scan_text.py  --toc disc_map/extracted/MIS_T/toc.json  --csv disc_map/text_inventory.csv
-python3 tools/extract_t.py --file GG/COM/FDAT.T --toc-only
-python3 tools/scan_text.py  --toc disc_map/extracted/FDAT_T/toc.json --terminated-only --append --csv disc_map/text_inventory.csv
+python3 tools/extract/build_filemap.py
+python3 tools/extract/extract_t.py --file GG/MS/MIS.T --toc-only
+python3 tools/extract/scan_text.py  --toc disc_map/extracted/MIS_T/toc.json  --csv disc_map/text_inventory.csv
+python3 tools/extract/extract_t.py --file GG/COM/FDAT.T --toc-only
+python3 tools/extract/scan_text.py  --toc disc_map/extracted/FDAT_T/toc.json --terminated-only --append --csv disc_map/text_inventory.csv
 ```

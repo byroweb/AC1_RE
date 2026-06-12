@@ -12,8 +12,8 @@
 # continues seamlessly (I just pick up where I left off).
 #
 # Usage:
-#   tools/resurrect.sh                 # dry-run: print the plan, change nothing
-#   tools/resurrect.sh --go [delay]    # execute; delay seconds before relaunch (default 8)
+#   tools/re/resurrect.sh                 # dry-run: print the plan, change nothing
+#   tools/re/resurrect.sh --go [delay]    # execute; delay seconds before relaunch (default 8)
 #
 # Env: CLAUDE_CODE_SESSION_ID must be set (Claude Code exports it).
 set -uo pipefail

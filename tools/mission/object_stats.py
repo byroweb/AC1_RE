@@ -17,18 +17,18 @@ mission (with its hw8..hw19 decoded under the current field hypotheses), and -- 
 you pass an explicit 20-halfword record -- decodes that single record.  It does NOT
 invent a type stat row that does not exist in the ROM.
 
-Reuses tools/extract_t.py (container) and tools/mission_parse.py (chunk walk +
+Reuses tools/extract/extract_t.py (container) and tools/mission/mission_parse.py (chunk walk +
 record layout) by import; it does NOT modify them.
 
 Usage:
   # all instances of type 5 across mission 1, decoded:
-  tools/object_stats.py --fdat disc_map/extracted/FDAT_T/entries --mission 1 --type 5
+  tools/mission/object_stats.py --fdat disc_map/extracted/FDAT_T/entries --mission 1 --type 5
   # every type used in a mission, with instance stats:
-  tools/object_stats.py --fdat disc_map/extracted/FDAT_T/entries --mission 1
+  tools/mission/object_stats.py --fdat disc_map/extracted/FDAT_T/entries --mission 1
   # a single stream file:
-  tools/object_stats.py --stream .../003.bin --type 99
+  tools/mission/object_stats.py --stream .../003.bin --type 99
   # decode one explicit record (20 comma-separated int16 halfwords):
-  tools/object_stats.py --record 28015,-625,5003,0,0,1024,0,77,0,0,0,2050,313,0,0,0,0,0,0,0
+  tools/mission/object_stats.py --record 28015,-625,5003,0,0,1024,0,77,0,0,0,2050,313,0,0,0,0,0,0,0
 """
 import argparse
 import os

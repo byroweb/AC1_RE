@@ -3,7 +3,7 @@
 Companion to `docs/PA_FORMAT.md`. PA files are not arbitrary bundles — every PA file
 follows a **fixed slot skeleton**: a given `.T` entry index ("slot") holds the same
 *kind* of object in every file, with per-stage data. Found by analysing all 72 files
-with `tools/pa_slots.py` (→ `disc_map/pa_slots.csv`). The *semantics* of each slot
+with `tools/pa/pa_slots.py` (→ `disc_map/pa_slots.csv`). The *semantics* of each slot
 (what the game does with it) are being cracked from the code side in `docs/PA_HEADER.md`.
 
 ## Numbers
@@ -65,4 +65,4 @@ such file looked the same: we were defaulting to the largest slot.)
 - Map slot index → game object type (AC part? MT? prop? effect?) once the header
   semantics are known.
 
-Reproduce: `python3 tools/pa_slots.py`  (→ `disc_map/pa_slots.csv` + this summary).
+Reproduce: `python3 tools/pa/pa_slots.py`  (→ `disc_map/pa_slots.csv` + this summary).

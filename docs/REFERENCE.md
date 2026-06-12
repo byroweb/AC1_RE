@@ -347,7 +347,7 @@ See `AC1_TEXT_SYSTEM.md` for the full text/menu system writeup.
 The in-mission code is **FDAT entry 202 (`0xCA`)**, a 286,720-byte overlay loaded
 to the same base as entry 201 (**`0x8004ADA0`**); it is therefore *not* in the
 entry-201 Ghidra DB and must be imported separately for deeper work. Extract it
-with `tools/extract_t.py` (FDAT entry 202) → load at vma `0x8004ADA0`.
+with `tools/extract/extract_t.py` (FDAT entry 202) → load at vma `0x8004ADA0`.
 
 **PA stage loader** — `FUN_8004F1A8` (overlay):
 - Reads stage/area number from byte `DAT_8004121B`, formats the path template
@@ -377,7 +377,7 @@ with `tools/extract_t.py` (FDAT entry 202) → load at vma `0x8004ADA0`.
   `+8`=colour/normal pool off, `+0x0e`=flags (`0x8000`=skip, low9=count addend),
   `+0x10`=prim-stream off, `+0x14`=prim count base, `+0x18`=4th pool off.
   Prim records walked = `u16[+0x14] + (flags&0x1ff) − 1`. (Decoder/OBJ exporter:
-  `tools/pa_obj.py`. NB: relocation adds +0x18 file-relative — the true PA00 e2
+  `tools/pa/pa_obj.py`. NB: relocation adds +0x18 file-relative — the true PA00 e2
   vertex pool base is **0x1230**, not the previously-noted 0x1218.)
 - **`FUN_80057C44`** — per-sub-object (124-byte stride) bbox transform + NCLIP cull.
 - **`FUN_8005A57C`** — per-frame **primitive emitter** (the GPU walker). Dispatches
@@ -403,7 +403,7 @@ table (+0x08)` to 57 placement records (marker `0x012C/0x0352` + int16 transform
 vectors), table also byte-identical across files. The object-instance table at
 `0x8019FAB8` (256×44, init `FUN_80073B74`) is filled from the **mission** file (id 2),
 and each instance's field `+0x0A` selects its PA geometry block → **slots are
-data-driven but authored from a fixed template**. Header dumper: `tools/pa_parse.py
+data-driven but authored from a fixed template**. Header dumper: `tools/pa/pa_parse.py
 … --header`.
 
 **Primitive record (CONFIRMED):** variable length, `reclen = 4 + byte[1]*4`;
@@ -412,7 +412,7 @@ data-driven but authored from a fixed template**. Header dumper: `tools/pa_parse
 indices / optional flag word. Index offsets per type: 0x20→+8(3v), 0x28→+8(4v),
 0x24→+0x12(3v), 0x2c→+0x14(4v), 0x34→+0x12(3v), 0x3c→+0x12(4v). Validated on
 PA00 e2 @0x1960 and PA20 e3 @0x6c (indices in-range, walk hits next section).
-Decoder: `tools/pa_parse.py … --prims OFF CNT`.
+Decoder: `tools/pa/pa_parse.py … --prims OFF CNT`.
 
 | Symbol | Address | |
 | --- | --- | --- |
@@ -440,7 +440,7 @@ Decoder: `tools/pa_parse.py … --prims OFF CNT`.
 
 ## 12. Mission runtime — descriptor, MT spawn, timer, objectives (RE 2026-06-08)
 
-Full writeup: **`docs/MISSION_SYSTEM.md`**. Tool: `tools/mission_parse.py`. All in
+Full writeup: **`docs/MISSION_SYSTEM.md`**. Tool: `tools/mission/mission_parse.py`. All in
 the entry-202 overlay (base `0x8004ADA0`).
 
 **Per-mission data = FDAT entry PAIR (file id 2):** mission N →

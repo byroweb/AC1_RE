@@ -7,12 +7,12 @@
 # Ghidra DB lacks for mission/mode overlays (see docs/MXT_LOADER.md).
 #
 # Usage:
-#   tools/ghidra_overlay.sh <overlay.bin> <hexaddr> [hexaddr ...]
-#   tools/ghidra_overlay.sh disc_map/overlays/ovl202_mission.bin 0x8008ab68
+#   tools/re/ghidra_overlay.sh <overlay.bin> <hexaddr> [hexaddr ...]
+#   tools/re/ghidra_overlay.sh disc_map/overlays/ovl202_mission.bin 0x8008ab68
 #
 # First call on an overlay analyzes (~30s); later calls are fast (-process).
 set -euo pipefail
-HERE="$(cd "$(dirname "$0")/.." && pwd)"
+HERE="$(cd "$(dirname "$0")/../.." && pwd)"
 HL=/snap/ghidra/current/ghidra_12.0_PUBLIC/support/analyzeHeadless
 BASE=0x8004ada0
 PROJDIR=/tmp/ghidra_overlays

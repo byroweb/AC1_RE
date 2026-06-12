@@ -11,7 +11,7 @@ Target: **SLUS-01323 (v1.1)**. Disc sectors **101920–103449** (1530 sectors,
 - `uint16[0]` = **884** (entry count) → **883 entries**, offsets at `uint16[1..]`.
 - Entry *i* spans sectors `TOC[i]..TOC[i+1]-1` (file-relative; disc LBA = `101920 + off`).
 - 547 non-empty entries: **194 TIM** images + **353 data/text** entries (+ empties).
-- Extract with: `python3 tools/extract_t.py --file GG/MS/MIS.T --dump-entries`
+- Extract with: `python3 tools/extract/extract_t.py --file GG/MS/MIS.T --dump-entries`
 
 ## Entry roles
 

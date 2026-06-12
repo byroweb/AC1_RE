@@ -17,8 +17,9 @@ time; PATCHES is the single source of truth.  Addresses verified live; base
 import os, shutil, struct, sys
 
 HERE   = os.path.dirname(os.path.abspath(__file__))
-SRC_T  = os.path.join(HERE, "fdat_extracted.T")
-PAT_T  = os.path.join(HERE, "fdat_patched.T")
+ROOT   = os.path.dirname(os.path.dirname(HERE))
+SRC_T  = os.path.join(ROOT, "fdat_extracted.T")
+PAT_T  = os.path.join(ROOT, "fdat_patched.T")
 BIN_IN = "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1).bin"
 BIN_OUT= "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1) [RTL].bin"
 CUE_OUT= "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1) [RTL].cue"

@@ -16,11 +16,11 @@ Output JSON schema:
                "children": [ {"idx","id","type","sector_first","sector_last", ...} ] } ]
 }
 
-Usage: python3 tools/build_filemap.py [AC_1_USA_test.idx] [disc_map/disc_files.json]
+Usage: python3 tools/extract/build_filemap.py [AC_1_USA_test.idx] [disc_map/disc_files.json]
 """
 import sys, os, json, re
 
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 IDX_DEFAULT = os.path.join(HERE, "AC_1_USA_test.idx")
 OUT_DEFAULT = os.path.join(HERE, "disc_map", "disc_files.json")
 

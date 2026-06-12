@@ -137,7 +137,7 @@ entry `0x8004c340` is a real prologue (`addiu sp,sp,-72; …`). Main entries:
 202=`0x8004c340`, 203=`0x8004bf94`, 204=`0x8004bf3c`. These are the first
 functions to analyze in each imported overlay.
 
-### Extraction — `tools/extract_overlay.py`
+### Extraction — `tools/extract/extract_overlay.py`
 Carves overlays out of `fdat_extracted.T` (or `--disc` from the pristine .bin)
 using the count-first TOC, verifies the MXT checksum, writes
 `disc_map/overlays/ovl<N>_<name>.bin`, and emits a Ghidra import script.
@@ -178,11 +178,11 @@ Two ways:
 - **GUI**: `ghidra_scripts/import_ovl_<N>_<name>.py` creates an **overlay** memory
   block at `0x8004ada0` from the carved bin (so resident calls `0x80010000–0x8003ffff`
   still resolve), then disassembles. Run from the Script Manager, Auto-Analyze.
-- **Headless (no GUI) — `tools/ghidra_overlay.sh`** *(recommended)*: imports +
+- **Headless (no GUI) — `tools/re/ghidra_overlay.sh`** *(recommended)*: imports +
   auto-analyzes a carved overlay once (cached project), then decompiles any
   function address with full Ghidra quality:
   ```
-  tools/ghidra_overlay.sh disc_map/overlays/ovl202_mission.bin 0x8008ab68 0x8004c340
+  tools/re/ghidra_overlay.sh disc_map/overlays/ovl202_mission.bin 0x8008ab68 0x8004c340
   ```
   Verified: ovl202 auto-analyzes to **585 functions**; the mission main loop and
   driver decompile cleanly and confirm the live-RE mission lifecycle. This gives

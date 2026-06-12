@@ -8,11 +8,11 @@ This session's disc/`.T` work is the foundation layer for that. Capturing the
 plan so it isn't lost.
 
 ## What already exists (reusable building blocks)
-- **Disc file map:** `tools/build_filemap.py` → `disc_map/disc_files.json`
+- **Disc file map:** `tools/extract/build_filemap.py` → `disc_map/disc_files.json`
   (every file, exact sectors/size, from the jPSXdec `.idx`).
-- **Container reader:** `tools/extract_t.py` — generalized `.T` TOC parser +
+- **Container reader:** `tools/extract/extract_t.py` — generalized `.T` TOC parser +
   per-entry extractor (count-first / offset-first, zero-length tolerant).
-- **Text tooling:** `tools/scan_text.py` + `docs/DISC_TEXT_INVENTORY.md` —
+- **Text tooling:** `tools/extract/scan_text.py` + `docs/DISC_TEXT_INVENTORY.md` —
   mission text in `MIS.T`, UI text in `FDAT.T` entry 201.
 - **Inject/repack:** `psxinject` round-trip + checksum recompute
   (`REFERENCE.md` §6–7, `patch_draw_string.py`).
@@ -49,7 +49,7 @@ genuinely heavy jobs.
   PS1-class geometry is a few hundred polys + small textures; integrated graphics
   render it trivially — no Arc PC needed to look at models. Also: all RE/edit
   tooling, mipsel compile/inject, git, MCP control, normal-res emulation.
-- **Arc PC (offload only when heavy):** local-LLM passes (`tools/llm_local.py`,
+- **Arc PC (offload only when heavy):** local-LLM passes (`tools/re/llm_local.py`,
   agent `ac1-re-local-helper`), large batch jobs (mass texture decode, whole-disc
   sweeps), and enhanced/heavy DuckStation if needed.
 So: build the viewer to run **on the laptop**; reach for the Arc PC only for LLM

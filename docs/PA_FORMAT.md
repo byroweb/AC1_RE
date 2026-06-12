@@ -24,7 +24,7 @@ against KFModTool `core/tfile.cpp`): `uint16[0]` = entry count, then `count+1`
 uint16 sector offsets (×2048), duplicate offsets = zero-length entries.
 - `PA00.T`: 176 entries, 114 non-empty.
 - **No text** (probed PA00/20/40/60: 0 English words). Geometry only.
-- Tools: `tools/extract_t.py` (extract), `tools/pa_parse.py` (structure dump).
+- Tools: `tools/extract/extract_t.py` (extract), `tools/pa/pa_parse.py` (structure dump).
 
 ## Entry roles (CONFIRMED)
 | Entry | Role |
@@ -69,7 +69,7 @@ secbase[+12] = SUB-OBJECT TABLE  (stride 28)                  CONFIRMED
   - sub2: vtx@0x1f54 ×44,  prim@0x1b24 ×35  → ends 0x1f34
   Every decoded index is `< pool size` (max == count−1). **Note:** the earlier doc's
   "vertices @0x1218" was off by the +0x18 relocation; the true pool base is 0x1230.
-- Decode the table + export with **`tools/pa_obj.py … --entry N`** (prints the table,
+- Decode the table + export with **`tools/pa/pa_obj.py … --entry N`** (prints the table,
   walks each sub-object, validates index ranges). Per-sub-object pools confirm that
   vertex indices are POOL-RELATIVE (each sub-object is a separate OBJ group `o subN`).
 
@@ -154,7 +154,7 @@ textured, translucent; SVECTOR vertices) when reverse-engineering AC1's variant.
 
 ## Loader & registrar (RE 2026-06-08 — see REFERENCE.md §11)
 The mission code is **FDAT entry 202** (`0xCA`), an overlay at base `0x8004ADA0`
-(extract with `tools/extract_t.py`; not in the entry-201 Ghidra DB).
+(extract with `tools/extract/extract_t.py`; not in the entry-201 Ghidra DB).
 - **`FUN_8004F1A8`** builds the path from template `"P0\PA00.T"` (@`0x8008D928`)
   using stage byte `DAT_8004121B`, then `load_T_file(0, path)` — **PA loads into
   file slot 0** — and `read_T_entry(0, 1, dest)` to grab entry 1 (offset directory)
@@ -164,8 +164,8 @@ The mission code is **FDAT entry 202** (`0xCA`), an overlay at base `0x8004ADA0`
   `half[block+4]>>2` / `half[block+6]>>2`, `+0x04`=index). This CONFIRMS the block
   header's halfword count fields are real geometry element counts.
 
-## OBJ exporter (DONE — `tools/pa_obj.py`)
-`tools/pa_obj.py GG/P0/PA00.T --entry 2 [--sub N] [-o out.obj]` decodes the stride-28
+## OBJ exporter (DONE — `tools/pa/pa_obj.py`)
+`tools/pa/pa_obj.py GG/P0/PA00.T --entry 2 [--sub N] [-o out.obj]` decodes the stride-28
 sub-object table, reads each sub-object's int16 vertex pool, walks its variable-length
 primitive stream, triangulates quads, and writes a Wavefront `.obj` (one `o subN` group
 per sub-object; output to `disc_map/`, gitignored). Validated:
@@ -183,7 +183,7 @@ edge cases) are dropped so output is always a valid mesh.
 1. ~~**Gouraud vidx (0x34/0x3c):**~~ **DONE 2026-06-11** — RE'd live from the relocation
    handlers `0x80057674`/`0x800577a4`: gouraud verts are stride-4 (interleaved with
    per-vertex normal indices), first vertex at record+0x12 (tri) / +0x16 (quad). 0
-   out-of-range across all 72 PA files. Fixed in `tools/pa_obj.py` + AC1mod
+   out-of-range across all 72 PA files. Fixed in `tools/pa/pa_obj.py` + AC1mod
    `core/pa_parser.py`.
 2. **Textures/UVs:** decode the UV+clut(`0x7980`)/tpage(`0x009b`) shading words into
    real CLUT/tpage coords + a TIM source so the OBJ can carry a material.

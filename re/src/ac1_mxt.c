@@ -9,7 +9,7 @@ static uint32_t rd32(const uint8_t *p) {
            ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
 }
 
-/* Heuristic mirror of tools/extract_t.py: count-first archives store the entry
+/* Heuristic mirror of tools/extract/extract_t.py: count-first archives store the entry
  * count in u16[0] with offsets beginning at u16[1] (FDAT.T, MENU_TIM.T);
  * offset-first store offset[0]==1 in u16[0]. */
 static ac1_toc_kind detect_kind(const uint8_t *s0, uint32_t sectors) {

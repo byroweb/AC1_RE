@@ -15,13 +15,13 @@ For each entry we emit, per detected message:
 Plus a human-readable per-container dump (<name>_text.txt) for translators.
 
 Usage:
-  python3 tools/scan_text.py --toc disc_map/extracted/MIS_T/toc.json
-  python3 tools/scan_text.py --toc .../toc.json --csv disc_map/text_inventory.csv --append
-  python3 tools/scan_text.py --toc .../toc.json --self-test   # FDAT-201 gate helper
+  python3 tools/extract/scan_text.py --toc disc_map/extracted/MIS_T/toc.json
+  python3 tools/extract/scan_text.py --toc .../toc.json --csv disc_map/text_inventory.csv --append
+  python3 tools/extract/scan_text.py --toc .../toc.json --self-test   # FDAT-201 gate helper
 """
 import json, struct, re, os, sys, argparse, csv
 
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FILEMAP = os.path.join(HERE, "disc_map", "disc_files.json")
 RAW, OFF, DATA = 2352, 24, 2048
 

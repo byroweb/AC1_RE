@@ -39,9 +39,9 @@ Two linked unknowns are answered here (see docs/MISSION_STAGES.md):
     Verified: chunk-11 record count == max hw3 for missions 0,1,2,3.
 
 Usage:
-  tools/mission_stages.py --fdat DIR --mission N [--stage BYTE] [--stagemap FILE]
-  tools/mission_stages.py --decode-stage BYTE         # just print PA file(s)
-  tools/mission_stages.py --stream 2N+1.bin --stage BYTE
+  tools/mission/mission_stages.py --fdat DIR --mission N [--stage BYTE] [--stagemap FILE]
+  tools/mission/mission_stages.py --decode-stage BYTE         # just print PA file(s)
+  tools/mission/mission_stages.py --stream 2N+1.bin --stage BYTE
 """
 import argparse
 import json

@@ -17,9 +17,10 @@ Operates ON TOP of the existing [RTL] disc (preserves the name-shaper FDAT patch
 import os, struct, shutil, sys
 
 HERE   = os.path.dirname(os.path.abspath(__file__))
+ROOT   = os.path.dirname(os.path.dirname(HERE))
 BIN    = "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1) [RTL].bin"
 MENU_SRC = "/tmp/MENU_TIM_original.T"          # pristine MENU_TIM (== retail, verified)
-FDAT_SRC = os.path.join(HERE, "fdat_patched.T")# current FDAT (has the name shaper)
+FDAT_SRC = os.path.join(ROOT, "fdat_patched.T")# current FDAT (has the name shaper)
 BAND   = "/tmp/title_band2.raw"                # 256x240 4bpp word band (30720B), centered layout
 DESC   = "/tmp/desc_kanji2.bin"                # 6x12B descriptors, tpage 0x39, w=144 h=40 v=cid*40
 

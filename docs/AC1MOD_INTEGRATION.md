@@ -11,7 +11,7 @@ to become **AC1mod**, a disc browser + PS1 stage/model viewer. Companion to
   `DetailPanel.show_entry(entry)` (main.py ~L948) routes by `_entry_is_text` /
   `_entry_is_hex` / `is_audio`, else falls through to the image page.
 - `core/jpsxdec.py` — disc index wrapper (jPSXdec `.idx` → `IndexEntry` list, same
-  index format we parse in `tools/build_filemap.py`).
+  index format we parse in `tools/extract/build_filemap.py`).
 - `core/project.py`, `core/workers.py` — project file + background workers.
 - `core/pa_parser` exists **only as a stale `.pyc`** (no source) — replace it.
 - Deps: PyQt6, Pillow. **`PyQt6.QtOpenGLWidgets` is available**; PyOpenGL /
@@ -20,8 +20,8 @@ to become **AC1mod**, a disc browser + PS1 stage/model viewer. Companion to
 ## Plan — 3 pieces
 
 ### 1. `core/pa_parser.py` (port from this repo)
-Port the confirmed decode from `tools/pa_parse.py` (+ the forthcoming
-`tools/pa_obj.py`): `.T` TOC read → size-prefixed block → per-sub-object vertex
+Port the confirmed decode from `tools/pa/pa_parse.py` (+ the forthcoming
+`tools/pa/pa_obj.py`): `.T` TOC read → size-prefixed block → per-sub-object vertex
 pools (int16 x,y,z) + variable-length primitive records (`reclen = 4+byte[1]*4`,
 `type = byte[3]&0xBC`, pool-relative uint16 indices). Output a plain
 `Mesh{vertices:[(x,y,z)], faces:[(i,j,k[,l], color/uv)]}` dataclass — engine-agnostic
@@ -53,14 +53,14 @@ it, loading the block via `core/pa_parser`.
 ## Dependencies / sequencing
 - **Blocked on** the `re/pa-obj-export` agent task: it resolves the stride-28
   sub-header (per-sub-object vertex-pool boundaries) and the running-counter vs.
-  real-index question, and produces `tools/pa_obj.py`. The `Mesh` builder in
+  real-index question, and produces `tools/pa/pa_obj.py`. The `Mesh` builder in
   `core/pa_parser.py` should reuse exactly that decode. Do not implement the viewer's
   geometry decode before that lands, or it'll disagree with the validated one.
 - After it lands: (a) port → `core/pa_parser.py`, (b) add `ModelView3D` (QPainter
   v1), (c) hook `show_entry`, (d) manually verify a stage renders as a coherent shape.
 
 ## Verification
-- `python3 tools/pa_obj.py …` produces a mesh whose `f` indices are all valid and
+- `python3 tools/pa/pa_obj.py …` produces a mesh whose `f` indices are all valid and
   whose shape is recognizable (open it in any OBJ viewer / Blender).
 - In AC1mod: select a `PA##.T` geometry entry → page 3 shows an orbitable mesh that
   matches the OBJ. Cross-check ≥2 stages.

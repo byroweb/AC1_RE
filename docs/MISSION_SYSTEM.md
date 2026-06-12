@@ -3,8 +3,8 @@
 Target **SLUS-01323 (v1.1)**. Code-side companion to `REFERENCE.md` §11/§12,
 `docs/PA_HEADER.md` (slot binding) and `docs/PA_FORMAT.md`. All addresses are in
 the **mission overlay = FDAT.T entry 202 (0xCA)**, loaded to base `0x8004ADA0`
-(extract with `tools/extract_t.py`; not in the entry-201 Ghidra DB). Offsets
-verified on the **pristine** bin. Tool: `tools/mission_parse.py`.
+(extract with `tools/extract/extract_t.py`; not in the entry-201 Ghidra DB). Offsets
+verified on the **pristine** bin. Tool: `tools/mission/mission_parse.py`.
 
 Notation: `CONFIRMED` = byte/disasm-verified here. `HYPOTHESIS` = inferred, not yet
 ground-truthed in DuckStation.
@@ -89,7 +89,7 @@ Empty slots carry `hw3 == -1` and zero position. Mission 0 has 6 non-empty
 records; mission 2 has different types/positions. Binding to geometry & display
 slot is `FUN_80078B14` (`+0x0A` = block index → 44-byte record table
 `0x8019F538`; `÷44` magic = display-slot 1..16). Dump:
-`tools/mission_parse.py --stream <2N+1>.bin --spawns`.
+`tools/mission/mission_parse.py --stream <2N+1>.bin --spawns`.
 
 > Note: this is the **placement/spawn list**. Whether AI/HP live here (hw8..hw19)
 > or are looked up by `hw7` (type id) in a separate stat table is not yet

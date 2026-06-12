@@ -171,7 +171,7 @@ Wiping the live name with `ff ff ff ff` clobbered the `0x3e` (`>`) terminator, s
 terminator (or restore one) — never leave the string unterminated.
 
 ### Tooling added
-`tools/ac1_mcp_input.py` — does the DuckStation MCP Streamable-HTTP handshake and
+`tools/emu/ac1_mcp_input.py` — does the DuckStation MCP Streamable-HTTP handshake and
 fires a frame-timed `input_sequence`. Default = 2 Start presses; **use a ~2 s
 (120-frame) gap** to step demo-reel → title → main menu reliably (a 1 s gap is too
 fast and the attract/demo reel re-arms). The title screen is the only demo-reel

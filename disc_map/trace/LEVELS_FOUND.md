@@ -19,7 +19,7 @@ u32[1] = 0x80 (flags/count)
          walk by block size: 0x08 -> 0x08+size -> ... until u32[0] (geom end)
 <geom_end>.. = the other mission chunks (spawn table chunk 12, script, etc.)
 ```
-These blocks use the **exact PA geometry format** already decoded by `tools/pa_obj.py`
+These blocks use the **exact PA geometry format** already decoded by `tools/pa/pa_obj.py`
 (sub-object table + int16 vertex pool + variable primitive records). They decode with
 **0% out-of-range faces** (clean) using the gouraud-fixed decoder.
 
