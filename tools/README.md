@@ -22,7 +22,7 @@ tools/ghidra/overlay2c.sh 0x80082190 0x1b0          # decompile the name-input h
   targets → `.L` labels, `jal` → `func_<addr>`, `$`-prefixed regs). Out-of-slice
   branch targets get trailing stub labels + a WARNING (means `len` was too small
   — grow it to capture the whole function).
-- m2c lives at `~/Applications/m2c` (venv at `.venv`).
+- m2c lives at your m2c install (e.g. `~/Applications/m2c`; venv at `.venv`).
 
 **Validated** against hand-RE'd routines (cursor.update original `n*16+8`, the
 name handler = `farsi_name_input.c`, `box_init` alloc `0x800501bc` + `+0x74`

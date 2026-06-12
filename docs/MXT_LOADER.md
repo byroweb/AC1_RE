@@ -19,7 +19,7 @@ One 12-byte record per `mxtid` (archive). Built at boot by `mxt_register`:
 | +4  | base `CdlLOC`    | file start on disc (min,sec,frame BCD + 1 pad)   |
 | +8  | `u32` size       | file size in bytes                               |
 
-Live dump (slot 10), confirmed:
+Live dump, confirmed:
 
 | mxtid | file            | base CdlLOC | size        | offtbl ptr  |
 |-------|-----------------|-------------|-------------|-------------|
@@ -168,7 +168,7 @@ the front-end via `DAT_80039c5e` = 0/1/2.
 
 ### Validation
 - Carved `ovl202_mission.bin` == prior `disc_map/fdat_entry202.bin` **exactly**.
-- vs **live RAM** (slot-10 mission, paused): 99.91% identical; **100% of code
+- vs **live RAM** (in-mission, paused): 99.91% identical; **100% of code
   matches** (round-think bytes identical); the only diffs are the final ~16 KB
   (overlay BSS/scratch mutated at runtime). The static carve is a deterministic,
   checksum-valid stand-in for a live dump — better for analysis (no runtime mutation).

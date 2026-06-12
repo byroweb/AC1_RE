@@ -32,7 +32,7 @@ texture variant).
 52=0x34 gouraud tri · 60=0x3c gouraud quad · 164=0xa4 / 172=0xac = high-bit textured
 (sprite/billboard).
 
-## Implication for AC1mod (Phase 3)
+## Implication for the companion AC1mod viewer (separate repo)
 - The part-scale effect meshes are real geometry — the viewer can render them as objects
   (placed per-instance), not skip them.
 - The sprite/billboard slots (ext=32640) should still be excluded from raw-coord scene

@@ -19,7 +19,7 @@ flagged renderable** by the existing renderer. That means the Farsi
 `draw_string` path (`string_render.c`) can display translated MIS/FDAT text
 **with no new renderer** — only the bytes change (+ checksum recompute, §6).
 
-## Deliverables (this session)
+## Deliverables
 - `disc_map/disc_files.json` — exact file map (133 files) from the jPSXdec `.idx`,
   re-pointed at the **pristine** backup image.
 - `tools/extract/build_filemap.py` — `.idx` → file map (validated vs `REFERENCE.md` §9).

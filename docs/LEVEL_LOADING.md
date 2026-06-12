@@ -65,7 +65,7 @@ inside **entry `2N+1`**, a chunk stream of `[u32 len][payload]` records:
 
 56 of the mission entries carry a chunk-7 table (3–505 sections each). Spawn
 coordinates (chunk 12) and section translations share the same world space —
-verified by overlaying spawns on assembled levels in the AC1mod viewer.
+verified by overlaying spawns on assembled levels in the companion AC1mod viewer (separate repo).
 
 ### The placement table (chunk 7, CONFIRMED)
 
@@ -169,7 +169,7 @@ the shared pack. e200's internal layout differs (geometry from +0x28; lighting a
 | `disc_map/trace/assemble_levels.py` | batch-assembles all 56 levels from FDAT → OBJ (`o floor/ceiling/wall` groups) + top-down PNGs (outputs are game-derived: never distribute) |
 | `tools/pa/pa_obj.py` | PA geometry block decoder (gouraud 0x34/0x3c stride-4 RESOLVED — see `PA_FORMAT.md`) |
 | `tools/mission/mission_parse.py` | spawn table / chunk stream inspection |
-| AC1mod viewer (PSXmod repo) | `core/level.py` + CLI `level N --no-ceiling --spawns`; GUI Missions window has Level/Ceilings toggles; spawns render in-place on the level |
+| companion AC1mod viewer (separate repo) | `core/level.py` + CLI `level N --no-ceiling --spawns`; GUI Missions window has Level/Ceilings toggles; spawns render in-place on the level |
 
 ---
 

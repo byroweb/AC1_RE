@@ -2,7 +2,7 @@
 
 Status (2026-06-09): emblem **palette + format confirmed statically**; exact pixel
 **offset + count** pending a DuckStation byte-diff. Tooling already round-trips
-(`AC1mod/core/memcard.py`, `ac1mod_cli.py memcard`).
+(in the companion AC1mod viewer (separate repo): its `core/memcard.py` and `memcard` CLI).
 
 ## Memory card (standard PS1, 128 KiB)
 - 16 blocks × 8192 B. Block 0 = directory; frame 0 = `MC` header; frames 1..15 =
@@ -14,8 +14,8 @@ Status (2026-06-09): emblem **palette + format confirmed statically**; exact pix
   `+0x04` title Shift-JIS (full-width); `+0x60` icon CLUT (16×u16 BGR555);
   `+0x80..` 16×16 4bpp icon frame(s).
 
-The reference card (`~/.local/share/duckstation/memcards/Armored Core (USA)
-(Reprint)_1.mcd`) holds one AC1 save: slot 1, code `BASCUS-94182A`, title
+The reference card (in your DuckStation memcards directory, e.g.
+`~/.local/share/duckstation/memcards/<game>_N.mcd`) holds one AC1 save: slot 1, code `BASCUS-94182A`, title
 `ARMOREDCORE01 SORTY000`. Its PS1 icon decodes to the **AC logo** (confirms the
 card parser + 4bpp/BGR555 path).
 
@@ -54,7 +54,7 @@ proper is the `0xFF` tail.
    distinctive pattern** (e.g. a diagonal of pure colour 0, then colour 8) so the
    indices are unmistakable. Exit/save back to the **same card**.
 2. `export_memory_card_save` (or copy the `.mcd`) **before and after**, then diff:
-   `ac1mod_cli.py` reads both; the changed byte span = the emblem pixel region →
+   the companion viewer's memcard CLI reads both; the changed byte span = the emblem pixel region →
    exact `EMBLEM_PIX_OFF` and length (→ count). The drawn indices vs. our nibble
    order confirm bit/nibble packing and row order.
 3. While in the editor, `dump_vram` / `read_vram_region`: the emblem is uploaded
@@ -69,10 +69,11 @@ Ghidra (the EXE currently loaded is the base + garage; its string table has no
 `EMBLEM`). The byte-diff above is faster and decisive, so do that first.
 
 ## Tooling (done, round-trip verified)
+Implemented in the companion AC1mod viewer (separate repo):
 - `core/memcard.py`: `read_card`, save list + AC1 detect, `icon_rgba`,
   `emblem_palette`, `decode_emblem`, `encode_emblem` (matches any GIF/PNG to the
   fixed 16-colour palette, nearest-colour, packs 64×64 4bpp), `patch`/`save`
   (recomputes the directory XOR checksum). All offsets are parameters.
-- `ac1mod_cli.py memcard {list,icon,emblem-export,emblem-import}` — `--card`,
+- `memcard {list,icon,emblem-export,emblem-import}` CLI — `--card`,
   `--slot`, `--image`, `--pix-off`, `-o`. Verified: import a PNG → export → blank
   flips to drawn, bytes byte-identical after reload, save stays a valid AC1 file.

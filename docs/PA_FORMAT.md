@@ -106,7 +106,7 @@ normal-pool index sits between each). Reading them contiguously (the old `+0x14`
 guess) picked up the ×8 normal indices as vertices → out of range. See
 `disc_map/trace/gouraud_slot_resolved.md`.
 
-**CORRECTION (2026-06-08, visual RE via AC1mod):** every record begins with a
+**CORRECTION (2026-06-08, visual RE via the companion AC1mod viewer):** every record begins with a
 **per-poly running-counter halfword** (0,1,2,…); the real vertex indices follow it.
 The first-index offsets were each one halfword too early for 0x20/0x28/0x2c (they
 read the counter as a vertex -> in-range but wrong topology -> spiky meshes).
@@ -183,13 +183,13 @@ edge cases) are dropped so output is always a valid mesh.
 1. ~~**Gouraud vidx (0x34/0x3c):**~~ **DONE 2026-06-11** — RE'd live from the relocation
    handlers `0x80057674`/`0x800577a4`: gouraud verts are stride-4 (interleaved with
    per-vertex normal indices), first vertex at record+0x12 (tri) / +0x16 (quad). 0
-   out-of-range across all 72 PA files. Fixed in `tools/pa/pa_obj.py` + AC1mod
-   `core/pa_parser.py`.
+   out-of-range across all 72 PA files. Fixed in `tools/pa/pa_obj.py` (and ported into
+   the companion AC1mod viewer's `core/pa_parser.py`, separate repo).
 2. **Textures/UVs:** decode the UV+clut(`0x7980`)/tpage(`0x009b`) shading words into
    real CLUT/tpage coords + a TIM source so the OBJ can carry a material.
 3. **Stage assembly:** entry 0 / entry 1 directory → how blocks place into a full map
    (the per-block bboxes are part-scale; the map header must position them).
-4. Port walker `0x800574D8` + emitter `0x8005A57C` into PSXmod as **AC1mod**.
+4. Port walker `0x800574D8` + emitter `0x8005A57C` into the companion AC1mod viewer (separate repo).
 
 
 ## Scene assembly (world-coordinate finding, 2026-06-08)
@@ -207,7 +207,7 @@ view shows a clear designed level). Blocks whose bbox exceeds ~±12000 are the
 **object / MT / effect slots** (incl. the universal e125+ gouraud "effect" slots):
 they share a LOCAL origin and are positioned **per-instance by mission data** (object
 template + entry-1 placement vectors, see docs/PA_HEADER.md / docs/MISSION_SYSTEM.md),
-not by their own coords. AC1mod's `scene_mesh()` / CLI `--scene` merges the in-range
+not by their own coords. The companion viewer's `scene_mesh()` / CLI `--scene` merges the in-range
 (world-coord) blocks to show the stage; precise MT placement awaits the mission-runtime
 decode.
 

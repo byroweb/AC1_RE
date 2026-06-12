@@ -1,20 +1,16 @@
 # AC1 Combat / Physics / Missiles — RE notes
 
 Target **SLUS-01323 (v1.1)**. Mix of static (Ghidra DB = FDAT entry-201 / base
-exe) and **live ground-truth in DuckStation** inside the first Raven-test arena
-(save state **slot 10** = arena, paused; backup of all slots in
-`savestate_backup_20260609/`).
+exe) and **live ground-truth** inside the first Raven-test arena.
 
 Notation: `CONFIRMED` = byte/disasm/live-verified. `HYPOTHESIS` = inferred.
 
 ---
 
 ## 0. How to get here (live)
-- Boot disc, `load_state` **slot 1** (Raven-test intro text) → `Start`/`Cross`
-  through the briefing → "Now Loading" → arena. Pause immediately.
-- `slot 10` is the arena already loaded + paused (full AP). Reload it whenever the
-  fight goes bad — combat is fast and the enemy AI will wreck you (work paused +
-  `frame_step`; AP/timer only tick while running).
+- Boot the disc, take the Raven-test intro → `Start`/`Cross` through the briefing →
+  "Now Loading" → arena. Pause immediately. Work paused + `frame_step`; AP/timer
+  only tick while running. Combat is fast and the enemy AI will wreck you.
 - HUD: green vertical bar + number = **AP** (defense, decreases when hit). Left
   also shows **ENERGY** (boost gauge, drains/regens). Top = mission timer
   (lose if AP **or** timer hits 0). Right scope = current weapon + ammo
@@ -97,7 +93,7 @@ per-frame delta (acceleration), X (`+0x08`) and Y (`+0x14`) steady → standard
 mission-overlay per-frame code reached via `0x8005CB24 → 0x800674B0`. **Next:**
 re-trap the `0x801A26C4` write with a hardware-style watch and single-step the
 body to capture the `pos += vel` and the boost/gravity terms (energy gauge feeds
-boost). Tool path: slot 10 → write-watch `0x801A26C4` → step into body.
+boost). Tool path: in-arena → write-watch `0x801A26C4` → step into body.
 
 ---
 
@@ -219,7 +215,7 @@ the result from the single AP pool at `AC+0x160`. The `+0x5c` post-hit hook is w
 loss / destruction visuals and the death sequence are driven.
 
 > **Live-disasm note (2026-06-10):** decode these damage functions **only from an
-> in-mission state** (e.g. `load_state 10`). The `0x8007xxxx`/`0x8009xxxx` code is
+> in-mission state**. The `0x8007xxxx`/`0x8009xxxx` code is
 > swapped per overlay context — disassembling them from a menu/garage state shows a
 > *different* resident overlay (a jump-table dispatcher), which earlier looked like
 > the addresses were "offset." They are correct in-mission. All §8 finds were
@@ -407,7 +403,7 @@ mission-overlay routines `0x801C75BC` / `0x801C8CBC` / `0x801C91CC` / `0x801C981
 **Zero an enemy AC's method table `+0x4C..+0x5C` (20 bytes)** → the per-AC passes
 skip it (null check) → the NPC is **fully inert**: no movement, no aiming, no
 firing. Verified live: enemy position byte-identical across a live run, no muzzle
-flashes, player AP unchanged. Reversible by `load_state` (the table is restored).
+flashes, player AP unchanged. Reversible (restoring the table re-enables the AC).
 
 ```
 enemy idx1 @0x801A2828:  write 20 zero bytes at 0x801A2874   (+0x4C..+0x5C)
@@ -488,5 +484,5 @@ setting the desired state), not a RAM freeze.
 - `tools/` + ad-hoc python diffs of full `dump_ram` snapshots
   (`/tmp/ac1_rest.bin`, `ac1_move1/2.bin`, `ac1_pre/post.bin`).
 - Method that worked best: **dump full RAM at controlled frame-stepped states and
-  diff in python** (the emulator's iterative memory_scan was unreliable across
-  `load_state`). Monotonic-delta filtering + object-array slot diffing.
+  diff in python** (iterative memory_scan was unreliable across state reloads).
+  Monotonic-delta filtering + object-array slot diffing.

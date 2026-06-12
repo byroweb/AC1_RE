@@ -27,7 +27,7 @@ big-mesh slots they fill (e.g. phase 0 → slots 10,13,16,19,22):
 | 1 | 11,14,17,20,23 | 12 | PA05, PA09, PA21 |
 | 2 | 12,15,18,21,24 | 24 | PA04, PA08, PA16 |
 
-## Slot map (by region, with visual ID from the AC1mod renderer)
+## Slot map (by region, with visual ID from the companion AC1mod viewer)
 | Slots | present in | subs | faces | class | looks like |
 | --- | --- | --- | --- | --- | --- |
 | **e2-e4** | 24 files | 3 | ~210-296 | FIXED | chunky blocky structures (buildings / terrain pieces) |
@@ -55,7 +55,7 @@ such file looked the same: we were defaulting to the largest slot.)
 - Identity of the **universal sliver slots** (e125+) — sprites/effects? Needs the
   prim-type / sprite-primitive decode.
 
-  PARTIAL (this session): e125+ are **gouraud-heavy** (types 0x34/0x3c), and gouraud
+  PARTIAL: e125+ are **gouraud-heavy** (types 0x34/0x3c), and gouraud
   records **interleave vertex + per-vertex-colour indices** — the 4 quad vertices are
   at byte offsets 0x14,0x18,0x1c,0x20 (stride 4, skipping the colour halfword), not a
   contiguous run. Decoding that way recovers ~150 faces, but some sub-objects still

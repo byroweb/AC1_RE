@@ -1,6 +1,6 @@
 # Sub-trace D — spawn→geometry binding (live, training mission, 2026-06-11)
 
-Source: DuckStation, pristine/backup disc, save slot 1 (training mission). PA file =
+Source: pristine/backup disc, training mission. PA file =
 P0\PA00.T (stage byte `0x8004121B = 0x00`). Artifacts: `block_table_8019F538.bin`,
 `inst_table_8019FAB8.bin`, `parse_tables.py`.
 
@@ -45,6 +45,6 @@ The block-record count fields (`+4/+6 = count<<2`) are **runtime-computed and do
 appear in the raw PA file headers** (scan for matching +4/+6 in PA00 → no hit). So a
 viewer cannot map block index → PA entry by header match. The mapping is built at load
 time: blk[0] from PA entry-1; blk[1..N] from the mission **chunk-11** stream
-(FUN_800739AC). To wire AC1mod (Phase 3): walk the mission chunk stream
+(FUN_800739AC). To wire the companion AC1mod viewer (separate repo): walk the mission chunk stream
 (`tools/mission/mission_parse.py`) to recover, per block index, which PA entry / sub-object set
 the geometry came from, then place spawns (instance pos + block→geometry) in the scene.

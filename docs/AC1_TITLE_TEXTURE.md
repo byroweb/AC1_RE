@@ -16,7 +16,7 @@ Confirmed Farsi (user-approved 2026-06-08):
 (Word-art is rendered with PIL+raqm full Unicode shaping — no font-glyph-set
 limits, so hamza etc. are fine.)
 
-## Diagnosis (done this session)
+## Diagnosis
 - The titles are currently **corrupted/garbled** (see `docs/screens/` once added;
   zoomed grab shown to user). Garbled since before any of today's pokes — NOT
   caused by the live label experiments.
@@ -38,7 +38,7 @@ variable-width Farsi atlas — only `draw_string` (the `>`-terminated path, a C
 reimpl) can. Localizing those needs a renderer patch and is OUT OF SCOPE here.
 (The `>`-terminated DATA rows Sorties/Success/Failure/Overall DO localize via
 draw_string — verified live, bytes computed in `tools/farsi/shape_data_labels.py`, not
-yet baked.) See that file + this session's notes if revisiting the font path.
+yet baked.) See that file if revisiting the font path.
 
 ## Plan (next session)
 1. **Locate source.** Find the FDAT entry holding the title texture (candidate:
@@ -93,7 +93,7 @@ RE the title banner draw and redirect it to a `draw_string` of the shaped Farsi 
 to read big. Under this approach the "destroyed word-art" is moot — we stop using
 those rects as titles. The OLD bitmap plan below (steps 2–3) is SUPERSEDED.
 
-## TITLE DRAW — FULLY RE'd (2026-06-08, live, slot 3 hub)
+## TITLE DRAW — FULLY RE'd (2026-06-08, live, in the hub)
 - **Title sprite:** one 32-byte textured-rect prim, code 0x64, drawn 1:1 at **screen
   (90,72) size 128×24** from **tpage 0x0007** (global/shared menu page). Prim built
   in the buffer at ~0x801D6948 (u/v at prim+0x18).
@@ -126,7 +126,6 @@ and blitted live into the font sheet at V120–191 (DuckStation write_vram_regio
 (448,120) 64×72) — i.e. exactly where the 6 descriptors already point, **tpage 7, no
 code changes**. Rotated all 6 categories: سیستم·مأموریت·فروشگاه·گاراژ·رده‌بندی·نامه all
 render crisp & correctly shaped (hamza + ZWNJ intact). Shots: docs/screens/title_crisp_*.png.
-Proof save state = **DuckStation slot 4** (live VRAM hack, on MAIL). Clean hub = slot 3.
 This validates rendering + descriptor map + draw RE completely.
 
 ## PERMANENT-BAKE PLAN (remaining)
@@ -185,7 +184,6 @@ solved by a **zero-code "dead-kanji repurpose"**:
   the name shaper). Backup: `[RTL].bin.pre-title.bak`.
 - Cold-boot verified: all 6 titles render crisp (گاراژ·رده‌بندی·ایمیل·سیستم·مأموریت·فروشگاه),
   name atlas + Farsi menus intact, no NOW-LOADING hang. Shots docs/screens/baked_title_*.png.
-  Baked-disc hub save state = DuckStation slot 6.
 - **Centering (v2):** the title element X (90) is allocated at a varying RAM address and
   written once at init (not a patchable static const), so instead of moving the sprite the
   words are positioned WITHIN the texture. Layout changed to a **1-col × 6-row band, 144×40
@@ -217,7 +215,7 @@ Disc is 100% packed (no free sectors in MENU_TIM or FDAT) → store words IN the
   (Find writer: hub menu init. Live source confirmed; const location TBD.)
 - **Checksums + build:** fix_overlay_checksum (entry-201, seed 0x12345678) → build_rtl_patch
   → boot → verify ×6 + name screen intact. NOTE entry-201 checksum MUST be recomputed.
-- Proof states: slot 4 (tpage-7), slot 5 (tpage-11 final config). tools/farsi/title_wordart.py.
+- Rendering: tools/farsi/title_wordart.py (tpage-7 and tpage-11 final config).
 
 ## (superseded earlier idea) Bake order: add words TIM entry to MENU_TIM.T (+fix entry checksum) → write upload hook
   @0x800CF360 + trampoline at title fn 0x80065400 → patch 6 descriptors @0x800B6E4C (u,v +
@@ -225,9 +223,9 @@ Disc is 100% packed (no free sectors in MENU_TIM or FDAT) → store words IN the
   + confirm name screen intact.
 
 ## Plan (next session) — SUPERSEDED by Option A above; kept for reference
-- DuckStation `load_state` **slot 2** = the DATA screen ([RTL] disc, save loaded
-  from card, pilot سلام). From there: Circle → hub carousel; Left/Right rotate
-  categories; the title banner is the garbled text at the top.
+- The DATA screen ([RTL] disc, save loaded from card, pilot سلام): Circle → hub
+  carousel; Left/Right rotate categories; the title banner is the garbled text at
+  the top.
 - Reach hub from cold boot: see `AC1_DATA_SCREEN.md` (demo-reel skip: 2 Start
   presses, 120-frame gap; tool `tools/ghidra/ac1_mcp_input.py`).
 - VRAM tooling: `dump_vram` (png/bin), `read_vram_region`. Today's dumps were in

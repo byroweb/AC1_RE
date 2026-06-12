@@ -11,15 +11,11 @@ for a fresh chat, is to **Farsi-localize the DATA screen labels** (still English
 | `docs/screens/salaam_zoom.png` | zoom of سلام (shaped, ligature) — the round-trip visual |
 | `docs/screens/load_data_list.png` | the LOAD DATA list (NO./AC NAME/SORTIES/CREDITS) |
 
-## Quick resume (DuckStation save state)
-- **Slot 2 = this exact DATA screen**, on the baked `[RTL]` disc, save loaded from
-  the memory card, pilot = سلام. `load_state` slot 2 to land right here.
-- Slot 10 = name screen with سلام typed (pre-confirm). Slot 1 = post-confirm test
-  briefing. Slots 5/6/7/9 = various name-entry screens.
+## The سلام save
 - Memory card slot 0 file `BASCUS-94182A` holds the سلام save (title
   `ARMOREDCORE01 SORTY000`).
 
-## How to get here from a cold boot (if no save state)
+## How to get here from a cold boot
 1. `boot_game .../Armored Core (v1.1) [RTL].cue`. Let the PS / FromSoftware /
    ASSEMBLE-SYSTEM intro play; press Start to reach the "Push Start Button" title.
 2. **Beat the demo reel.** The title flips to the attract/demo reel after a few

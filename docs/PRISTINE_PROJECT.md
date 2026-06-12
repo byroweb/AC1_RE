@@ -49,9 +49,9 @@ not C source. Because the resident bytes are identical, it transfers 1:1:
 ## Regenerate from scratch
 
 ```bash
-export XDG_CONFIG_HOME=/home/byron/snap/ghidra/current/.config   # so headless finds ghidra_psx_ldr
+export XDG_CONFIG_HOME="$HOME/snap/ghidra/current/.config"   # so headless finds ghidra_psx_ldr
 HL=/snap/ghidra/current/ghidra_12.0_PUBLIC/support/analyzeHeadless
-cd /home/byron/Desktop/AC_1_USA_RE
+cd <repo>
 rm -rf AC_1_USA_2048_RE.gpr AC_1_USA_2048_RE.rep AC_1_USA_2048_RE.lock*
 
 # 1. dump markup from the FARSI project (read-only)

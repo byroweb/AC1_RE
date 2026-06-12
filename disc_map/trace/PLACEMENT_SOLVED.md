@@ -61,8 +61,6 @@ render-time k. (Nassau: records 15–24 form the tunnel-depth brightness/fog gra
   shared scene pack; its 14 blocks are also resident during other missions (table @
   `0x801A5FF0`). Entries 41/49/57 (m20/24/28) have only 4 chunks — they likely reference
   shared scenes the same way. **Open**: where the mission→shared-scene selection happens.
-- Save-state note: slot 1 = DGE, slot 2 = RTT (swapped vs. expectation; RTT's briefing
-  thumbnail shows the green X).
 
 ## What stays open (minor)
 

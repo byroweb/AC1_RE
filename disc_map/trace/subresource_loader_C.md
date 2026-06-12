@@ -68,7 +68,7 @@ mission — missions reuse stages). Sub-resource bytes `00 03 01 01 00 03 ff ff`
 | 6 | 0xff | (none) |
 | 7 | 0xff | (none) |
 
-## Implication for AC1mod (Phase 3)
+## Implication for the companion AC1mod viewer (separate repo)
 To reconstruct a stage's full asset set: load the main PA (stage byte), then for each of
 the 8 sub-resource bytes load entry `byte+ADDEND[slot]` (skip 0xFF). These are the
 stage's chosen objects/MTs/effects — exactly the entries the mission then instances via

@@ -1,7 +1,7 @@
 # Gouraud 0x34/0x3c vertex-index slot — RESOLVED (live trace, 2026-06-11)
 
-Source: live DuckStation, pristine/backup disc (SLUS-01323 v1.1), training mission
-(save slot 1). Relocation jump table `0x8004B184` (mission/geometry overlay loaded).
+Source: live, pristine/backup disc (SLUS-01323 v1.1), training mission.
+Relocation jump table `0x8004B184` (mission/geometry overlay loaded).
 
 ## Method
 Read the relocation-walker handler jump table at `0x8004B184` (word stride,
