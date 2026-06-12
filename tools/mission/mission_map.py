@@ -11,7 +11,7 @@ Reads a mission CHUNK-STREAM entry (FDAT entry 2N+1, e.g. extracted NNN.bin). Re
 a PNG with one dot per spawn, coloured by type id, sized for visibility.
 
 Usage:
-  python3 tools/mission_map.py disc_map/extracted/FDAT_T/entries/003.bin -o /tmp/m1.png
+  python3 tools/mission/mission_map.py disc_map/extracted/FDAT_T/entries/003.bin -o /tmp/m1.png
 """
 import sys, os, struct, argparse, colorsys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

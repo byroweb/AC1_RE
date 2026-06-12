@@ -46,5 +46,5 @@ appear in the raw PA file headers** (scan for matching +4/+6 in PA00 → no hit)
 viewer cannot map block index → PA entry by header match. The mapping is built at load
 time: blk[0] from PA entry-1; blk[1..N] from the mission **chunk-11** stream
 (FUN_800739AC). To wire AC1mod (Phase 3): walk the mission chunk stream
-(`tools/mission_parse.py`) to recover, per block index, which PA entry / sub-object set
+(`tools/mission/mission_parse.py`) to recover, per block index, which PA entry / sub-object set
 the geometry came from, then place spawns (instance pos + block→geometry) in the scene.

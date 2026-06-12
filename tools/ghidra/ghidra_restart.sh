@@ -10,7 +10,7 @@
 # the GhidraMCP plugin start its server on 127.0.0.1:8080. Health-check:
 #   curl -s --max-time 5 http://127.0.0.1:8080/list_functions
 #
-# Usage: tools/ghidra_restart.sh
+# Usage: tools/ghidra/ghidra_restart.sh
 set -uo pipefail
 
 PROJ_DIR="/home/byron/Desktop/AC_1_USA_RE"

@@ -33,13 +33,13 @@ Verified on PA00 entry 2 (3 sub-objects: 122/14/44 verts; prim walks land exactl
 section boundaries 0x1218 / 0x1a38 / 0x1f34; every index < pool size).
 
 Usage:
-  python3 tools/pa_obj.py GG/P0/PA00.T --entry 2
-  python3 tools/pa_obj.py GG/P0/PA00.T --entry 2 --sub 0 -o disc_map/pa00_e2_s0.obj
-  python3 tools/pa_obj.py GG/P2/PA20.T --entry 3 -o disc_map/pa20_e3.obj
+  python3 tools/pa/pa_obj.py GG/P0/PA00.T --entry 2
+  python3 tools/pa/pa_obj.py GG/P0/PA00.T --entry 2 --sub 0 -o disc_map/pa00_e2_s0.obj
+  python3 tools/pa/pa_obj.py GG/P2/PA20.T --entry 3 -o disc_map/pa20_e3.obj
 """
 import json, struct, sys, argparse, collections, os
 
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FILEMAP = os.path.join(HERE, "disc_map", "disc_files.json")
 RAW, OFF, DATA = 2352, 24, 2048
 
@@ -165,7 +165,7 @@ def export(block, subs_filter, out_path):
     bbox = [None] * 6  # minx,miny,minz,maxx,maxy,maxz
     type_counts = collections.Counter()
     deg = oor = 0
-    lines.append("# AC1 PA geometry export (tools/pa_obj.py)")
+    lines.append("# AC1 PA geometry export (tools/pa/pa_obj.py)")
     for s in subs:
         verts = read_verts(block, s["vtx_off"], s["vtx_cnt"])
         prims, tc, end = read_prims(block, s["prim_off"], s["prim_cnt"])

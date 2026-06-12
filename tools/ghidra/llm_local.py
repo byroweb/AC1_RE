@@ -12,9 +12,9 @@ Config via env (override per call as needed):
   LLM_LOCAL_MODEL  model id             (default qwen2.5-coder-7b-instruct)
 
 Usage:
-  echo "PROMPT" | tools/llm_local.py
-  tools/llm_local.py -p "PROMPT" [--system "..."] [--model X] [--max 2048] [--temp 0.2]
-  tools/llm_local.py --ping            # health check / list models
+  echo "PROMPT" | tools/ghidra/llm_local.py
+  tools/ghidra/llm_local.py -p "PROMPT" [--system "..."] [--model X] [--max 2048] [--temp 0.2]
+  tools/ghidra/llm_local.py --ping            # health check / list models
 """
 import os, sys, json, argparse, urllib.request, urllib.error
 

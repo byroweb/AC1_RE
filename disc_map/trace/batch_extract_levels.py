@@ -8,7 +8,7 @@ below) = ceiling; up-facing horizontal = floor; the rest = wall. (Convention may
 floor<->ceiling swap depending on winding; documented, easy to flip.)
 """
 import sys, os, struct, math, json
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools", "pa"))
 import pa_obj
 
 OUTDIR = os.path.join(pa_obj.HERE, "disc_map", "levels")

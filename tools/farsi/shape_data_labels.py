@@ -7,7 +7,7 @@ slot byte budget. Menu/label strings are 0x00-terminated; the MISSION REPORT row
 group (Sorties/…) is '>' (0x3e)-terminated (draw_string path).
 """
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import farsi_runtime_shape as frs
 
 

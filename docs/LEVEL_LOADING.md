@@ -57,7 +57,7 @@ inside **entry `2N+1`**, a chunk stream of `[u32 len][payload]` records:
 
 | chunk | content |
 |------:|---------|
-| 0 | **geometry blocks**: from payload +8 up to `u32[0]`, a run of size-prefixed PA-format blocks (see `PA_FORMAT.md`; decode with `tools/pa_obj.py`). LOCAL coordinates, pre-rotated. |
+| 0 | **geometry blocks**: from payload +8 up to `u32[0]`, a run of size-prefixed PA-format blocks (see `PA_FORMAT.md`; decode with `tools/pa/pa_obj.py`). LOCAL coordinates, pre-rotated. |
 | 1, 2 | geometry-handler siblings (relocated alongside; LOD/extra mesh data) HYPOTHESIS |
 | 7 | **section placement table** (below) — at chunk offset 0 |
 | 12 | object/MT **spawn table** (256×40-byte records; see `MISSION_SYSTEM.md`) |
@@ -167,8 +167,8 @@ the shared pack. e200's internal layout differs (geometry from +0x28; lighting a
 | tool | does |
 |------|------|
 | `disc_map/trace/assemble_levels.py` | batch-assembles all 56 levels from FDAT → OBJ (`o floor/ceiling/wall` groups) + top-down PNGs (outputs are game-derived: never distribute) |
-| `tools/pa_obj.py` | PA geometry block decoder (gouraud 0x34/0x3c stride-4 RESOLVED — see `PA_FORMAT.md`) |
-| `tools/mission_parse.py` | spawn table / chunk stream inspection |
+| `tools/pa/pa_obj.py` | PA geometry block decoder (gouraud 0x34/0x3c stride-4 RESOLVED — see `PA_FORMAT.md`) |
+| `tools/mission/mission_parse.py` | spawn table / chunk stream inspection |
 | AC1mod viewer (PSXmod repo) | `core/level.py` + CLI `level N --no-ceiling --spawns`; GUI Missions window has Level/Ceilings toggles; spawns render in-place on the level |
 
 ---

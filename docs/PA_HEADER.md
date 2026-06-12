@@ -58,7 +58,7 @@ then `count` typed u16 entries = (blockID << 8) | subtype:
 - The trailing `0xNN03`(count) / `0xNN02` pairs associate each blockID with a child /
   instance count — an **object-tree / LOD / sub-part grouping** (HYPOTHESIS).
 - **Cross-file invariant:** PA00 ≡ PA20 ≡ PA07 for the entire list (verified byte-equal
-  via `tools/pa_parse.py … --header`). Core evidence that slot roles are fixed.
+  via `tools/pa/pa_parse.py … --header`). Core evidence that slot roles are fixed.
 
 ## Entry 1 — object/placement directory (CONFIRMED container; payload partial)
 
@@ -87,7 +87,7 @@ renderer walks per object.
 
 ## Code path — how a block binds to an object slot (CONFIRMED addresses)
 
-FDAT entry-202 overlay, base `0x8004ADA0` (extract `tools/extract_t.py`; disassemble
+FDAT entry-202 overlay, base `0x8004ADA0` (extract `tools/extract/extract_t.py`; disassemble
 `mipsel-linux-gnu-objdump -b binary -m mips:3000 -EL --adjust-vma=0x8004ADA0`).
 
 ### 1. PA loader `FUN_8004F1A8` (0x8004F1A8) — called once, `a0 = 0` (from 0x8004FA00)

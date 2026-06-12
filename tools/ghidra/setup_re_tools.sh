@@ -2,13 +2,13 @@
 # setup_re_tools.sh — idempotent installer + health report for the AC1 RE tool belt.
 #
 # Brings up / verifies everything that speeds up the reversing workflow:
-#   1. m2c       — MIPS asm -> C decompiler (drives tools/overlay2c.sh)
+#   1. m2c       — MIPS asm -> C decompiler (drives tools/ghidra/overlay2c.sh)
 #   2. toolchain — mipsel-linux-gnu-gcc / objdump (compile patches, disassemble)
 #   3. PSX loader+ PSYQ signatures (ghidra_psx_ldr) — auto-name libgpu/gte/cd/etc.
 #   4. overlay   — Ghidra script to map the runtime overlay into the base project
 #
 # Safe to re-run; only fetches what's missing. Run from anywhere.
-#   tools/setup_re_tools.sh
+#   tools/ghidra/setup_re_tools.sh
 set -uo pipefail
 
 REPO="/home/byron/Desktop/AC_1_USA_RE"
@@ -32,7 +32,7 @@ if [ ! -x "$M2C/.venv/bin/python" ]; then
   python3 -m venv "$M2C/.venv" && "$M2C/.venv/bin/pip" install -q graphviz
 fi
 if "$M2C/.venv/bin/python" "$M2C/m2c.py" --help >/dev/null 2>&1; then
-  ok "m2c runnable  (use: $REPO/tools/overlay2c.sh <addr> <len>)"
+  ok "m2c runnable  (use: $REPO/tools/ghidra/overlay2c.sh <addr> <len>)"
 else warn "m2c not runnable"; fi
 
 # 2. toolchain -------------------------------------------------------------
@@ -54,7 +54,7 @@ else
   URL="https://github.com/lab313ru/ghidra_psx_ldr/releases/download/2026.06.04/ghidra_12.0_PUBLIC_20260604_ghidra_psx_ldr.zip"
   curl -sL --max-time 90 -o "$APPS/ghidra_extensions/ghidra_psx_ldr.zip" "$URL" \
     && unzip -q "$APPS/ghidra_extensions/ghidra_psx_ldr.zip" -d "$GEXT" \
-    && ok "installed (restart Ghidra: tools/ghidra_restart.sh)"
+    && ok "installed (restart Ghidra: tools/ghidra/ghidra_restart.sh)"
 fi
 
 # 4. overlay import script -------------------------------------------------

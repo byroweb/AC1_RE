@@ -4,7 +4,7 @@ environment geometry vs part-scale common assets. Per block: part (span<4000),
 sentinel/effect (ext>30000, the 0x7F80 billboard slots), or LEVEL-candidate
 (span>=4000 and ext<=30000 = large coherent world geometry)."""
 import sys, os, struct, json
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools", "pa"))
 import pa_obj
 
 fm = json.load(open(os.path.join(pa_obj.HERE, "disc_map", "disc_files.json")))

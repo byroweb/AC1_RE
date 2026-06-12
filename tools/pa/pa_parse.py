@@ -2,7 +2,7 @@
 """
 pa_parse.py — structural parser for AC1 PA##.T stage/map packs.
 
-PA##.T is a standard count-first ".T" container (see tools/extract_t.py). Its
+PA##.T is a standard count-first ".T" container (see tools/extract/extract_t.py). Its
 entries are NOT Sony TMD/TIM — AC1 uses a *custom* geometry/map format. This tool
 dumps the confirmed structure so the format can be cracked incrementally:
 
@@ -17,13 +17,13 @@ dumps the confirmed structure so the format can be cracked incrementally:
                  and fixed-8-byte primitive records (custom, not TMD packets).
 
 Usage:
-  python3 tools/pa_parse.py GG/P0/PA00.T                 # summary of all entries
-  python3 tools/pa_parse.py GG/P0/PA00.T --entry 2 -v    # dump one block's header
-  python3 tools/pa_parse.py GG/P0/PA00.T --entry 2 --verts 0x1218 122  # decode verts
+  python3 tools/pa/pa_parse.py GG/P0/PA00.T                 # summary of all entries
+  python3 tools/pa/pa_parse.py GG/P0/PA00.T --entry 2 -v    # dump one block's header
+  python3 tools/pa/pa_parse.py GG/P0/PA00.T --entry 2 --verts 0x1218 122  # decode verts
 """
 import json, struct, sys, argparse, collections, os
 
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FILEMAP = os.path.join(HERE, "disc_map", "disc_files.json")
 RAW, OFF, DATA = 2352, 24, 2048
 

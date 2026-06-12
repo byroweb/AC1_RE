@@ -17,12 +17,12 @@ Classes:
              role / template filled with per-stage data).
   VARIABLE — sub/face counts differ across files (genuinely stage-specific).
 
-Usage: python3 tools/pa_slots.py
+Usage: python3 tools/pa/pa_slots.py
 """
 import json, struct, hashlib, os, sys, re, csv, collections
 
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(HERE, "tools"))
+HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pa_obj as PA   # reuse the validated decoder
 
 

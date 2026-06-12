@@ -3,7 +3,7 @@
 (entry 2N+1): a run of consecutive PA-format geometry blocks from offset 8 up to the
 geometry-region end (entry u32[0]). Merge at raw (world) coords -> OBJ + stats."""
 import sys, os, struct
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools", "pa"))
 import pa_obj
 
 def extract(fdat_entry_index, out_obj):

@@ -28,7 +28,7 @@ WORLD coordinates) + _topdown.png + _index.json. All outputs are game-derived ->
 gitignored, never distribute.
 """
 import sys, os, struct, math, json, colorsys
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "tools"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "tools", "pa"))
 import pa_obj
 
 OUTDIR = os.path.join(pa_obj.HERE, "disc_map", "levels_assembled")

@@ -5,7 +5,7 @@ where the level/environment geometry lives. World-scale bbox (big extent) = cand
 level; part-scale (~hundreds) = AC/MT/object.
 """
 import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "tools", "pa"))
 import pa_obj
 
 

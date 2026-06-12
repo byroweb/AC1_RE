@@ -18,12 +18,12 @@ Reuses the Mode-2/Form-1 sector math from extract_fdat.py:
 
 CLI:
   # by file id/path (looked up in disc_map/disc_files.json):
-  python3 tools/extract_t.py --file GG/MS/MIS.T
-  python3 tools/extract_t.py --file GG/P0/PA00.T --dump-entries
+  python3 tools/extract/extract_t.py --file GG/MS/MIS.T
+  python3 tools/extract/extract_t.py --file GG/P0/PA00.T --dump-entries
   # by explicit sector range:
-  python3 tools/extract_t.py --sectors 101920-103449
+  python3 tools/extract/extract_t.py --sectors 101920-103449
   # list TOC only, no payload extraction:
-  python3 tools/extract_t.py --file GG/MS/MIS.T --toc-only
+  python3 tools/extract/extract_t.py --file GG/MS/MIS.T --toc-only
 
 Outputs (default under disc_map/extracted/<name>/):
   <name>.T          flat 2048-B/sector container
@@ -32,7 +32,7 @@ Outputs (default under disc_map/extracted/<name>/):
 """
 import sys, os, json, struct, argparse, re
 
-HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FILEMAP = os.path.join(HERE, "disc_map", "disc_files.json")
 
 SECTOR_RAW  = 2352

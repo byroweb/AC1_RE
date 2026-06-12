@@ -15,14 +15,12 @@ regions/revisions are not supported and addresses will not match.
 | Path | Description |
 | --- | --- |
 | `re/` | **Behavioral C reference models** — portable, host-side, *mutable* re-implementations of game subsystems (verified against your extracted data). Flagship: `re/ac1_mxt` (container + overlay + checksum). See `re/README.md` |
-| `font_render.c` | Reconstruction of the glyph renderer (`draw_char`) |
-| `string_render.c` | Reconstruction of the string renderer (`draw_string`) |
-| `farsi_name_shape.c` / `farsi_name_input.c` | Persian shaping + name-entry handling |
-| `farsi_table.h` | Persian glyph mapping table |
-| `psx_shim.h` | Minimal PSY-Q/libps type & macro shims for building patches |
-| `farsi_*.py` | Glyph baking, texture atlas, and runtime-shaping tooling |
-| `tools/` | Extraction/repack + RE tooling (`extract_overlay.py`, `extract_t.py`, `ghidra_overlay.sh` headless decompiler, …) |
-| `extract_fdat.py`, `patch_draw_string.py` | Container extraction & patch build helpers |
+| `tools/` | All tooling, grouped by subsystem (see below) |
+| `tools/farsi/` | Persian localization toolchain — glyph baking, texture atlas, runtime shaping, plus the C patch sources (`font_render.c`, `string_render.c`, `farsi_name_*.c`, `farsi_table.h`, `psx_shim.h`) |
+| `tools/extract/` | Disc/container extraction + text inventory (`extract_t.py`, `extract_overlay.py`, `extract_fdat.py`, `build_filemap.py`, `scan_text.py`) |
+| `tools/pa/` | PA geometry-pack decoders (`pa_obj.py`, `pa_parse.py`, `pa_slots.py`) |
+| `tools/mission/` | Mission/objective + spawn-table parsing (`mission_parse.py`, `mission_stages.py`, `object_stats.py`, …) |
+| `tools/ghidra/` | Decompile/RE pipeline + emulator automation (`ghidra_overlay.sh` headless decompiler, `overlay2c.sh`, `setup_re_tools.sh`, `ac1_mcp_input.py`, …) |
 | `ghidra_scripts/` | Ghidra scripts (Java + Jython) — overlay import, headless decompile/xref |
 | `docs/REFERENCE.md` | **RE reference** — functions, addresses, `.T` format, checksum, sectors |
 | `docs/` | Subsystem write-ups — `LEVEL_LOADING.md` (mission→geometry pipeline, placement SOLVED), `MXT_LOADER.md`, `COMBAT_PHYSICS.md`, `MISSION_SYSTEM.md`, `AC1_TEXT_SYSTEM.md`, … |
