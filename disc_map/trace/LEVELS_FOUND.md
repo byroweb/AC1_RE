@@ -34,15 +34,30 @@ These blocks use the **exact PA geometry format** already decoded by `tools/pa_o
 - mxtid map (by file size in MXT registry `0x8004A2A4` word2): 0=PA00(880KB),
   1=RTIM(17MB,textures), 2=FDAT(27MB). So the runtime "container 1" reads were textures.
 
+## Per-block placement transforms — THERE ARE NONE (resolved 2026-06-11)
+Investigated per the assembly question: the blocks are **already in world coordinates**,
+so no transforms are needed. Evidence:
+- Single-block decode is clean (block 2 = a flat wall/floor panel, all type 0x2c quads,
+  no spikes — `blk2_topdown.png`). Blocks are NOT spiky/garbage.
+- Vertices are **absolute world coords** (±5000, e.g. wall edges `(-1496,-2300,2423)`/
+  `(-1496,-300,2423)` = a vertical wall at a fixed X/Z), not local ±small.
+- A floor-plan render (near-horizontal faces only, top-down) of the merged blocks shows a
+  **real designed space**: rectangular floor sections + a central feature + a circular
+  boundary (skydome) — `e67_floorplan.png`. The 3D "blob" was just a closed environment +
+  skydome viewed from outside in a flat painter renderer.
+
+**Assembly = plain concatenation of the blocks** (what `extract_level.py` already does).
+Blocks all center near the origin because the space is roughly centered there, not because
+they need positioning.
+
 ## Answer: can we extract all levels offline?
-**YES.** Every mission's environment is in `FDAT.T` (one 27 MB file, entries 2N+1), in the
-already-decoded PA geometry format. **No per-level breakpoints needed** — batch-walk each
-FDAT odd entry's geometry region and decode. Remaining work to RENDER them correctly:
-1. Find the **per-block placement transforms** (rotation+translation) — likely in the
-   chunk stream alongside/after the geometry, or a transform per block header. Apply them
-   to assemble sections into the real layout.
-2. Confirm these blocks are the render mesh vs a coarse/collision hull (112 verts/section
-   is coarse — may be one LOD; check for a finer set).
+**YES — and it's simpler than feared (no transform recovery).** Every mission's
+environment is in `FDAT.T` (one 27 MB file, entries 2N+1), in the already-decoded PA
+geometry format, world-positioned. Batch-walk each FDAT odd entry's geometry region
+(offset 0x08 .. u32[0]) and decode. **No per-level breakpoints.** Polish remaining:
+- A proper renderer (backface cull / view-from-inside / textures) for clean visuals.
+- Separate the skydome/boundary blocks from walkable geometry if desired.
+- ~112 verts per panel is coarse PSX-era geometry; check whether a finer LOD set exists.
 
 Tools: `extract_level.py` (walk+decode+OBJ), `classify_pa.py`, `scan_geometry.py`,
 `render_obj.py`.
