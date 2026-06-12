@@ -1,5 +1,12 @@
 # Sub-trace C — sub-resource loader (live, 2026-06-11)
 
+> **CONTEXT CORRECTION (2026-06-11):** the *code* below is accurately traced, but it is
+> the **bootstrap / common (PA00) loader**, NOT mission-stage assembly. A write-watch on
+> `0x8004121B` never fired across an entire Reclaim Oil Facility mission, and PA files
+> appear to be object/AC/MT/effect + assignment-screen assets rather than the walkable
+> stage. Read this as "how the common/assignment PA bundle pulls in sub-resources," not
+> "how a level is built." See `mission_stage_map.md` for the disproof + revised picture.
+
 Caught live by a **read-watchpoint on `0x8004121D`** during a fresh stage load
 ("Eliminate Squatters"). The loader fired at PC `0x8004F2A8`.
 

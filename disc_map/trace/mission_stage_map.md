@@ -1,24 +1,62 @@
-# Sub-trace B — mission → stage byte + sub-resource map (IN PROGRESS)
+# Sub-trace B — CORRECTION/RETRACTION (2026-06-11)
 
-The 9 GameState bytes that drive a stage load (read live in-mission; they persist
-through the mission). Stage byte `0x8004121B` → main `P{n}\PA{nn}.T`; sub-resource
-selectors `0x121D..0x1224` → entry = byte + addend[slot] (see subresource_loader_C.md;
-addends 0:+2 1:+10 2:+44 3:+88 4:+60 5:+70 6:+108 7:+142; 0xFF = empty).
+**The earlier claim in this file — "missions reuse stage PA00, differing only in
+sub-resource bytes" — is WRONG. Retracted.**
 
-| mission | stage 0x121B | PA file | sub-res 0x121D..0x1224 | decoded entries |
-|---------|-------------|---------|------------------------|-----------------|
-| Training | 0x00 | PA00 | 00 03 05 01 00 01 00 18 | e2,e13,e49,e89,e60,e71,e108,e166* |
-| Eliminate Squatters | 0x00 | PA00 | 00 03 01 01 00 03 ff ff | e2,e13,e45,e89,e60,e73,—,— |
-| Eliminate Strikers | 0x00 | PA00 | 00 03 01 01 00 0c ff ff | e2,e13,e45,e89,e60,e82,—,— |
+## What disproved it
+User ground-truth: Eliminate Squatters (high-ceilinged room), Eliminate Strikers
+(bridge over water), Reclaim Oil Facility (oil facility), and garage "Test AC" (arena)
+are visibly DIFFERENT environments — they cannot all be PA00.
 
-(* training slot7 = 0x18+142 = e166, slightly past PA00's 176 entries — fine.)
+Live test: armed a **write-watch on the stage byte `0x8004121B`** AND a read-watch on
+`0x8004121D`, then played the **entire** Reclaim Oil Facility mission.
+- **Neither watch fired the whole mission.**
+- Path buffer `0x8008D928` stayed `"P0\PA00.T"`; byte `0x8004121B` stayed `0x00`.
+- The GameState descriptor bytes were **byte-identical** across Strikers / Test AC /
+  Reclaim Oil Facility (`00 00 00 03 01 01 00 0c ff ff ff 03 00 8a 02 28`).
 
-Observations:
-- Early Chrome missions REUSE the same stage (PA00); they differ only in the
-  sub-resource selectors (which MTs/objects/effects spawn).
-- Squatters vs Strikers differ in exactly ONE byte: slot 5 (e70 category) 0x03→0x0c
-  (e73 vs e82). Clean independent confirmation of the item-C addend model.
+Three different environments → identical bytes → those bytes are NOT per-mission.
 
-TODO (full B sweep): load all 50 missions, record these 9 bytes each, to build the
-complete mission→stage map. Now semi-automatable: trap the loader (read-watch
-0x8004121D) or just snapshot 0x8004121B..0x1224 once in each mission.
+## Corrected understanding
+`FUN @ 0x8004F1A8` (reads `0x8004121B`, builds `"P{n}\PA{nn}.T"` at `0x8008D928`, loads
+slot 0) is a **bootstrap / common loader**: it loads PA00 once (briefing / garage /
+common assets), with the byte defaulting to 0. **It is NOT the mission stage loader.**
+The real walkable stage (oil facility / bridge / room) loads through DIFFERENT code that
+has not yet been found — it does not touch `0x8004121B` or `0x8004121D`.
+
+### What PA files actually are (revised hypothesis)
+The doc/REFERENCE label "PA##.T = stage/map geometry packs" looks WRONG. Evidence:
+- AC1mod's PA viewer shows **mission-assignment-screen imagery** inside PA files (user
+  observation).
+- Our renders decoded PA00 entries as **AC/mech parts, small props, and effects/sprites**
+  (e21 = an AC core piece; e137 = a prop; e125-165 = effects) — object geometry, not a
+  level hull.
+- PA00 is loaded as a **common bundle at every mission start** (the bootstrap above).
+So PA files appear to be **object / AC / MT / effect + assignment-screen asset packs**,
+NOT the playable environment. The walkable stage geometry is a separate, still-unknown
+subsystem (different files and/or loader).
+
+## Impact on the other Phase-1 items
+- **A (gouraud 0x34/0x3c)** — UNAFFECTED. Pure geometry-decode, validated on the raw PA
+  files (0 OOR / 72 files). Still correct.
+- **E (effect slots e125-165)** — UNAFFECTED. Format-level decode of those entries.
+- **C (sub-resource loader, 0x8004F2xx)** — the CODE trace is accurate, but its CONTEXT
+  was mislabeled: it loads sub-resources into the **bootstrap/common (PA00) context**,
+  not per-mission stage assembly. The addend→slot-category mapping is real behavior;
+  "how stages are assembled" is NOT what it shows. See caveat in subresource_loader_C.md.
+- **D (block table 0x8019F538 binding)** — the runtime MECHANISM (instance[+0x0a] →
+  block record → +0x28 geometry ptr) is real and was observed live, but only in the
+  **training mission**, which is itself a PA00/common context. Whether real mission
+  stages use the same path with other PA files is UNPROVEN.
+
+## Correct way to find the real stage loader (next session)
+The `.T` container loader is `FUN_800165E4` (MXT loader; called at 0x8004F244 for the
+bootstrap). EVERY `.T` load goes through it. Plan: arm an **execute breakpoint on
+`0x800165E4` BEFORE entering a real stage**, then drop into the mission; log each call's
+args/path. The stage PA (a `PA##.T` other than PA00) will appear, revealing the real
+stage file and — by backtracking the caller — the real stage selector. Alternatively,
+dump the loaded stage geometry work-RAM while standing in a real stage and match it
+against the 72 PA files to identify the stage file empirically.
+
+(Lesson: validate load-pipeline claims against the actually-rendered environment /
+actually-loaded filename, never against a doc-supplied address alone.)
