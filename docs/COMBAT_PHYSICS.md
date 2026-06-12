@@ -26,6 +26,11 @@ A fixed array of **510 slots × 0xD0 (208) bytes**:
 - Used by whichever active overlay's frame loop is running (menu/garage AND
   in-mission both index this same base).
 
+> **See also [RUNTIME_RAM_MAP.md](RUNTIME_RAM_MAP.md):** in-mission the AC entities
+> form a `0x170`-stride array from `0x801A26B8` (player→enemy gap = `0x170`, not a
+> `0xD0` step), distinct from this menu/garage `0xD0` pool — independently cross-checked
+> against Zinfidel's BizHawk overlay scripts. How the two relate at runtime is open.
+
 **Player AC = slot 1 = `0x801A26B8`** (CONFIRMED live: appears as `s3` in the
 player transform code while moving; position fields track movement). Its first
 two words are shared-table pointers:

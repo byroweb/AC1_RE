@@ -166,7 +166,7 @@ the shared pack. e200's internal layout differs (geometry from +0x28; lighting a
 
 | tool | does |
 |------|------|
-| `disc_map/trace/assemble_levels.py` | batch-assembles all 56 levels from FDAT → OBJ (`o floor/ceiling/wall` groups) + top-down PNGs (outputs are game-derived: never distribute) |
+| `disc_map/trace/assemble_levels.py` | batch-assembles all 56 levels from FDAT → OBJ (`o floor/ceiling/wall` groups) + top-down PNGs (the PNG renders are derived analysis imagery; the OBJ geometry is extracted game data — keep it local, don't redistribute) |
 | `tools/pa/pa_obj.py` | PA geometry block decoder (gouraud 0x34/0x3c stride-4 RESOLVED — see `PA_FORMAT.md`) |
 | `tools/mission/mission_parse.py` | spawn table / chunk stream inspection |
 | companion AC1mod viewer (separate repo) | `core/level.py` + CLI `level N --no-ceiling --spawns`; GUI Missions window has Level/Ceilings toggles; spawns render in-place on the level |

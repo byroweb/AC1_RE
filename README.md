@@ -6,9 +6,10 @@ PlayStation game *Armored Core* (1997).
 This repository targets the **North American release, `SLUS-01323` (v1.1)**. Other
 regions/revisions are not supported and addresses will not match.
 
-> **This project contains no game code, assets, or data.** It is source code and
-> documentation only. To use the localization you must supply your own legally
-> obtained copy of the game. See [Legal](#legal) below.
+> **This project ships no game code, assets, or data files.** It is original source
+> code and documentation only (documentation may include screenshots and derived
+> analysis imagery for illustration — see [Legal](#legal)). To use the localization
+> you must supply your own legally obtained copy of the game.
 
 ## What's here
 
@@ -27,7 +28,7 @@ regions/revisions are not supported and addresses will not match.
 
 ## How it works (safe distribution model)
 
-This project **never distributes any part of the game**. Instead:
+This project **never redistributes the game's code, assets, or data files**. Instead:
 
 1. You provide your own legally-owned disc image of `SLUS-01323`.
 2. The tooling here extracts the data it needs *from your copy, on your machine*.
@@ -46,9 +47,13 @@ endorsed by, or sponsored by** FromSoftware, Inc. or Agetec, Inc.
 *Armored Core* and all related assets, names, and data are the property of their
 respective copyright holders. This repository contains **only original
 reverse-engineered source code and documentation** — no game executable, ROM,
-disc image, textures, audio, or other copyrighted game data is included or
+disc image, textures, audio, or other copyrighted game data files are included or
 distributed. You must own a legitimate copy of the game to make any use of this
 project.
+
+Documentation may include screenshots and derived analysis imagery (e.g. annotated
+captures and reconstructed level renders) for illustration and education; these are
+the project's own analytical output, not redistributed game asset files.
 
 The code in this repository is released under the [MIT License](LICENSE). That
 license applies to the original work in this repository only, and does not grant
