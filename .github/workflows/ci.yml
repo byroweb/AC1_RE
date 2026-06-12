@@ -1,0 +1,33 @@
+name: CI
+
+# Build + validate the behavioral reference models and syntax-check the tooling.
+# Note: the checksum validation in `make test` only runs when ../fdat_extracted.T
+# is present. That file is extracted from a disc you own and is never committed,
+# so on CI the test builds and runs the model but reports "skip" for validation.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build + test reference models (warnings are errors)
+        run: make -C re test CFLAGS="-std=c99 -O2 -Wall -Wextra -Werror -Iinclude"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Syntax-check Python tooling
+        run: |
+          git ls-files '*.py' | while read -r f; do
+            echo "py_compile: $f"
+            python -m py_compile "$f"
+          done
