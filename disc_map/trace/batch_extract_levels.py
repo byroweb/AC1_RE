@@ -62,7 +62,9 @@ def extract_entry(e):
     for f in faces:
         ny = fnormal(V, f)[1]
         if abs(ny) > HORIZ:
-            grp["ceiling" if ny < 0 else "floor"].append(f)
+            # PSX Y is DOWN: floor's front face points -Y (fixed 2026-06-12,
+            # verified visually in the AC1mod viewer; was flipped before)
+            grp["floor" if ny < 0 else "ceiling"].append(f)
         else:
             grp["wall"].append(f)
     bb = [min(c[i] for c in V) for i in range(3)] + [max(c[i] for c in V) for i in range(3)]

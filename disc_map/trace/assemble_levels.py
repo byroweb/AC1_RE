@@ -136,7 +136,9 @@ def assemble(ei, e):
     for f in faces:
         ny = fnormal(V, f)[1]
         if abs(ny) > HORIZ:
-            grp["ceiling" if ny < 0 else "floor"].append(f)
+            # PSX Y is DOWN: a walkable floor's front face points -Y (world up).
+            # (Verified in the AC1mod viewer 2026-06-12 — earlier convention was flipped.)
+            grp["floor" if ny < 0 else "ceiling"].append(f)
         else:
             grp["wall"].append(f)
     return V, grp, len(blocks), len(plc)
