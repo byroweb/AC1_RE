@@ -24,9 +24,8 @@ regions/revisions are not supported and addresses will not match.
 | `tools/` | Extraction/repack + RE tooling (`extract_overlay.py`, `extract_t.py`, `ghidra_overlay.sh` headless decompiler, …) |
 | `extract_fdat.py`, `patch_draw_string.py` | Container extraction & patch build helpers |
 | `ghidra_scripts/` | Ghidra scripts (Java + Jython) — overlay import, headless decompile/xref |
-| `REFERENCE.md` | **RE reference** — functions, addresses, `.T` format, checksum, sectors |
-| `docs/` | Subsystem write-ups — `LEVEL_LOADING.md` (mission→geometry pipeline, placement SOLVED), `MXT_LOADER.md`, `COMBAT_PHYSICS.md`, `MISSION_SYSTEM.md`, … |
-| `AC1_TEXT_SYSTEM.md` | Documentation of the game's text/menu system |
+| `docs/REFERENCE.md` | **RE reference** — functions, addresses, `.T` format, checksum, sectors |
+| `docs/` | Subsystem write-ups — `LEVEL_LOADING.md` (mission→geometry pipeline, placement SOLVED), `MXT_LOADER.md`, `COMBAT_PHYSICS.md`, `MISSION_SYSTEM.md`, `AC1_TEXT_SYSTEM.md`, … |
 
 ## How it works (safe distribution model)
 

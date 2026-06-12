@@ -40,7 +40,7 @@ Build: `make` (or `make test`). Requires only a C99 compiler.
 This `re/` tree is the home for **portable, compilable, validated** reference
 models. It does not replace existing work — it consolidates and extends it:
 
-- **`../REFERENCE.md`** is the master RE reference (memory map, `.T` format,
+- **`../docs/REFERENCE.md`** is the master RE reference (memory map, `.T` format,
   checksum, quick address index, mission overlay). Models cite it; they don't
   duplicate its tables.
 - The repo already has **patch-oriented** reconstructions at the root
@@ -57,7 +57,7 @@ models. It does not replace existing work — it consolidates and extends it:
 | model        | status        | what it reproduces                                  | anchored by |
 |--------------|---------------|-----------------------------------------------------|-------------|
 | `ac1_mxt`    | **done, validated** | `.T`/MXT archives, FDAT overlay layout, the `0x12345678` checksum, overlay header (`entry_fn`, `"ENERGY"` magic) | `docs/MXT_LOADER.md` |
-| text render  | **done (root)** | `draw_char`/`draw_string` glyph + string rendering  | `../font_render.c`, `../string_render.c`, `../AC1_TEXT_SYSTEM.md` |
+| text render  | **done (root)** | `draw_char`/`draw_string` glyph + string rendering  | `../font_render.c`, `../string_render.c`, `../docs/AC1_TEXT_SYSTEM.md` |
 | `ac1_mission`| planned       | mission lifecycle: driver, timer, objective vtable, success/fail → result | `docs/MISSION_SYSTEM.md` |
 | `ac1_combat` | planned       | projectile pool + per-type think (ballistic/missile homing), proximity/collision, damage application | `docs/COMBAT_PHYSICS.md` |
 | `ac1_physics`| planned       | AC movement integrator (boost/gravity/recoil)       | `docs/COMBAT_PHYSICS.md` |

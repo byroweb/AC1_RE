@@ -4,7 +4,7 @@ scan_text.py — find draw_string-compatible text inside extracted .T entries.
 
 Consumes a toc.json produced by extract_t.py (+ the source .bin) and scans every
 non-empty, non-TIM entry for translatable strings. AC1 menu/mission text is
-rendered by draw_string (REFERENCE.md §4): a byte walker over (mostly) ASCII /
+rendered by draw_string (docs/REFERENCE.md §4): a byte walker over (mostly) ASCII /
 Shift-JIS with inline escapes and a '>' (0x3E) terminator. Mission briefings in
 MIS.T additionally use '/' (0x2F) as the final end-of-message marker and literal
 '@d' / '%d' colour markup.

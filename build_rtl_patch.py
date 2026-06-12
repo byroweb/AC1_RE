@@ -36,7 +36,7 @@ DATA_SIZE   = 2048
 def flat(rt): return E201_FLAT + (rt - BASE)
 
 # --- Farsi name shaper integration (compiled from C at build time) ----------
-# Placement (all in VERIFIED-free overlay padding; see AC1_NAME_SHAPER.md):
+# Placement (all in VERIFIED-free overlay padding; see docs/AC1_NAME_SHAPER.md):
 #   shape_name code   -> 0x800BC740 (436B padding block)
 #   shape_name tables -> 0x80081F70 (200B padding block)
 #   name_input_handler-> 0x80082190 (432B; ends exactly at the row-0 keyboard

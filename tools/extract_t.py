@@ -2,7 +2,7 @@
 """
 extract_t.py — generalized AC1 ".T" container extractor.
 
-A ".T" file is a sector-based container (REFERENCE.md §3):
+A ".T" file is a sector-based container (docs/REFERENCE.md §3):
   - Sector 0 (2048 B): TOC = packed uint16 array of sector offsets.
     Entry i spans sectors TOC[i] .. TOC[i+1]-1.
   - TWO conventions for uint16[0]:
@@ -10,7 +10,7 @@ A ".T" file is a sector-based container (REFERENCE.md §3):
       * "count-first" : TOC[0] is the ENTRY COUNT, real offsets start at TOC[1]
         (seen in MENU_TIM.T = 122, and PA00.T = 176). Auto-detected below.
   - Zero-length entries are common (repeated offsets) and tolerated.
-  - Each entry carries a trailing uint32 checksum word (REFERENCE.md §6) — we do
+  - Each entry carries a trailing uint32 checksum word (docs/REFERENCE.md §6) — we do
     NOT touch it here; extraction is read-only. Checksums only matter on re-inject.
 
 Reuses the Mode-2/Form-1 sector math from extract_fdat.py:
