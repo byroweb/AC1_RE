@@ -4,7 +4,7 @@ title_wordart.py — render the six hub category titles as CRISP native-size Far
 word-art for the AC1 [RTL] disc.
 
 The hub title sprite draws each word 1:1 at **128x24** from a font-page texture
-(see AC1_TITLE_TEXTURE.md: descriptor table @0x800B6E4C). The original English
+(see docs/AC1_TITLE_TEXTURE.md: descriptor table @0x800B6E4C). The original English
 word-art (MISSION/MAIL/GARAGE/RANKING/SHOP/SYSTEM) was pre-baked at that size.
 We do the same for Farsi: full PIL+raqm Unicode shaping (hamza, ZWNJ, etc. all
 fine — unlike the 128-glyph name atlas), quantized to 4bpp / CLUT 0x3817 (white

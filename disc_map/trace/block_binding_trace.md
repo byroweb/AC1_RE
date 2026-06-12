@@ -4,7 +4,7 @@ Source: DuckStation, pristine/backup disc, save slot 1 (training mission). PA fi
 P0\PA00.T (stage byte `0x8004121B = 0x00`). Artifacts: `block_table_8019F538.bin`,
 `inst_table_8019FAB8.bin`, `parse_tables.py`.
 
-## Confirmed chain (matches REFERENCE.md §11 / docs/PA_HEADER.md / MISSION_SYSTEM.md)
+## Confirmed chain (matches docs/REFERENCE.md §11 / docs/PA_HEADER.md / MISSION_SYSTEM.md)
 
 ```
 instance/spawn table 0x8019FAB8 (stride 44, 256 slots)

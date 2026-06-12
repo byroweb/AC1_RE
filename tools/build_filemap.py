@@ -127,7 +127,7 @@ def main():
     with open(out_path, "w") as f:
         json.dump(out, f, indent=1)
 
-    # ---- summary + validation against REFERENCE.md §9 ground truth ----
+    # ---- summary + validation against docs/REFERENCE.md §9 ground truth ----
     def find(p):
         return next((r for r in files if r.get("path") == p or r.get("id") == p), None)
 

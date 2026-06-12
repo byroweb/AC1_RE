@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """mission_parse.py - dump an AC1 mission descriptor from FDAT.T.
 
-Target: SLUS-01323 (v1.1).  Companion to docs/MISSION_SYSTEM.md and REFERENCE.md
+Target: SLUS-01323 (v1.1).  Companion to docs/MISSION_SYSTEM.md and docs/REFERENCE.md
 "Mission runtime".  Pristine bin only.
 
 A mission N is described by a PAIR of FDAT.T entries (file id 2):

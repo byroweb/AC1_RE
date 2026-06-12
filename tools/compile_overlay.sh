@@ -9,7 +9,7 @@
 # word); aborts otherwise. Extra args are passed through as -Wl,--defsym=NAME=ADDR
 # to bind external SDK/overlay functions (e.g. shape_name=0x80065DBC).
 #
-# Toolchain flags per REFERENCE.md §7 (note -march=r3000 REQUIRES -mfp32).
+# Toolchain flags per docs/REFERENCE.md §7 (note -march=r3000 REQUIRES -mfp32).
 set -euo pipefail
 SRC=$1; ADDR=$2; ENTRY=$3; OUT=$4; shift 4
 GCC=mipsel-linux-gnu-gcc
