@@ -49,7 +49,7 @@ genuinely heavy jobs.
   PS1-class geometry is a few hundred polys + small textures; integrated graphics
   render it trivially — no Arc PC needed to look at models. Also: all RE/edit
   tooling, mipsel compile/inject, git, MCP control, normal-res emulation.
-- **Arc PC (offload only when heavy):** local-LLM passes (`tools/re/llm_local.py`,
+- **Arc PC (offload only when heavy):** local-LLM passes (`tools/ghidra/llm_local.py`,
   agent `ac1-re-local-helper`), large batch jobs (mass texture decode, whole-disc
   sweeps), and enhanced/heavy DuckStation if needed.
 So: build the viewer to run **on the laptop**; reach for the Arc PC only for LLM

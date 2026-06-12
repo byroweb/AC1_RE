@@ -178,11 +178,11 @@ Two ways:
 - **GUI**: `ghidra_scripts/import_ovl_<N>_<name>.py` creates an **overlay** memory
   block at `0x8004ada0` from the carved bin (so resident calls `0x80010000–0x8003ffff`
   still resolve), then disassembles. Run from the Script Manager, Auto-Analyze.
-- **Headless (no GUI) — `tools/re/ghidra_overlay.sh`** *(recommended)*: imports +
+- **Headless (no GUI) — `tools/ghidra/ghidra_overlay.sh`** *(recommended)*: imports +
   auto-analyzes a carved overlay once (cached project), then decompiles any
   function address with full Ghidra quality:
   ```
-  tools/re/ghidra_overlay.sh disc_map/overlays/ovl202_mission.bin 0x8008ab68 0x8004c340
+  tools/ghidra/ghidra_overlay.sh disc_map/overlays/ovl202_mission.bin 0x8008ab68 0x8004c340
   ```
   Verified: ovl202 auto-analyzes to **585 functions**; the mission main loop and
   driver decompile cleanly and confirm the live-RE mission lifecycle. This gives

@@ -49,7 +49,7 @@ models. It does not replace existing work — it consolidates and extends it:
   (they bake into the game); the models here target the **host** (portable C99,
   run/verify on your PC). Both are "behavioral C," different deployment.
 - Extraction/repack **tooling** lives in `../tools/` (`extract/extract_t.py`,
-  `farsi/build_rtl_patch.py`, …) and `../tools/re/ghidra_overlay.sh` (headless
+  `farsi/build_rtl_patch.py`, …) and `../tools/ghidra/ghidra_overlay.sh` (headless
   decompile of any overlay function). Models are derived from those + `docs/`.
 
 ## Models
@@ -83,5 +83,5 @@ overlay checksums: ALL VALID
 
 The models are written from the RE captured in `docs/` and the project memory.
 To add one: read the matching `docs/*.md`, pull the relevant functions with
-`tools/re/ghidra_overlay.sh <overlay.bin> <addr>`, then translate the behavior into
+`tools/ghidra/ghidra_overlay.sh <overlay.bin> <addr>`, then translate the behavior into
 a small, well-commented `.c`/`.h` pair plus an `examples/` validator.

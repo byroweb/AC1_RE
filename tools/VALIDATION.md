@@ -7,7 +7,7 @@ against the documented findings.
 
 ## Method
 
-`tools/re/overlay2c.sh <addr> <len>` carves the byte range out of
+`tools/ghidra/overlay2c.sh <addr> <len>` carves the byte range out of
 `overlay_80050000.bin` (base `0x80050000`), disassembles it with
 `mipsel-linux-gnu-objdump`, converts to m2c GAS asm via `objdump2m2c.py`, and
 decompiles with m2c. Each target below has an independently-known behaviour from

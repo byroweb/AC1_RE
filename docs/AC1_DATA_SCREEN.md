@@ -23,7 +23,7 @@ for a fresh chat, is to **Farsi-localize the DATA screen labels** (still English
 1. `boot_game .../Armored Core (v1.1) [RTL].cue`. Let the PS / FromSoftware /
    ASSEMBLE-SYSTEM intro play; press Start to reach the "Push Start Button" title.
 2. **Beat the demo reel.** The title flips to the attract/demo reel after a few
-   idle seconds. Use `tools/emu/ac1_mcp_input.py` (or the `input_sequence` MCP tool):
+   idle seconds. Use `tools/ghidra/ac1_mcp_input.py` (or the `input_sequence` MCP tool):
    **2 Start presses with a ~120-frame (2 s) gap** steps demo→title→main menu.
    A 1 s gap is too fast (reel re-arms). The title is the only demo-reel race.
 3. Main menu: **Scenario Mode** (Cross) → submenu **ادامه (Continue)** (Cross) →
@@ -61,7 +61,7 @@ also English and on the same screens.
   `draw_string` runs off the end → **hang**. Keep/restore a terminator.
 
 ## Tooling
-- `tools/emu/ac1_mcp_input.py` — DuckStation MCP handshake + frame-timed
+- `tools/ghidra/ac1_mcp_input.py` — DuckStation MCP handshake + frame-timed
   `input_sequence`; default 2 Start presses (use `--gap 120`). Note: the
   DuckStation MCP is single-session, so this script's session evicts the agent's
   (recover with any `get_status`). For agent-driven nav, call `input_sequence`

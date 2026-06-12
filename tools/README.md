@@ -1,7 +1,7 @@
 # AC1 RE tool belt (`tools/`)
 
 Accelerators for the Armored Core 1 reverse-engineering / Farsi-patch workflow.
-Run `tools/re/setup_re_tools.sh` once on a new machine to install/verify everything.
+Run `tools/ghidra/setup_re_tools.sh` once on a new machine to install/verify everything.
 
 ## `setup_re_tools.sh`
 Idempotent installer + health report. Sets up m2c, checks the mipsel toolchain,
@@ -13,7 +13,7 @@ Decompiles a slice of MIPS to C via `objdump` + **m2c**. The name/menu code live
 in a runtime overlay Ghidra's base project doesn't cover, so this turns a live
 address range into readable C in one step.
 ```
-tools/re/overlay2c.sh 0x80082190 0x1b0          # decompile the name-input handler
+tools/ghidra/overlay2c.sh 0x80082190 0x1b0          # decompile the name-input handler
 ```
 - Default binfile = `overlay_80050000.bin` (RAM dump), base = `0x80050000`.
 - To decompile freshly-patched live code, dump RAM first (DuckStation

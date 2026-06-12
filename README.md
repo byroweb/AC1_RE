@@ -20,8 +20,7 @@ regions/revisions are not supported and addresses will not match.
 | `tools/extract/` | Disc/container extraction + text inventory (`extract_t.py`, `extract_overlay.py`, `extract_fdat.py`, `build_filemap.py`, `scan_text.py`) |
 | `tools/pa/` | PA geometry-pack decoders (`pa_obj.py`, `pa_parse.py`, `pa_slots.py`) |
 | `tools/mission/` | Mission/objective + spawn-table parsing (`mission_parse.py`, `mission_stages.py`, `object_stats.py`, …) |
-| `tools/re/` | Decompile/RE pipeline (`ghidra_overlay.sh` headless decompiler, `overlay2c.sh`, `setup_re_tools.sh`, …) |
-| `tools/emu/` | Emulator input automation (`ac1_mcp_input.py`) |
+| `tools/ghidra/` | Decompile/RE pipeline + emulator automation (`ghidra_overlay.sh` headless decompiler, `overlay2c.sh`, `setup_re_tools.sh`, `ac1_mcp_input.py`, …) |
 | `ghidra_scripts/` | Ghidra scripts (Java + Jython) — overlay import, headless decompile/xref |
 | `docs/REFERENCE.md` | **RE reference** — functions, addresses, `.T` format, checksum, sectors |
 | `docs/` | Subsystem write-ups — `LEVEL_LOADING.md` (mission→geometry pipeline, placement SOLVED), `MXT_LOADER.md`, `COMBAT_PHYSICS.md`, `MISSION_SYSTEM.md`, `AC1_TEXT_SYSTEM.md`, … |

@@ -229,6 +229,6 @@ Disc is 100% packed (no free sectors in MENU_TIM or FDAT) → store words IN the
   from card, pilot سلام). From there: Circle → hub carousel; Left/Right rotate
   categories; the title banner is the garbled text at the top.
 - Reach hub from cold boot: see `AC1_DATA_SCREEN.md` (demo-reel skip: 2 Start
-  presses, 120-frame gap; tool `tools/emu/ac1_mcp_input.py`).
+  presses, 120-frame gap; tool `tools/ghidra/ac1_mcp_input.py`).
 - VRAM tooling: `dump_vram` (png/bin), `read_vram_region`. Today's dumps were in
   DuckStation's mcp cache (`vram_system.bin`, `vram_mission.bin`).
