@@ -34,21 +34,29 @@ These blocks use the **exact PA geometry format** already decoded by `tools/pa_o
 - mxtid map (by file size in MXT registry `0x8004A2A4` word2): 0=PA00(880KB),
   1=RTIM(17MB,textures), 2=FDAT(27MB). So the runtime "container 1" reads were textures.
 
-## Per-block placement transforms — THERE ARE NONE (resolved 2026-06-11)
-Investigated per the assembly question: the blocks are **already in world coordinates**,
-so no transforms are needed. Evidence:
-- Single-block decode is clean (block 2 = a flat wall/floor panel, all type 0x2c quads,
-  no spikes — `blk2_topdown.png`). Blocks are NOT spiky/garbage.
-- Vertices are **absolute world coords** (±5000, e.g. wall edges `(-1496,-2300,2423)`/
-  `(-1496,-300,2423)` = a vertical wall at a fixed X/Z), not local ±small.
-- A floor-plan render (near-horizontal faces only, top-down) of the merged blocks shows a
-  **real designed space**: rectangular floor sections + a central feature + a circular
-  boundary (skydome) — `e67_floorplan.png`. The 3D "blob" was just a closed environment +
-  skydome viewed from outside in a flat painter renderer.
+## Per-block placement transforms — THEY EXIST (corrected 2026-06-11)
+**CORRECTION:** an earlier draft here said "no transforms / world-positioned" — WRONG
+(user ground-truth: the real level is an X with curved legs, not the circle the naive
+merge produces). The blocks ARE local and need a per-block transform.
 
-**Assembly = plain concatenation of the blocks** (what `extract_level.py` already does).
-Blocks all center near the origin because the space is roughly centered there, not because
-they need positioning.
+Evidence:
+- All 38 block **centroids sit at the origin** (e.g. blk2 (32,-896,-89), blk5 (88,-896,
+  -33)) — the sections are stacked on top of each other, not tiled. A per-block colored
+  render shows every block radiating from the same center (`e67_perblock.png`).
+- The render path proves it: cull/transform `FUN @ 0x80057C44` loads a per-block PSX
+  `MATRIX` — **rotation** (5 packed words @ `0x800b1228`) + **translation** (3 words @
+  `0x800b123c`) — before drawing each block. So placement = **rotation + translation**.
+- Entry 2N+1 is a proper `[u32 len][payload]` **chunk stream** (not `[geom_end][blocks]`):
+  chunk 0 = geometry (the 38 blocks), chunk 1 (107 KB) + chunk 2 = geometry-handler
+  siblings (`FUN_80053848`), … chunk 12 = the object/MT **spawn** table.
+- The section transforms are NOT in the spawn table (chunk 12 places objects — truck/MTs —
+  at ±17000 with block indices 0/1, sub-trace D style). They come from the geometry
+  chunks (0–2), source TBD (candidate: chunk 1).
+
+**OPEN / next:** capture the per-block matrices. Cleanest = runtime: while standing in a
+level, write-watch `0x800b1228` (+ `0x800b123c`) and collect all ~38 (rotation,translation)
+pairs in one frame, then apply them to assemble the X and verify. Then locate that data in
+the chunk stream (chunk 1?) to extract all levels offline.
 
 ## Answer: can we extract all levels offline?
 **YES — and it's simpler than feared (no transform recovery).** Every mission's
