@@ -1,4 +1,11 @@
-# Level-section PLACEMENT — investigation log (OPEN PROBLEM, 2026-06-11/12)
+# Level-section PLACEMENT — investigation log (SOLVED 2026-06-12 → see PLACEMENT_SOLVED.md)
+
+> **RESOLUTION:** placement is TRANSLATION-ONLY (FDAT 2N+1 **chunk 7**, 52-byte records,
+> translation at +0x10, block index at +0x1e; blocks pre-rotated on disc, reused =
+> instancing). The "4-orientation LUT @ 0x801ad00c" below turned out to be the per-section
+> LIGHTING table (4 pre-rotated light-matrix variants). The level renders through a
+> previously unmapped path (`0x800639D8`/`0x80063B9C`), not the object paths below.
+> Full details: **`PLACEMENT_SOLVED.md`**. The log below is kept as the hunt record.
 
 The walkable level geometry is found (FDAT entry 2N+1, chunk 0 = PA-format blocks, see
 `LEVELS_FOUND.md`). The blocks are **local, stacked at the origin** and need a **per-section
