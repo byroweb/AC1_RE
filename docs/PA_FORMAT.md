@@ -1,9 +1,22 @@
-# `GG/P0–P3/PA00–PA71.T` — Stage/map packs (format RE in progress)
+# `GG/P0–P3/PA00–PA71.T` — geometry asset packs (IDENTITY UNDER REVISION)
 
 Target: **SLUS-01323 (v1.1)**. **72 files** (`PA00.T`..`PA71.T`) across `GG/P0..P3`,
-disc sectors **103637–126704**, ~700–900 KB each. Loaded via `load_T_file(3, …)`
-(file id 3, `REFERENCE.md` §3). These are the **3D stage geometry/map packs** — the
-key target for the future AC1mod map/model viewer (`docs/AC1MOD_VISION.md`).
+disc sectors **103637–126704**, ~700–900 KB each.
+
+> **CORRECTION (2026-06-11):** these were long labelled "3D stage/map packs," but live
+> RE shows that's **not established**. `PA00.T` is loaded as a **common/bootstrap bundle
+> at every mission start** (via `FUN_8004F1A8`, stage byte `0x8004121B`=0), and its
+> entries decode as **AC/mech parts, props, and effect/sprite objects** — plus the PA
+> viewer shows **mission-assignment-screen imagery** in PA files. Meanwhile a write-watch
+> on `0x8004121B` never fired across an entire real mission (Reclaim Oil Facility), and
+> three visibly-different missions shared byte-identical descriptors — so the walkable
+> **stage environment is a separate, not-yet-identified subsystem**, NOT these PA files
+> (at least not PA00). Caveat: the older "scene assembly" note below saw PA40 merge into
+> a facility-like floor plan, so SOME PA files may still hold level-scale geometry — the
+> per-file role is genuinely unresolved. Treat everything below as a validated **geometry
+> container/primitive format** (which is solid and file-verified), NOT proof that these
+> files are the playable levels. Resolving identity = the live `.T`-loader trace
+> (`FUN_800165E4`) during a real stage load. See `disc_map/trace/mission_stage_map.md`.
 
 ## Container (CONFIRMED)
 Standard count-first `.T` container, identical mechanism to King's Field (verified
@@ -180,6 +193,13 @@ edge cases) are dropped so output is always a valid mesh.
 
 
 ## Scene assembly (world-coordinate finding, 2026-06-08)
+> **CAVEAT (2026-06-11):** this section calls the merged result "the stage," but per the
+> top-of-file correction that identity is unproven — PA00 is a common/asset bundle, and
+> the real walkable stage loads elsewhere. The PA40 "facility floor plan" below is
+> suggestive that *some* PA files hold level-scale geometry, but it has NOT been
+> cross-checked against the actual in-game environment. Read "stage" here as "the
+> world-coord geometry in this PA file," pending the live `.T`-loader trace.
+
 A PA file's **environment geometry blocks are authored directly in WORLD
 coordinates** — merging them unmodified reconstructs the actual stage layout
 (verified: PA40 assembles into a bilaterally-symmetric facility floor plan; top-down
