@@ -1,8 +1,31 @@
-# AC1 player emblem — memory-card save format (static RE + DuckStation plan)
+# AC1 player emblem — memory-card save format
 
-Status (2026-06-09): emblem **palette + format confirmed statically**; exact pixel
-**offset + count** pending a DuckStation byte-diff. Tooling already round-trips
-(in the companion AC1mod viewer (separate repo): its `core/memcard.py` and `memcard` CLI).
+Status (2026-06-13): **FULLY CONFIRMED** by reading a real DuckStation card that
+contains drawn emblems. Offset + count + layout all resolved (see "Emblem format
+— confirmed" below). Tooling round-trips, including a boundary-crossing slot
+(handled in the companion AC1mod project — separate repo). The original
+2026-06-09 guesses (one emblem in the MAIN save at 0x0E80, palette 0x0C3A) were
+WRONG — the emblems are in a separate card file; that 0x0C3A ramp in the main
+save is the live colour-picker state.
+
+## Emblem format — confirmed
+- Emblems live in a **separate card file**, code `BASCUS-94182Z` (note the `Z`
+  suffix vs the main save's `A`), title **`ARMORED CORE EMBLEM DATA`**, **2 blocks
+  / 16384 B**. The main save (`...A`) does NOT hold the drawn emblems.
+- **7 emblems.** Each is a **2080-byte (`0x820`) record**, back-to-back:
+  - `+0x00` 32 B palette = 16 × u16 BGR555 (a copy of the in-game colour picker
+    rainbow ramp; in practice all 7 copies are the standard ramp)
+  - `+0x20` 2048 B pixels = **64×64, 4bpp, low-nibble first, row-major**
+- First record at **file offset `0x206`** (file = the save's blocks joined in
+  link order). Emblem `i` record = `0x206 + i*0x820`; pixels = record `+0x20`.
+- A single emblem's 2048-B pixel run **can straddle the 8192-B block boundary**
+  (e.g. emblem 3 spans 0x1A86..0x2286), so edits must go through the joined file
+  bytes, not one block. Default-blank pixels are `0xFF`.
+- Ground truth: this card's 7 slots decode to hand-drawn `X,2,3,4,5,6,7` (each a
+  different palette index) — upright and legible, confirming row + nibble order.
+- This matches the user's earlier Project Phantasma (SLUS-00670) decoder exactly
+  (same 7-count, same `0x820` stride, same interleaved per-emblem palette); only
+  the base offset and the dedicated `...Z` file differ.
 
 ## Memory card (standard PS1, 128 KiB)
 - 16 blocks × 8192 B. Block 0 = directory; frame 0 = `MC` header; frames 1..15 =
@@ -22,58 +45,35 @@ card parser + 4bpp/BGR555 path).
 AC1 detection: filename contains `SCUS-94182` / `SLUS-01323`, or title starts
 `ARMOREDCORE`. Only AC1 saves are openable for emblem edit; others are out of scope.
 
-## Emblem — what's confirmed
-- **64×64, 4bpp (16 colours)**, RAW pixels (NOT an embedded TIM — the `0x10000000`
-  hits in the block are false positives inside stats data).
-- **Palette = the in-game colour picker**: 16 BGR555 entries at block offset
-  **`0x0C3A`** — a clean rainbow ramp (red→orange→yellow→green→cyan→blue→magenta→
-  gray→white). Player-editable, stored per save (so it is NOT a constant in
-  `SLUS_013.23` — a binary search for the ramp finds nothing, as expected).
-- One 64×64 4bpp emblem = **2048 B**, which fits cleanly in the block's blank tail
-  region **`0x0E80..0x2000`** (4480 B, all `0xFF` in this save).
+The reference card above (`(Reprint)_1.mcd`) has only the main save and **no
+emblem file**, so it shows nothing to decode — that earlier dead end was looking
+in the main save. The card with drawn emblems is `Armored Core 1
+backup_1.mcd` (slot 2 = `BASCUS-94182Z` `ARMORED CORE EMBLEM DATA`).
 
-## Why this save shows "nothing"
-This pilot never drew an emblem, so the pixel region is blank (`0xFF` = white).
-The structured bytes at `0x0C00..0x0E77` are save **metadata** (a descending value
-table at `0x0D00`, coordinate/RLE-looking pairs at `0x0D90`, an `00 FF` run that
-renders as alternating red/white) — not the emblem raster. Decoding 64×64 from
-`0x0C5A` shows metadata in the top ~17 rows then blank, confirming the emblem
-proper is the `0xFF` tail.
+AC1 detection: filename contains `SCUS-94182` / `SLUS-01323`, or title starts
+`ARMOREDCORE`. The emblem file additionally has `EMBLEM` in its title.
 
-## Open — needs DuckStation ground truth
-1. **Exact pixel offset** within `0x0E80..0x2000` (default guess `0x0E80`; could be
-   block-end-aligned `0x1800`).
-2. **Count.** Earlier impression was "7 emblem textures". 7×2048 = 14336 B > one
-   8192 block, so all 7 cannot be full 64×64 in the main save — likely the main
-   save holds ONE 64×64 emblem and the "7" are either VRAM split-textures (the AC
-   decal applied at several places) or live in a separate **SAVE EMBLEM** card file
-   (the DATA screen has `SAVE EMBLEM`/`LOAD EMBLEM`). This card has no emblem file.
+## How it was locked (2026-06-13)
+No draw/byte-diff was needed: a card already had a fully-drawn emblem file. Export
+both files (`export_memory_card_save`), join the emblem file's 2 blocks, and
+scan for the colour-picker ramp signature (`1F 00 FF 01 FF 03`). It hits **7
+times at stride `0x820`** starting `0x206` → 7 records, palette-then-pixels,
+exactly. Decoding each record's 2048 B as 64×64 4bpp gives upright legible
+glyphs. Done. (The former "main save @0x0E80" plan was a wrong file entirely.)
 
-### DuckStation actions that would lock it (byte-diff, most decisive)
-1. Boot AC1, load this save, go DATA → enter the emblem editor and **draw a
-   distinctive pattern** (e.g. a diagonal of pure colour 0, then colour 8) so the
-   indices are unmistakable. Exit/save back to the **same card**.
-2. `export_memory_card_save` (or copy the `.mcd`) **before and after**, then diff:
-   the companion viewer's memcard CLI reads both; the changed byte span = the emblem pixel region →
-   exact `EMBLEM_PIX_OFF` and length (→ count). The drawn indices vs. our nibble
-   order confirm bit/nibble packing and row order.
-3. While in the editor, `dump_vram` / `read_vram_region`: the emblem is uploaded
-   via `LoadImage` (string present at `0x80011BD0`). The VRAM RECT gives w/h in
-   16-bit units (64px 4bpp → w=16, h=64) and the texture-page location, confirming
-   4bpp and revealing how many copies/sizes exist (the "7" question).
-4. Optional: breakpoint `LoadImage` (or the memcard read path) to capture the
-   source pointer = the in-RAM save buffer + emblem offset, cross-checking #2.
-
-Static RE of the loader itself needs the **DATA-screen overlay** imported into
-Ghidra (the EXE currently loaded is the base + garage; its string table has no
-`EMBLEM`). The byte-diff above is faster and decisive, so do that first.
+Former open questions, now answered: pixel offset = `0x206 + i*0x820 + 0x20`;
+count = 7; they live in the `...Z` file, not the main save / not VRAM splits.
 
 ## Tooling (done, round-trip verified)
-Implemented in the companion AC1mod viewer (separate repo):
-- `core/memcard.py`: `read_card`, save list + AC1 detect, `icon_rgba`,
-  `emblem_palette`, `decode_emblem`, `encode_emblem` (matches any GIF/PNG to the
-  fixed 16-colour palette, nearest-colour, packs 64×64 4bpp), `patch`/`save`
-  (recomputes the directory XOR checksum). All offsets are parameters.
-- `memcard {list,icon,emblem-export,emblem-import}` CLI — `--card`,
-  `--slot`, `--image`, `--pix-off`, `-o`. Verified: import a PNG → export → blank
-  flips to drawn, bytes byte-identical after reload, save stays a valid AC1 file.
+Implemented in the companion AC1mod project (separate repo):
+- `core/memcard.py`: `read_card`, save list + AC1/emblem-file detect, `icon_rgba`,
+  `file_bytes`/`write_file_bytes` (join/split the emblem file's 2 blocks),
+  `emblem_file()`, and per-index `emblem_palette` / `decode_emblem` /
+  `is_emblem_blank` / `encode_emblem` (GIF/PNG → nearest-colour in that emblem's
+  palette → 64×64 4bpp) / `write_emblem`. `save()` recomputes the directory XOR
+  checksum. Indices `0..6`; offsets via `emblem_record_off` / `emblem_pix_off`.
+- a `memcard {list,icon,emblem-export,emblem-import}` CLI — `--card`,
+  `--index N` (0..6; export -1 = 7-up sheet), `--image`, `-o`. Verified on a real
+  card: list shows 7/7 drawn; export renders X,2,3,4,5,6,7; importing into the
+  boundary-crossing slot 3 changes **only** that emblem's pixels, preserves all 7
+  palettes + every other byte, and keeps directory checksums valid.
