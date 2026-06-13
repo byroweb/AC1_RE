@@ -18,7 +18,7 @@ regions/revisions are not supported and addresses will not match.
 | `re/` | **Behavioral C reference models** — portable, host-side, *mutable* re-implementations of game subsystems (verified against your extracted data). Flagship: `re/ac1_mxt` (container + overlay + checksum). See `re/README.md` |
 | `tools/` | All tooling, grouped by subsystem (see below) |
 | `tools/farsi/` | Persian localization toolchain — glyph baking, texture atlas, runtime shaping, plus the C patch sources (`font_render.c`, `string_render.c`, `farsi_name_*.c`, `farsi_table.h`, `psx_shim.h`) |
-| `tools/extract/` | Disc/container extraction + text inventory (`extract_t.py`, `extract_overlay.py`, `extract_fdat.py`, `build_filemap.py`, `scan_text.py`) |
+| `tools/extract/` | Disc/container extraction + repack + text inventory (`extract_t.py`, `t_repack.py` `.T` writer/repacker, `extract_overlay.py`, `extract_fdat.py`, `build_filemap.py`, `scan_text.py`) |
 | `tools/pa/` | PA geometry-pack decoders (`pa_obj.py`, `pa_parse.py`, `pa_slots.py`) |
 | `tools/mission/` | Mission/objective + spawn-table parsing (`mission_parse.py`, `mission_stages.py`, `object_stats.py`, …) |
 | `tools/ghidra/` | Decompile/RE pipeline + emulator automation (`ghidra_overlay.sh` headless decompiler, `overlay2c.sh`, `setup_re_tools.sh`, `ac1_mcp_input.py`, …) |
