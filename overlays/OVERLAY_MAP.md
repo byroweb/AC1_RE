@@ -110,6 +110,41 @@ left primary labels + plate comments.
 A program-wide plate comment at `0x80050000` records the swap warning (text identical
 to the TL;DR above).
 
+### Level-completion mechanism (added 2026-06-14, live DuckStation RE)
+
+The "mission complete" / level-exit commit path, annotated in the **same Mission202
+project**. CONFIRMED live (memory `project_ac1_objective_complete`) and re-verified
+against the dump bytes. Programs/blocks noted per symbol.
+
+| addr        | name                         | kind  | program / block        | note |
+|-------------|------------------------------|-------|------------------------|------|
+| `0x8008A0B0`| `mission_exit_commit`        | func  | Mission202 `ram` block | objective-object update **dispatcher**: indexes mission jump table `0x8004C164` by `(a0-1)` and `jr v0` @`0x8008A104` into per-frame event-case bodies. Runs each frame via `mission_phase_dispatch`. |
+| `0x8008A1F4`| `mission_exit_complete_case` | label | Mission202 `ram` block | the EXIT-COMPLETE case body (a `jr v0` target inside `mission_exit_commit`, NOT fallthrough — so the dispatcher's Ghidra function body does not span it). gate `lhu v0,[0x8019F528]`@`0x8008A1EC`; `bnez`@`0x8008A1F4`; else `jal 0x8008A048`/`0x8008A080` (COM "mission complete" sub-handlers) then `jal 0x8004C318`@`0x8008A20C` with `a0=0x80` in delay slot @`0x8008A210`. |
+| `0x8008AB68`| `mission_phase_dispatch`     | func  | Mission202 `ram` block | per-frame: `lw [0x8019F51C]` (objective object `0x801C4B40`), `lw 0(v0)`, `jalr v0`@`0x8008AB80` — calls the objective object's update method. |
+| `0x8008A8F8`| `mission_eventflags_tick`    | func  | Mission202 `ram` block | per-frame maintainer of event-flags word `0x8019F524`: `lw; and ~0x1000; sw`@`0x8008A938` (clears transient bit `0x1000`). This per-frame write defeats a plain watchpoint on `0x8019F524`. |
+| `0x8004C318`| `mission_set_result`         | func  | Mission202 **`ovl202_lower`** block | mission result/end primitive. `sw a0,[0x8019F524]`@`0x8004C324` stores result code (`a0`; `0x80` from exit-complete path); if `[0x8019F528]==0` sets end-countdown `0x8019F528=100` (~debrief in ~100 frames). Called from `mission_exit_commit`@`0x8008A20C`. |
+
+**The lower overlay block.** `0x8004C318` is **below** the main dump base
+`0x80050000`. To annotate it in the same project, a new **regular initialized
+memory block `ovl202_lower` (`0x8004ADA0`..`0x8004FFFF`, `0x5260` B)** was created
+from the first `0x5260` bytes of `disc_map/overlays/ovl202_mission.bin`
+(load_base `0x8004ADA0`). Only the lower `0x5260` is loaded — the rest of that
+carved image (`0x80050000`+) would overlap the existing `ram` block, so it is
+omitted. A `Pcode error at 8004ada8` during disassembly is EXPECTED (`0x8004ADA0`
+is the overlay header, not code); `0x8004C318` itself disassembled cleanly
+(10 instructions, `jr ra`@`0x8004C338`). The mission VM jump table `0x8004C164`
+now resolves to real bytes inside this block.
+
+Resident data addresses referenced in the comments — `0x8019F524` (result/event
+word), `0x8019F528` (end-countdown), `0x8019F51C` (objective-object ptr →
+`0x801C4B40`), `0x801D0B50` (objectives-complete state, ==3) — live in the
+always-resident data region OUTSIDE both blocks, so they are NOT labeled here.
+
+Scripts: `AnnotateMission202Complete.java` (parts A+B), `FixExitCommit.java`
+(re-pointed `mission_exit_commit` to the true entry `0x8008A0B0` after the first
+pass made a 1-byte stub at the `jr v0` target `0x8008A1F4`), `LabelExitCase.java`
+(label+pre-comment on the case body), `VerifyLevelComplete.java` (read-only dump).
+
 ## Cross-overlay references (do not chase blindly)
 The mission VM jump table is at `0x8004C164` and the overlay-header pointers at
 `0x8004ADA0+`. Those addresses are **below** this dump's base, so Ghidra shows them as
@@ -123,4 +158,6 @@ unreadable. To resolve them, use the separately-carved overlay images
 - Provenance: `/home/byron/Desktop/AC_1_USA_RE/overlays/README_mission_overlay.md`
 - New Ghidra project: `/home/byron/Desktop/AC_1_USA_RE/ghidra_mission202/Mission202.gpr`
 - Annotate scripts: `/home/byron/Desktop/AC_1_USA_RE/ghidra_scripts/{AnnotateMission202,FixVMLabels}.java`
+- Level-complete annotate scripts: `/home/byron/Desktop/AC_1_USA_RE/ghidra_scripts/{AnnotateMission202Complete,FixExitCommit,LabelExitCase,VerifyLevelComplete}.java`
 - Pre-task Ghidra backup: `/home/byron/Desktop/AC_1_USA_RE/_ghidra_backup_2026-06-14/`
+- Pre-level-complete Mission202 backup: `/home/byron/Desktop/AC_1_USA_RE/_ghidra_mission202_backup_pre_levelcomplete_2026-06-14/`
