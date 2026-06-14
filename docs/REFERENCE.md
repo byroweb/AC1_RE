@@ -490,3 +490,39 @@ data-driven VM (`0x8008BAF8`) can set flags from the script stream.
 | mission script jump table (10 cmds) | `0x8004C164` | overlay |
 | timer set helper (cmd 4) | `0x8008A778` | overlay |
 | "MISSION TIMER" / "#Location Now" strings | `0x8004ADB0` / `0x8004C1AC` | overlay |
+
+---
+
+## 13. Player interactions & live mission ground-truth (RE 2026-06-14)
+
+Live (DuckStation) RE of the in-mission interactive systems. Writeups:
+**`docs/INTERACTIONS.md`** (Circle-context door/item, COM dialogs, SsVm sound) and
+**`docs/MISSION_SYSTEM.md` §6** (completion flow, spawn-activation chain). Overlay
+provenance + the annotated Ghidra project: **`overlays/OVERLAY_MAP.md`** (isolated
+`ghidra_mission202/Mission202.gpr`).
+
+- **Level completion is two-step:** destroy last objective → `0x801D0B50` (=struct
+  `0x801D0B40`+0x10) `= 3` *objectives-complete* + a "last objective" COM dialog
+  (does **not** end the mission); then **cross the exit border** → script cmd 5 →
+  `FUN_8004C318(0x80)` → arms `0x8019F528=100` → debrief. End-primitive
+  `FUN_8004C318` and the cmd-5 path are now **live-confirmed**.
+- **Sliding door** = world-structure object (`0x801D0B68` array, stride `0x40`);
+  state word `+0x30` **bit `0x100`=closed**, cleared by Circle-interact; open
+  routine `0x801C6B68` (objective overlay).
+- **Item pickup** ("COM : AC weapon obtained") = SsVm sound + COM dialog; obtained
+  part deferred to the owned-parts save at mission end (no live mid-mission flag).
+- **SsVm sound engine** (resident): trigger `UT_KEYV_OBJ_180` `0x80021880`, voice
+  table `0x80040938` (stride `0x1A`) — a memory-diff **red herring** (fires on any
+  Circle press).
+- **Method:** idle-baseline diff subtraction + aligned-word watchpoints; for a
+  per-frame-rewritten flag, NOP the writer's store, catch the real setter, restore
+  (see the `mem-diff-baseline` skill). The per-frame `0x8019F524` masker is the
+  `sw` at `0x8008A938` in `FUN_8008A8F8`.
+
+| Symbol | Address | |
+| --- | --- | --- |
+| objectives-complete state (struct `0x801D0B40`+0x10) | `0x801D0B50` | RAM |
+| door/world-structure object array | `0x801D0B68` | RAM |
+| door open routine (objective overlay) | `0x801C6B68` | overlay |
+| per-frame `0x8019F524` masker (`sw`) | `0x8008A938` | overlay |
+| SsVm sound trigger | `0x80021880` | EXE |

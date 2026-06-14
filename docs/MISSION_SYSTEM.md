@@ -220,6 +220,59 @@ mission result code; `DAT_800411F8` = mission number / phase byte;
 
 ---
 
+## 6. Live ground-truth — completion flow & spawn chain (DuckStation, 2026-06-14)
+
+Everything in §4 was static (disasm) RE; this section **live-confirms** it on
+hardware-accurate emulation and adds the observed end-to-end flow. Captured with
+save states + watchpoints + idle-baseline diffs (see the `mem-diff-baseline`
+skill). Ghidra names below are in the **isolated `Mission202` project** — see
+`overlays/OVERLAY_MAP.md`.
+
+### Level completion is **two halves** — the kill is not enough  CONFIRMED
+1. **Destroy the last objective** → the field at **`0x801D0B50`** (= the mission
+   timer/state struct `0x801D0B40` **+0x10**, §5) becomes **`3`** =
+   *objectives-complete*, and a non-pausing **`COM : …` "last objective"** dialog
+   fires. This does **NOT** set success or end the mission — verified:
+   `0x8019F524`, `0x80048610` and the objective object all stayed `0` across the
+   kill. (Open: reconcile `0x801D0B50` with the objective step counter
+   `0x8009079C` — likely distinct fields.)
+2. **Cross the level-exit border** (gated on the objectives-complete state) → the
+   objective object's per-frame update runs script **cmd 5** (`0x8008A1E8`) →
+   **`FUN_8004C318(0x80)`** writes `0x8019F524` and arms `0x8019F528 = 100`, the
+   ~100-frame countdown that transitions to the **debrief / "Income and expense
+   report"** screen. Live-observed `0x8019F524 = 0x480` at the exit = `0x80`
+   (cmd 5) + the `0x400` bit already noted in §5 (its setter not yet pinned).
+
+### Per-frame masker defeats a naïve watchpoint  CONFIRMED
+`FUN_8008A8F8` (the state machine, §3) re-writes `0x8019F524` **every frame**
+(`lw; and ~0x1000; sw` at **`0x8008A938`**) to clear the transient timer-warn bit
+`0x1000`. A plain write-watchpoint on `0x8019F524` therefore traps every frame and
+is useless. To catch the real setter (`FUN_8004C318`), **NOP `0x8008A938`** so the
+word is no longer written each frame, trap the clean setter, then restore the
+bytes (`24 f5 22 ac`). DuckStation patches the overlay with no I-cache problem.
+
+### Dynamic mid-mission spawn — activation chain  CONFIRMED
+The MT-spawn **table** (§2) is just placement data; enemies appear "out of
+nowhere" when a **script opcode activates** a spawn record. Live chain:
+spawn-group opcode (secondary VM dispatch `0x8008B42C` / handler `0x8008B830`,
+distinct from the `0x8004C164` VM) → **`0x80078CFC`** spawn routine →
+**`0x80078A2C`** slot allocator (AC array `0x801A26B8`, stride `0x170`) →
+**`FUN_800788C8`** resource loader (geometry/collision via `FUN_80050FC4`) →
+**`~0x80078C00`** record initializer → **`0x80078B14`** binder (marks the spawn
+record consumed). The trigger is a script/location condition, **not** a collidable
+trigger volume.
+
+### Ghidra (Mission202 project) — names applied this pass
+`mission_exit_commit` `0x8008A0B0` (the §4 script VM dispatcher; case bodies
+`0x8008A10C–0x8008A2A8`), `mission_vm_jumptable` `0x8004C164` (10 entries, defined
+as a JumpTable so the switch decompiles), `mission_set_result` `0x8004C318`,
+`mission_eventflags_tick` `0x8008A8F8`, `mission_phase_dispatch` `0x8008AB68`.
+`0x8004C318` and the table sit in the imported **`ovl202_lower`** block
+(`0x8004ADA0–0x8004FFFF`). Player-interaction handlers (door/item) are in the
+objective overlay — see **`docs/INTERACTIONS.md`**.
+
+---
+
 ## CONFIRMED vs HYPOTHESIS summary
 
 **CONFIRMED**
