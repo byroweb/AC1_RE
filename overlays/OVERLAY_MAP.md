@@ -145,6 +145,45 @@ Scripts: `AnnotateMission202Complete.java` (parts A+B), `FixExitCommit.java`
 pass made a 1-byte stub at the `jr v0` target `0x8008A1F4`), `LabelExitCase.java`
 (label+pre-comment on the case body), `VerifyLevelComplete.java` (read-only dump).
 
+### Mission script-VM event switch (added 2026-06-14, static RE + Ghidra)
+
+The dispatcher `mission_exit_commit` @`0x8008A0B0` is the **mission script-VM event
+switch**. Bounds check at `0x8008A0DC`: `sltiu v0,a0,10` → **exactly 10 cases**
+(`beqz`→default `0x8008A318`). Index = `(a0 & 0xff) - 1`. It loads
+`lw v0,[0x8004C164 + index*4]` (`0x8008A0FC`) and `jr v0` @`0x8008A104`.
+
+**Jump table `0x8004C164`** (10 × u32 pointers; lives in the `ovl202_lower` block).
+Defined as a Ghidra `JumpTable` override on the `jr v0`, so `mission_exit_commit`
+now decompiles as a full 10-case `switch`. Table label = `mission_vm_jumptable`;
+each target labeled `mission_vm_caseNN`. Bytes byte-verified against
+`disc_map/overlays/ovl202_mission.bin` (table file offset `0x13C4`); entry 10 =
+`0x00000000`, confirming the count is exactly 10. **NOTE:** this is a DIFFERENT
+dispatch from the secondary spawn-group VM `0x8008B42C`/`0x8008B830` (opcode `0x1003`,
+`project_ac1_dynamic_spawn`) — do not conflate; that one is a `lhu`-opcode `<32`
+beq-chain, this one is the `(a0-1)`-indexed objective-event table.
+
+| case | a0 | target addr  | label              | meaning (CONFIRMED by decompile unless "hyp") |
+|-----:|---:|--------------|--------------------|-----------------------------------------------|
+| 00   | 1  | `0x8008A10C` | `mission_vm_case00`| `jal 0x8008A048` (COM/broadcast, a0=s3); loops world-object array `&DAT_801D0BA0` (stride 0x40) clearing byte `+6`. Reset/broadcast op (hyp meaning). |
+| 01   | 2  | `0x8008A158` | `mission_vm_case01`| `jal 0x8008C2FC(a0=s0)` — secondary VM/COM routine (hyp). |
+| 02   | 3  | `0x8008A168` | `mission_vm_case02`| `jal 0x8008A048(a0=s0)` — COM/broadcast sub-handler (hyp). |
+| 03   | 4  | `0x8008A178` | `mission_vm_case03`| **SET-TIMER** (old cmd4): `jal 0x8008A048`; `jal 0x8008A778(timer=operand*0x16, mode, a2)`; `sh result,[0x8019F52C]` (displayed timer). Mode s4: 1→0x200, 2→0x80, else→0x100. |
+| 04   | 5  | `0x8008A1E8` | `mission_vm_case04`| **EXIT-COMPLETE / SUCCESS**: gate `lhu [0x8019F528]`; if 0 → `jal 0x8008A048/0x8008A080` then `mission_set_result(0x80)`. (= `mission_exit_complete_case` label is at `0x8008A1F4` inside this body, the gate `bnez`.) |
+| 05   | 6  | `0x8008A21C` | `mission_vm_case05`| **RESULT(0x100) via COM**: gate `lhu [0x8019F528]`; if 0 → `jal 0x8008A048/0x8008A080`, fall into case-07 tail `0x8008A274` → `mission_set_result(0x100)`. |
+| 06   | 7  | `0x8008A248` | `mission_vm_case06`| `jal 0x8008A048/0x8008A080` (COM broadcast), then return. Pure broadcast op. |
+| 07   | 8  | `0x8008A260` | `mission_vm_case07`| **SUCCESS-IF-99** (old cmd8): `FUN_80052A2C(99)`; if ret==1 → `mission_set_result(0x100)` @`0x8008A274`. |
+| 08   | 9  | `0x8008A284` | `mission_vm_case08`| **OBJECTIVE-OBJ METHOD** (old cmd9): `lw [0x8019F51C]`(obj `0x801C4B40`); `(*(obj+8))(a0=s1)`. |
+| 09   | 10 | `0x8008A2A8` | `mission_vm_case09`| `jal 0x8008A048`; loops world-object array `0x801D0B68` (stride 0x40): for each `obj!=0`, call `(*(obj+4))(obj, mode|0x8200, 0)`. Broadcast to world objects (hyp meaning). |
+
+Result codes committed via `mission_set_result` (`0x8004C318`): `0x80` (case04),
+`0x100` (cases 05 & 07). These match the live `0x8019F524` event-flags semantics
+documented in `project_ac1_objective_complete`.
+
+Script: `DefineMissionVMTable.java` (defines the 10 pointers, labels table+cases,
+writes the JumpTable override; idempotent — verifies each entry against the carved
+disc bytes before labeling). The switch decompiles cleanly and persists across
+reopen (verified read-only).
+
 ## Cross-overlay references (do not chase blindly)
 The mission VM jump table is at `0x8004C164` and the overlay-header pointers at
 `0x8004ADA0+`. Those addresses are **below** this dump's base, so Ghidra shows them as
@@ -159,5 +198,7 @@ unreadable. To resolve them, use the separately-carved overlay images
 - New Ghidra project: `/home/byron/Desktop/AC_1_USA_RE/ghidra_mission202/Mission202.gpr`
 - Annotate scripts: `/home/byron/Desktop/AC_1_USA_RE/ghidra_scripts/{AnnotateMission202,FixVMLabels}.java`
 - Level-complete annotate scripts: `/home/byron/Desktop/AC_1_USA_RE/ghidra_scripts/{AnnotateMission202Complete,FixExitCommit,LabelExitCase,VerifyLevelComplete}.java`
+- VM-switch table script: `/home/byron/Desktop/AC_1_USA_RE/ghidra_scripts/DefineMissionVMTable.java`
+- Pre-switch-table Mission202 backup: `/home/byron/Desktop/AC_1_USA_RE/_ghidra_mission202_backup_pre_switchtable_2026-06-14/`
 - Pre-task Ghidra backup: `/home/byron/Desktop/AC_1_USA_RE/_ghidra_backup_2026-06-14/`
 - Pre-level-complete Mission202 backup: `/home/byron/Desktop/AC_1_USA_RE/_ghidra_mission202_backup_pre_levelcomplete_2026-06-14/`
