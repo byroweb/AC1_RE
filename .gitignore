@@ -73,3 +73,6 @@ build/
 disc_map/levels/
 disc_map/levels_assembled/
 ghidra_mission202/
+
+# Personal scratch / throwaway working files (screenshots, experiments)
+scratch/
