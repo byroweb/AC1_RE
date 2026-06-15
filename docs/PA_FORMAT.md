@@ -138,8 +138,26 @@ with its own VRAM dest rect) — supplies UI/effect/AC pages (tx 5/8/9/13/15, e.
 (448,256)). **CONFIRMED negative:** RTIM does **not** fill PA00's dominant stage pages
 (704/768,256); a separate **per-stage** texture bank does. The PA loader `FUN_8004F1A8`
 has **no** `LoadImage`/GPU-DMA call — geometry load and texture upload are decoupled.
-OPEN: which file/bank uploads pages (704/768,256) — one DuckStation `LoadImage` trace at
-mission load resolves it (see `scratch/re/pa_textures.md` §4).
+
+**Per-stage texture bank — LOCATED on disc (2026-06-15):** the bank is **embedded in
+the PA container itself**, not in a sibling file (the `P0..P3` dirs hold only `PA##.T`).
+In `PA00.T` the two **non-geometry** entries carry it:
+- **entry 0** — a fixed **0x10000-byte (64 KB)** block, `self0` ≠ `len` so it is *not* a
+  geometry block; header is a small descriptor (`+0x00` used-size `0xf854`, `+0x0c`
+  count `0x1c`=28, then internal offsets `0x188 / 0xedc4 / 0xefd4`). Rendering it raw as
+  8bpp or 16bpp is **noise**, so the pixels are inside a **structured/encoded sub-container**
+  (offset table at `+0x1c`, regular `08 xx 08 yy` records), not a flat VRAM image.
+- **entry 1** — a **~2 KB** block whose body is an **ascending u16 offset table**
+  (`0x72,0x82,0xa2,0xea,0x10a,0x152,…`) → a **CLUT/palette directory** (matches the 8bpp
+  pages the geometry references).
+
+This matters because **~88% of PA00 faces are textured** (21572 textured vs 2810 flat;
+the flat faces use just 2 colours), so a stage cannot be rendered correctly from geometry
+alone — the entry-0 bank is required. OPEN: (a) crack the entry-0 sub-container encoding,
+and (b) confirm its VRAM upload destination — one DuckStation `LoadImage` trace at mission
+load nails the destination (see `scratch/re/pa_textures.md` §4). Offline alternative for a
+VRAM source is an **in-mission** DuckStation save state (`tools/duckstation/savestate.py`),
+but all 10 current backup states are menu/garage (`stage_byte=0`), so none carry stage VRAM.
 
 **Gouraud stride (RESOLVED 2026-06-11, live RE):** flat/textured types pack their
 vertex indices contiguously (stride 2). The **gouraud** types interleave

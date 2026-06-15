@@ -57,6 +57,16 @@ just flat/wireframe. Per textured record (`family = type & 0xFD`):
   additive enhancement (emit `vt` + a `usemtl tpage_XX` per face) if AC1mod wants
   textured OBJ export; ask and it can be added here as the single source of truth.
 
+**Material-map render (done in AC1mod 2026-06-15):** until real texels are available,
+AC1mod now colours each textured face by a stable hue derived from its decoded
+`(tpage, clut)` (`core/pa_parser.material_color`), exposed as `ac1mod_cli.py level N
+--materials`. Distinct textures read as distinct flat colours — a faithful *texture-layout*
+view, not real texels. **Where the texels live is now known:** the per-stage bank is
+embedded in the PA container — **entry 0** (64 KB, a structured/encoded sub-container) +
+**entry 1** (a CLUT/palette directory); see [PA_FORMAT.md](PA_FORMAT.md). Real texturing
+waits on cracking entry 0 + confirming its VRAM upload destination (or an in-mission VRAM
+dump via [SAVESTATE_FORMAT.md](SAVESTATE_FORMAT.md) — the current backups are all garage).
+
 ### 2. New decode AC1mod can surface (read-side)
 
 - **Mission scene = FDAT entry `2N+1` chunks**: chunk 0 = local geometry (PA-format
