@@ -38,7 +38,7 @@ big-mesh slots they fill (e.g. phase 0 → slots 10,13,16,19,22):
 
 (The big e10-e24 meshes are the ones earlier mistaken for "all AC parts" — they're a
 fixed model slot reused across the object-category files, which is exactly why every
-such file looked the same: we were defaulting to the largest slot.)
+such file looked the same: the largest slot was the default.)
 
 ## What this means
 - A PA file = a **fixed-layout resource bank** for a mission: common slots (present

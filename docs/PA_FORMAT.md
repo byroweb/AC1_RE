@@ -53,7 +53,8 @@ secbase[+12] = SUB-OBJECT TABLE  (stride 28)                  CONFIRMED
 | off | size | field |
 | --- | --- | --- |
 | +0x00 | u32 | **VERTEX-POOL offset** (relocated; ×nothing — int16 xyzw stride 8) |
-| +0x04 | u32 | **VERTEX COUNT** |
+| +0x04 | u16 | **VERTEX COUNT** (CORRECTION 2026-06-15: this is **u16**, not u32 — see +0x06) |
+| +0x06 | u16 | param (nonzero on the "articulated" block variant; e.g. PA00 e60). Reading +0x04 as u32 swallows this and massively over-reads the vertex count. Byte-exact cross-checked vs `tools/pa/pa_encode.py` (7602/7602). `pa_obj.py` fixed accordingly. |
 | +0x08 | u32 | 2nd-pool offset (colour/normal pool, relocated) |
 | +0x0e | u16 | **FLAGS**: `0x8000`=terminate/skip sub-object; `0x4000`=skip reloc; low 9 bits = prim-count addend |
 | +0x10 | u32 | **PRIMITIVE-STREAM offset** (relocated) — the walk start `t0` |
@@ -98,6 +99,65 @@ Vertex-index offset & count per type (record-relative; validated PA00+PA20):
 | 0x2c | textured | 4 | 32 | **+0x16** (stride 2) |
 | 0x34 | gouraud tri | 3 | 28 | **+0x12, stride 4** (RESOLVED) |
 | 0x3c | gouraud quad | 4 | 36 | **+0x16, stride 4** (RESOLVED) |
+
+### Textured-primitive MATERIAL words (CONFIRMED 2026-06-15, emitter `FUN_8005A57C`)
+
+For textured types the shading region is a **verbatim PSX texture-poly material**: the
+emitter `sw`s the on-disk word straight into the GPU `POLY_FT*/GT*` packet (no
+transform), so the on-disk word **is** the GPU CBA/tpage field. Record-relative offsets
+(record = the word whose byte3 is the type; `family = type & 0xFD`):
+
+| type | packet | reclen | CLUT word | TPAGE word | UV0/1/2[/3] (u,v bytes) | colour | vtx0 | vtx stride |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0x24 | FT3 | 24 | +0x06 | +0x0a | +0x04/05, +08/09, +0c/0d | GTE-lit | +0x12 | 2 |
+| 0x2c | FT4 | 32 | +0x06 | +0x0a | …+10/11 | GTE-lit | +0x16 | 2 |
+| 0x34 | GT3 | 28 | +0x06 | +0x0a | +04/05,+08/09,+0c/0d | GTE ×3 | +0x12 | 4 |
+| 0x3c | GT4 | 36 | +0x06 | +0x0a | …+10/11 | GTE ×4 | +0x16 | 4 |
+| 0xa4 | FT3 (unlit) | 28 | +0x06 | +0x0a | +04/05,+08/09,+0c/0d | rec+0x10 | +0x14 | 2 |
+| 0xac | FT4 (unlit) | 32 | +0x06 | +0x0a | …+10/11 | rec+0x14 | +0x18 | 2 |
+
+CLUT/TPAGE occupy the **high halfword** of the UV0/UV1 words. `u,v` are unsigned 0..255
+texel coords within the page. (Dispatch `type & 0xFD`; six handlers `0x8005A744..AE14`;
+matrix-variant emitter `0x80058B04` is identical. Full disasm proof in
+`scratch/re/pa_textures.md`.)
+
+**Decode formulas (standard PSX, cross-checked vs `tools/farsi/font_render.c`):**
+```
+CLUT  word: cx = (clut & 0x3F) << 4   (16px X granularity);  cy = clut >> 6   (1px Y)
+TPAGE word: px = (tpage & 0xF) * 64;   py = ((tpage>>4)&1) * 256;
+            abr = (tpage>>5)&3 (blend);  bpp = (tpage>>7)&3  (0=4bpp,1=8bpp,2/3=15bpp)
+```
+Observed PA00 markers: CLUT `0x7980`→VRAM (0,486); TPAGE `0x009b`→page (704,256) 8bpp.
+Dominant PA00 pages: `0x009c`(768,256) ×7370, `0x009b`(704,256) ×2002, `0x0037`(448,256,
+4bpp) ×874. **Re-texturing** an existing prim = overwrite the CLUT word (+0x06), TPAGE
+word (+0x0a) and the UV bytes; everything else is topology (then recompute the `.T`
+checksum). `pa_encode.py` preserves all of this byte-exact.
+
+**Texture image source:** `GG/COM/RTIM.T` is the common TIM bank (63 Sony TIMs, each
+with its own VRAM dest rect) — supplies UI/effect/AC pages (tx 5/8/9/13/15, e.g. page
+(448,256)). **CONFIRMED negative:** RTIM does **not** fill PA00's dominant stage pages
+(704/768,256); a separate **per-stage** texture bank does. The PA loader `FUN_8004F1A8`
+has **no** `LoadImage`/GPU-DMA call — geometry load and texture upload are decoupled.
+
+**Per-stage texture bank — LOCATED on disc (2026-06-15):** the bank is **embedded in
+the PA container itself**, not in a sibling file (the `P0..P3` dirs hold only `PA##.T`).
+In `PA00.T` the two **non-geometry** entries carry it:
+- **entry 0** — a fixed **0x10000-byte (64 KB)** block, `self0` ≠ `len` so it is *not* a
+  geometry block; header is a small descriptor (`+0x00` used-size `0xf854`, `+0x0c`
+  count `0x1c`=28, then internal offsets `0x188 / 0xedc4 / 0xefd4`). Rendering it raw as
+  8bpp or 16bpp is **noise**, so the pixels are inside a **structured/encoded sub-container**
+  (offset table at `+0x1c`, regular `08 xx 08 yy` records), not a flat VRAM image.
+- **entry 1** — a **~2 KB** block whose body is an **ascending u16 offset table**
+  (`0x72,0x82,0xa2,0xea,0x10a,0x152,…`) → a **CLUT/palette directory** (matches the 8bpp
+  pages the geometry references).
+
+This matters because **~88% of PA00 faces are textured** (21572 textured vs 2810 flat;
+the flat faces use just 2 colours), so a stage cannot be rendered correctly from geometry
+alone — the entry-0 bank is required. OPEN: (a) crack the entry-0 sub-container encoding,
+and (b) confirm its VRAM upload destination — one DuckStation `LoadImage` trace at mission
+load nails the destination (see `scratch/re/pa_textures.md` §4). Offline alternative for a
+VRAM source is an **in-mission** DuckStation save state (`tools/duckstation/savestate.py`),
+but all 10 current backup states are menu/garage (`stage_byte=0`), so none carry stage VRAM.
 
 **Gouraud stride (RESOLVED 2026-06-11, live RE):** flat/textured types pack their
 vertex indices contiguously (stride 2). The **gouraud** types interleave
@@ -185,8 +245,10 @@ edge cases) are dropped so output is always a valid mesh.
    per-vertex normal indices), first vertex at record+0x12 (tri) / +0x16 (quad). 0
    out-of-range across all 72 PA files. Fixed in `tools/pa/pa_obj.py` (and ported into
    the companion AC1mod viewer's `core/pa_parser.py`, separate repo).
-2. **Textures/UVs:** decode the UV+clut(`0x7980`)/tpage(`0x009b`) shading words into
-   real CLUT/tpage coords + a TIM source so the OBJ can carry a material.
+2. ~~**Textures/UVs:** decode the UV+clut/tpage shading words~~ **DONE 2026-06-15**
+   (see "Textured-primitive MATERIAL words" above): offsets, decode formulas, and the
+   RTIM bank are confirmed. Only the per-stage texture bank that fills pages (704/768,256)
+   is open (one live `LoadImage` trace).
 3. **Stage assembly:** entry 0 / entry 1 directory → how blocks place into a full map
    (the per-block bboxes are part-scale; the map header must position them).
 4. Port walker `0x800574D8` + emitter `0x8005A57C` into the companion AC1mod viewer (separate repo).
@@ -220,7 +282,8 @@ the pieces of a stage). Each 28-byte sub-object descriptor (table at
 | off | type | field |
 | --- | --- | --- |
 | +0x00 | u32 | vertex-pool offset |
-| +0x04 | u32 | vertex count |
+| +0x04 | u16 | vertex count (u16; +0x06 = u16 param — see correction above) |
+| +0x06 | u16 | param (articulated-variant; nonzero e.g. PA00 e60) |
 | +0x08 | u32 | **normal-pool** offset (pool2) |
 | +0x0c | u16 | **normal count** |
 | +0x0e | u16 | flags (0x8000 = skip/terminate) |
@@ -243,4 +306,5 @@ On-disk order within a sub-object: **[primitive stream][vertices][normals][pool4
 **Takeaway:** the big object blocks (21 sub-objects) are **complete articulated,
 fully-lit MT/AC models**, not loose triangles — vertices + per-corner normals +
 primitives per part. Still open: pool4's purpose, per-vertex colour vs normal index
-split, and texture image source (the PA loader's 8 conditional sub-resource loads).
+split, and the per-stage texture-image bank (material word decode is now done above;
+the upload source for stage pages 704/768,256 awaits a live `LoadImage` trace).

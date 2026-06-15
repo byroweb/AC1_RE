@@ -28,7 +28,7 @@ has not yet been found — it does not touch `0x8004121B` or `0x8004121D`.
 The doc/REFERENCE label "PA##.T = stage/map geometry packs" looks WRONG. Evidence:
 - The companion AC1mod viewer's PA viewer (separate repo) shows **mission-assignment-screen
   imagery** inside PA files (user observation).
-- Our renders decoded PA00 entries as **AC/mech parts, small props, and effects/sprites**
+- The renders decoded PA00 entries as **AC/mech parts, small props, and effects/sprites**
   (e21 = an AC core piece; e137 = a prop; e125-165 = effects) — object geometry, not a
   level hull.
 - PA00 is loaded as a **common bundle at every mission start** (the bootstrap above).

@@ -103,7 +103,12 @@ def parse_subobjects(block):
         o = tbl + i * 28
         if o + 28 > len(block):
             break
-        f0, vcnt, f8 = struct.unpack_from("<3I", block, o)
+        # +0x00 u32 vtx_off; +0x04 u16 vtx_cnt; +0x06 u16 param (nonzero on the
+        # "articulated" block variant — reading +0x04 as u32 over-reads vtx_cnt,
+        # cross-checked byte-exact vs tools/pa/pa_encode.py).
+        f0 = struct.unpack_from("<I", block, o)[0]
+        vcnt = struct.unpack_from("<H", block, o + 0x04)[0]
+        f8 = struct.unpack_from("<I", block, o + 0x08)[0]
         flags = struct.unpack_from("<H", block, o + 0x0e)[0]
         prim_off = struct.unpack_from("<I", block, o + 0x10)[0]
         prim_cnt_base = struct.unpack_from("<H", block, o + 0x14)[0]

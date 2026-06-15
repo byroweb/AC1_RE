@@ -464,10 +464,23 @@ Timer-tick handler (`~0x8004C4F0`) forces FAIL on expiry. Timer struct `0x801D0B
 **SUCCESS**, `0x200`=**FAIL** — read at mission exit (`0x8004C69C`) → result code
 **`0x80048610`** (1=success,2=fail). End primitive **`FUN_8004C318(a0)`** writes the
 flag + arms the 100-frame exit fade (`0x8019F528`). Objective-step primitive
-**`FUN_8008A80C`** drives progress counter `DAT_8009079C` (terminal at 36). Script
-VM **`FUN_8008A0B0`** + 10-entry jump table **`0x8004C164`** (cmd4=set-timer,
-cmd8=success-if-`FUN_80052A2C(99)`, cmd5=flag 0x80, timer-tick=0x200). A secondary
-data-driven VM (`0x8008BAF8`) can set flags from the script stream.
+**`FUN_8008A80C`** drives progress counter `DAT_8009079C` (terminal at 36). PRIMARY
+script VM **`FUN_8008A0B0`** + 10-entry jump table **`0x8004C164`** (cmd2=load
+secondary-VM set, cmd4=set-timer, cmd5=flag 0x80, cmd8=prompt-gated success,
+timer-tick=0x200).
+
+The **secondary actor-thread VM** (chunk 4 of the stream; tick `0x8008B380`,
+dispatch `0x8008B42C`) is the data-driven scripting language — 22 opcodes incl.
+`set_result` (`0x100A`→`FUN_8004C318`), scripted spawns, and movement/lerp. Full
+decode + assembler spec: **`docs/MISSION_SCRIPT_VM.md`**; type→behaviour binding +
+objective conditions: **`docs/ENTITY_TYPES.md`**; the level/mission **write-path**
+(edit→repack→reinject): **`docs/AUTHORING.md`**.
+
+> **Corrections (2026-06-15):** `FUN_80052A2C` is the TEXT/PROMPT VM (cmd 8 is a
+> prompt-gated success), not a "condition 99" predicate. `0x8008BAF8` is the
+> secondary-VM `set_result` opcode body, not a separate VM. Ready gate = `FUN_80052338`.
+> `hw7` (model id, 0..388) and the logical dispatch type (entity `+0x0E`, 1..6) are
+> **different namespaces** (`ENTITY_TYPES.md`).
 
 | Symbol | Address | |
 | --- | --- | --- |

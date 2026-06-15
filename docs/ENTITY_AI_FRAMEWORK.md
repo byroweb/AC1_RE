@@ -23,6 +23,11 @@ record in a **single entity array**:
   `[0x801A26B8, 0x801A26B8 + 0x1590)` and `0x1590 = 15 × 0x170` exactly → up to
   **15 entity slots**.
 
+The radar/target scan loop iterates a hard-coded count and the damage router
+bounds-checks an exact `0x1590 = 15 × 0x170` window → the array is a **statically
+sized, fixed-stride table of ~15 slots** (player + up to ~14 others), not a dynamic
+list. See `RAMWATCH_CONCORDANCE.md` §D3 (15-vs-16 loop-bound check still open).
+
 They share ONE struct; only the **vtable** (behaviour function pointers) and the
 **stats** differ. Consequence: there is **no special "moving" or "destructible"
 class**. Movement = a think-handler pointer; destructibility = an HP field + a
@@ -31,7 +36,7 @@ damage handler. The static `0x801D0B68` world props (generators/fuel tanks, see
 the train is the *full* case — mover + HP, on the entity route.
 
 > Stride `0x170` is independently corroborated in
-> [RUNTIME_RAM_MAP.md](RUNTIME_RAM_MAP.md) (our method-table test + Zinfidel
+> [RUNTIME_RAM_MAP.md](RUNTIME_RAM_MAP.md) (the project's method-table test + Zinfidel
 > BizHawk `ENTITY_OFFSET = 0x170`). Today's mission data agrees: slot 7 = train at
 > `+7*0x170`, HP/faction/vtable all align, and the damage router's AC range is an
 > exact `0x170` multiple. The separate `0xD0`-stride / 510-slot pool at
@@ -51,9 +56,10 @@ the train is the *full* case — mover + HP, on the entity route.
 ### Entity struct fields  CONFIRMED
 | off | size | meaning |
 |---|---|---|
-| `+0x00` | ptr | definition/resource pointer (`*(entity)`; armor stat at its `+0x14`) |
+| `+0x00` | ptr | definition/resource pointer (`*(entity)`; armor stat at its `+0x14`). ⚠ TASVideos reads this as u16 "ID" `+0x00` + u16 "active flags" `+0x02` — the ptr's low half varies by type (looks ID-like); needs reconcile (see `RAMWATCH_CONCORDANCE.md` §D2) |
 | `+0x04` | ptr | geometry-block record table (`0x8019F5xx`) |
 | `+0x08`,`+0x0C` | s16 | render/screen-space position (rebuilt each frame from matrix; used by target scoring) |
+| `+0x12` | s16 | **yaw / facing** (corroborated by TASVideos player-yaw `0x801A26CA`; re-verify) |
 | `+0x20`,`+0x24` | 16.16 | **train's** authoritative world X/Z (offset varies by entity type) |
 | `+0x36` | u16 | **faction/team id** in low 3 bits (red AC = 2). Friend/foe knob |
 | `+0x40` | u8 | **AI state byte** (state-machine selector; `0xFF` = special branch) |

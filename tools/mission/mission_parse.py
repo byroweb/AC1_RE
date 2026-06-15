@@ -35,6 +35,16 @@ import sys
 SPAWN_CHUNK = 12           # index of the instance/MT table in the chunk stream
 SPAWN_REC_LEN = 40         # source record length (20 int16)
 
+# Best-guess role per chunk index (see docs/MISSION_SYSTEM.md and
+# scratch/re/secondary_vm.md).  Used only for human-readable labelling.
+CHUNK_ROLES = {
+    0:  "geometry (local)",
+    4:  "script / actor-threads (secondary VM)",
+    7:  "section-placement",
+    11: "per-mission geom records",
+    12: "spawn / instance table",
+}
+
 
 def walk_chunks(buf, limit=64):
     """Yield (idx, off, length, stop) for each [u32 len][payload] chunk."""
@@ -57,9 +67,10 @@ def dump_chunks(buf):
         if stop:
             print(f"  chunk {idx:2d}  off 0x{off:05x}  len {ln} (STOP)")
             return
-        tag = ""
+        role = CHUNK_ROLES.get(idx, "")
+        tag = f"  <- {role}" if role else ""
         if idx == SPAWN_CHUNK and ln:
-            tag = f"  <- SPAWN/INSTANCE table ({ln // SPAWN_REC_LEN} recs)"
+            tag += f" ({ln // SPAWN_REC_LEN} recs)"
         print(f"  chunk {idx:2d}  off 0x{off:05x}  len {ln} (0x{ln:x}){tag}")
 
 
