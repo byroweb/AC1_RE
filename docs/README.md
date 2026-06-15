@@ -55,6 +55,9 @@ facts from open questions:
 - [COMBAT_PHYSICS.md](COMBAT_PHYSICS.md) — combat / physics / missiles RE notes.
 - [RUNTIME_RAM_MAP.md](RUNTIME_RAM_MAP.md) — in-mission AC entity array, camera, and
   frame counters (with independent Zinfidel BizHawk cross-check).
+- [ENTITY_AI_FRAMEWORK.md](ENTITY_AI_FRAMEWORK.md) — the shared entity/NPC array
+  (player/AC/aircraft/train as one struct): +0x58 think-handler clean-freeze tool,
+  faction/target fields, nearest-enemy target selection, and the entity damage route.
 
 ### Localization / UI
 - [AC1_TEXT_SYSTEM.md](AC1_TEXT_SYSTEM.md) — the text & menu rendering system, plus
