@@ -80,10 +80,11 @@ Source 40-byte record (`hwK` = int16 at byte 2K):
 | field | meaning | status |
 | --- | --- | --- |
 | `hw0,hw1,hw2` | X, Y, Z position | CONFIRMED |
-| `hw3` | **geometry block index** (`-> instance +0x0A`; `-1` = none) — binds to PA block via `0x8019F538` (PA_HEADER §"per-object setup") | CONFIRMED |
-| `hw5` | rotation (PSX angle units; `2048` = 1/16 turn observed) | HYPOTHESIS |
-| `hw7` | **object / MT TYPE id** | CONFIRMED (varies per mission: 5,7,8,25,33,34,62,190,196…) |
-| `hw8..hw19` | per-type params (HP / flags / link / area ids) | HYPOTHESIS |
+| `hw3` | **geometry block index** (`-> instance +0x0A`; `-1`=none; binds PA block via `0x8019F538`) **AND the behaviour DISPATCH TYPE** (`-> entity +0x0E -> objective-object INIT column`) — same id, both roles | CONFIRMED |
+| `hw5` | rotation (PSX angle units; `2048` = 1/2 turn) | CONFIRMED (range) |
+| `hw7` | **resource / class id** (wide 0..388; flag-table `0x80198B08` key) — **NOT the dispatch type (that is `hw3`)**, not copied to the instance | CONFIRMED |
+| `hw11` | **HP** (-> instance `+0x160/162/164`) | CONFIRMED path, HP HYP-strong |
+| `hw8,hw9,hw12,hw15,hw19` | params (flags/row-index/sub-stat/area/orient) — see `OBJECT_STATS.md` | HYPOTHESIS |
 
 Empty slots carry `hw3 == -1` and zero position. Mission 0 has 6 non-empty
 records; mission 2 has different types/positions. Binding to geometry & display
@@ -91,9 +92,10 @@ slot is `FUN_80078B14` (`+0x0A` = block index → 44-byte record table
 `0x8019F538`; `÷44` magic = display-slot 1..16). Dump:
 `tools/mission/mission_parse.py --stream <2N+1>.bin --spawns`.
 
-> Note: this is the **placement/spawn list**. Whether AI/HP live here (hw8..hw19)
-> or are looked up by `hw7` (type id) in a separate stat table is not yet
-> confirmed — best next ground-truth target.
+> Note: this is the **placement/spawn list**. The marshaller `FUN_80073B74` is a flat
+> reshape `hwK -> template +0x04+2K` (256 recs, stride 40→44; also seeds template
+> `+0x02 = hw11`). HP lives here (`hw11`); remaining `hw8/hw9/hw12/hw15` semantics need
+> live ground-truth. See `OBJECT_STATS.md`, `ENTITY_TYPES.md`.
 
 ---
 
@@ -153,11 +155,24 @@ sets `0x8019F528 = 100` (the ~100-frame end fade). Callers / values:
 | --- | --- | --- |
 | `0x8004C5F0` (timer-tick handler) | `0x200` | **FAIL on timeout** |
 | cmd 5 `0x8008A20C` | `0x80`  | generic end/objective flag |
-| cmd 8 `0x8008A274` (after `FUN_80052A2C(99)==1`) | `0x100` | **SUCCESS when condition 99 holds** |
-| `0x8008BAF8` (secondary script VM) | `hw` from script stream | **data-driven** flag set (can set 0x100/0x200) |
+| cmd 8 `0x8008A274` (after `FUN_80052A2C(99)==1`) | `0x100` | **prompt-gated SUCCESS** — see correction below |
+| `0x8008BAF8` = secondary-VM `set_result` opcode `0x100A` | `flags` from chunk-4 script | **data-driven** flag set (`0x100`/`0x200`/`0x80`) |
 
 So **success = `0x8019F524 |= 0x100`, failure = `|= 0x200`**, both routed through
 `FUN_8004C318`; the timer-tick path forces `0x200` on expiry.
+
+> **Corrections (2026-06-15, static disasm, see `MISSION_SCRIPT_VM.md` / `ENTITY_TYPES.md`):**
+> - **`FUN_80052A2C` is the TEXT / STRING-format + prompt VM, NOT a condition predicate.**
+>   It is a wait-for-button prompt loop (`0x80052A2C`); the string interpreter is at
+>   `0x80052B28` (jump tables `0x8005AEF0` by `char-10`, `0x8005ADC8` by `char-47`). So
+>   cmd 8 is a **prompt-gated success** (arg `99` = a message/format id; commits `0x100`
+>   when the prompt returns 1) — the exact trigger should be confirmed live. There is no
+>   generic "condition 99" predicate.
+> - **`0x8008BAF8` is not a separate VM** — it is the body of opcode `0x100A` (`set_result`)
+>   inside the secondary actor-thread VM (chunk 4). The "data-driven flag set" is that
+>   opcode calling `FUN_8004C318`. Full secondary VM in `MISSION_SCRIPT_VM.md`.
+> - The real ready/idle gate used by objective ticks is **`FUN_80052338`**
+>   (`*(*0x801FD844+0x10)==0`), not `FUN_80052A2C`.
 
 ### Objective-step primitive `FUN_8008A80C` (`0x8008A80C`)  CONFIRMED
 Drives the **objective progress counter `DAT_8009079C`** (range-checked `< 37`):
@@ -183,8 +198,9 @@ Opcode in `a0` (1..10) indexes a **10-entry jump table at `0x8004C164`**:
 | 5 | `0x8008A1E8` | end + `FUN_8004C318(0x80)` |
 | 6 | `0x8008A21C` | enable group + counter (`FUN_8008A080`) |
 | 7 | `0x8008A248` | group + counter |
-| 8 | `0x8008A260` | if `FUN_80052A2C(99)==1` → `FUN_8004C318(0x100)` (**SUCCESS**) |
+| 8 | `0x8008A260` | prompt-gated success: `FUN_80052A2C(99)` (TEXT/PROMPT VM, see correction above); if ret==1 → `FUN_8004C318(0x100)` |
 | 9 | `0x8008A284` | indirect call `[*0x8019F51C+8](idx)` (objective-object method) |
+| 2 | `0x8008A158` | `FUN_8008C2FC` → loads **secondary actor-thread VM** set (chunk 4); see `MISSION_SCRIPT_VM.md` |
 | 10 | `0x8008A2A8` | broadcast a `0x8200`+sub message to a range of objects |
 
 `FUN_8008A080` increments a per-object kill/visit counter at `0x80031A94 + id`
@@ -279,7 +295,8 @@ objective overlay — see **`docs/INTERACTIONS.md`**.
 - Mission N = FDAT entry pair (`2N` objective-object code+vtable @0x801C4B40,
   `2N+1` chunk stream); scene loader `FUN_8004F508`; chunk 12 = 256×40 MT-spawn
   table → `FUN_80073B74` → `0x8019FAB8`.
-- Spawn record: pos `hw0-2`, geometry block `hw3` (→ +0x0A binding), type `hw7`.
+- Spawn record: pos `hw0-2`, **`hw3` = geom block + dispatch type** (→ +0x0A→+0x0E),
+  `hw7` = resource/class id, `hw11` = HP. (See `OBJECT_STATS.md`/`ENTITY_TYPES.md`.)
 - Timer vars `0x8019F52C` (display) / `0x8019F52A` (end-anim) / struct `0x801D0B40`;
   driver `FUN_8008AB68`; state machine `FUN_8008A8F8`; HUD MM:SS path.
 - Result flags `0x8019F524` (0x100=success / 0x200=fail) → result code `0x80048610`;
@@ -288,11 +305,14 @@ objective overlay — see **`docs/INTERACTIONS.md`**.
   `0x8004C164` (cmd4=set-timer, cmd8=success-if-99, cmd5=0x80, timer-tick=0x200).
 
 **HYPOTHESIS / open**
-- Spawn `hw8..hw19` semantics (HP / AI / link / area ids) and whether stats are
-  keyed by `hw7` type id in a separate table.
+- Spawn `hw8/hw9/hw12/hw15` semantics (flags / row-index / sub-stat / area). `hw11`=HP
+  and `hw3`=dispatch type are resolved (`spawn_marshal`); HP needs a live watchpoint to seal.
 - The cmd4 `×22` timer scale / exact frame unit.
 - The objective-TYPE distinction (survive / reach / defend / destroy) is encoded
-  in the per-mission objective object's CODE and/or the secondary script VM
-  (`FUN_8008B…`, opcode at `0x8008BAF8` sets flags from a data stream) — the
-  enumerated condition checks (target-dead / player-in-area / timer / escort-alive)
-  live there; not yet enumerated per opcode.
+  in the per-mission objective object's CODE (`ENTITY_TYPES.md`) and/or the secondary
+  actor-thread VM (`MISSION_SCRIPT_VM.md`). **NOW ENUMERATED** (2026-06-15): the
+  secondary VM (chunk 4) has a full 22-opcode set incl. `set_result`; the objective
+  ticks for missions 0–3 are decoded and distilled into a 14-primitive condition
+  taxonomy (`ENTITY_TYPES.md` §objective). Remaining: per-mission `init_unit` field
+  semantics, the AUX flag-table bit meanings, and live confirmation of M2's protect-
+  vs-destroy sign.

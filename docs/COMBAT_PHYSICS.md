@@ -401,7 +401,16 @@ jalr vN(a0=ac)` — every call is null-checked):
 The enemy update wrapper `0x800760DC` = `jal 0x80075FC0` (pre/anim) → `jal
 0x8004F024` (**AC movement integrator**: applies the velocity/matrix at `ac+0x64`
 to position `ac+0x08` via per-axis helper `0x8004EF74`; also answers §3) → `jalr
-ac+0x50` (think). The NPC "brain" (targeting / navigate / decide-to-fire) is in the
+ac+0x50` (think).
+
+> **CONFLICT (2026-06-15) — confirm live.** A static collision-path recon
+> (`docs/COLLISION.md`, `scratch/re/collision.md`) reads `0x8004F024`/`0x8004EF74` as a
+> *timed value-easing* routine (no world reads, no GTE), i.e. NOT the integrator. This
+> contradicts the live finding above (called from the enemy update wrapper as the
+> velocity→position step). One of the two is mis-scoped. Resolve in DuckStation:
+> breakpoint `0x8004F024`, check whether it writes `ac+0x08` from `ac+0x64` during AC
+> motion. World collision itself is `0x80070F30`→`0x8006F4D8` (`COLLISION.md`),
+> independent of this dispute. The NPC "brain" (targeting / navigate / decide-to-fire) is in the
 mission-overlay routines `0x801C75BC` / `0x801C8CBC` / `0x801C91CC` / `0x801C981C`.
 
 ### ENEMY-AI FREEZE SWITCH  CONFIRMED & TESTED

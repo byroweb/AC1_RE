@@ -25,8 +25,8 @@ limits, so hamza etc. are fine.)
   **one static resident texture** ("the texture everything is calling"), each word
   a different UV rect. They are NOT per-category uploads.
 - That texture sits in the **menu/font texture page tpage 0x0007 (VRAM ~448,0)** —
-  the SAME page our Farsi glyph atlas uses (string_render.c: tpage 0x0007, CLUT
-  `FONT_CBA_MENU 0x3817` → CLUT VRAM (368,224)). Strong hypothesis: our Farsi
+  the SAME page the Farsi glyph atlas uses (string_render.c: tpage 0x0007, CLUT
+  `FONT_CBA_MENU 0x3817` → CLUT VRAM (368,224)). Strong hypothesis: the Farsi
   atlas baking overwrote part of the title word-art. Confirm by comparing the
   title region on the **original** unpatched disc vs the `[RTL]` disc.
 
@@ -69,16 +69,16 @@ in a 2-col × 3-row grid (~24px/row):
   to be confirmed by RE'ing the banner draw — that draw lives in a runtime overlay,
   not in the Ghidra base-EXE image, so it needs live overlay disassembly).
 
-**2. TAMPERING BUG CONFIRMED (this is why titles are garbled — it is OUR doing).**
+**2. TAMPERING BUG CONFIRMED (this is why titles are garbled — it is self-inflicted).**
   - The working base `…/AC_1_USA_test/Armored Core (v1.1).bin` has MENU_TIM font
-    rows **V96–188 overwritten with our 128-glyph Farsi atlas** (+ Persian digit
+    rows **V96–188 overwritten with the 128-glyph Farsi atlas** (+ Persian digit
     cells), which **destroyed the English word-art**. It is baked into the base
     `.bin`, so EVERY `[RTL]` build inherits the garbled titles.
   - Proven by re-extracting MENU_TIM from the PRISTINE backup
     `…/AC_1_USA_backup/Armored Core (v1.1).bin` and decoding the font sheet:
     intact MISSION/MAIL/GARAGE/RANKING/SHOP/SYSTEM word-art. See
     `docs/screens/menu_font_PRISTINE.png` vs `menu_font_RTL_atlas.png`.
-  - FDAT.T on the [RTL] disc is byte-identical to retail EXCEPT entry-201 (our
+  - FDAT.T on the [RTL] disc is byte-identical to retail EXCEPT entry-201 (the
     draw_string + name-shaper code). So no *other* tampering — only this and the
     intended overlay patch.
 
@@ -90,8 +90,8 @@ band. One sheet cannot hold both the glyph atlas and title word-art bitmaps.
 atlas where it is (name screen needs it); do NOT bake word-art bitmaps. Instead,
 RE the title banner draw and redirect it to a `draw_string` of the shaped Farsi word
 (گاراژ/رده‌بندی/نامه/سیستم/مأموریت/فروشگاه) rendered from the resident atlas, scaled
-to read big. Under this approach the "destroyed word-art" is moot — we stop using
-those rects as titles. The OLD bitmap plan below (steps 2–3) is SUPERSEDED.
+to read big. Under this approach the "destroyed word-art" is moot — those rects are
+no longer used as titles. The OLD bitmap plan below (steps 2–3) is SUPERSEDED.
 
 ## TITLE DRAW — FULLY RE'd (2026-06-08, live, in the hub)
 - **Title sprite:** one 32-byte textured-rect prim, code 0x64, drawn 1:1 at **screen
@@ -195,7 +195,7 @@ solved by a **zero-code "dead-kanji repurpose"**:
 
 ## BUILD RECIPE (execute-ready, 2026-06-08) — historical; superseded by title_build.py above
 Disc is 100% packed (no free sectors in MENU_TIM or FDAT) → store words IN the overlay
-(entry-201), which we already rebuild+checksum (zero risk to other assets).
+(entry-201), which is already rebuilt+checksummed (zero risk to other assets).
 - **Words data:** 6 words pack to ~1167B @1bpp (tight). Reclaimable overlay space:
   dead `draw_kanji` 0x80065DBC..0x800660C4 (776B) + tail pad 0x800CF35F (573B) + small
   runs (188/130/128/85/76B). Pick a layout that (a) fits reclaimed space @1bpp and (b)

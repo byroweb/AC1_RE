@@ -64,7 +64,7 @@ level, write-watch `0x800b1228` (+ `0x800b123c`) and collect all ~38 (rotation,t
 pairs in one frame, then apply them to assemble the X and verify. Then locate that data in
 the chunk stream (chunk 1?) to extract all levels offline.
 
-## Answer: can we extract all levels offline?
+## Answer: can all levels be extracted offline?
 **YES — and it's simpler than feared (no transform recovery).** Every mission's
 environment is in `FDAT.T` (one 27 MB file, entries 2N+1), in the already-decoded PA
 geometry format, world-positioned. Batch-walk each FDAT odd entry's geometry region

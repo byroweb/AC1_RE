@@ -30,8 +30,15 @@ model:
    blocks**; the scene loader registers their pointers into a **resource pointer
    table at `0x801A5F34`** (slot index x4). Each registered block is a typed pack
    (model geometry, instance descriptors, etc.) consumed by the render/AI code.
-   The type id (`hw7`) selects which model/behavior block is used at bind time —
-   it is **not** used as a direct array subscript into an HP/damage table.
+   The resource/class id (`hw7`) is a wide label (0..388) used as a flag-table key,
+   **not** a direct subscript into an HP/damage table.
+
+> **Correction (2026-06-15, `spawn_marshal`):** the behaviour **dispatch type is
+> `hw3`** (= the geometry block index = template `+0x0A` = entity `+0x0E`), which
+> selects the per-mission objective-object INIT method (→ `+0x58` think). **`hw7` is a
+> separate resource/class id** (template `+0x12`, never copied to the instance). Earlier
+> text calling `hw7` "the type" is superseded — `hw7` and `hw3` are different namespaces
+> (`ENTITY_TYPES.md`). HP is **`hw11`** (copied to instance `+0x160/162/164`).
 
 So for a viewer: **read the spawn record's `hw8..hw19` for the displayable
 per-instance numbers**, and treat `hw7` as the *type/class id* (a label, not a
@@ -52,15 +59,15 @@ instance template and is therefore readable/displayable.
 | src hw | byte | instance off | meaning | status |
 | --- | --- | --- | --- | --- |
 | hw0,hw1,hw2 | 0,2,4 | +0x04..+0x08 | **X, Y, Z** world position | CONFIRMED |
-| hw3 | 6 | +0x0A | **geometry block index** (-1 = none); binds to PA block via `0x8019F538` | CONFIRMED |
+| hw3 | 6 | +0x0A | **geometry block index** (-1=none; binds PA block via `0x8019F538`) **AND the logical DISPATCH TYPE** → entity `+0x0E` → objective-object INIT column (`+0x20+type*4`). Same small id (0/1/-1) serves both roles | CONFIRMED (`spawn_marshal`, `ENTITY_TYPES.md`) |
 | hw4 | 8 | +0x0C | 0 in all observed records | HYPOTHESIS (unused/flags) |
 | hw5 | 10 | +0x0E | **rotation** (PSX angle units; 1024/2048/3072 = 1/4 1/2 3/4 of 4096) | CONFIRMED (range) |
 | hw6 | 12 | +0x10 | 0 observed | HYPOTHESIS |
-| **hw7** | 14 | **+0x12** | **object / MT TYPE id** (read as a byte at +0x12 by some paths) | CONFIRMED |
-| hw8 | 16 | +0x14 | per-instance param A — small (0,32,64,288,512,3616); **AI/aggression or activation flags** | HYPOTHESIS |
-| hw9 | 18 | +0x16 | per-instance param B (0 in all observed) | HYPOTHESIS |
-| hw10 | 20 | +0x18 | copied to instance +0x00 (derived/link) | HYPOTHESIS |
-| hw11 | 22 | +0x1A | **per-instance "big" value** — 1300/2050/4500/5200/6000/9800; **candidate HP / armor / detection-range** | HYPOTHESIS |
+| **hw7** | 14 | **+0x12** | **resource / class id** (wide, 0..388) — flag-table `0x80198B08` bit key (row = hw9×0x6c); a scale arg. **NOT the behaviour dispatch type (that is hw3); not copied to the instance by the binder** | CONFIRMED (`spawn_marshal`) |
+| hw8 | 16 | +0x14 | param A → instance `+0x32` flag via `(hw8>>4 & 2)` | CONFIRMED (path), HYP (meaning) |
+| hw9 | 18 | +0x16 | flag-table row index (×0x6c into `0x80198B08`) | CONFIRMED (path), HYP |
+| hw10 | 20 | +0x18 | 0 observed | HYPOTHESIS |
+| hw11 | 22 | +0x1A (and → template +0x02) | **HP** — marshaller/binder copy it to instance `+0x160`, `+0x162`, `+0x164` (3 copies into the known AP region); values 1300..9800 | CONFIRMED path; HP = HYP-strong (live watchpoint on +0x160 to seal) |
 | hw12 | 24 | +0x1C | per-instance value — 110/130/300/313/480/2500; **candidate sub-stat (range / damage / area-id)** | HYPOTHESIS |
 | hw13 | 26 | +0x1E | 0/600 observed | HYPOTHESIS |
 | hw14 | 28 | +0x20 | 0/2561 observed | HYPOTHESIS |

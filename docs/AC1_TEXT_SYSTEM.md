@@ -1,7 +1,7 @@
 # AC1 (USA v1.1) — Text & Menu Rendering System
 
 Reverse-engineering notes for the Armored Core 1 USA text pipeline, and the
-record of the Farsi-localization changes we are layering on top of it.
+record of the Farsi-localization changes being layered on top of it.
 
 All RAM addresses below are for **FDAT entry 201**, the menu/UI overlay, which
 loads at **RAM base `0x8004ADA0`** (segment `FDAT_201` in Ghidra). Entry-201
@@ -10,7 +10,7 @@ checksum word — see `project_ac1_overlay_checksum`; any byte edit to entry 201
 must recompute it or the game hangs at NOW LOADING.
 
 Source files in this repo: `font_render.c` (draw_char), `string_render.c`
-(draw_string + our draw_farsi), `farsi_*.py` (build-time pipeline),
+(draw_string + the project's draw_farsi), `farsi_*.py` (build-time pipeline),
 `farsi_runtime_shape.py` (runtime name shaper reference).
 
 ---
@@ -53,7 +53,7 @@ Renders ONE ASCII char as a `SPRT_VAR` (GP0 0x64) into the OT.
 ### draw_kanji @ `0x80065DBC`  (2-byte Shift-JIS path)
 Originally invoked by draw_string for double-byte characters. **Was assumed dead
 in the USA build — it is NOT; the name-entry keyboard depends on it** (§4, §5).
-We removed its invocation when patching draw_string (§6); this is what broke
+Its invocation was removed when patching draw_string (§6); this is what broke
 name entry. Candidate space to reclaim for the runtime shaper.
 
 ### draw_string @ `0x8006599C`  (see `string_render.c`)
@@ -174,14 +174,14 @@ Row==3 special-cases the full-width space `0x81 0x40`.
 
 ### Name display
 The stored bytes are rendered through draw_string (type 7). So whatever encoding
-we store, the **display will follow draw_string's interpretation**.
+is stored, the **display will follow draw_string's interpretation**.
 
 ---
 
 ## 5. Farsi localization changes
 
 ### 5.1 draw_string Farsi patch (DONE — `string_render.c`)
-We replaced the 2-byte kanji branch with a Farsi branch:
+The 2-byte kanji branch was replaced with a Farsi branch:
 > any byte `>= 0x80` → Farsi glyph, index `= byte-0x80`, drawn by **draw_farsi**
 > (variable-width SPRT_VAR from `fmet[]`, same per-zone metrics transform).
 
@@ -315,7 +315,7 @@ PREVBTN @0x8004C748 (edge), LOGBUF @0x8004C750. Fixes applied:
 - EDGE: edge = buttons & ~PREVBTN (one char per press, not frame-rate).
 - DEBOUNCE for downstream states: handler sets `*(0x801A2550) |= edge&(0x40|0x20|0x800)`
   (the game's "consumed" latch) so the name-confirm state doesn't accept the held
-  END press. Stock did the same; we'd dropped it when switching to our own edge.
+  END press. Stock did the same; it had been dropped when switching to a custom edge.
 - RTL: LOGBUF holds typed order; display = reversed(LOGBUF)+'>'.
 - END: draw_confirm(0x8005D8D4, "Confirm name?" @0x8004C878, cur+24,12,0) + set
   parent+116=0x8008240C. START(0x800)->cursor row3 col2.
@@ -382,7 +382,7 @@ Validated Python≡C≡build-time on 20 words (letters-only + mixed digit/space/
 
 ## 6. Open questions / TODO pointers
 - Where exactly renderer `0x80059B50` (type 6) samples its glyphs (GTE poly path)
-  — only matters if we keep any type-6 text; name grid will move to draw_string.
-- Free-VRAM decision if we ever stop sharing the font tpage (currently moot since
+  — only matters if any type-6 text is kept; name grid will move to draw_string.
+- Free-VRAM decision if the font tpage is ever no longer shared (currently moot since
   full-Farsi reuses the font texture wholesale).
 - Save-data impact of 1-byte name encoding (acceptable for a translation).

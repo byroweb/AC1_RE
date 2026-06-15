@@ -171,7 +171,7 @@ beq-chain, this one is the `(a0-1)`-indexed objective-event table.
 | 04   | 5  | `0x8008A1E8` | `mission_vm_case04`| **EXIT-COMPLETE / SUCCESS**: gate `lhu [0x8019F528]`; if 0 → `jal 0x8008A048/0x8008A080` then `mission_set_result(0x80)`. (= `mission_exit_complete_case` label is at `0x8008A1F4` inside this body, the gate `bnez`.) |
 | 05   | 6  | `0x8008A21C` | `mission_vm_case05`| **RESULT(0x100) via COM**: gate `lhu [0x8019F528]`; if 0 → `jal 0x8008A048/0x8008A080`, fall into case-07 tail `0x8008A274` → `mission_set_result(0x100)`. |
 | 06   | 7  | `0x8008A248` | `mission_vm_case06`| `jal 0x8008A048/0x8008A080` (COM broadcast), then return. Pure broadcast op. |
-| 07   | 8  | `0x8008A260` | `mission_vm_case07`| **SUCCESS-IF-99** (old cmd8): `FUN_80052A2C(99)`; if ret==1 → `mission_set_result(0x100)` @`0x8008A274`. |
+| 07   | 8  | `0x8008A260` | `mission_vm_case07`| **PROMPT-GATED SUCCESS** (old cmd8): `FUN_80052A2C(99)`; if ret==1 → `mission_set_result(0x100)` @`0x8008A274`. NOTE (2026-06-15): `FUN_80052A2C` is the TEXT/PROMPT VM, not a "condition 99" predicate — arg 99 = message/format id, success commits when the prompt returns 1 (confirm trigger live). See `docs/MISSION_SCRIPT_VM.md`. |
 | 08   | 9  | `0x8008A284` | `mission_vm_case08`| **OBJECTIVE-OBJ METHOD** (old cmd9): `lw [0x8019F51C]`(obj `0x801C4B40`); `(*(obj+8))(a0=s1)`. |
 | 09   | 10 | `0x8008A2A8` | `mission_vm_case09`| `jal 0x8008A048`; loops world-object array `0x801D0B68` (stride 0x40): for each `obj!=0`, call `(*(obj+4))(obj, mode|0x8200, 0)`. Broadcast to world objects (hyp meaning). |
 
