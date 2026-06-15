@@ -30,6 +30,8 @@ facts from open questions:
 ### Disc / containers
 - [MXT_LOADER.md](MXT_LOADER.md) — the MXT container & overlay loader behind every
   `.T` file load, the FDAT overlay system, and the trailing-checksum gotcha.
+- [T_REPACK.md](T_REPACK.md) — the `.T` container **writer/repacker** (`tools/extract/t_repack.py`):
+  inverse of `extract_t.py`, with TOC rebuild + checksum recompute (round-trips 90/90).
 - [PA_FORMAT.md](PA_FORMAT.md) — `PA00–PA71.T` geometry asset packs: container +
   primitive format (identity under revision).
 - [PA_HEADER.md](PA_HEADER.md) — PA##.T entry-0 (master header) + entry-1
@@ -50,6 +52,10 @@ facts from open questions:
   select to on-screen geometry.
 - [OBJECT_STATS.md](OBJECT_STATS.md) — where the per-type and per-instance object/MT
   stats live.
+- [INTERACTIONS.md](INTERACTIONS.md) — player interactions: Circle-context door/item
+  use, COM dialogs, and live mission-completion ground-truth.
+- [`../overlays/OVERLAY_MAP.md`](../overlays/OVERLAY_MAP.md) — FDAT overlay-swap map
+  (UI / mission / link / arena) + the isolated Mission202 Ghidra import.
 
 ### Gameplay
 - [COMBAT_PHYSICS.md](COMBAT_PHYSICS.md) — combat / physics / missiles RE notes.
