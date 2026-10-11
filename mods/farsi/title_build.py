@@ -18,7 +18,8 @@ import os, struct, shutil, sys
 
 HERE   = os.path.dirname(os.path.abspath(__file__))
 ROOT   = os.path.dirname(os.path.dirname(HERE))
-BIN    = "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1) [RTL].bin"
+# Your own [RTL]-patched disc image (output of build_rtl_patch.py). Never committed.
+BIN    = os.environ.get("AC1_RTL_BIN", "")
 MENU_SRC = "/tmp/MENU_TIM_original.T"          # pristine MENU_TIM (== retail, verified)
 FDAT_SRC = os.path.join(ROOT, "fdat_patched.T")# current FDAT (has the name shaper)
 BAND   = "/tmp/title_band2.raw"                # 256x240 4bpp word band (30720B), centered layout
@@ -57,6 +58,8 @@ def inject(binf, filebuf, fsec0, fsec1, binsec0):
             f.write(data)
 
 def main():
+    if not BIN:
+        sys.exit("set AC1_RTL_BIN to your [RTL]-patched .bin (see mods/farsi/README.md)")
     for p in (BIN, MENU_SRC, FDAT_SRC, BAND, DESC):
         if not os.path.exists(p): sys.exit("missing: "+p)
     # backup the working disc once

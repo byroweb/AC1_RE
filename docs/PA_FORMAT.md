@@ -121,7 +121,7 @@ texel coords within the page. (Dispatch `type & 0xFD`; six handlers `0x8005A744.
 matrix-variant emitter `0x80058B04` is identical. Full disasm proof in
 `scratch/re/pa_textures.md`.)
 
-**Decode formulas (standard PSX, cross-checked vs `tools/farsi/font_render.c`):**
+**Decode formulas (standard PSX, cross-checked vs `mods/farsi/font_render.c`):**
 ```
 CLUT  word: cx = (clut & 0x3F) << 4   (16px X granularity);  cy = clut >> 6   (1px Y)
 TPAGE word: px = (tpage & 0xF) * 64;   py = ((tpage>>4)&1) * 256;

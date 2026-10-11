@@ -16,7 +16,8 @@ Atlas is laid out in 16px-tall rows, <=256px wide (one PS1 tpage region).
 from PIL import Image, ImageDraw, ImageFont
 from farsi_glyphs import build_inventory
 import farsi_texture as ft
-import json
+import json, os
+METRICS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'farsi_metrics.json')
 
 FONT = '/usr/share/fonts/truetype/noto/NotoSansArabic-Regular.ttf'
 PT   = 12
@@ -75,7 +76,7 @@ def main():
     # size-indexed table: size 0 = large (filled); 4/6/8 reserved (empty)
     table = {'0': {str(i): placed[k] for i, k in enumerate(inv)},
              '4': {}, '6': {}, '8': {}}
-    json.dump(table, open('/home/byron/Desktop/AC_1_USA_RE/farsi_metrics.json', 'w'),
+    json.dump(table, open(METRICS, 'w'),
               ensure_ascii=False)
     print('metrics -> farsi_metrics.json (size 0 filled; 4/6/8 reserved)')
     # quick stats

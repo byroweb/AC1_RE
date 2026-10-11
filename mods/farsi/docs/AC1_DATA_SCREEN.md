@@ -2,14 +2,14 @@
 
 Status (2026-06-08): the memory-card round-trip is **proven** and the pilot name
 **سلام** renders correctly in-game after a full cold-boot + card reload (see the
-shaped lam-alef ligature in `docs/screens/salaam_zoom.png`). The remaining work,
+shaped lam-alef ligature in `screens/salaam_zoom.png`). The remaining work,
 for a fresh chat, is to **Farsi-localize the DATA screen labels** (still English).
 
 | screenshot | what it shows |
 |---|---|
-| `docs/screens/data_screen_salaam.png` | the full DATA screen: سلام (Farsi, correct) + English labels |
-| `docs/screens/salaam_zoom.png` | zoom of سلام (shaped, ligature) — the round-trip visual |
-| `docs/screens/load_data_list.png` | the LOAD DATA list (NO./AC NAME/SORTIES/CREDITS) |
+| `screens/data_screen_salaam.png` | the full DATA screen: سلام (Farsi, correct) + English labels |
+| `screens/salaam_zoom.png` | zoom of سلام (shaped, ligature) — the round-trip visual |
+| `screens/load_data_list.png` | the LOAD DATA list (NO./AC NAME/SORTIES/CREDITS) |
 
 ## The سلام save
 - Memory card slot 0 file `BASCUS-94182A` holds the سلام save (title

@@ -20,9 +20,11 @@ HERE   = os.path.dirname(os.path.abspath(__file__))
 ROOT   = os.path.dirname(os.path.dirname(HERE))
 SRC_T  = os.path.join(ROOT, "fdat_extracted.T")
 PAT_T  = os.path.join(ROOT, "fdat_patched.T")
-BIN_IN = "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1).bin"
-BIN_OUT= "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1) [RTL].bin"
-CUE_OUT= "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1) [RTL].cue"
+# Your own legally-owned SLUS-01323 v1.1 image (2352-B sectors). Never committed.
+# AC1_BIN = pristine input; the patched copy is written next to it as "<name> [RTL].bin/.cue".
+BIN_IN = os.environ.get("AC1_BIN", "")
+BIN_OUT= os.path.splitext(BIN_IN)[0] + " [RTL].bin" if BIN_IN else ""
+CUE_OUT= os.path.splitext(BIN_IN)[0] + " [RTL].cue" if BIN_IN else ""
 
 # --- FDAT / entry-201 geometry ---
 BASE        = 0x8004ADA0          # runtime base of overlay entry 201
@@ -37,7 +39,7 @@ DATA_SIZE   = 2048
 def flat(rt): return E201_FLAT + (rt - BASE)
 
 # --- Farsi name shaper integration (compiled from C at build time) ----------
-# Placement (all in VERIFIED-free overlay padding; see docs/AC1_NAME_SHAPER.md):
+# Placement (all in VERIFIED-free overlay padding; see mods/farsi/docs/AC1_NAME_SHAPER.md):
 #   shape_name code   -> 0x800BC740 (436B padding block)
 #   shape_name tables -> 0x80081F70 (200B padding block)
 #   name_input_handler-> 0x80082190 (432B; ends exactly at the row-0 keyboard
@@ -269,6 +271,8 @@ def reinsert():
                 f'  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n')
 
 if __name__ == "__main__":
+    if not BIN_IN:
+        sys.exit("set AC1_BIN to your pristine SLUS-01323 v1.1 .bin (see mods/farsi/README.md)")
     print("0) compile + merge Farsi name shaper")
     _shaper = _compile_shaper()
     PATCHES.update(_shaper)

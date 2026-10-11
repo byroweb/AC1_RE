@@ -43,13 +43,13 @@ models. It does not replace existing work — it consolidates and extends it:
 - **`../docs/REFERENCE.md`** is the master RE reference (memory map, `.T` format,
   checksum, quick address index, mission overlay). Models cite it; they don't
   duplicate its tables.
-- The repo already has **patch-oriented** reconstructions in `../tools/farsi/`
+- The Farsi mod has **patch-oriented** reconstructions in `../mods/farsi/`
   (`font_render.c`, `string_render.c`, the `farsi_name_*.c` set), built
-  against `../tools/farsi/psx_shim.h` for `mipsel-gcc`. Those target the console
+  against `../mods/farsi/psx_shim.h` for `mipsel-gcc`. Those target the console
   (they bake into the game); the models here target the **host** (portable C99,
   run/verify on your PC). Both are "behavioral C," different deployment.
 - Extraction/repack **tooling** lives in `../tools/` (`extract/extract_t.py`,
-  `farsi/build_rtl_patch.py`, …) and `../tools/ghidra/ghidra_overlay.sh` (headless
+  `disc/reinject.py`, …) and `../tools/ghidra/ghidra_overlay.sh` (headless
   decompile of any overlay function). Models are derived from those + `docs/`.
 
 ## Models
@@ -57,7 +57,7 @@ models. It does not replace existing work — it consolidates and extends it:
 | model        | status        | what it reproduces                                  | anchored by |
 |--------------|---------------|-----------------------------------------------------|-------------|
 | `ac1_mxt`    | **done, validated** | `.T`/MXT archives, FDAT overlay layout, the `0x12345678` checksum, overlay header (`entry_fn`, `"ENERGY"` magic) | `docs/MXT_LOADER.md` |
-| text render  | **done** | `draw_char`/`draw_string` glyph + string rendering  | `../tools/farsi/font_render.c`, `../tools/farsi/string_render.c`, `../docs/AC1_TEXT_SYSTEM.md` |
+| text render  | **done** | `draw_char`/`draw_string` glyph + string rendering  | `../mods/farsi/font_render.c`, `../mods/farsi/string_render.c`, `../docs/AC1_TEXT_SYSTEM.md` |
 | `ac1_mission`| planned       | mission lifecycle: driver, timer, objective vtable, success/fail → result | `docs/MISSION_SYSTEM.md` |
 | `ac1_combat` | planned       | projectile pool + per-type think (ballistic/missile homing), proximity/collision, damage application | `docs/COMBAT_PHYSICS.md` |
 | `ac1_physics`| planned       | AC movement integrator (boost/gravity/recoil)       | `docs/COMBAT_PHYSICS.md` |

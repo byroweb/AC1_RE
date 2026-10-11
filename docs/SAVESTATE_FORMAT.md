@@ -65,7 +65,7 @@ python3 tools/duckstation/savestate.py STATE.sav --disc DISC.bin --dump-vram /tm
 All 10 backup states (slots 1–10 + `resume`) are **menu/garage** — `stage_byte=0`,
 objective-object ptr `0`, player entity all-zero. So there is **no in-mission VRAM dump
 offline** right now; capturing the per-stage texture bank from VRAM needs a fresh
-in-mission state from the running emulator. (The companion `docs/screens/vram_full_slot2.png`
+in-mission state from the running emulator. (The companion `mods/farsi/docs/screens/vram_full_slot2.png`
 is likewise a garage VRAM — it holds parts/UI pages, not stage texture pages.)
 
 ## Caveat — VRAM offset

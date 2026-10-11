@@ -266,6 +266,9 @@ mipsel-linux-gnu-objcopy -O binary --only-section=.text out.elf out.bin
 
 ## 8. Farsi localization status
 
+> Snapshot kept for history. The localization now lives under `mods/farsi/`
+> (see [`mods/farsi/README.md`](../mods/farsi/README.md) for current status).
+
 - **Renderer works** — `draw_string` byte `>=0x80` → `draw_farsi` → `SPRT_VAR`
   from a packed `fmet[]` table. Start menu translated (بازی جدید / ادامه), bold
   Noto Sans Arabic, RTL right-aligned (new escape `\x01 <signed byte>`).

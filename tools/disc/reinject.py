@@ -4,7 +4,7 @@ disc .bin, in place, at a file's sector range.
 
 Target: SLUS-01323 (v1.1).  Companion to tools/extract/t_repack.py (which builds
 the flat .T) and docs/AUTHORING.md.  Generalizes the FDAT-only `reinsert()` from
-tools/farsi/build_rtl_patch.py to ANY file in disc_map/disc_files.json.
+mods/farsi/build_rtl_patch.py to ANY file in disc_map/disc_files.json.
 
 The flat .T is the de-sectored payload (DATA_SIZE bytes per sector).  Each sector
 N of it is written to the user-data window of disc sector (sector_first + N),

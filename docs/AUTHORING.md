@@ -50,7 +50,7 @@ tools/disc/reinject.py --file GG/COM/FDAT.T --t <rebuilt.T> --out "<test>.bin"
 | `tools/pa/pa_encode.py` | PA geometry **encoder** (byte-exact parse↔encode, **7602/7602** blocks; `--translate` edit demo) — the geometry write-path |
 | `tools/mission/mission_geom.py` | per-mission geometry (chunk-0 PA blocks): parse/edit/splice; `--selftest` **59/59 streams, 1740/1740 blocks** byte-exact |
 | `tools/disc/reinject.py` | write a rebuilt flat `.T` back into a `.bin` at the file's sector span (in-place) |
-| `tools/farsi/build_rtl_patch.py` | reference: original FDAT reinsert + overlay-patch flow |
+| `mods/farsi/build_rtl_patch.py` | reference: original FDAT reinsert + overlay-patch flow |
 
 ## Decoded systems (RE docs)
 

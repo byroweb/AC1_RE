@@ -1,6 +1,7 @@
 # AC1 RE tool belt (`tools/`)
 
-Accelerators for the Armored Core 1 reverse-engineering / Farsi-patch workflow.
+Accelerators for the Armored Core 1 reverse-engineering workflow (the Farsi
+localization mod's own build scripts live in `mods/farsi/`).
 Run `tools/ghidra/setup_re_tools.sh` once on a new machine to install/verify everything.
 
 ## `setup_re_tools.sh`

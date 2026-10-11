@@ -17,7 +17,7 @@ Confirmed Farsi (user-approved 2026-06-08):
 limits, so hamza etc. are fine.)
 
 ## Diagnosis
-- The titles are currently **corrupted/garbled** (see `docs/screens/` once added;
+- The titles are currently **corrupted/garbled** (see `screens/` once added;
   zoomed grab shown to user). Garbled since before any of today's pokes — NOT
   caused by the live label experiments.
 - **VRAM diff** between two categories (SYSTEM vs the next) showed changes only in
@@ -37,7 +37,7 @@ list headers, confirm prompts) are drawn by a **shared ASCII font renderer**
 variable-width Farsi atlas — only `draw_string` (the `>`-terminated path, a C
 reimpl) can. Localizing those needs a renderer patch and is OUT OF SCOPE here.
 (The `>`-terminated DATA rows Sorties/Success/Failure/Overall DO localize via
-draw_string — verified live, bytes computed in `tools/farsi/shape_data_labels.py`, not
+draw_string — verified live, bytes computed in `../shape_data_labels.py`, not
 yet baked.) See that file if revisiting the font path.
 
 ## Plan (future work)
@@ -48,7 +48,7 @@ yet baked.) See that file if revisiting the font path.
    at (448,0). Determine pixel format (likely 4bpp + CLUT).
 2. **Generate word-art.** Render each Farsi word to a bitmap sized to its rect,
    quantize to the texture's CLUT/4bpp. Reuse the PIL+raqm setup from
-   `farsi_texture.py` (NotoSansArabic). New helper, e.g. `tools/farsi/title_wordart.py`.
+   `farsi_texture.py` (NotoSansArabic). New helper, e.g. `../title_wordart.py`.
 3. **Inject + bake.** Write the word bitmaps into the source TIM in
    `fdat_extracted.T`, rebuild the `[RTL]` disc, recompute the **entry checksum**
    (seed 0x12345678 + word sum — see project_ac1_overlay_checksum /
@@ -65,7 +65,7 @@ in a 2-col × 3-row grid (~24px/row):
   - V120–143  MISSION | MAIL
   - V144–167  GARAGE  | RANKING
   - V168–191  SHOP    | SYSTEM
-  Approx visual rects in `docs/title_wordart_rects.json` (exact title-SPRT UVs still
+  Approx visual rects in `../title_wordart_rects.json` (exact title-SPRT UVs still
   to be confirmed by RE'ing the banner draw — that draw lives in a runtime overlay,
   not in the Ghidra base-EXE image, so it needs live overlay disassembly).
 
@@ -77,7 +77,7 @@ in a 2-col × 3-row grid (~24px/row):
   - Proven by re-extracting MENU_TIM from the PRISTINE backup
     `…/AC_1_USA_backup/Armored Core (v1.1).bin` and decoding the font sheet:
     intact MISSION/MAIL/GARAGE/RANKING/SHOP/SYSTEM word-art. See
-    `docs/screens/menu_font_PRISTINE.png` vs `menu_font_RTL_atlas.png`.
+    `screens/menu_font_PRISTINE.png` vs `menu_font_RTL_atlas.png`.
   - FDAT.T on the [RTL] disc is byte-identical to retail EXCEPT entry-201 (the
     draw_string + name-shaper code). So no *other* tampering — only this and the
     intended overlay patch.
@@ -112,7 +112,7 @@ no longer used as titles. The OLD bitmap plan below (steps 2–3) is SUPERSEDED.
   All clut=0x3817, w=128, h=24, flag=0x27.
 - **Free VRAM:** large empty block ~x704–896, y128–255 (**tpage 11**, base x704). Room
   for six 128×24 word cells (2 cols u0/128 × 3 rows v128/152/176). tpage 7's own
-  bottom rows (y192–255) are NOT free (see docs/screens).
+  bottom rows (y192–255) are NOT free (see screens/).
 
 ## A2 plan (crisp titles, decided): render six **128×24** Farsi words at native size
 (full PIL+raqm shaping, 4bpp, clut 0x3817 white), place in free VRAM, repoint the 6
@@ -121,11 +121,11 @@ free VRAM (no TIM targets it) — either embed a TIM + runtime LoadImage in the 
 or extend/relocate. Title draw fn 0x80065400 is patchable for the tpage set.
 
 ## LIVE PROOF — ALL 6 CRISP TITLES CONFIRMED (2026-06-08)
-Rendered six 128×24 crisp Farsi words (tools/farsi/title_wordart.py), packed to 4bpp band,
+Rendered six 128×24 crisp Farsi words (`../title_wordart.py`), packed to 4bpp band,
 and blitted live into the font sheet at V120–191 (DuckStation write_vram_region @VRAM
 (448,120) 64×72) — i.e. exactly where the 6 descriptors already point, **tpage 7, no
 code changes**. Rotated all 6 categories: سیستم·مأموریت·فروشگاه·گاراژ·رده‌بندی·نامه all
-render crisp & correctly shaped (hamza + ZWNJ intact). Shots: docs/screens/title_crisp_*.png.
+render crisp & correctly shaped (hamza + ZWNJ intact). Shots: screens/title_crisp_*.png.
 This validates rendering + descriptor map + draw RE completely.
 
 ## PERMANENT-BAKE PLAN (remaining)
@@ -164,7 +164,7 @@ COEXIST with the atlas → put words in **free VRAM tpage 11** and redirect the 
 ## FINALIZED SPEC (user-approved 2026-06-08)
 - Words (carousel id → Farsi): id0 GARAGE گاراژ, id1 SHOP فروشگاه, id2 MISSION مأموریت,
   id3 SYSTEM سیستم, **id4 MAIL ایمیل** (changed from نامه → e-mail), id5 RANKING رده‌بندی.
-  All in tools/farsi/title_wordart.py (render 128×24, full raqm shaping). PROVEN crisp live.
+  All in `../title_wordart.py` (render 128×24, full raqm shaping). PROVEN crisp live.
 - Title screen position: **x=112, y=86** (was 90,72) — approved centered above icon.
   Live source 0x801A3810/0x801A3814; for the bake find where these consts are written
   (hub menu init writes 90/72) and patch to 112/86.
@@ -183,15 +183,15 @@ solved by a **zero-code "dead-kanji repurpose"**:
   hook, no MENU_TIM size change.** Operates on top of the existing [RTL] disc (preserves
   the name shaper). Backup: `[RTL].bin.pre-title.bak`.
 - Cold-boot verified: all 6 titles render crisp (گاراژ·رده‌بندی·ایمیل·سیستم·مأموریت·فروشگاه),
-  name atlas + Farsi menus intact, no NOW-LOADING hang. Shots docs/screens/baked_title_*.png.
+  name atlas + Farsi menus intact, no NOW-LOADING hang. Shots screens/baked_title_*.png.
 - **Centering (v2):** the title element X (90) is allocated at a varying RAM address and
   written once at init (not a patchable static const), so instead of moving the sprite the
   words are positioned WITHIN the texture. Layout changed to a **1-col × 6-row band, 144×40
-  cells** (tools/farsi/title_wordart.py build_inputs); each word's ink is centred at cell-x **CX=80**
+  cells** (`../title_wordart.py` build_inputs); each word's ink is centred at cell-x **CX=80**
   so it lands on the measured carousel **icon centre x≈169** (arrow midpoint, measured from the
   framebuffer; the spinning 3D icon pollutes naive centroids — use the right arrow @207 +
   left arrow @132). Descriptors: u=0, v=cid*40, w=144, h=40, tpage 0x39. Cold-boot verified
-  centred. Rebuild: `python3 tools/farsi/title_wordart.py --build && python3 title_build.py`.
+  centred. Rebuild: `python3 mods/farsi/title_wordart.py --build && python3 mods/farsi/title_build.py`.
 
 ## BUILD RECIPE (execute-ready, 2026-06-08) — historical; superseded by title_build.py above
 Disc is 100% packed (no free sectors in MENU_TIM or FDAT) → store words IN the overlay
@@ -215,7 +215,7 @@ Disc is 100% packed (no free sectors in MENU_TIM or FDAT) → store words IN the
   (Find writer: hub menu init. Live source confirmed; const location TBD.)
 - **Checksums + build:** fix_overlay_checksum (entry-201, seed 0x12345678) → build_rtl_patch
   → boot → verify ×6 + name screen intact. NOTE entry-201 checksum MUST be recomputed.
-- Rendering: tools/farsi/title_wordart.py (tpage-7 and tpage-11 final config).
+- Rendering: `../title_wordart.py` (tpage-7 and tpage-11 final config).
 
 ## (superseded earlier idea) Bake order: add words TIM entry to MENU_TIM.T (+fix entry checksum) → write upload hook
   @0x800CF360 + trampoline at title fn 0x80065400 → patch 6 descriptors @0x800B6E4C (u,v +
