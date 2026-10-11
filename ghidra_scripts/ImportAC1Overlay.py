@@ -14,7 +14,10 @@
 from java.io import File, FileInputStream
 from ghidra.app.cmd.disassemble import DisassembleCommand
 
-BIN_PATH = "/home/byron/Desktop/AC_1_USA_RE/overlay_80050000.bin"
+import os
+# Repo root: $AC1_RE_ROOT, else the parent of ghidra_scripts/ (where this script lives).
+_ROOT = os.environ.get("AC1_RE_ROOT") or os.path.dirname(os.path.dirname(getSourceFile().getAbsolutePath()))
+BIN_PATH = os.path.join(_ROOT, "overlay_80050000.bin")   # DuckStation RAM dump (not committed)
 BASE     = 0x80050000
 BLOCK    = "overlay"
 

@@ -60,11 +60,11 @@ handler (see below); the UI overlay has unrelated code there.
 ## What was created for the MISSION-202 overlay (this task)
 
 ### New, isolated Ghidra program
-- **Project:** `/home/byron/Desktop/AC_1_USA_RE/ghidra_mission202/Mission202.gpr`
+- **Project:** `ghidra_mission202/Mission202.gpr`
   (a brand-new, standalone Ghidra project — NOT the live `AC_1_USA_2048_RE`/`FARSI`
   projects, which were left untouched).
 - **Program inside it:** `mission_overlay_FDAT202_80050000.bin`
-- **Source bytes:** `/home/byron/Desktop/AC_1_USA_RE/overlays/mission_overlay_FDAT202_80050000.bin`
+- **Source bytes:** `overlays/mission_overlay_FDAT202_80050000.bin`
   (raw RAM, base `0x80050000`, size `0x90000` = 589824 B, captured in-mission).
 - **Language:** `MIPS:LE:32:default` (R3000A, little-endian), image base `0x80050000`.
 - **Analysis:** full Ghidra auto-analysis ran clean (585-ish funcs; generic_clib applied).
@@ -75,17 +75,17 @@ handler (see below); the UI overlay has unrelated code there.
 
 ### To open it (does not touch the live session)
 Launch a second Ghidra, then File → Open Project →
-`/home/byron/Desktop/AC_1_USA_RE/ghidra_mission202/Mission202.gpr`, and open the
+`ghidra_mission202/Mission202.gpr`, and open the
 `mission_overlay_FDAT202_80050000.bin` program. (If the live GUI holds a global lock,
 just start another Ghidra instance; the projects are separate directories.)
 
 ### Headless reproduction
 ```
 HL=/snap/ghidra/35/ghidra_12.0_PUBLIC/support/analyzeHeadless
-$HL /home/byron/Desktop/AC_1_USA_RE/ghidra_mission202 Mission202 \
+$HL ghidra_mission202 Mission202 \
   -import .../overlays/mission_overlay_FDAT202_80050000.bin \
   -processor MIPS:LE:32:default -loader BinaryLoader -loader-baseAddr 0x80050000 \
-  -scriptPath /home/byron/Desktop/AC_1_USA_RE/ghidra_scripts \
+  -scriptPath ghidra_scripts \
   -postScript AnnotateMission202.java
 # then: -process ... -noanalysis -preScript FixVMLabels.java
 ```
@@ -192,13 +192,15 @@ unreadable. To resolve them, use the separately-carved overlay images
 `project_ac1_mxt_loader`, or extend this dump downward.
 
 ## Files
-- Doc (this): `/home/byron/Desktop/AC_1_USA_RE/overlays/OVERLAY_MAP.md`
-- Dump: `/home/byron/Desktop/AC_1_USA_RE/overlays/mission_overlay_FDAT202_80050000.bin`
-- Provenance: `/home/byron/Desktop/AC_1_USA_RE/overlays/README_mission_overlay.md`
-- New Ghidra project: `/home/byron/Desktop/AC_1_USA_RE/ghidra_mission202/Mission202.gpr`
-- Annotate scripts: `/home/byron/Desktop/AC_1_USA_RE/ghidra_scripts/{AnnotateMission202,FixVMLabels}.java`
-- Level-complete annotate scripts: `/home/byron/Desktop/AC_1_USA_RE/ghidra_scripts/{AnnotateMission202Complete,FixExitCommit,LabelExitCase,VerifyLevelComplete}.java`
-- VM-switch table script: `/home/byron/Desktop/AC_1_USA_RE/ghidra_scripts/DefineMissionVMTable.java`
-- Pre-switch-table Mission202 backup: `/home/byron/Desktop/AC_1_USA_RE/_ghidra_mission202_backup_pre_switchtable_2026-06-14/`
-- Pre-task Ghidra backup: `/home/byron/Desktop/AC_1_USA_RE/_ghidra_backup_2026-06-14/`
-- Pre-level-complete Mission202 backup: `/home/byron/Desktop/AC_1_USA_RE/_ghidra_mission202_backup_pre_levelcomplete_2026-06-14/`
+Paths are relative to the repo root. `ghidra_mission202/`, the overlay dump and the
+`_ghidra_*backup*/` directories are local working files (gitignored), not committed.
+- Doc (this): `overlays/OVERLAY_MAP.md`
+- Dump: `overlays/mission_overlay_FDAT202_80050000.bin`
+- Provenance: `overlays/README_mission_overlay.md`
+- New Ghidra project: `ghidra_mission202/Mission202.gpr`
+- Annotate scripts: `ghidra_scripts/{AnnotateMission202,FixVMLabels}.java`
+- Level-complete annotate scripts: `ghidra_scripts/{AnnotateMission202Complete,FixExitCommit,LabelExitCase,VerifyLevelComplete}.java`
+- VM-switch table script: `ghidra_scripts/DefineMissionVMTable.java`
+- Pre-switch-table Mission202 backup: `_ghidra_mission202_backup_pre_switchtable_2026-06-14/`
+- Pre-task Ghidra backup: `_ghidra_backup_2026-06-14/`
+- Pre-level-complete Mission202 backup: `_ghidra_mission202_backup_pre_levelcomplete_2026-06-14/`

@@ -8,7 +8,7 @@ disc: every file with exact sector range + size, plus introspected sub-streams
 
 Output JSON schema:
 {
-  "source_bin": "...",
+  "source_bin": null,          # never a machine path in the committed map; tools use $AC1_BIN
   "sector_size": 2352, "sector_count": N, "first_sector_offset": 0,
   "files": [ { "idx": int, "id": str, "path": str,
                "sector_first": int, "sector_last": int, "size": int,
@@ -27,7 +27,8 @@ OUT_DEFAULT = os.path.join(HERE, "disc_map", "disc_files.json")
 # The .idx was built against a *patched* work image ("AC_1_USA_test"). For a clean
 # text inventory we must read the PRISTINE original. Sector layout is identical
 # (same ISO/size), so the .idx sector ranges remain valid against the pristine bin.
-PRISTINE_BIN = "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_backup/Armored Core (v1.1).bin"
+# Point AC1_BIN at your pristine image; if unset/missing, the .idx source is kept.
+PRISTINE_BIN = os.environ.get("AC1_BIN", "")
 
 
 def parse_kv(line):
@@ -115,10 +116,11 @@ def main():
                                   "sector_first": first, "sector_last": last,
                                   "orphan": True})
 
-    # Override source to the pristine image for clean reads (see PRISTINE_BIN note).
-    if os.path.exists(PRISTINE_BIN):
-        header["idx_source_bin"] = header.get("source_bin")
-        header["source_bin"] = PRISTINE_BIN
+    # The .idx names the image it was built from (a machine path). Never publish
+    # that: the committed map carries source_bin=null and every tool falls back to
+    # $AC1_BIN (see disc_bin() in extract_t.py). A local AC1_BIN is recorded only
+    # when it exists, so a private regenerate keeps working offline.
+    header["source_bin"] = PRISTINE_BIN if os.path.exists(PRISTINE_BIN) else None
 
     out = dict(header)
     out["file_count"] = len(files)

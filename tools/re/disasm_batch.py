@@ -37,7 +37,7 @@ DEFAULT_BIN = os.path.join(REPO, "overlays",
 DEFAULT_BASE = 0x80050000
 
 OBJDUMP = "mipsel-linux-gnu-objdump"
-M2C_DIR = "/home/byron/Applications/m2c"
+M2C_DIR = os.environ.get("M2C_DIR", os.path.expanduser("~/Applications/m2c"))
 M2C_PY = os.path.join(M2C_DIR, ".venv", "bin", "python")
 M2C = os.path.join(M2C_DIR, "m2c.py")
 

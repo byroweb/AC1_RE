@@ -1,9 +1,8 @@
 {
- "source_bin": "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_backup/Armored Core (v1.1).bin",
+ "source_bin": null,
  "sector_size": 2352,
  "sector_count": 223112,
  "first_sector_offset": 0,
- "idx_source_bin": "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1).bin",
  "file_count": 133,
  "files": [
   {

@@ -209,6 +209,15 @@ def load_filemap():
         return json.load(f)
 
 
+def disc_bin(fm):
+    """Your disc image: the filemap's source_bin if set locally, else $AC1_BIN.
+    The committed disc_files.json carries no path (bring your own disc)."""
+    p = fm.get("source_bin") or os.environ.get("AC1_BIN")
+    if not p or not os.path.exists(p):
+        sys.exit("disc image not found: set AC1_BIN to your SLUS-01323 v1.1 .bin")
+    return p
+
+
 def find_file(fm, key):
     for r in fm["files"]:
         if r.get("path") == key or r.get("id") == key:
@@ -224,7 +233,7 @@ def read_flat_from_disc(fm, rec):
     """De-sector a file out of the source .bin into a flat 2048-B/sector image."""
     first, last = rec["sector_first"], rec["sector_last"]
     out = bytearray()
-    with open(fm["source_bin"], "rb") as f:
+    with open(disc_bin(fm), "rb") as f:
         for s in range(first, last + 1):
             f.seek(s * SECTOR_RAW + DATA_OFFSET)
             d = f.read(DATA_SIZE)

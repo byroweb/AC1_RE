@@ -25,6 +25,15 @@ HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 FILEMAP = os.path.join(HERE, "disc_map", "disc_files.json")
 RAW, OFF, DATA = 2352, 24, 2048
 
+
+def disc_bin(fm):
+    """Your disc image: the filemap's source_bin if set locally, else $AC1_BIN.
+    The committed disc_files.json carries no path (bring your own disc)."""
+    p = fm.get("source_bin") or os.environ.get("AC1_BIN")
+    if not p or not os.path.exists(p):
+        sys.exit("disc image not found: set AC1_BIN to your SLUS-01323 v1.1 .bin")
+    return p
+
 # SJIS double-byte lead ranges (the JP leftover paths)
 def is_sjis_lead(b): return (0x81 <= b <= 0x9f) or (0xe0 <= b <= 0xef)
 
@@ -165,7 +174,7 @@ def main():
 
     toc = json.load(open(args.toc))
     name = toc["name"]
-    bin_path = args.bin or json.load(open(FILEMAP))["source_bin"]
+    bin_path = args.bin or disc_bin(json.load(open(FILEMAP)))
     disc_first = toc["disc_sector_first"]
     ents = [e for e in toc["entries"] if e["sector_count"] > 0]
 

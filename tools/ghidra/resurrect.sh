@@ -28,7 +28,7 @@ done
 
 SID="${CLAUDE_CODE_SESSION_ID:-}"
 CWD="$(pwd)"
-CLAUDE_BIN="$(command -v claude || echo /home/byron/.local/bin/claude)"
+CLAUDE_BIN="$(command -v claude || echo "$HOME/.local/bin/claude")"
 
 if [ -z "$SID" ]; then
   echo "[resurrect] ERROR: CLAUDE_CODE_SESSION_ID not set; cannot resume."; exit 1

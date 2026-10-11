@@ -49,6 +49,15 @@ HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 FILEMAP = os.path.join(HERE, "disc_map", "disc_files.json")
 RAW, OFF, DATA = 2352, 24, 2048
 
+
+def disc_bin(fm):
+    """Your disc image: the filemap's source_bin if set locally, else $AC1_BIN.
+    The committed disc_files.json carries no path (bring your own disc)."""
+    p = fm.get("source_bin") or os.environ.get("AC1_BIN")
+    if not p or not os.path.exists(p):
+        sys.exit("disc image not found: set AC1_BIN to your SLUS-01323 v1.1 .bin")
+    return p
+
 # --- Primitive type -> (first vertex-index byte offset, #verts, index stride) -----
 # Identical to tools/pa/pa_obj.py PRIM_VERTS (RE'd from relocation walker
 # FUN_800574D8). Used ONLY by the editable decode/re-encode of vertex indices; the
@@ -75,7 +84,7 @@ def load_container(path):
     if not rec:
         sys.exit(f"not in filemap: {path}")
     blob = bytearray()
-    with open(fm["source_bin"], "rb") as f:
+    with open(disc_bin(fm), "rb") as f:
         for s in range(rec["sector_first"], rec["sector_last"] + 1):
             f.seek(s * RAW + OFF)
             blob += f.read(DATA)

@@ -4,6 +4,18 @@ Accelerators for the Armored Core 1 reverse-engineering workflow (the Farsi
 localization mod's own build scripts live in `mods/farsi/`).
 Run `tools/ghidra/setup_re_tools.sh` once on a new machine to install/verify everything.
 
+## Where your files live (environment variables)
+Nothing in the repo points at a fixed machine path. Scripts find the repo root from
+their own location and take your local files from these variables:
+
+| variable | meaning | default |
+| --- | --- | --- |
+| `AC1_BIN` | your pristine `SLUS-01323` v1.1 image (2352-B sectors) | *(required by `extract_fdat.py`, `build_filemap.py`, the Farsi bake)* |
+| `AC1_RE_ROOT` | repo root, for Ghidra scripts run from a copied script dir | parent of `ghidra_scripts/` |
+| `AC1_GHIDRA_PROJECT_DIR` | directory holding `AC_1_USA_2048_RE.gpr` | repo root |
+| `M2C_DIR` | your m2c checkout (venv at `.venv`) | `~/Applications/m2c` |
+| `GHIDRA_EXT_DIR` | Ghidra user Extensions dir | snap layout under `~/snap/ghidra/…` |
+
 ## `setup_re_tools.sh`
 Idempotent installer + health report. Sets up m2c, checks the mipsel toolchain,
 installs/verifies the Ghidra PSX loader + PSYQ signatures, and confirms the

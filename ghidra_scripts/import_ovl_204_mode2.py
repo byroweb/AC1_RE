@@ -10,7 +10,10 @@
 import jarray
 from ghidra.program.model.mem import MemoryConflictHandler
 
-BIN = r"/home/byron/Desktop/AC_1_USA_RE/disc_map/overlays/ovl204_mode2.bin"
+import os
+# Repo root: $AC1_RE_ROOT, else the parent of ghidra_scripts/ (where this script lives).
+_ROOT = os.environ.get("AC1_RE_ROOT") or os.path.dirname(os.path.dirname(getSourceFile().getAbsolutePath()))
+BIN = os.path.join(_ROOT, r"disc_map/overlays/ovl204_mode2.bin")
 BASE = 0x8004ada0
 NAME = "ovl204_mode2"
 

@@ -126,8 +126,7 @@ def gate_edit_correctness(fm):
 
 def main():
     fm = T.load_filemap()
-    if not os.path.exists(fm["source_bin"]):
-        sys.exit(f"source disc not found: {fm['source_bin']}")
+    fm = dict(fm); fm["source_bin"] = T.disc_bin(fm)   # resolve $AC1_BIN once for all gates
     results = {
         "round-trip gate": gate_roundtrip(fm),
         "checksum parity": gate_checksum_parity(fm),

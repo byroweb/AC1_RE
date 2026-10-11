@@ -5,8 +5,9 @@ Usage: python3 extract_fdat.py [input.bin] [output.T]
 """
 import sys, os, struct
 
-BIN_DEFAULT = "/home/byron/Desktop/Armored_Core_Hacks/AC_1_USA_test/Armored Core (v1.1).bin"
-OUT_DEFAULT = "/home/byron/Desktop/AC_1_USA_RE/fdat_extracted.T"
+REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BIN_DEFAULT = os.environ.get("AC1_BIN", "")          # your SLUS-01323 v1.1 image (2352-B sectors)
+OUT_DEFAULT = os.path.join(REPO, "fdat_extracted.T") # gitignored
 
 SECTOR_RAW  = 2352
 DATA_OFFSET = 24        # Mode 2 Form 1: 12 sync + 4 header + 8 subheader
@@ -18,6 +19,8 @@ FDAT_COUNT  = 13142     # sectors 72189–85330 inclusive (85330-72189+1); 13142
 def main():
     bin_path = sys.argv[1] if len(sys.argv) > 1 else BIN_DEFAULT
     out_path = sys.argv[2] if len(sys.argv) > 2 else OUT_DEFAULT
+    if not bin_path:
+        sys.exit("usage: extract_fdat.py <input.bin> [output.T]  (or set AC1_BIN)")
 
     expected_bytes = FDAT_COUNT * DATA_SIZE   # 26,912,768 — close to 26,914,816
     # jPSXdec reports 26914816; FDAT_COUNT = ceil(26914816/2048) = 13141
