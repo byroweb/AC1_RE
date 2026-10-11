@@ -1,30 +1,41 @@
 # AC1_RE
 
-Reverse-engineering notes, tooling, and a **Persian (Farsi) localization** for the
-PlayStation game *Armored Core* (1997).
+Reverse-engineering reference and tooling for the PlayStation game *Armored Core*
+(1997): file formats, the mission/level pipeline, the text and entity systems, and
+behavioral C models of the engine's subsystems.
 
 This repository targets the **North American release, `SLUS-01323` (v1.1)**. Other
 regions/revisions are not supported and addresses will not match.
 
 > **This project ships no game code, assets, or data files.** It is original source
 > code and documentation only (documentation may include screenshots and derived
-> analysis imagery for illustration — see [Legal](#legal)). To use the localization
-> you must supply your own legally obtained copy of the game.
+> analysis imagery for illustration — see [Legal](#legal)). Everything here operates
+> on your own legally obtained copy of the game.
 
 ## What's here
 
 | Path | Description |
 | --- | --- |
-| `re/` | **Behavioral C reference models** — portable, host-side, *mutable* re-implementations of game subsystems (verified against your extracted data). Flagship: `re/ac1_mxt` (container + overlay + checksum). See `re/README.md` |
-| `tools/` | All tooling, grouped by subsystem (see below) |
-| `tools/farsi/` | Persian localization toolchain — glyph baking, texture atlas, runtime shaping, plus the C patch sources (`font_render.c`, `string_render.c`, `farsi_name_*.c`, `farsi_table.h`, `psx_shim.h`) |
+| `docs/` | **The RE write-ups.** Start at the [documentation index](docs/README.md); the master reference is [`docs/REFERENCE.md`](docs/REFERENCE.md) (functions, RAM map, `.T` container format, checksum, disc sectors). Subsystem docs: `LEVEL_LOADING.md` (mission→geometry pipeline, placement SOLVED), `MXT_LOADER.md`, `PA_FORMAT.md`, `MISSION_SYSTEM.md`, `MISSION_SCRIPT_VM.md`, `COMBAT_PHYSICS.md`, `ENTITY_AI_FRAMEWORK.md`, `AC1_TEXT_SYSTEM.md`, … |
+| `re/` | **Behavioral C reference models** — portable, host-side re-implementations of game subsystems, verified against your extracted data. Flagship: `re/ac1_mxt` (container + overlay + checksum). See [`re/README.md`](re/README.md) |
+| `tools/` | All tooling, grouped by subsystem — see [`tools/README.md`](tools/README.md) |
 | `tools/extract/` | Disc/container extraction + repack + text inventory (`extract_t.py`, `t_repack.py` `.T` writer/repacker, `extract_overlay.py`, `extract_fdat.py`, `build_filemap.py`, `scan_text.py`) |
-| `tools/pa/` | PA geometry-pack decoders (`pa_obj.py`, `pa_parse.py`, `pa_slots.py`) |
-| `tools/mission/` | Mission/objective + spawn-table parsing (`mission_parse.py`, `mission_stages.py`, `object_stats.py`, …) |
+| `tools/pa/` | PA geometry-pack decoders + encoder (`pa_obj.py`, `pa_parse.py`, `pa_slots.py`, `pa_encode.py`) |
+| `tools/mission/` | Mission/objective, spawn-table and script-VM parsing + editing (`mission_parse.py`, `mission_stages.py`, `mission_script.py`, `spawn_edit.py`, …) |
+| `tools/disc/` | Write a rebuilt `.T` back into your disc image (`reinject.py`) |
 | `tools/ghidra/` | Decompile/RE pipeline + emulator automation (`ghidra_overlay.sh` headless decompiler, `overlay2c.sh`, `setup_re_tools.sh`, `ac1_mcp_input.py`, …) |
 | `ghidra_scripts/` | Ghidra scripts (Java + Jython) — overlay import, headless decompile/xref |
-| `docs/REFERENCE.md` | **RE reference** — functions, addresses, `.T` format, checksum, sectors |
-| `docs/` | Subsystem write-ups (start at the [documentation index](docs/README.md)) — `LEVEL_LOADING.md` (mission→geometry pipeline, placement SOLVED), `MXT_LOADER.md`, `COMBAT_PHYSICS.md`, `MISSION_SYSTEM.md`, `AC1_TEXT_SYSTEM.md`, … |
+| `disc_map/`, `overlays/` | Disc file map, investigation traces, and the FDAT overlay-swap map |
+
+## Downstream projects
+
+The RE here is the foundation for two mods. They are consumers of this repo, not
+part of the reference itself:
+
+| Project | Where | What |
+| --- | --- | --- |
+| **AC1mod** | [separate repo](https://github.com/byroweb/AC1mod) | PyQt disc browser + stage/model viewer, heading toward a mission/map editor. Vendors the decoders from `tools/`. See [`docs/AC1MOD_VISION.md`](docs/AC1MOD_VISION.md). |
+| **Farsi localization** | [`mods/farsi/`](mods/farsi/README.md) | Persian (Farsi) localization patch set — renderer patch, glyph atlas, RTL name entry + runtime shaper, hub title word-art. Incubated here for now; it will move to its own repo once the translation corpus and release pipeline exist. |
 
 ## How it works (safe distribution model)
 
@@ -32,8 +43,8 @@ This project **never redistributes the game's code, assets, or data files**. Ins
 
 1. You provide your own legally-owned disc image of `SLUS-01323`.
 2. The tooling here extracts the data it needs *from your copy, on your machine*.
-3. Code changes are compiled and applied as a **patch** to your own image — the
-   repository ships only the changes, never the original bytes.
+3. Code changes (in the mods) are compiled and applied as a **patch** to your own
+   image — the repository ships only the changes, never the original bytes.
 
 A MIPS `mipsel` toolchain is required to build the C patches. Addresses, offsets,
 and table indices documented here are factual interoperability information.
@@ -41,7 +52,7 @@ and table indices documented here are factual interoperability information.
 ## Legal
 
 This is an unofficial, non-commercial fan project for the purposes of
-**localization, interoperability, and education**. It is **not affiliated with,
+**interoperability, education, and localization**. It is **not affiliated with,
 endorsed by, or sponsored by** FromSoftware, Inc. or Agetec, Inc.
 
 *Armored Core* and all related assets, names, and data are the property of their

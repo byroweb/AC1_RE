@@ -46,6 +46,15 @@ def load_filemap():
         return json.load(f)
 
 
+def disc_bin(fm):
+    """Your disc image: the filemap's source_bin if set locally, else $AC1_BIN.
+    The committed disc_files.json carries no path (bring your own disc)."""
+    p = fm.get("source_bin") or os.environ.get("AC1_BIN")
+    if not p or not os.path.exists(p):
+        sys.exit("disc image not found: set AC1_BIN to your SLUS-01323 v1.1 .bin")
+    return p
+
+
 def find_file(fm, key):
     for r in fm["files"]:
         if r.get("path") == key or r.get("id") == key:
@@ -137,7 +146,7 @@ def main():
     args = ap.parse_args()
 
     fm = load_filemap()
-    bin_path = args.bin or fm["source_bin"]
+    bin_path = args.bin or disc_bin(fm)
 
     if args.file:
         rec = find_file(fm, args.file)

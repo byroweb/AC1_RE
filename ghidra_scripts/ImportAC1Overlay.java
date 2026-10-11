@@ -34,9 +34,17 @@ import java.util.Map;
 
 public class ImportAC1Overlay extends GhidraScript {
 
-    private static final String BIN_PATH = "/home/byron/Desktop/AC_1_USA_RE/overlay_80050000.bin";
+    // DuckStation RAM dump of the overlay, at the repo root (never committed).
+    private static final String BIN_REL  = "overlay_80050000.bin";
     private static final long   BASE     = 0x80050000L;
     private static final String BLOCK    = "overlay";
+
+    // Repo root: $AC1_RE_ROOT, else the parent of ghidra_scripts/ (where this file lives).
+    private String repoRoot() {
+        String r = System.getenv("AC1_RE_ROOT");
+        if (r != null && !r.isEmpty()) return r;
+        return getSourceFile().getParentFile().getParentFile().getAbsolutePath();
+    }
 
     // Known overlay entry points (verified live via DuckStation / overlay2c).
     private static final Map<Long, String> ENTRIES = new LinkedHashMap<>();
@@ -58,6 +66,7 @@ public class ImportAC1Overlay extends GhidraScript {
         Memory  mem  = currentProgram.getMemory();
         Address base = toAddr(BASE);
 
+        final String BIN_PATH = new File(repoRoot(), BIN_REL).getPath();
         File f = new File(BIN_PATH);
         if (!f.exists()) {
             throw new Exception("dump not found: " + BIN_PATH +

@@ -65,28 +65,24 @@ facts from open questions:
   (player/AC/aircraft/train as one struct): +0x58 think-handler clean-freeze tool,
   faction/target fields, nearest-enemy target selection, and the entity damage route.
 
-### Localization / UI
-- [AC1_TEXT_SYSTEM.md](AC1_TEXT_SYSTEM.md) — the text & menu rendering system, plus
-  the Farsi-localization changes layered on top.
-- [AC1_NAME_RTL.md](AC1_NAME_RTL.md) — pilot-name entry screen right-to-left (Farsi)
-  layout.
-- [AC1_NAME_SHAPER.md](AC1_NAME_SHAPER.md) — runtime contextual shaping for Farsi
-  pilot-name entry.
-- [AC1_TITLE_TEXTURE.md](AC1_TITLE_TEXTURE.md) — Ravens' Nest category-title word-art
-  → Farsi handoff.
-- [AC1_DATA_SCREEN.md](AC1_DATA_SCREEN.md) — Ravens' Nest DATA screen round-trip
-  proof + Farsi-localization handoff.
+### UI / save data
+- [AC1_TEXT_SYSTEM.md](AC1_TEXT_SYSTEM.md) — the stock text & menu rendering system
+  (font texture, draw_char/draw_string, menu draw queue, name entry).
 - [AC1_EMBLEM.md](AC1_EMBLEM.md) — player emblem memory-card save format.
 
 ### Project / build
 - [PRISTINE_PROJECT.md](PRISTINE_PROJECT.md) — the clean, unmodified Ghidra project
   for the pristine USA v1.1 build.
 
-### Companion project
+### Downstream consumers (not RE)
 - [AC1MOD_VISION.md](AC1MOD_VISION.md) — pointer to the AC1mod companion
   viewer/toolkit project and the RE foundation it builds on.
 - [AC1MOD_INTEGRATION.md](AC1MOD_INTEGRATION.md) — integration point between this
   repo's PA geometry decode and the AC1mod companion viewer.
+- [`../mods/farsi/`](../mods/farsi/README.md) — the Persian (Farsi) localization mod,
+  incubated in this repo until it has its own release cycle. Its docs
+  (`LOCALIZATION.md`, name-entry RTL + shaper, title word-art, DATA screen) are in
+  `mods/farsi/docs/`.
 
 ## Deep-dives & tooling
 

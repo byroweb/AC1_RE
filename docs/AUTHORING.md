@@ -50,7 +50,7 @@ tools/disc/reinject.py --file GG/COM/FDAT.T --t <rebuilt.T> --out "<test>.bin"
 | `tools/pa/pa_encode.py` | PA geometry **encoder** (byte-exact parse↔encode, **7602/7602** blocks; `--translate` edit demo) — the geometry write-path |
 | `tools/mission/mission_geom.py` | per-mission geometry (chunk-0 PA blocks): parse/edit/splice; `--selftest` **59/59 streams, 1740/1740 blocks** byte-exact |
 | `tools/disc/reinject.py` | write a rebuilt flat `.T` back into a `.bin` at the file's sector span (in-place) |
-| `tools/farsi/build_rtl_patch.py` | reference: original FDAT reinsert + overlay-patch flow |
+| `mods/farsi/build_rtl_patch.py` | reference: original FDAT reinsert + overlay-patch flow |
 
 ## Decoded systems (RE docs)
 
@@ -61,9 +61,9 @@ tools/disc/reinject.py --file GG/COM/FDAT.T --t <rebuilt.T> --out "<test>.bin"
   `0x801C4B40`, INIT column installs `+0x58` think), the two type namespaces
   (model id `hw7` vs logical dispatch type), and the win/fail condition taxonomy.
 
-Disc images (`disc_map/disc_files.json` -> `source_bin`):
-- pristine: `~/Desktop/Armored_Core_Hacks/AC_1_USA_backup/Armored Core (v1.1).bin` (read from here)
-- test outputs: `~/Desktop/Armored_Core_Hacks/AC_1_USA_test/…[TAG].bin` (write here)
+Disc images: every tool reads the pristine image from `$AC1_BIN` (or a local
+`source_bin` in `disc_map/disc_files.json`, which is `null` as committed) and
+writes test outputs wherever `--out` points (`…[TAG].bin` next to it is the convention).
 
 ## Constraints / gotchas
 

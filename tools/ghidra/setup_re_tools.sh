@@ -11,10 +11,11 @@
 #   tools/ghidra/setup_re_tools.sh
 set -uo pipefail
 
-REPO="/home/byron/Desktop/AC_1_USA_RE"
-APPS="/home/byron/Applications"
-M2C="$APPS/m2c"
-GEXT="/home/byron/snap/ghidra/current/.config/ghidra/ghidra_12.0_PUBLIC/Extensions"
+REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+APPS="${APPS_DIR:-$HOME/Applications}"
+M2C="${M2C_DIR:-$APPS/m2c}"
+# Ghidra user Extensions dir (snap layout by default; override for a non-snap install)
+GEXT="${GHIDRA_EXT_DIR:-$HOME/snap/ghidra/current/.config/ghidra/ghidra_12.0_PUBLIC/Extensions}"
 ok(){ echo "  [ok]   $*"; }
 add(){ echo "  [+]    $*"; }
 warn(){ echo "  [warn] $*"; }

@@ -21,7 +21,7 @@ LEN="${2:?need length}"
 BIN="${3:-$HERE/overlay_80050000.bin}"
 BASE="${4:-0x80050000}"
 
-M2C="/home/byron/Applications/m2c"
+M2C="${M2C_DIR:-$HOME/Applications/m2c}"   # your m2c checkout (see setup_re_tools.sh)
 OBJDUMP="mipsel-linux-gnu-objdump"
 
 addr=$(( ADDR ))

@@ -28,6 +28,15 @@ FILEMAP = os.path.join(HERE, "disc_map", "disc_files.json")
 RAW, OFF, DATA = 2352, 24, 2048
 
 
+def disc_bin(fm):
+    """Your disc image: the filemap's source_bin if set locally, else $AC1_BIN.
+    The committed disc_files.json carries no path (bring your own disc)."""
+    p = fm.get("source_bin") or os.environ.get("AC1_BIN")
+    if not p or not os.path.exists(p):
+        sys.exit("disc image not found: set AC1_BIN to your SLUS-01323 v1.1 .bin")
+    return p
+
+
 def load_container(path):
     fm = json.load(open(FILEMAP))
     rec = next((r for r in fm["files"]
@@ -36,7 +45,7 @@ def load_container(path):
     if not rec:
         sys.exit(f"not in filemap: {path}")
     blob = bytearray()
-    with open(fm["source_bin"], "rb") as f:
+    with open(disc_bin(fm), "rb") as f:
         for s in range(rec["sector_first"], rec["sector_last"] + 1):
             f.seek(s * RAW + OFF)
             blob += f.read(DATA)

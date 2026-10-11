@@ -45,9 +45,10 @@ def _resolve(key):
 
 
 # Per-glyph advances (for RTL width), loaded from the renderer metrics table.
-import json as _json
+import json as _json, os as _os
+_METRICS = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'farsi_metrics.json')
 _ADV = {int(k): v['adv'] for k, v in
-        _json.load(open('/home/byron/Desktop/AC_1_USA_RE/farsi_metrics.json'))['0'].items()}
+        _json.load(open(_METRICS))['0'].items()}
 
 
 def bake(text, terminator=True, right_align=False, field_width=72):

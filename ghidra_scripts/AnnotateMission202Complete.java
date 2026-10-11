@@ -27,16 +27,23 @@ import ghidra.program.model.mem.Memory;
 import ghidra.program.model.mem.MemoryBlock;
 import ghidra.program.model.symbol.SourceType;
 import ghidra.app.cmd.disassemble.DisassembleCommand;
+import java.io.File;
 import java.io.RandomAccessFile;
 
 public class AnnotateMission202Complete extends GhidraScript {
 
-    // carved lower-portion overlay image (base 0x8004ADA0)
-    static final String LOWER_BIN =
-        "/home/byron/Desktop/AC_1_USA_RE/disc_map/overlays/ovl202_mission.bin";
+    // carved lower-portion overlay image (base 0x8004ADA0), repo-relative (not committed)
+    static final String LOWER_REL = "disc_map/overlays/ovl202_mission.bin";
     static final long LOWER_BASE  = 0x8004ADA0L;
     static final long DUMP_BASE   = 0x80050000L;          // existing block start
     static final int  LOWER_LEN   = (int)(DUMP_BASE - LOWER_BASE); // 0x5260
+
+    // Repo root: $AC1_RE_ROOT, else the parent of ghidra_scripts/ (where this file lives).
+    private String repoRoot() {
+        String r = System.getenv("AC1_RE_ROOT");
+        if (r != null && !r.isEmpty()) return r;
+        return getSourceFile().getParentFile().getParentFile().getAbsolutePath();
+    }
 
     // {addr-inside-func (hex), name, plate comment}
     static final String[][] IN_RANGE = {
@@ -90,6 +97,7 @@ public class AnnotateMission202Complete extends GhidraScript {
             println("LOWER BLOCK already present (" + existing.getName()
                 + " @ " + existing.getStart() + "); skipping create.");
         } else {
+            final String LOWER_BIN = new File(repoRoot(), LOWER_REL).getPath();
             byte[] bytes = new byte[LOWER_LEN];
             RandomAccessFile raf = new RandomAccessFile(LOWER_BIN, "r");
             raf.readFully(bytes, 0, LOWER_LEN);   // bytes 0..0x5260 == 0x8004ADA0..0x8004FFFF

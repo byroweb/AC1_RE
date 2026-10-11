@@ -4,7 +4,7 @@ disc .bin, in place, at a file's sector range.
 
 Target: SLUS-01323 (v1.1).  Companion to tools/extract/t_repack.py (which builds
 the flat .T) and docs/AUTHORING.md.  Generalizes the FDAT-only `reinsert()` from
-tools/farsi/build_rtl_patch.py to ANY file in disc_map/disc_files.json.
+mods/farsi/build_rtl_patch.py to ANY file in disc_map/disc_files.json.
 
 The flat .T is the de-sectored payload (DATA_SIZE bytes per sector).  Each sector
 N of it is written to the user-data window of disc sector (sector_first + N),
@@ -31,6 +31,15 @@ DATA_SIZE   = 2048          # user data per sector
 def load_filemap():
     with open(FILEMAP) as f:
         return json.load(f)
+
+
+def disc_bin(fm):
+    """Your disc image: the filemap's source_bin if set locally, else $AC1_BIN.
+    The committed disc_files.json carries no path (bring your own disc)."""
+    p = fm.get("source_bin") or os.environ.get("AC1_BIN")
+    if not p or not os.path.exists(p):
+        sys.exit("disc image not found: set AC1_BIN to your SLUS-01323 v1.1 .bin")
+    return p
 
 
 def find_file(fm, key):
@@ -103,7 +112,7 @@ def main():
     ap = argparse.ArgumentParser(description="reinject a flat .T into a PSX disc .bin")
     ap.add_argument("--file", required=True, help="file id/path from disc_files.json")
     ap.add_argument("--t", required=True, help="rebuilt flat .T (2048-B/sector)")
-    ap.add_argument("--in", dest="in_bin", help="source .bin (default: filemap source_bin)")
+    ap.add_argument("--in", dest="in_bin", help="source .bin (default: filemap source_bin, else $AC1_BIN)")
     ap.add_argument("--out", required=True, help="output patched .bin")
     ap.add_argument("--no-cue", action="store_true", help="do not write a .cue")
     ap.add_argument("--grow", action="store_true",
@@ -112,7 +121,7 @@ def main():
     args = ap.parse_args()
 
     fm = load_filemap()
-    in_bin = args.in_bin or fm["source_bin"]
+    in_bin = args.in_bin or disc_bin(fm)
     rec = find_file(fm, args.file)
     if not rec:
         sys.exit(f"file not in filemap: {args.file}")

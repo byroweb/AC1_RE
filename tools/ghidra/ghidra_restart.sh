@@ -13,7 +13,8 @@
 # Usage: tools/ghidra/ghidra_restart.sh
 set -uo pipefail
 
-PROJ_DIR="/home/byron/Desktop/AC_1_USA_RE"
+REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+PROJ_DIR="${AC1_GHIDRA_PROJECT_DIR:-$REPO}"   # where AC_1_USA_2048_RE.gpr lives (gitignored)
 GPR="$PROJ_DIR/AC_1_USA_2048_RE.gpr"     # active project (the one used with MCP)
 GHIDRA="/snap/bin/ghidra"
 
