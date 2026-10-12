@@ -61,11 +61,13 @@ just flat/wireframe. Per textured record (`family = type & 0xFD`):
 AC1mod now colours each textured face by a stable hue derived from its decoded
 `(tpage, clut)` (`core/pa_parser.material_color`), exposed as `ac1mod_cli.py level N
 --materials`. Distinct textures read as distinct flat colours — a faithful *texture-layout*
-view, not real texels. **Where the texels live is now known:** the per-stage bank is
-embedded in the PA container — **entry 0** (64 KB, a structured/encoded sub-container) +
-**entry 1** (a CLUT/palette directory); see [PA_FORMAT.md](PA_FORMAT.md). Real texturing
-waits on cracking entry 0 + confirming its VRAM upload destination (or an in-mission VRAM
-dump via [SAVESTATE_FORMAT.md](SAVESTATE_FORMAT.md) — the current backups are all garage).
+view, not real texels. **CORRECTION (2026-10-12): the texels have NOT been located.** The
+"entry 0 = encoded texture bank, entry 1 = CLUT directory" claim was retracted — those
+entries are the PA master header and the placement directory ([PA_HEADER.md](PA_HEADER.md);
+reconciliation in [PA_FORMAT.md](PA_FORMAT.md)). Do not build an entry-0 texture decoder.
+Real texturing waits on a live `LoadImage` trace / an in-mission VRAM dump
+([LIVE_CHECKLIST.md](LIVE_CHECKLIST.md) LVL-2/LVL-3; [SAVESTATE_FORMAT.md](SAVESTATE_FORMAT.md) —
+the current backups are all garage).
 
 ### 2. New decode AC1mod can surface (read-side)
 

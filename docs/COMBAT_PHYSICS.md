@@ -409,8 +409,17 @@ ac+0x50` (think).
 > contradicts the live finding above (called from the enemy update wrapper as the
 > velocity→position step). One of the two is mis-scoped. Resolve in DuckStation:
 > breakpoint `0x8004F024`, check whether it writes `ac+0x08` from `ac+0x64` during AC
-> motion. World collision itself is `0x80070F30`→`0x8006F4D8` (`COLLISION.md`),
-> independent of this dispute. The NPC "brain" (targeting / navigate / decide-to-fire) is in the
+> motion ([LIVE_CHECKLIST.md](LIVE_CHECKLIST.md) S-3). World collision itself is
+> `0x80070F30`→`0x8006F4D8` (`COLLISION.md`), independent of this dispute.
+>
+> **Slot-role note (2026-10-12):** `ENTITY_AI_FRAMEWORK.md` calls `+0x58` the *think*
+> handler and found that nulling it alone corrupts position (train / aircraft, a different
+> mission), whereas here nulling it on an enemy AC only stops fire. Both are live
+> observations. The consistent reading: the vtable is installed **per entity class** by the
+> objective object's INIT column (`ENTITY_TYPES.md`), so the *role* of `+0x58` depends on the
+> class — for ACs movement is `+0x54` + the integrator and the authoritative position is
+> `+0x08/+0x0C`, while for the train/aircraft the `+0x58` handler produces the position that
+> the generic updater stores at `+0x20/+0x24`. HYPOTHESIS until LIVE_CHECKLIST ENT-1. The NPC "brain" (targeting / navigate / decide-to-fire) is in the
 mission-overlay routines `0x801C75BC` / `0x801C8CBC` / `0x801C91CC` / `0x801C981C`.
 
 ### ENEMY-AI FREEZE SWITCH  CONFIRMED & TESTED

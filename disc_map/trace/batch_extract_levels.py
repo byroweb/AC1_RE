@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Batch-extract every walkable level from FDAT.T (entries 2N+1) to OBJ, classifying
+"""SUPERSEDED by assemble_levels.py (which adds real world placement from chunk 7).
+Kept for the floor/ceiling/wall classification history; do not extend.
+
+Batch-extract every walkable level from FDAT.T (entries 2N+1) to OBJ, classifying
 faces into floor / ceiling / wall groups so ceilings can be toggled.
 
 Ceiling heuristic (per the 'textures on the underside' hint): a near-horizontal face

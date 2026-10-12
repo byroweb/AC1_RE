@@ -26,6 +26,9 @@ facts from open questions:
 ### Reference hub
 - [REFERENCE.md](REFERENCE.md) — consolidated RE reference: functions, RAM
   addresses, the `.T` container format, FDAT entry-201, checksum, disc sectors.
+- [LIVE_CHECKLIST.md](LIVE_CHECKLIST.md) — **every open item that needs the running game**,
+  as concrete traps (address, what to look for, which doc claim it settles). Start here
+  before a DuckStation session; append new items as RE raises them.
 
 ### Disc / containers
 - [MXT_LOADER.md](MXT_LOADER.md) — the MXT container & overlay loader behind every
@@ -86,8 +89,7 @@ facts from open questions:
 
 ## Deep-dives & tooling
 
-- [`disc_map/trace/`](../disc_map/trace/) — investigation logs and breadcrumbs
-  (e.g. `PLACEMENT_SOLVED.md`, `mission_load_sequence.md`, `mission_stage_map.md`,
-  `gouraud_slot_resolved.md`).
+- [`disc_map/trace/`](../disc_map/trace/README.md) — investigation logs and the level
+  tooling, with a status index (current / log / retracted / superseded).
 - [`tools/`](../tools/) — extraction, PA decoders, mission/objective parsing, the
   Farsi toolchain, and the Ghidra/RE pipeline.
