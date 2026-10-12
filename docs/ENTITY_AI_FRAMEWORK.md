@@ -111,6 +111,13 @@ fire / corruption); restore the original pointer to un-freeze. Validated: train
 world-X held exactly across frame-steps and at full speed. All 7 NPCs frozen →
 player free to roam, energy stable.
 
+> **Slot-role note (2026-10-12):** `COMBAT_PHYSICS.md` §6 labels `+0x58` the *weapon / fire
+> AI* on an enemy AC (zeroing it ⇒ "moves but never fires", no position corruption). Not a
+> contradiction if the handler's role is per entity class (it is installed by the
+> per-mission INIT column, `ENTITY_TYPES.md`): the train/aircraft handlers here produce the
+> position the updater stores at `+0x20/+0x24`; AC movement goes through `+0x54` and the
+> integrator into `+0x08/+0x0C`. HYPOTHESIS — [LIVE_CHECKLIST.md](LIVE_CHECKLIST.md) ENT-1.
+
 Notes: `0x80078xxx` is in the swappable mission overlay, so the patch is
 RAM-only / non-persistent (reload restores it). Damage/collision is **independent
 of `+0x58`**, so frozen entities still take hits (§4) — ideal sitting targets.

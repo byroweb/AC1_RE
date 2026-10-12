@@ -139,7 +139,7 @@ with its own VRAM dest rect) — supplies UI/effect/AC pages (tx 5/8/9/13/15, e.
 (704/768,256); a separate **per-stage** texture bank does. The PA loader `FUN_8004F1A8`
 has **no** `LoadImage`/GPU-DMA call — geometry load and texture upload are decoupled.
 
-**Per-stage texture bank — LOCATED on disc (2026-06-15):** the bank is **embedded in
+**Per-stage texture bank — claim RETRACTED (see RECONCILIATION below; original 2026-06-15 text kept):** the bank is **embedded in
 the PA container itself**, not in a sibling file (the `P0..P3` dirs hold only `PA##.T`).
 In `PA00.T` the two **non-geometry** entries carry it:
 - **entry 0** — a fixed **0x10000-byte (64 KB)** block, `self0` ≠ `len` so it is *not* a
@@ -158,6 +158,22 @@ and (b) confirm its VRAM upload destination — one DuckStation `LoadImage` trac
 load nails the destination (see `scratch/re/pa_textures.md` §4). Offline alternative for a
 VRAM source is an **in-mission** DuckStation save state (`tools/duckstation/savestate.py`),
 but all 10 current backup states are menu/garage (`stage_byte=0`), so none carry stage VRAM.
+
+> **RECONCILIATION (2026-10-12, static cross-check vs [PA_HEADER.md](PA_HEADER.md)):** the
+> "texture bank in entry 0 / entry 1" reading above and PA_HEADER's "master header +
+> placement directory" reading describe the **same bytes**, and PA_HEADER's is the one that
+> explains them: the used-size `0xF854` and the three internal offsets `0x188 / 0xEDC4 /
+> 0xEFD4` are exactly PA_HEADER's ptr C (u32 offset directory), ptr D (int16 transform
+> vectors) and the aux ptr; the "regular `08 xx 08 yy` records" at `+0x1C` are the typed
+> object-index list `(blockID<<8)|0x08` (LE bytes `08 NN`); and that list is **byte-identical
+> across PA00/07/20**, which a per-stage texture bank could not be. Entry 1's "ascending u16
+> offset table" is the 57-record placement directory's pointer table at `+0x08`.
+> **So entry 0 is the master header, entry 1 the placement directory, and the per-stage
+> texture bank has NOT been located.** Still true and still open: RTIM does not fill pages
+> (704/768,256) and the PA loader does no upload, so the texel source for those pages is
+> unknown — tracked as [LIVE_CHECKLIST.md](LIVE_CHECKLIST.md) LVL-3 (LoadImage trace) and
+> LVL-2 (read them out of an in-mission VRAM). `AC1MOD_INTEGRATION.md` §1b carries this
+> correction.
 
 **Gouraud stride (RESOLVED 2026-06-11, live RE):** flat/textured types pack their
 vertex indices contiguously (stride 2). The **gouraud** types interleave

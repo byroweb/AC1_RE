@@ -6,6 +6,11 @@ geometry blocks), [PA_SLOTS.md](PA_SLOTS.md) (empirical cross-file slot matrix),
 against **PA00 / PA07 / PA20** (`GG/P0` + `GG/P1`). Overlay code = FDAT entry 202,
 base `0x8004ADA0`.
 
+> **Reconciled 2026-10-12:** `PA_FORMAT.md`'s later reading of entry 0 / entry 1 as a
+> per-stage *texture bank + CLUT directory* was retracted in favour of the layout below
+> (same bytes; this reading explains them and is byte-identical across files). See
+> PA_FORMAT.md "RECONCILIATION".
+>
 > Terminology: `docs/PA_SLOTS.md` calls a `.T` *entry index* a "slot". The entry-0
 > list below uses an internal **blockID** tag (0x00..0x2c). These are two views of the
 > same fixed roster — the header is *why* PA_SLOTS sees a fixed skeleton.

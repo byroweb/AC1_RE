@@ -10,6 +10,18 @@ runtime), [PA_HEADER.md](PA_HEADER.md) (slot binding), [PA_FORMAT.md](PA_FORMAT.
 
 `CONFIRMED` = disasm/byte-verified here. `HYPOTHESIS` = inferred, not ground-truthed.
 
+> **RECONCILIATION (2026-10-12) with [LEVEL_LOADING.md](LEVEL_LOADING.md) / [PA_FORMAT.md](PA_FORMAT.md):**
+> Part 1 below is correct *as code* — `0x8004F1A8` really decodes `0x8004121B` into
+> `P{n}\PA{nn}.T`. But every live trace so far read the byte as **0** (PA00, the common /
+> bootstrap pack), a write-watch on it never fired across a whole mission, and the walkable
+> level turned out to live in FDAT entry `2N+1` (chunk 0 + chunk 7), not in a PA file. So
+> the byte is a **PA-pack selector whose observed in-mission value is always 0**, not the
+> per-mission *level* selector Part 1 set out to find; the "mission→byte table" is most
+> likely the constant 0 for every mission. What is genuinely open is **who ever selects
+> PA01–PA71** (72 files exist; candidates: mission-assignment-screen imagery, arena,
+> garage) — [LIVE_CHECKLIST.md](LIVE_CHECKLIST.md) S-4 / MIS-11. Read "stage" below as
+> "PA pack".
+
 ---
 
 ## Part 2 first (fully solved) — spawn block-index -> geometry  CONFIRMED

@@ -50,7 +50,7 @@ This static recon reads `0x8004F024` / `0x8004EF74` as a timed value-easing rout
 live finding in `COMBAT_PHYSICS.md`** (which calls `0x8004F024` the AC movement
 integrator, invoked from the enemy update wrapper `0x800760DC`). One reading is
 mis-scoped — resolve in DuckStation (breakpoint `0x8004F024`; does it write `ac+0x08`
-from `ac+0x64`?). Either way it is separate from world collision, which is
+from `ac+0x64`? — [LIVE_CHECKLIST.md](LIVE_CHECKLIST.md) S-3). Either way it is separate from world collision, which is
 `0x80070F30` → `0x8006F4D8` (above).
 
 ## Authoring implication

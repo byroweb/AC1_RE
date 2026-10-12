@@ -58,13 +58,37 @@ models. It does not replace existing work — it consolidates and extends it:
 |--------------|---------------|-----------------------------------------------------|-------------|
 | `ac1_mxt`    | **done, validated** | `.T`/MXT archives, FDAT overlay layout, the `0x12345678` checksum, overlay header (`entry_fn`, `"ENERGY"` magic) | `docs/MXT_LOADER.md` |
 | text render  | **done** | `draw_char`/`draw_string` glyph + string rendering  | `../mods/farsi/font_render.c`, `../mods/farsi/string_render.c`, `../docs/AC1_TEXT_SYSTEM.md` |
-| `ac1_mission`| planned       | mission lifecycle: driver, timer, objective vtable, success/fail → result | `docs/MISSION_SYSTEM.md` |
+| `ac1_mission`| **done (static)** | mission lifecycle: control block, timer, objective step, result flags, end fade, exit code, primary-VM cmds; byte-exact chunk-stream / spawn-table / secondary-VM-blob decoders | `docs/MISSION_STATE_MACHINE.md`, `docs/MISSION_SYSTEM.md`, `docs/MISSION_SCRIPT_VM.md` |
 | `ac1_combat` | planned       | projectile pool + per-type think (ballistic/missile homing), proximity/collision, damage application | `docs/COMBAT_PHYSICS.md` |
 | `ac1_physics`| planned       | AC movement integrator (boost/gravity/recoil)       | `docs/COMBAT_PHYSICS.md` |
 | `ac1_parts`  | planned       | garage AC assembly: part stat tables → totals (AP/weight/EN) | (in progress) |
 
 Each model maps 1:1 to a documented subsystem so the C and the RE notes stay in
 sync.
+
+## Validate the mission model
+
+`mission_sim` always runs a lifecycle self-test (timer → FAIL → 100-frame fade →
+exit code 2; intro sequencer to terminal at 36; cmd 5 / masker / store semantics;
+spawn marshal; VM opcode lengths). Given `../fdat_extracted.T` it also walks every
+mission's chunk stream, counts spawns, and walks every secondary-VM thread to END
+(expected on retail: all threads clean, 106 threads). `mission_sim <FDAT.T> N` dumps
+mission N (chunks, spawns, disassembled threads).
+
+```
+$ ./build/mission_sim ../fdat_extracted.T
+lifecycle self-test
+  ok:   cmd 4 sets timer = 22 * param
+  ...
+self-test: PASS (0 failures)
+../fdat_extracted.T: NN mission streams, NN with a script chunk, NN sets, 106 threads (0 bad), NNN spawns
+secondary-VM walk: ALL THREADS REACH END
+```
+
+The runtime half is written from the documented behaviour (static disasm + the live
+completion trace); the points it had to guess are marked in the source with the
+`docs/LIVE_CHECKLIST.md` item that settles them (MIS-2 timer unit, MIS-15 store-vs-OR,
+MIS-16 the `0x80` exit).
 
 ## Validate the MXT model
 
