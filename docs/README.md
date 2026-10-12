@@ -47,6 +47,10 @@ facts from open questions:
   player-facing translatable string.
 
 ### Missions / levels
+- [MISSION_STATE_MACHINE.md](MISSION_STATE_MACHINE.md) — **start here for the mission
+  runtime**: the lifecycle as one state machine (load → running → objectives complete →
+  ending → exit), every state variable and its writers, the per-frame order, and the
+  open points. Executable model: `re/ac1_mission`.
 - [MISSION_SYSTEM.md](MISSION_SYSTEM.md) — mission runtime: descriptor, MT spawn,
   timer, objectives.
 - [MISSION_STAGES.md](MISSION_STAGES.md) — mission → PA stage file + spawn

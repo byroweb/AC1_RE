@@ -56,6 +56,8 @@ the rest can be done in any order.
 | MIS-12 | [ ] | `bp 0x80078D50` (type dispatch) in every mission you visit; log `(mission, type=instance+0x0E, fn)`. | The concrete type→think map, to merge into `disc_map/type_catalog_long.csv`. | `ENTITY_TYPES.md` "Concrete numeric type→think for all 59 missions". |
 | MIS-13 | [ ] | `bp` each AUX_TBL `+0x120` entry of the objobj (M0–M3 first); note the caller and the `0x8019F524`/flag bit it touches. | Per-mission event-flag bit meanings. | `ENTITY_TYPES.md` "AUX_TBL `+0x120` bit semantics"; `0x80198808` row format. |
 | MIS-14 | [ ] | `bp` the primary-VM jump-table cases 00/01/02/09 (`0x8004C164`; bodies `0x8008A10C…`). | What each actually does when hit in a real mission. | `overlays/OVERLAY_MAP.md` "hyp meaning" cases. |
+| MIS-15 | [ ] | With `0x8019F524` holding `0x400` (after MIS-5, or poke it), `bp 0x8004C318` and step the store. | Does the word become `a0` (store) or `a0 \| old` (OR)? | `MISSION_SYSTEM.md` §4 "writes a0 directly" vs the live `0x480` at exit; `re/ac1_mission` `set_result` semantics; authoring of `set_result` scripts. |
+| MIS-16 | [ ] | Complete a mission via the exit border (cmd 5 path): read `0x80048610` the frame the fade ends, then `rw 0x80048610` into the debrief (*EXE*). | The result code for a `0x80` exit and how the base EXE decides success vs fail from it (or from `0x8019F524` directly). | `MISSION_STATE_MACHINE.md` §6; `MISSION_SYSTEM.md` §4 result-code table (0x80 → 0?). |
 
 ---
 

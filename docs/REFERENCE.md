@@ -443,7 +443,8 @@ Decoder: `tools/pa/pa_parse.py … --prims OFF CNT`.
 
 ## 12. Mission runtime — descriptor, MT spawn, timer, objectives (RE 2026-06-08)
 
-Full writeup: **`docs/MISSION_SYSTEM.md`**. Tool: `tools/mission/mission_parse.py`. All in
+Consolidated lifecycle / state machine: **`docs/MISSION_STATE_MACHINE.md`** (host-side
+C model `re/ac1_mission`). Full writeup: **`docs/MISSION_SYSTEM.md`**. Tool: `tools/mission/mission_parse.py`. All in
 the entry-202 overlay (base `0x8004ADA0`).
 
 **Per-mission data = FDAT entry PAIR (file id 2):** mission N →
