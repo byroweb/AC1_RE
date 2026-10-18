@@ -65,6 +65,20 @@ Everything here runs under **Git Bash** (MSYS2); PowerShell/cmd are not supporte
   `AC1_DS_EXE` (emulator exe, for the build string). `AC1_BIN` supplies the EXE
   anchor + disc identity.
 
+## `plantview/` — live "plant view" of the mission loop
+A factory-floor style dashboard of the mission lifecycle (LOAD → RUNNING →
+OBJECTIVES_COMPLETE → ENDING → EXIT), the entity table (spawn / update / collision /
+destroy with per-station counts) and the per-frame pipeline, drawn from
+`tools/plantview/stations.json` (every address with its CONFIRMED / HYPOTHESIS label
+from the docs). `poller.py` samples RAM live through the DuckStation MCP `read_memory`
+path or offline from save states via `savestate.py`, and serves JSON + SSE on
+127.0.0.1; `index.html` is a single self-contained canvas page with a replay scrubber.
+See [`plantview/README.md`](plantview/README.md) for running it and adding a station.
+```
+python tools/plantview/poller.py --source states --open     # replay the state library
+python tools/plantview/poller.py --source live --open       # DuckStation, port 2346
+```
+
 ## `setup_re_tools.sh`
 Idempotent installer + health report. Sets up m2c, checks the mipsel toolchain,
 installs/verifies the Ghidra PSX loader + PSYQ signatures, and confirms the

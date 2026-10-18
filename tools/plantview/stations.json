@@ -1,0 +1,173 @@
+{
+  "$comment": "AC1 (SLUS-01323 v1.1) plant-view layout. Every address comes from docs/MISSION_STATE_MACHINE.md §3, docs/RUNTIME_RAM_MAP.md, docs/ENTITY_AI_FRAMEWORK.md or docs/REFERENCE.md; 'status' repeats the doc's CONFIRMED / HYPOTHESIS label. poller.py reads the 'fields' and 'arrays', computes 'derived' values, and index.html lays out 'stations' and 'transitions'. See tools/plantview/README.md to add a station.",
+  "target": "SLUS-01323 v1.1",
+  "grid": { "cols": 12, "rows": 7, "cell_w": 150, "cell_h": 96 },
+
+  "fields": {
+    "game_mode":      { "addr": "0x80039C5E", "type": "u8",  "status": "CONFIRMED",  "doc": "REFERENCE.md §2",            "label": "mode byte",         "note": "0 mission / 1 link versus / 2 local battle (FDAT 202/203/204 overlay select)" },
+    "mission_no":     { "addr": "0x800411F8", "type": "u8",  "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §2", "label": "mission #",         "note": "copied to 0x8019F518 by the loader; writer on the way in is open (S-4)" },
+    "pa_pack":        { "addr": "0x8004121B", "type": "u8",  "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §2", "label": "PA pack",           "note": "loader step 8 selects the PA pack with it (0 = PA00)" },
+    "result_code":    { "addr": "0x80048610", "type": "u32", "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §6", "label": "result code",       "note": "1 success / 2 fail / 0 neither, written by 0x8004C69C; read by the base EXE" },
+    "progress_ctr":   { "addr": "0x8009079C", "type": "u32", "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §3", "label": "progress counter",  "note": "FUN_8008A80C steps 0..36; only meaningful while overlay 202 is resident" },
+    "mission_no_mb":  { "addr": "0x8019F518", "type": "u32", "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §2", "label": "mission # (ctrl blk)" },
+    "objobj_ptr":     { "addr": "0x8019F51C", "type": "u32", "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §3", "label": "objobj ptr",        "note": "0x801C4B40 while a mission is loaded" },
+    "stream_ptr":     { "addr": "0x8019F520", "type": "u32", "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §3", "label": "chunk stream ptr" },
+    "flags":          { "addr": "0x8019F524", "type": "u32", "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §3", "label": "flags",
+                        "bits": { "0x80": "progress", "0x100": "success", "0x200": "fail", "0x400": "event", "0x1000": "timer-warn", "0x2000": "objective-pending" } },
+    "end_counter":    { "addr": "0x8019F528", "type": "u16", "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §3", "label": "end counter",       "note": "armed to 100 by FUN_8004C318, FUN_8008AA90 counts it to 0 then exits", "gauge": { "min": 0, "max": 100 } },
+    "end_anim":       { "addr": "0x8019F52A", "type": "u16", "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §3", "label": "end-anim / timer-mode", "note": "< 61 runs the end-anim state machine; < 16 shows the HUD timer; 0xFFFF idle" },
+    "timer":          { "addr": "0x8019F52C", "type": "u16", "status": "HYPOTHESIS", "doc": "MISSION_STATE_MACHINE.md §3", "label": "displayed timer",   "note": "variable CONFIRMED, units HYPOTHESIS (MIS-2: 22 x param)" },
+    "terminal_flag":  { "addr": "0x801CC80C", "type": "u8",  "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §3", "label": "terminal flag",     "note": "set by FUN_8008A80C at progress step 36" },
+    "objectives_done":{ "addr": "0x801D0B50", "type": "u8",  "status": "CONFIRMED",  "doc": "MISSION_STATE_MACHINE.md §3", "label": "objectives-complete", "note": "3 = all objectives done (live); relation to progress_ctr open (MIS-4)" },
+    "frame_ctr_1":    { "addr": "0x80198804", "type": "u16", "status": "HYPOTHESIS", "doc": "RUNTIME_RAM_MAP.md",          "label": "frame counter 1" },
+    "frame_ctr_2":    { "addr": "0x801AC81C", "type": "u16", "status": "HYPOTHESIS", "doc": "RUNTIME_RAM_MAP.md",          "label": "frame counter 2" }
+  },
+
+  "arrays": {
+    "entities": {
+      "base": "0x801A26B8", "stride": "0x170", "count": 15, "status": "CONFIRMED",
+      "doc": "RUNTIME_RAM_MAP.md; ENTITY_AI_FRAMEWORK.md §0",
+      "note": "slot 0 = player; 15 slots from the damage router's 0x1590 bounds check (16 in the radar loop, ENT-3 open)",
+      "offsets": {
+        "template_ptr": { "off": "0x00",  "type": "u32", "status": "CONFIRMED",  "note": "points into the instance-template table 0x8019FAB8 when the slot is bound" },
+        "geom_ptr":     { "off": "0x04",  "type": "u32", "status": "CONFIRMED",  "note": "geometry-block record (0x8019F538 + idx*44) — collision geometry bound" },
+        "pos_x":        { "off": "0x08",  "type": "s16", "status": "CONFIRMED",  "note": "MT mover 0x8004F024 writes 3xs16 here (live 2026-10-18); ACs open (ENT-1)" },
+        "pos_y":        { "off": "0x0A",  "type": "s16", "status": "CONFIRMED" },
+        "pos_z":        { "off": "0x0C",  "type": "s16", "status": "CONFIRMED" },
+        "yaw":          { "off": "0x12",  "type": "s16", "status": "HYPOTHESIS" },
+        "faction":      { "off": "0x36",  "type": "u16", "status": "CONFIRMED",  "note": "low 3 bits = team id (red AC = 2)" },
+        "ai_state":     { "off": "0x40",  "type": "u8",  "status": "CONFIRMED",  "note": "state-machine selector; 0xFF = special branch" },
+        "target_ptr":   { "off": "0x48",  "type": "u32", "status": "CONFIRMED" },
+        "think":        { "off": "0x58",  "type": "u32", "status": "CONFIRMED",  "note": "vtable think method installed by INIT[type]" },
+        "on_hit":       { "off": "0x5C",  "type": "u32", "status": "CONFIRMED",  "note": "on-hit + death method" },
+        "ap":           { "off": "0x160", "type": "u16", "status": "CONFIRMED",  "note": "player: 0x801A2818; HUD shows ap/4" },
+        "ap_max":       { "off": "0x162", "type": "u16", "status": "CONFIRMED" }
+      }
+    },
+    "templates": {
+      "base": "0x8019FAB8", "stride": "44", "count": 256, "status": "CONFIRMED",
+      "doc": "MISSION_STATE_MACHINE.md §7",
+      "note": "chunk-12 spawn records copied by FUN_80073B74; +0x00 = 0 at load, the binder marks the record consumed",
+      "offsets": {
+        "consumed": { "off": "0x00", "type": "u16", "status": "HYPOTHESIS", "note": "non-zero once the binder has consumed the record (reading of 'marks consumed')" },
+        "hp":       { "off": "0x02", "type": "u16", "status": "CONFIRMED",  "note": "hw11 HP of the chunk-12 record" },
+        "type":     { "off": "0x0E", "type": "u16", "status": "CONFIRMED",  "note": "hw5 type/block word — INIT[type] dispatch" },
+        "resource": { "off": "0x12", "type": "u16", "status": "CONFIRMED",  "note": "hw7 resource id" }
+      }
+    }
+  },
+
+  "derived": {
+    "$comment": "Computed by poller.py from the fields above (see decode_sample). Listed here so the page can label them with the same CONFIRMED/HYPOTHESIS honesty.",
+    "lifecycle":        { "status": "HYPOTHESIS", "note": "OUT_OF_MISSION | LOAD | RUNNING | OBJECTIVES_COMPLETE | ENDING | EXIT, decoded from game_mode, objobj_ptr, entity slot 0, objectives_done, flags, end_counter, result_code. Only RUNNING->ENDING->EXIT follow CONFIRMED writers; LOAD and EXIT boundaries are heuristics." },
+    "entities_active":  { "status": "HYPOTHESIS", "note": "slots whose template_ptr lies inside the template table and whose think method is non-null" },
+    "entities_collide": { "status": "HYPOTHESIS", "note": "active slots with a non-null geom_ptr" },
+    "entities_dead":    { "status": "HYPOTHESIS", "note": "active slots with ap == 0" },
+    "templates_total":  { "status": "HYPOTHESIS", "note": "template records with hp != 0" },
+    "templates_consumed": { "status": "HYPOTHESIS", "note": "template records with consumed != 0" }
+  },
+
+  "stations": [
+    { "id": "OUT_OF_MISSION", "label": "GARAGE / SORTIE", "group": "lifecycle", "col": 0, "row": 0,
+      "doc": "MISSION_STATE_MACHINE.md §1", "status": "HYPOTHESIS",
+      "fields": ["game_mode", "mission_no", "pa_pack"],
+      "active_when": { "lifecycle": "OUT_OF_MISSION" },
+      "note": "base EXE; garage -> SORTIE path not yet RE'd (S-4, MIS-11)" },
+
+    { "id": "LOAD", "label": "LOAD", "group": "lifecycle", "col": 2, "row": 0,
+      "doc": "MISSION_STATE_MACHINE.md §2", "status": "CONFIRMED",
+      "fields": ["mission_no_mb", "objobj_ptr", "stream_ptr", "pa_pack"],
+      "active_when": { "lifecycle": "LOAD" },
+      "substeps": [
+        "1 init control block 0x8019F51C..32, mission # -> 0x8019F518",
+        "2 RTIM 100 + RTIM N (TIM banks)",
+        "3 FDAT 200 shared stream",
+        "4 FDAT 2N -> objobj 0x801C4B40",
+        "5 FDAT 2N+1 chunk stream -> walk (12 = spawn table -> templates)",
+        "6 objobj INIT",
+        "7 timer := 0",
+        "8 FUN_8004F1A8 PA pack",
+        "9 FUN_80078B14 binder per object"
+      ] },
+
+    { "id": "RUNNING", "label": "RUNNING", "group": "lifecycle", "col": 4, "row": 0,
+      "doc": "MISSION_STATE_MACHINE.md §4", "status": "CONFIRMED",
+      "fields": ["flags", "progress_ctr", "timer", "end_anim", "terminal_flag"],
+      "active_when": { "lifecycle": "RUNNING" },
+      "gauges": [ { "field": "progress_ctr", "min": 0, "max": 36, "label": "progress 0..36" } ] },
+
+    { "id": "OBJECTIVES_COMPLETE", "label": "OBJECTIVES COMPLETE", "group": "lifecycle", "col": 6, "row": 0,
+      "doc": "MISSION_STATE_MACHINE.md §5", "status": "CONFIRMED",
+      "fields": ["objectives_done", "flags"],
+      "active_when": { "lifecycle": "OBJECTIVES_COMPLETE" },
+      "note": "0x801D0B50 = 3; flags, result and objobj untouched until the border exit" },
+
+    { "id": "ENDING", "label": "ENDING", "group": "lifecycle", "col": 8, "row": 0,
+      "doc": "MISSION_STATE_MACHINE.md §5", "status": "CONFIRMED",
+      "fields": ["end_counter", "flags", "end_anim"],
+      "active_when": { "lifecycle": "ENDING" },
+      "gauges": [ { "field": "end_counter", "min": 0, "max": 100, "label": "fade 100 -> 0" } ] },
+
+    { "id": "EXIT", "label": "EXIT", "group": "lifecycle", "col": 10, "row": 0,
+      "doc": "MISSION_STATE_MACHINE.md §6", "status": "CONFIRMED",
+      "fields": ["result_code", "flags"],
+      "active_when": { "lifecycle": "EXIT" },
+      "note": "0x8004C69C maps flags -> 0x80048610; base EXE debrief past here is not RE'd" },
+
+    { "id": "SPAWN", "label": "SPAWN", "group": "entity", "col": 1, "row": 2,
+      "doc": "MISSION_STATE_MACHINE.md §7", "status": "CONFIRMED",
+      "fields": [],
+      "counter": { "value": "templates_consumed", "of": "templates_total", "label": "templates consumed / total" },
+      "active_when": { "counter_gt": 0 },
+      "note": "chunk-12 record -> template -> spawn_group N / objobj EVENT -> FUN_80078CFC -> allocator 0x80078A2C" },
+
+    { "id": "UPDATE", "label": "UPDATE (think)", "group": "entity", "col": 4, "row": 2,
+      "doc": "ENTITY_AI_FRAMEWORK.md §1", "status": "CONFIRMED",
+      "fields": [],
+      "counter": { "value": "entities_active", "of": 15, "label": "live entities / slots" },
+      "active_when": { "counter_gt": 0 },
+      "note": "generic updater ~0x800789D0: +0x4C wrapper -> +0x50..+0x5C methods, think at +0x58" },
+
+    { "id": "COLLISION", "label": "COLLISION", "group": "entity", "col": 7, "row": 2,
+      "doc": "COMBAT_PHYSICS.md §6", "status": "HYPOTHESIS",
+      "fields": [],
+      "counter": { "value": "entities_collide", "of": "entities_active", "label": "with geometry / live" },
+      "active_when": { "counter_gt": 0 },
+      "note": "projectile round think FUN_80083A10 -> collision -> FUN_800835E8 damage dispatch" },
+
+    { "id": "DESTROY", "label": "DESTROY", "group": "entity", "col": 10, "row": 2,
+      "doc": "MISSION_STATE_MACHINE.md §7", "status": "HYPOTHESIS",
+      "fields": [],
+      "counter": { "value": "entities_dead", "of": "entities_active", "label": "ap == 0 / live" },
+      "active_when": { "counter_gt": 0 },
+      "note": "death method +0x5C; objobj FREE hook (+0x10) adjusts kill tallies; despawn_group -> FUN_80078D78" },
+
+    { "id": "PH_DRIVER",   "label": "driver 0x8008AB68", "group": "frame", "col": 0,  "row": 4, "doc": "MISSION_STATE_MACHINE.md §4", "status": "CONFIRMED", "fields": [], "note": "objective TICK, end-anim, end-sequence" },
+    { "id": "PH_TIMER",    "label": "timer tick",        "group": "frame", "col": 2,  "row": 4, "doc": "MISSION_STATE_MACHINE.md §4", "status": "CONFIRMED", "fields": [], "note": "countdown struct 0x801D0B40; expiry -> FUN_8004C318(0x200)" },
+    { "id": "PH_VM",       "label": "vm_tick 0x8008B380","group": "frame", "col": 4,  "row": 4, "doc": "MISSION_SCRIPT_VM.md",        "status": "CONFIRMED", "fields": [], "note": "secondary VM threads: dispatch until blocked / END" },
+    { "id": "PH_ENTITIES", "label": "entity update",     "group": "frame", "col": 6,  "row": 4, "doc": "ENTITY_AI_FRAMEWORK.md §1",   "status": "CONFIRMED", "fields": [], "note": "per entity +0x4C wrapper, think +0x58" },
+    { "id": "PH_PROJ",     "label": "projectiles",       "group": "frame", "col": 8,  "row": 4, "doc": "COMBAT_PHYSICS.md §6",        "status": "CONFIRMED", "fields": [], "note": "FUN_80083A10 round think -> FUN_800835E8 damage" },
+    { "id": "PH_HUD",      "label": "HUD",               "group": "frame", "col": 10, "row": 4, "doc": "MISSION_STATE_MACHINE.md §4", "status": "CONFIRMED", "fields": [], "note": "timer MM:SS when end_anim < 16 && timer != 0" }
+  ],
+
+  "transitions": [
+    { "from": "OUT_OF_MISSION", "to": "LOAD", "label": "SORTIE (writer open, S-4)", "status": "HYPOTHESIS", "doc": "MISSION_STATE_MACHINE.md §1" },
+    { "from": "LOAD", "to": "RUNNING", "label": "FUN_8004F508 returns", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §5" },
+    { "from": "RUNNING", "to": "OBJECTIVES_COMPLETE", "label": "0x801D0B50 = 3", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §5" },
+    { "from": "OBJECTIVES_COMPLETE", "to": "ENDING", "label": "border exit -> cmd 5 -> set_result(0x80)", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §5" },
+    { "from": "RUNNING", "to": "ENDING", "label": "timer 0 -> set_result(0x200) / VM set_result / cmd 8 (0x100)", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §5", "bend": 1 },
+    { "from": "ENDING", "to": "EXIT", "label": "end counter 100 -> 0 (FUN_8008AA90)", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §5" },
+    { "from": "EXIT", "to": "OUT_OF_MISSION", "label": "base EXE reads 0x80048610 (debrief)", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §6", "bend": -1 },
+
+    { "from": "SPAWN", "to": "UPDATE", "label": "allocator -> resources -> binder -> INIT[type]", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §7", "event": "spawn" },
+    { "from": "UPDATE", "to": "COLLISION", "label": "per-frame think + projectile hits", "status": "HYPOTHESIS", "doc": "COMBAT_PHYSICS.md §6", "event": "tick" },
+    { "from": "COLLISION", "to": "DESTROY", "label": "on-hit/death +0x5C", "status": "HYPOTHESIS", "doc": "MISSION_STATE_MACHINE.md §7", "event": "death" },
+    { "from": "DESTROY", "to": "SPAWN", "label": "objobj FREE hook / despawn_group", "status": "HYPOTHESIS", "doc": "MISSION_STATE_MACHINE.md §7", "event": "free", "bend": 1 },
+
+    { "from": "PH_DRIVER", "to": "PH_TIMER", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §4" },
+    { "from": "PH_TIMER", "to": "PH_VM", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §4" },
+    { "from": "PH_VM", "to": "PH_ENTITIES", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §4" },
+    { "from": "PH_ENTITIES", "to": "PH_PROJ", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §4" },
+    { "from": "PH_PROJ", "to": "PH_HUD", "status": "CONFIRMED", "doc": "MISSION_STATE_MACHINE.md §4" }
+  ]
+}
