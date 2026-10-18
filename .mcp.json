@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ghidra": {
+      "command": "${GHIDRAMCP_CMD:-ghidra-mcp}",
+      "args": ["--ghidra-server", "http://127.0.0.1:8080/"]
+    }
+  }
+}
