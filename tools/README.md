@@ -34,6 +34,22 @@ Everything here runs under **Git Bash** (MSYS2); PowerShell/cmd are not supporte
 - `ghidra_restart.sh` uses PowerShell `Stop-Process` instead of `pkill` and
   launches `ghidraRun.bat`; `ghidra_overlay.sh` runs `analyzeHeadless.bat`.
 
+## `duckstation/` — save states
+- **`states.py`** — the save-state **library**: `archive <slot> <id>` copies a
+  DuckStation slot file into a directory outside the repo (`AC1_STATES_DIR`,
+  default `~/dev/ac1_states`) under a stable ID, extracts the thumbnail, reads
+  mission/stage/flags from RAM and appends a row to the committed manifest
+  `disc_map/states/STATES.tsv`; `stage <id> <slot>` puts one back; `check`
+  verifies sha256s; `list` queries. Slots are scratch, **docs cite IDs** — see
+  `disc_map/states/README.md`. Test: `python tools/duckstation/states_test.py`.
+- **`savestate.py`** — offline DUCCS reader (header, RAM by PS1 address, VRAM,
+  thumbnail, frame counter); `docs/SAVESTATE_FORMAT.md`. Needs a zstd decoder:
+  `pip install zstandard` or the `zstd` CLI (neither ships with Windows).
+- Extra variables: `AC1_STATES_DIR` (library), `AC1_DS_DIR` (DuckStation data dir,
+  auto-detected from Documents/DuckStation or `~/.local/share/duckstation`),
+  `AC1_DS_EXE` (emulator exe, for the build string). `AC1_BIN` supplies the EXE
+  anchor + disc identity.
+
 ## `setup_re_tools.sh`
 Idempotent installer + health report. Sets up m2c, checks the mipsel toolchain,
 installs/verifies the Ghidra PSX loader + PSYQ signatures, and confirms the
