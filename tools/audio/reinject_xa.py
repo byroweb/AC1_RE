@@ -3,7 +3,7 @@
 reinject_xa.py - write a replacement take (WAV) into one TALK channel of a COPY
 of the disc, driven by a row of disc_map/voice_manifest.tsv.
 
-The dub half of the voice pipeline (docs/AUDIO_PIPELINE.md §6). Given a clip id
+The dub half of the voice pipeline (docs/AUDIO_PIPELINE.md section 6). Given a clip id
 the manifest tells us the stream, its XA channel, the interleave stride and the
 clip's audio-sector budget (audio_sector_first..audio_sector_last, i.e. disc
 sectors sector_first + stride*k). This script:
@@ -86,7 +86,7 @@ class Target:
         self.rate = int(row.get("rate") or 37800)
         if ".STR[" in self.source_file or "_str" in self.stream:
             sys.exit(f"{self.clip_id}: STR audio tracks are stereo music+speech mixes; "
-                     "this tool only dubs the mono TALK channels (see AUDIO_PIPELINE.md §6)")
+                     "this tool only dubs the mono TALK channels (see AUDIO_PIPELINE.md section 6)")
         self.n_sectors = self.audio_last - self.audio_first + 1
         if self.n_sectors < 1:
             sys.exit(f"{self.clip_id}: empty sector budget")

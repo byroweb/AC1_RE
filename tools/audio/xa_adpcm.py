@@ -2,7 +2,7 @@
 """
 xa_adpcm.py - CD-ROM XA-ADPCM codec + Mode 2 Form 2 sector packing, in Python.
 
-The re-injection half of the voice pipeline (docs/AUDIO_PIPELINE.md §6) needs
+The re-injection half of the voice pipeline (docs/AUDIO_PIPELINE.md section 6) needs
 three things that nothing else in the repo had: an XA-ADPCM *encoder*, the
 Form 2 sector layout, and the CD-ROM EDC. All three live here as pure
 functions over bytes/numpy so they can be unit-tested without a disc
