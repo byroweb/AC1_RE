@@ -1,3 +1,4 @@
 # vaddr	ovl	source	size	extra match_fn.py args (one line per matched function; re/match/check_all.sh re-verifies every row)
 0x80066F68	201	ovl201/func_80066F68.c	40	
 0x800510B0	201	ovl201/func_800510B0.c	76	--defsym D_801F36D0=0x801F36D0 --defsym D_801BC478=0x801BC478
+0x8006DCEC	201	ovl201/func_8006DCEC.c	104	--defsym D_801A2568=0x801A2568 --defsym func_8006C324=0x8006C324
