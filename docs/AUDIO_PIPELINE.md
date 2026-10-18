@@ -288,6 +288,47 @@ play no radio line in their first 90 s — their chunk-4 scripts have no `play_s
   line the drive keeps reading `TALK00.XA` to its end and the radio state byte
   `0x80041BC2` goes `0xFF → 0xF0`, on both images.
 
+### Repeating the test: `tools/duckstation/radio_line.py`
+
+The procedure above is one committed tool (standard library only for the emulator
+part; numpy/scipy/PyAV from `tools/audio/.venv` for the correlation). Given a clip id
+from the voice manifest (or a raw `--id`), the `.cue` of the disc copy and a state id
+from `disc_map/states/STATES.tsv`, it stages the state into a scratch slot with the
+header's media path rewritten to that `.cue`, boots the copy (shutting down whatever
+runs first), loads the slot, breaks on `0x8005804C`, calls `FUN_8004DB18(id)` with all
+registers saved and restored, records with the `capture` MCP tool, decodes the MP4 and
+prints the NCC of the take and of every channel decode of the stream against the capture:
+
+```bash
+tools/audio/.venv/Scripts/python tools/duckstation/radio_line.py \
+    --clip TALK00_ch12_c000 --disc ~/dev/ac1_dub.cue --state M30-ctrl-01 --slot 9 \
+    --capture out/dub.mp4 --take take.wav --wav-out out/dub.wav --json out/dub.json \
+    --shutdown --boot-after "${AC1_BIN%.bin}.cue" --load-after 3 --delete-slot
+tools/audio/.venv/Scripts/python tools/duckstation/radio_line.py \
+    --clip TALK00_ch12_c000 --disc "${AC1_BIN%.bin}.cue" --capture out/pristine.mp4   # reference run
+tools/audio/.venv/Scripts/python tools/duckstation/radio_line.py \
+    --clip TALK00_ch12_c000 --analyse-only out/dub.mp4 --take take.wav         # correlate later
+```
+
+`--disc` may be the pristine `.cue` for a reference run (it is only booted, never
+written). The slot is refused unless it is empty, archived in `STATES.tsv`, or was
+written by the tool itself (it leaves a `.radio_line.json` marker next to the slot
+file and `--delete-slot` only removes slots with a matching marker; `--force`
+overrides both). Expect ~3 minutes per run: once a breakpoint has been used, every
+MCP call takes ~2 s for the rest of the emulator session, most of it in the restore
+of the 35 saved registers. The tool checks that the XA file table entry's `CdlLOC`
+matches the manifest's first sector of the stream and that the radio-state id at
+`0x80041BBE` is the requested one, and logs the drive's LBA so a run that never
+read the stream's sectors is visible.
+
+Re-run on 2026-10-18 with the tool on a fresh copy (`TALK00_ch12_c000`, same take,
+state `M30-ctrl-01`, slot 9, 2 min 43 s wall clock): file table entry 3 `CdlLOC` = LBA
+60284 as in the manifest, the player returned in 6.2 s, radio state `3c 00 01 01 ff`
+then `f0` after the line, the drive logged inside `TALK00.XA` throughout (LBA
+60682 → 61640), and the capture's NCC was **0.950 against the take** at 0.56 s,
+0.043 against the original `TALK00_ch12` and ≤ 0.063 against every other channel of
+the stream — the documented result, reproduced.
+
 Not done: hardware (a burned disc / ODE) and a line triggered by a mission script
 rather than the debugger — the latter only needs a save state in a mission whose
 script has `play_sound` (missions 1, 3, 4, 6, 9, 10, 12, 13, 14, 17, 18, 21, 26,

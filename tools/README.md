@@ -42,6 +42,21 @@ Everything here runs under **Git Bash** (MSYS2); PowerShell/cmd are not supporte
   `disc_map/states/STATES.tsv`; `stage <id> <slot>` puts one back; `check`
   verifies sha256s; `list` queries. Slots are scratch, **docs cite IDs** — see
   `disc_map/states/README.md`. Test: `python tools/duckstation/states_test.py`.
+- **`radio_line.py`** — plays one XA radio line in the running game through
+  DuckStation's MCP server (sadnescity fork, port 2346) and measures what came out:
+  stages a library state into a scratch slot with its media path rewritten to a
+  disc copy's `.cue`, boots the copy, calls the game's XA line player
+  `FUN_8004DB18(id)` from a breakpoint on `0x8005804C` with every register saved
+  and restored, records with the `capture` tool and reports the normalised
+  cross-correlation of the capture against the dubbed take and the pristine channel
+  decodes (`docs/AUDIO_PIPELINE.md` §6). `--clip` takes a `voice_manifest.tsv` id,
+  `--id` a raw `file_index << 4 | channel`; urllib only for the emulator part,
+  `tools/audio/.venv` for the analysis (`--analyse-only` runs it on an existing MP4).
+  ```
+  tools/audio/.venv/Scripts/python tools/duckstation/radio_line.py --clip TALK00_ch12_c000 \
+      --disc ~/dev/ac1_dub.cue --capture out/dub.mp4 --take take.wav \
+      --shutdown --boot-after "${AC1_BIN%.bin}.cue" --load-after 3 --delete-slot
+  ```
 - **`savestate.py`** — offline DUCCS reader (header, RAM by PS1 address, VRAM,
   thumbnail, frame counter); `docs/SAVESTATE_FORMAT.md`. Needs a zstd decoder:
   `pip install zstandard` or the `zstd` CLI (neither ships with Windows).
