@@ -7,8 +7,12 @@ Covers the two pieces that must be right for re-injection to be possible later:
     streams (mono stride-16 TALK channels, stereo stride-8 STR tracks), and the
     jPSXdec .idx parser that feeds it;
   * split_utterances.split_by_energy — the silence splitter, on synthetic audio.
+Plus the gate (classify), the manifest columns / carry-over, the sound-sequence
+parser (xa_refs, on a synthetic blob), the subtitle corpus and own-line scoring
+of match_text, and the reclaimable report.
 
-Needs only numpy (the tools/audio/.venv has it). No game data is read.
+Needs only numpy (the tools/audio/.venv has it; one test uses rapidfuzz when
+present). No game data is read.
   tools/audio/.venv/Scripts/python tools/audio/audio_test.py
 """
 import os
@@ -22,6 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ac1audio as A  # noqa: E402
 import build_manifest as M  # noqa: E402
 import classify as C  # noqa: E402
+import match_text as MT  # noqa: E402
 import reclaimable as R  # noqa: E402
 import transcribe as T  # noqa: E402
 import xa_refs as X  # noqa: E402
@@ -489,7 +494,7 @@ def enc_text(s):
         elif ch in " \n":
             out.append(ord(ch))
         else:
-            out.append({".": 0x8E, ",": 0x8F, "?": 0x90, "!": 0x91, ":": 0x98, "'": 0x9D}[ch])
+            out.append({".": 0x8E, ",": 0x8F, "?": 0x90, "!": 0x91, ":": 0x98, "'": 0x9D, "-": 0x8B}[ch])
     return bytes(out)
 
 
@@ -541,7 +546,8 @@ class XaRefs(unittest.TestCase):
 
     def test_decode_text_unknown_codes(self):
         self.assertEqual(X.decode_text(enc_text("Go back. It is not too late.")), "Go back. It is not too late.")
-        self.assertIn("<83>", X.decode_text(b"\x83" + enc_text(" minutes")))
+        self.assertEqual(X.decode_text(b"\x83\x80" + enc_text(" seconds")), "30 seconds")   # timer digits
+        self.assertIn("<f0>", X.decode_text(b"\xf0" + enc_text(" minutes")))
 
 
 class Reclaimable(unittest.TestCase):
@@ -600,6 +606,170 @@ class Reclaimable(unittest.TestCase):
                 rd = csv.DictReader(f, delimiter="\t")
                 self.assertEqual(rd.fieldnames, R.COLUMNS)
                 self.assertEqual(len(list(rd)), len(rep))
+
+
+# ------------------------------------------------- subtitle corpus + own line
+def toy_scorer(a, b):
+    """Stand-in for rapidfuzz.token_sort_ratio: % of the query's words found in the candidate."""
+    qa, qb = a.split(), set(b.split())
+    if not qa or not qb:
+        return 0.0
+    return 100.0 * sum(1 for w in qa if w in qb) / max(len(qa), len(qb))
+
+
+class SubtitleCorpus(unittest.TestCase):
+    SEQS = [("", ""),
+            ("M3X0N", "Radio: Is that you, Raven?\n       The target is in this sector."),
+            ("M1V0", "COM : Combat system engaged"),
+            ("M1X74", "Your fate is sealed."),
+            ("M2X40N", "Radio: With your skill, one-on-one isn't a fair fight."),
+            ("M1T12N", "Radio: This is Boulder. Refueling complete."),   # text-only radio: no X
+            ("M1X74", "Your fate is sealed.")]                           # the same line twice
+
+    def corpus(self):
+        with tempfile.TemporaryDirectory() as td:
+            with open(os.path.join(td, "200.bin"), "wb") as f:
+                f.write(b"\x00" * 16 + synth_blob(self.SEQS))
+            return MT.load_sequence_corpus(fdat_entries=td)
+
+    def test_split_speaker(self):
+        self.assertEqual(MT.split_speaker("Radio: Is that you?"), ("Radio", "Is that you?"))
+        self.assertEqual(MT.split_speaker("COM : Combat system engaged"), ("COM", "Combat system engaged"))
+        self.assertEqual(MT.split_speaker("Your fate is sealed."), ("", "Your fate is sealed."))
+        self.assertEqual(MT.split_speaker(""), ("", ""))
+
+    def test_candidates_from_blob(self):
+        cands = self.corpus()
+        self.assertEqual([c["id"] for c in cands],
+                         ["SEQ:1:X0", "SEQ:2", "SEQ:3:X74", "SEQ:4:X40", "SEQ:5", "SEQ:6:X74"])
+        by = {c["id"]: c for c in cands}
+        self.assertEqual(by["SEQ:1:X0"]["text"], "Is that you, Raven? The target is in this sector.")
+        self.assertEqual((by["SEQ:1:X0"]["speaker"], by["SEQ:1:X0"]["line"]), ("Radio", 0))
+        self.assertEqual((by["SEQ:2"]["speaker"], by["SEQ:2"]["line"]), ("COM", None))
+        self.assertEqual((by["SEQ:3:X74"]["speaker"], by["SEQ:3:X74"]["snd"]), ("", 3))
+        self.assertEqual(by["SEQ:5"]["text"], "This is Boulder. Refueling complete.")
+
+    def test_candidates_from_refs_json_and_none(self):
+        refs = {"sequences": {"38": {"ops": "M2X25N", "xa_lines": [25], "music": [],
+                                     "text": "Radio: A...a friend! W..we're saved!"},
+                              "101": {"ops": "M1V0", "xa_lines": [], "music": [0], "text": ""}}}
+        cands = MT.sequence_candidates(refs)
+        self.assertEqual([(c["id"], c["text"], c["speaker"]) for c in cands],
+                         [("SEQ:38:X25", "A...a friend! W..we're saved!", "Radio")])
+        with tempfile.TemporaryDirectory() as td:
+            self.assertEqual(MT.load_sequence_corpus(fdat_entries=td), [])
+            p = os.path.join(td, "xa_line_refs.json")
+            A.save_json(p, refs)
+            self.assertEqual(len(MT.load_sequence_corpus(fdat_entries=td, refs_path=p)), 1)
+
+    def test_normalize_and_sentences(self):
+        self.assertEqual(MT.normalize("<f0> minutes to full charge."), "minutes to full charge")
+        self.assertEqual(MT.normalize("30 seconds to self-destruct. 3 minutes."),
+                         MT.normalize("Thirty seconds to self destruct! Three minutes"))
+        self.assertEqual(MT.normalize("Kamui mk. 17 found, 1000 m"), "kamui mk seventeen found 1000 m")
+        self.assertEqual(MT.normalize("Don’t move!"), "don't move")
+        three = "Trouble in generator room. All workers evacuate immediately. This is not a drill."
+        self.assertEqual(MT.sentences("S", three),
+                         [("S#s0", "Trouble in generator room."), ("S#s1", "All workers evacuate immediately."),
+                          ("S#s2", "This is not a drill.")])
+        self.assertEqual([i for i, _ in MT.sentences("S", three, runs=True)],
+                         ["S#s0", "S#s1", "S#s2", "S#s0-1", "S#s1-2"])   # the full run is the whole text
+        self.assertEqual(dict(MT.sentences("S", three, runs=True))["S#s1-2"],
+                         "All workers evacuate immediately. This is not a drill.")
+        self.assertEqual(MT.sentences("S", "Your fate is sealed."), [])
+
+    def test_own_line_scoring(self):
+        cands = self.corpus()
+        q = MT.normalize("The target is in this sector.")
+        best = MT.score_own_line(q, 0, cands, toy_scorer)
+        self.assertEqual((best["id"], best["text"], best["similarity"], best["speaker"]),
+                         ("SEQ:1:X0#s1", "The target is in this sector.", 100.0, "Radio"))
+        # the whole subtitle wins when it scores the same as a sentence
+        q = MT.normalize("Is that you, Raven? The target is in this sector.")
+        self.assertEqual(MT.score_own_line(q, 0, cands, toy_scorer)["id"], "SEQ:1:X0")
+        # a line in two sequences: either copy, best score
+        self.assertEqual(MT.score_own_line("your fate is sealed", 74, cands, toy_scorer)["similarity"], 100.0)
+        # Japanese take in an English slot: no transcript to score, but the subtitle is named
+        best = MT.score_own_line("", 0, cands, toy_scorer)
+        self.assertEqual((best["similarity"], best["id"]), (0.0, "SEQ:1:X0"))
+        # a line no sequence plays (the Japanese slots), and a non-TALK clip
+        self.assertIsNone(MT.score_own_line("anything", 57, cands, toy_scorer))
+        self.assertIsNone(MT.score_own_line("anything", None, cands, toy_scorer))
+        self.assertEqual(MT.own_line_of({"source_file": "GG/BGM/TALK04.XA", "channel": 10}), 74)
+        self.assertIsNone(MT.own_line_of({"source_file": "GG/STR/ACED1.STR", "channel": 1}))
+
+    def test_own_line_with_rapidfuzz(self):
+        try:
+            import rapidfuzz  # noqa: F401
+        except ImportError:
+            self.skipTest("rapidfuzz not installed")
+        cands = self.corpus()
+        best = MT.score_own_line(MT.normalize("Your fate is sealed"), 74, cands)
+        self.assertEqual(best["similarity"], 100.0)
+        self.assertLess(MT.score_own_line(MT.normalize("Combat system engaged"), 74, cands)["similarity"], 60)
+
+
+class OwnLineInManifest(unittest.TestCase):
+    OWN = {"best_id": "MIS_T:315:+0x0000", "best_text": "Your space shuttle is ready.", "similarity": 62.6,
+           "candidates": [], "own_line": 0, "own_line_id": "SEQ:1:X0",
+           "own_line_text": "Is that you, Raven? The target is in this sector.",
+           "own_line_speaker": "Radio", "own_line_similarity": 96.0}
+
+    def test_pick_match(self):
+        mid, text, sim, src, notes = M.pick_match(self.OWN)
+        self.assertEqual((mid, sim, src, notes), ("SEQ:1:X0", 96.0, "own_line", []))
+        self.assertEqual(text, "Is that you, Raven? The target is in this sector.")
+        # free corpus hit beats a weak own line: own line still shown, note explains
+        m = dict(self.OWN, own_line_similarity=40.0, similarity=90.0)
+        mid, _, sim, src, notes = M.pick_match(m)
+        self.assertEqual((mid, sim, src), ("SEQ:1:X0", 40.0, "own_line"))
+        self.assertIn("MIS_T:315:+0x0000 at 90.0", notes[0])
+        # a sentence of the own subtitle is still the own line, not a divergent hit
+        m = dict(self.OWN, best_id="SEQ:1:X0#s1", similarity=100.0, own_line_similarity=70.0)
+        self.assertEqual(M.pick_match(m)[4], [])
+        # TALK line no sequence plays: free match, note
+        m = {"best_id": "", "best_text": "", "similarity": 0, "own_line": 80, "own_line_id": ""}
+        mid, _, sim, src, notes = M.pick_match(m)
+        self.assertEqual((mid, sim, src), ("", 0, ""))
+        self.assertIn("line 80", notes[0])
+        # STR clip: plain corpus match, no notes
+        m = {"best_id": "MIS_T:1:+0x0000", "best_text": "x", "similarity": 88.0, "own_line": None}
+        self.assertEqual(M.pick_match(m), ("MIS_T:1:+0x0000", "x", 88.0, "corpus", []))
+        self.assertEqual(M.pick_match({}), ("", "", 0, "", []))
+
+    def test_status_prefers_own_line(self):
+        clips = [clip("A_c000"), clip("B_c000", "TALK00_ch01", idx=0), clip("J_c000", "TALK01_ch09"),
+                 clip("S_c000", "ACED1_str", kind="STR")]
+        clips[1]["channel"] = 1
+        trans = {"A_c000": whisper_rec(), "B_c000": whisper_rec(text="Your space shuttle is ready."),
+                 "J_c000": whisper_rec("ja", 0.99, 0.02, "こちらバルダー。", lp=-0.6),
+                 "S_c000": whisper_rec(text="In addition it is a known fact.")}
+        kinds = {c: {"kind": "speech_en", "kind_auto": "speech_en"} for c in trans}
+        kinds["J_c000"] = {"kind": "speech_ja", "kind_auto": "speech_ja"}
+        matches = {
+            "A_c000": self.OWN,                                           # own line strong, corpus weak
+            "B_c000": dict(self.OWN, own_line=1, own_line_id="SEQ:2:X1", own_line_text="Do you read me?",
+                           own_line_similarity=30.0, similarity=95.0),    # corpus strong, own line weak
+            "J_c000": {"best_id": "", "best_text": "", "similarity": 0, "candidates": [], "own_line": 25,
+                       "own_line_id": "SEQ:38:X25", "own_line_text": "A...a friend! We're saved!",
+                       "own_line_speaker": "Radio", "own_line_similarity": 0},
+            "S_c000": {"best_id": "MIS_T:9:+0x0000", "best_text": "In addition, it is a known fact.",
+                       "similarity": 97.0, "candidates": [], "own_line": None, "own_line_id": ""},
+        }
+        rows = {r["clip_id"]: r for r in M.build_rows(clips, trans, {"clips": {}, "voices": []}, matches, kinds, {})}
+        a, b, j, s = rows["A_c000"], rows["B_c000"], rows["J_c000"], rows["S_c000"]
+        self.assertEqual((a["status"], a["matched_string_id"], a["similarity"], a["own_line"]),
+                         ("matched", "SEQ:1:X0", 96.0, 0))
+        self.assertEqual(a["matched_text"], "Is that you, Raven? The target is in this sector.")
+        self.assertEqual((b["status"], b["matched_string_id"], b["similarity"]), ("check", "SEQ:2:X1", 30.0))
+        self.assertIn("own subtitle scores 30.0", b["auto_notes"])
+        self.assertIn("matches MIS_T:315:+0x0000 at 95.0", b["auto_notes"])
+        self.assertEqual((j["status"], j["matched_text"], j["similarity"]), ("check", "A...a friend! We're saved!", 0))
+        self.assertIn("take is Japanese", j["auto_notes"])
+        self.assertEqual((s["status"], s["matched_string_id"], s["own_line"]), ("matched", "MIS_T:9:+0x0000", ""))
+        self.assertNotIn("subtitle", s["auto_notes"])
+        self.assertIn("own_line", M.COLUMNS)
+        self.assertLess(M.COLUMNS.index("similarity"), M.COLUMNS.index("own_line"))
 
 
 if __name__ == "__main__":

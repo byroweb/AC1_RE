@@ -46,6 +46,7 @@
   .src { font-size:13px; margin-top:3px; } .src b { color:var(--ja); font-weight:600; }
   .cand { font-size:12px; margin-top:3px; }
   .cand button { padding:1px 6px; font-size:12px; margin-right:4px; }
+  .own { font-size:11px; color:var(--acc); border:1px solid var(--acc); border-radius:3px; padding:0 4px; }
   audio { width:220px; height:28px; }
   .voices { display:flex; flex-wrap:wrap; gap:6px 14px; margin:6px 0 10px; font-size:12px; color:var(--mut); }
   .voices b { color:var(--fg); }
@@ -72,7 +73,7 @@
 <table>
   <thead><tr>
     <th data-k="confidence">conf</th><th>play</th><th data-k="clip_id">clip</th><th data-k="kind">kind · lang</th><th data-k="voice">voice</th>
-    <th>transcript (edit)</th><th data-k="similarity">corpus match</th><th data-k="status">status</th><th>notes</th>
+    <th>transcript (edit)</th><th data-k="similarity" title="own line = the slot's subtitle from the sound-sequence blob; otherwise the best MIS.T string">corpus match</th><th data-k="status">status</th><th>notes</th>
   </tr></thead>
   <tbody id="rows"></tbody>
 </table>
@@ -161,8 +162,8 @@ function render() {
       <td>${esc(r.voice)}<br><input type="text" data-f="voice_label" value="${esc(r.voice_label)}" placeholder="name this voice" size="12"><div class="m">F0 ${r.f0_hz || '?'} Hz${r.processed === 1 || r.processed === '1' ? ' · processed?' : ''}</div></td>
       <td class="txt"><textarea data-f="verified_text" placeholder="${esc(r.transcript)}">${esc(r.verified_text || r.transcript)}</textarea>
         <div class="m">whisper${r.language && r.language !== 'en' ? ' (' + esc(r.language) + ')' : ''}: ${esc(r.transcript)}</div></td>
-      <td>${r.matched_string_id ? `<span class="${r.similarity >= 85 ? 's-matched' : 'm'}">${r.similarity}</span> <span class="m">${esc(r.matched_string_id)}</span><div>${esc(r.matched_text)}</div>
-        <div class="cand"><button data-accept="${esc(r.matched_text)}">accept</button>${(r.candidates || []).slice(1).map(c => `<button data-accept="${esc(c.text)}" title="${esc(c.id)}">${c.similarity}</button>`).join('')}</div>` : '<span class="m">—</span>'}</td>
+      <td>${r.matched_string_id ? `<span class="${r.similarity >= 85 ? 's-matched' : 'm'}">${r.similarity}</span> <span class="m">${esc(r.matched_string_id)}</span>${r.match_src === 'own_line' ? ` <span class="own" title="the on-screen subtitle of this slot's own radio line (sound sequence); what the slot is supposed to say">own line${r.own_line_speaker ? ' · ' + esc(r.own_line_speaker) : ''}</span>` : ''}<div>${esc(r.matched_text)}</div>
+        <div class="cand"><button data-accept="${esc(r.matched_text)}">accept</button>${(r.candidates || []).filter(c => c.id.split('#')[0] !== String(r.matched_string_id).split('#')[0]).map(c => `<button data-accept="${esc(c.text)}" title="${esc(c.id)}${c.speaker ? ' (' + esc(c.speaker) + ')' : ''}">${c.similarity}</button>`).join('')}</div>` : (r.own_line !== '' && r.own_line !== undefined && r.own_line !== null ? `<span class="m">line ${esc(r.own_line)}: no subtitle (no sequence plays it)</span>` : '<span class="m">—</span>')}</td>
       <td class="s-${esc(r.status)}">${esc(r.status)}<br><label class="m"><input type="checkbox" data-f="verified" ${r.verified === '1' ? 'checked' : ''}> verified</label></td>
       <td><input type="text" data-f="notes" value="${esc(r.notes)}" size="18"><div class="m">${esc(r.auto_notes)}</div></td>
     </tr>`).join('');

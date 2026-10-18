@@ -72,7 +72,8 @@ PUNCT = {0x8E: ".", 0x8F: ",", 0x90: "?", 0x91: "!", 0x98: ":", 0x9D: "'", 0x8B:
 
 # ---------------------------------------------------------------- the blob
 def decode_text(b):
-    """Subtitle bytes in the game's font encoding -> str (unknown codes as <xx>)."""
+    """Subtitle bytes in the game's font encoding -> str (unknown codes as <xx>;
+    the opcode letters some subtitles embed, e.g. W11 in the countdowns, stay <57><31><31>)."""
     out = []
     for c in b:
         if c == 0:
@@ -83,6 +84,11 @@ def decode_text(b):
             out.append(chr(ord("a") + c - 0xC4))
         elif 0xA0 <= c < 0xAA:
             out.append(chr(ord("0") + c - 0xA0))
+        elif 0x80 <= c < 0x8A:
+            # second digit set (the timer-style digits): "<83><80> seconds", "<82> minutes"
+            # where the audio says "thirty seconds" / "two minutes", and the "<83>, <82>,
+            # <81>" countdown of sequence 15. Inferred from the transcripts, not from code.
+            out.append(chr(ord("0") + c - 0x80))
         elif c in (0x20, 0x0A):
             out.append(chr(c))
         else:

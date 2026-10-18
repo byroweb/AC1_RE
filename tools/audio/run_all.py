@@ -16,6 +16,8 @@ tools/audio/setup_audio.sh / docs/AUDIO_PIPELINE.md):
   tools/audio/.venv/Scripts/python tools/audio/run_all.py
   tools/audio/.venv/Scripts/python tools/audio/run_all.py --from speakers
   tools/audio/.venv/Scripts/python tools/audio/run_all.py --skip-demoplay -- --model distil-large-v3
+  tools/audio/.venv/Scripts/python tools/audio/run_all.py --from match \
+      --out /path/to/AUDIO --corpus /path/to/MIS_T/toc.json --fdat-entries /path/to/FDAT_T/entries
 """
 import argparse
 import os
@@ -46,6 +48,8 @@ def main():
     ap.add_argument("--skip-demoplay", action="store_true", help="extract: skip GG/STR/DEMOPLAY.STR")
     ap.add_argument("--threshold", type=float, help="speakers: clustering cosine-distance cut")
     ap.add_argument("--n-voices", type=int, help="speakers: force N voice clusters")
+    ap.add_argument("--corpus", action="append", default=[], help="match: extra toc.json (repeatable)")
+    ap.add_argument("--fdat-entries", help="match + refs: dumped FDAT.T entries dir (200.bin = sound sequences)")
     args = ap.parse_args(argv)
 
     sel = STAGES[STAGES.index(args.start):STAGES.index(args.stop) + 1]
@@ -65,6 +69,11 @@ def main():
                 cmd += ["--n-voices", str(args.n_voices)]
         if st == "transcribe":
             cmd += extra
+        if st == "match":
+            for c in args.corpus:
+                cmd += ["--corpus", c]
+        if st in ("match", "refs") and args.fdat_entries:
+            cmd += ["--fdat-entries", args.fdat_entries]
         print(f"\n=== [{st}] {' '.join(os.path.basename(c) if i < 2 else c for i, c in enumerate(cmd))}",
               file=sys.stderr, flush=True)
         ts = time.time()
