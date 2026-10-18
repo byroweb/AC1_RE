@@ -1,0 +1,36 @@
+row	clip_id	kind	source_file	channel	clip	line	xa_id	sector_first	sector_last	audio_sector_first	audio_sector_last	audio_sectors	stride	duration_s	xa_payload_bytes	raw_bytes	reclaimable	channel_sectors	channel_free	referenced	ref_detail	language	language_prob
+clip	TALK01_ch09_c000	speech_ja	GG/BGM/TALK01.XA	9	0	25	0x49	62981	63093	0	7	8	16	0.853	18432	18816	yes	8	yes	referenced	sequence 38 plays it; no chunk-4 script calls that sequence (other triggers not scanned)	ja	0.9983
+clip	TALK03_ch09_c000	speech_ja	GG/BGM/TALK03.XA	9	0	57	0x69	67701	67861	0	10	11	16	1.08	25344	25872	yes	76	yes	unreferenced	no sound sequence plays this line	ja	0.9837
+clip	TALK03_ch09_c001	speech_ja	GG/BGM/TALK03.XA	9	1	57	0x69	67973	68581	17	55	39	16	4.05	89856	91728	yes	76	yes	unreferenced	no sound sequence plays this line	ja	0.9967
+clip	TALK03_ch09_c002	speech_ja	GG/BGM/TALK03.XA	9	2	57	0x69	68629	68725	58	64	7	16	0.67	16128	16464	yes	76	yes	unreferenced	no sound sequence plays this line	ja	0.9808
+clip	TALK03_ch09_c003	speech_ja	GG/BGM/TALK03.XA	9	3	57	0x69	68773	68901	67	75	9	16	0.957	20736	21168	yes	76	yes	unreferenced	no sound sequence plays this line	ja	0.9258
+clip	TALK04_ch03_c000	speech_ja	GG/BGM/TALK04.XA	3	0	67	0x73	69807	70015	0	13	14	16	1.41	32256	32928	yes	73	yes	unreferenced	no sound sequence plays this line	ja	0.9907
+clip	TALK04_ch03_c001	speech_ja	GG/BGM/TALK04.XA	3	1	67	0x73	70079	70415	17	38	22	16	2.3	50688	51744	yes	73	yes	unreferenced	no sound sequence plays this line	ja	0.9944
+clip	TALK04_ch03_c002	speech_ja	GG/BGM/TALK04.XA	3	2	67	0x73	70511	70959	44	72	29	16	3.007	66816	68208	yes	73	yes	unreferenced	no sound sequence plays this line	ja	0.9808
+clip	TALK05_ch00_c000	speech_ja	GG/BGM/TALK05.XA	0	0	80	0x80	71740	71852	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch01_c000	speech_ja	GG/BGM/TALK05.XA	1	0	81	0x81	71741	71853	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch02_c000	speech_ja	GG/BGM/TALK05.XA	2	0	82	0x82	71742	71854	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch03_c000	speech_ja	GG/BGM/TALK05.XA	3	0	83	0x83	71743	71855	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch04_c000	speech_ja	GG/BGM/TALK05.XA	4	0	84	0x84	71744	71856	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch05_c000	speech_ja	GG/BGM/TALK05.XA	5	0	85	0x85	71745	71857	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch06_c000	speech_ja	GG/BGM/TALK05.XA	6	0	86	0x86	71746	71858	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch07_c000	speech_ja	GG/BGM/TALK05.XA	7	0	87	0x87	71747	71859	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch08_c000	speech_ja	GG/BGM/TALK05.XA	8	0	88	0x88	71748	71860	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch09_c000	speech_ja	GG/BGM/TALK05.XA	9	0	89	0x89	71749	71861	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch10_c000	speech_ja	GG/BGM/TALK05.XA	10	0	90	0x8A	71750	71862	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch11_c000	speech_ja	GG/BGM/TALK05.XA	11	0	91	0x8B	71751	71863	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch12_c000	speech_ja	GG/BGM/TALK05.XA	12	0	92	0x8C	71752	71864	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch13_c000	speech_ja	GG/BGM/TALK05.XA	13	0	93	0x8D	71753	71865	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch14_c000	speech_ja	GG/BGM/TALK05.XA	14	0	94	0x8E	71754	71866	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	TALK05_ch15_c000	speech_ja	GG/BGM/TALK05.XA	15	0	95	0x8F	71755	71867	0	7	8	16	0.853	18432	18816	yes	8	yes	unreferenced	no sound sequence plays this line	ja	0.9983
+clip	ACED3_str_c000	sfx	GG/STR/ACED3.STR	1	0			144018	144138	7	22	16	8	0.816	0	0	no (stereo movie track)	752		unchecked	STR cutscene track, not an addressable XA line	nn	0.2537
+clip	ACED3_str_c008	sfx	GG/STR/ACED3.STR	1	8			147234	147330	409	421	13	8	0.656	0	0	no (stereo movie track)	752		unchecked	STR cutscene track, not an addressable XA line	en	0.2804
+clip	ACED5_str_c000	ambience	GG/STR/ACED5.STR	1	0			155988	156212	0	28	29	8	1.512	0	0	no (stereo movie track)	226		unchecked	STR cutscene track, not an addressable XA line	en	0.3011
+clip	ACED5_str_c001	sfx	GG/STR/ACED5.STR	1	1			156340	156436	44	56	13	8	0.656	0	0	no (stereo movie track)	226		unchecked	STR cutscene track, not an addressable XA line	en	0.2422
+subtotal	GG/BGM/TALK01.XA: 1 clips, 1 reclaimable		GG/BGM/TALK01.XA									8		0.853	18432	18816	1 clips	8	1 whole channel(s)	1 referenced, 0 unreferenced, 0 unchecked			
+subtotal	GG/BGM/TALK03.XA: 4 clips, 4 reclaimable		GG/BGM/TALK03.XA									66		6.757	152064	155232	4 clips	76	1 whole channel(s)	0 referenced, 4 unreferenced, 0 unchecked			
+subtotal	GG/BGM/TALK04.XA: 3 clips, 3 reclaimable		GG/BGM/TALK04.XA									65		6.717	149760	152880	3 clips	73	1 whole channel(s)	0 referenced, 3 unreferenced, 0 unchecked			
+subtotal	GG/BGM/TALK05.XA: 16 clips, 16 reclaimable		GG/BGM/TALK05.XA									128		13.648	294912	301056	16 clips	128	16 whole channel(s)	0 referenced, 16 unreferenced, 0 unchecked			
+subtotal	GG/STR/ACED3.STR: 2 clips, 0 reclaimable		GG/STR/ACED3.STR									0		0	0	0	0 clips	0	0 whole channel(s)	0 referenced, 0 unreferenced, 0 unchecked			
+subtotal	GG/STR/ACED5.STR: 2 clips, 0 reclaimable		GG/STR/ACED5.STR									0		0	0	0	0 clips	0	0 whole channel(s)	0 referenced, 0 unreferenced, 0 unchecked			
+total	ALL: 28 clips, 24 reclaimable		ALL									267		27.975	615168	627984	24 clips	285	19 whole channel(s)	1 referenced, 23 unreferenced, 0 unchecked			

@@ -2,7 +2,7 @@
 """
 speakers.py — tag who is speaking: speaker embeddings + clustering + voice stats.
 
-Stage 4 of the voice pipeline (docs/AUDIO_PIPELINE.md). For every clip in
+Stage 5 of the voice pipeline (docs/AUDIO_PIPELINE.md). For every clip in
 <out>/clips.json:
   * a 192-d ECAPA-TDNN speaker embedding (SpeechBrain spkrec-ecapa-voxceleb,
     CPU; the model is fetched once into <out>/_models/),
@@ -13,7 +13,10 @@ Stage 4 of the voice pipeline (docs/AUDIO_PIPELINE.md). For every clip in
 Embeddings are clustered with average-linkage agglomerative clustering on cosine
 distance; clusters become voice_00, voice_01, ... (largest first). The owner
 names them once (e.g. voice_02 = operator woman) via the review page or the
-manifest's notes.
+manifest's notes. Clips that classify.py (kinds.json) tagged ambience or sfx
+are embedded but kept out of the clustering and the duplicate search; they
+all land in the pseudo-voice `nonspeech` (--include-nonspeech restores the
+old behaviour of clustering everything).
 
 Writes <out>/speakers.json  {clips: {clip_id: {voice, f0_hz, harmonicity,
 flatness, processed, duplicate_of}}, voices: [{voice, n_clips, total_s, f0_median_hz,
@@ -35,7 +38,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ac1audio as A  # noqa: E402
 from split_utterances import resample, to_mono  # noqa: E402
 
+from classify import NONSPEECH  # noqa: E402
+
 SR = 16000
+NONSPEECH_VOICE = "nonspeech"   # pseudo-voice for ambience / sfx clips (never clustered)
 
 
 # ------------------------------------------------------------- pitch / timbre
@@ -145,6 +151,8 @@ def main():
     ap.add_argument("--min-clip-s", type=float, default=0.4,
                     help="clips shorter than this get an embedding but are clustered last")
     ap.add_argument("--recluster", action="store_true", help="reuse speakers_emb.npz, only recluster")
+    ap.add_argument("--include-nonspeech", action="store_true",
+                    help="cluster ambience/sfx clips too instead of parking them in `nonspeech`")
     args = ap.parse_args()
 
     out = args.out
@@ -175,13 +183,21 @@ def main():
         np.savez(emb_path, ids=np.array(ids), embs=embs,
                  feats=np.array([[f[0] or 0.0, f[1], f[2]] for f in feats], dtype=float))
 
-    labels = cluster(embs, args.threshold, args.n_voices)
-    dups = near_duplicates(embs, clips)
+    kinds = A.load_json(os.path.join(out, "kinds.json"), default={})
+    if not kinds:
+        A.log("[speakers] no kinds.json — clustering every clip (run classify.py for the gate)")
+    nonspeech = set() if args.include_nonspeech else {
+        c["clip_id"] for c in clips if kinds.get(c["clip_id"], {}).get("kind") in NONSPEECH}
+    speech_idx = [i for i, c in enumerate(clips) if c["clip_id"] not in nonspeech]
+    labels = np.full(len(clips), -1, dtype=int)
+    if speech_idx:
+        labels[speech_idx] = cluster(embs[speech_idx], args.threshold, args.n_voices)
+    dups = near_duplicates(embs[speech_idx], [clips[i] for i in speech_idx]) if speech_idx else {}
     per_clip = {}
     voices = {}
     for c, lab, (f0, harm, flat) in zip(clips, labels, feats):
         f0 = float(f0) if f0 else None
-        v = f"voice_{int(lab):02d}"
+        v = f"voice_{int(lab):02d}" if lab >= 0 else NONSPEECH_VOICE
         proc = processed_flag(float(harm), float(flat))
         per_clip[c["clip_id"]] = {"voice": v, "f0_hz": f0, "harmonicity": round(float(harm), 3),
                                   "flatness": round(float(flat), 4), "processed": proc,
@@ -197,7 +213,7 @@ def main():
         d["clips"].append((c["duration_s"], c["clip_id"]))
 
     summary = []
-    for v in sorted(voices, key=lambda k: (-voices[k]["n_clips"], k)):
+    for v in sorted(voices, key=lambda k: (k == NONSPEECH_VOICE, -voices[k]["n_clips"], k)):
         d = voices[v]
         d["clips"].sort(reverse=True)
         summary.append({
@@ -212,9 +228,10 @@ def main():
         "params": {"threshold": args.threshold, "n_voices": args.n_voices,
                    "model": "speechbrain/spkrec-ecapa-voxceleb", "linkage": "average/cosine"},
         "clips": per_clip, "voices": summary})
-    A.log(f"[speakers] {len(summary)} voices from {len(clips)} clips "
+    A.log(f"[speakers] {len(summary) - (NONSPEECH_VOICE in voices)} voices from "
+          f"{len(speech_idx)} speech clips "
           f"(threshold {args.threshold if not args.n_voices else 'n=' + str(args.n_voices)}); "
-          f"{len(dups)} near-duplicate recordings")
+          f"{len(dups)} near-duplicate recordings; {len(nonspeech)} ambience/sfx clips in {NONSPEECH_VOICE}")
     for s in summary:
         A.log(f"  {s['voice']}: {s['n_clips']:3d} clips {s['total_s']:6.1f}s  "
               f"F0~{s['f0_median_hz']} Hz  processed {s['processed_frac']:.0%}  e.g. {s['examples'][0]}")

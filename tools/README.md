@@ -161,16 +161,20 @@ java -jar "$JPSXDEC_JAR" -x ac1.idx -i "GG/STR/ACED1.STR[0.0]" -af wav -dir out 
 
 ## `audio/` — spoken voice lines → manifest → dub (`tools/audio/`)
 Extracts the TALK XA channels and STR audio tracks with jPSXdec, splits them into
-clips, transcribes them with faster-whisper (CPU), clusters speakers, matches the
-text against the MIS.T corpus and writes `disc_map/voice_manifest.tsv` plus a local
-review page. Full write-up: [`docs/AUDIO_PIPELINE.md`](../docs/AUDIO_PIPELINE.md).
+clips, transcribes them with faster-whisper (CPU, language detected per clip —
+the disc has Japanese lines, which get Japanese text plus an English gloss), gates
+out ambience / sound effects, clusters speakers, matches the English text against
+the MIS.T corpus and writes `disc_map/voice_manifest.tsv` plus a local review
+page. Full write-up: [`docs/AUDIO_PIPELINE.md`](../docs/AUDIO_PIPELINE.md).
 ```
 tools/audio/setup_audio.sh                                   # venv + deps (once)
 tools/audio/.venv/Scripts/python tools/audio/run_all.py      # end to end
 tools/audio/.venv/Scripts/python tools/audio/audio_test.py   # unit tests
 ```
 Needs `AC1_BIN`, `JAVA_HOME` (JDK 21) and jPSXdec (above). Decoded audio stays in
-`disc_map/extracted/AUDIO/` (gitignored); only the manifest is committed.
+`disc_map/extracted/AUDIO/` (gitignored); committed are the manifest and
+`disc_map/voice_reclaimable.tsv` — the Japanese / non-speech XA slots that can be
+re-filled (`reclaimable.py`, with a static reference scan by `xa_refs.py`; docs §7).
 
 **Re-injection** (`reinject_xa.py`, docs §6): writes a replacement WAV take into
 one TALK channel of a *copy* of the disc, driven by a manifest row. Encodes to

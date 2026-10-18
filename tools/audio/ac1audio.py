@@ -46,6 +46,16 @@ JPSXDEC_SEARCH = [
 ]
 
 
+# Windows consoles default to cp1252; transcripts now carry Japanese, so make the
+# standard streams UTF-8 (unencodable characters replaced) instead of crashing.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
+
 def log(*a):
     print(*a, file=sys.stderr, flush=True)
 

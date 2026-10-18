@@ -2,7 +2,7 @@
 """
 match_text.py — line up each transcript with the extracted mission-text corpus.
 
-Stage 5 of the voice pipeline (docs/AUDIO_PIPELINE.md). Builds a candidate list
+Stage 6 of the voice pipeline (docs/AUDIO_PIPELINE.md). Builds a candidate list
 from the .T containers already extracted by tools/extract/extract_t.py
 --dump-entries (default: disc_map/extracted/MIS_T — the whole mission text
 corpus of GG/MS/MIS.T, split into draw_string messages exactly like
@@ -15,6 +15,9 @@ owner only has to accept the catalogued string; a poor one flags the clip for
 real listening. Note: AC1's in-mission radio lines mostly have no on-screen
 text, so low scores on TALK clips are expected — the match is there to catch
 the lines that ARE in the corpus (mission names, briefing phrases, cutscene text).
+
+Clips the gate (classify.py / kinds.json) marked ambience or sfx, and clips in a
+language other than English (the corpus is English), get an empty match.
 
 Writes <out>/matches.json: clip_id -> {best_id, best_text, similarity, candidates}.
 
@@ -33,6 +36,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "extract"))
 import ac1audio as A  # noqa: E402
 import scan_text as ST  # noqa: E402  (tools/extract/scan_text.py: split_messages / clean)
+from classify import NONSPEECH  # noqa: E402
 
 DEFAULT_CORPUS = os.path.join(A.ROOT, "disc_map", "extracted", "MIS_T", "toc.json")
 MARKUP = re.compile(rb"[@%]\d")
@@ -46,6 +50,12 @@ def message_text(raw):
     s = c.decode("latin-1", errors="replace")
     s = "".join(ch if 0x20 <= ord(ch) < 0x7f else " " for ch in s)
     return re.sub(r"\s+", " ", s).strip()
+
+
+def english_text(t):
+    """The transcript if the clip is English, else "" (the corpus is English and
+    there is no translation step)."""
+    return t.get("text", "") if (t.get("language") or "en") == "en" else ""
 
 
 def normalize(s):
@@ -117,9 +127,15 @@ def main():
     texts = dict(cands)
     tpath = os.path.join(args.out, "transcripts.json")
     trans = A.load_json(tpath)
+    kinds = A.load_json(os.path.join(args.out, "kinds.json"), default={})
     matches = {}
+    skipped = 0
     for cid, t in trans.items():
-        q = normalize(t.get("text", ""))
+        if kinds.get(cid, {}).get("kind") in NONSPEECH:
+            skipped += 1
+            q = ""
+        else:
+            q = normalize(english_text(t))
         if len(q) < 3:
             matches[cid] = {"best_id": "", "best_text": "", "similarity": 0, "candidates": []}
             continue
@@ -132,7 +148,7 @@ def main():
     sims = sorted((m["similarity"] for m in matches.values()), reverse=True)
     strong = sum(1 for s in sims if s >= 85)
     A.log(f"[match] {len(matches)} transcripts scored; {strong} at >=85, "
-          f"median {sims[len(sims)//2] if sims else 0}")
+          f"median {sims[len(sims)//2] if sims else 0}; {skipped} non-speech clips skipped")
     A.log(f"[match] -> {os.path.join(args.out, 'matches.json')}")
 
 
