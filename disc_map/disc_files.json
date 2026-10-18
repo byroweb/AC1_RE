@@ -3,7 +3,7 @@
  "sector_size": 2352,
  "sector_count": 223112,
  "first_sector_offset": 0,
- "file_count": 133,
+ "file_count": 124,
  "files": [
   {
    "idx": 0,
@@ -28415,16 +28415,19 @@
      "sector_first": 131042,
      "sector_last": 137348,
      "Dimensions": "320x240"
+    },
+    {
+     "idx": 2580,
+     "id": "GG/STR/ACED1.STR[0.0]",
+     "type": "XA",
+     "sector_first": 131049,
+     "sector_last": 133921,
+     "Channel": "1",
+     "Stereo?": "Yes",
+     "Samples/Sec": "37800",
+     "Sector stride": "8"
     }
    ]
-  },
-  {
-   "idx": 2580,
-   "id": "GG/STR/ACED1.STR[0.0]",
-   "type": "XA",
-   "sector_first": 131049,
-   "sector_last": 133921,
-   "orphan": true
   },
   {
    "idx": 2581,
@@ -28443,16 +28446,19 @@
      "sector_first": 137349,
      "sector_last": 143954,
      "Dimensions": "320x240"
+    },
+    {
+     "idx": 2583,
+     "id": "GG/STR/ACED2.STR[0.0]",
+     "type": "XA",
+     "sector_first": 137356,
+     "sector_last": 140788,
+     "Channel": "1",
+     "Stereo?": "Yes",
+     "Samples/Sec": "37800",
+     "Sector stride": "8"
     }
    ]
-  },
-  {
-   "idx": 2583,
-   "id": "GG/STR/ACED2.STR[0.0]",
-   "type": "XA",
-   "sector_first": 137356,
-   "sector_last": 140788,
-   "orphan": true
   },
   {
    "idx": 2584,
@@ -28471,16 +28477,19 @@
      "sector_first": 143955,
      "sector_last": 151012,
      "Dimensions": "320x240"
+    },
+    {
+     "idx": 2586,
+     "id": "GG/STR/ACED3.STR[0.0]",
+     "type": "XA",
+     "sector_first": 143962,
+     "sector_last": 149970,
+     "Channel": "1",
+     "Stereo?": "Yes",
+     "Samples/Sec": "37800",
+     "Sector stride": "8"
     }
    ]
-  },
-  {
-   "idx": 2586,
-   "id": "GG/STR/ACED3.STR[0.0]",
-   "type": "XA",
-   "sector_first": 143962,
-   "sector_last": 149970,
-   "orphan": true
   },
   {
    "idx": 2587,
@@ -28499,16 +28508,19 @@
      "sector_first": 151013,
      "sector_last": 155816,
      "Dimensions": "320x240"
+    },
+    {
+     "idx": 2589,
+     "id": "GG/STR/ACED4.STR[0.0]",
+     "type": "XA",
+     "sector_first": 151020,
+     "sector_last": 155980,
+     "Channel": "1",
+     "Stereo?": "Yes",
+     "Samples/Sec": "37800",
+     "Sector stride": "8"
     }
    ]
-  },
-  {
-   "idx": 2589,
-   "id": "GG/STR/ACED4.STR[0.0]",
-   "type": "XA",
-   "sector_first": 151020,
-   "sector_last": 155980,
-   "orphan": true
   },
   {
    "idx": 2590,
@@ -28527,16 +28539,19 @@
      "sector_first": 155981,
      "sector_last": 157931,
      "Dimensions": "320x240"
+    },
+    {
+     "idx": 2592,
+     "id": "GG/STR/ACED5.STR[0.0]",
+     "type": "XA",
+     "sector_first": 155988,
+     "sector_last": 157788,
+     "Channel": "1",
+     "Stereo?": "Yes",
+     "Samples/Sec": "37800",
+     "Sector stride": "8"
     }
    ]
-  },
-  {
-   "idx": 2592,
-   "id": "GG/STR/ACED5.STR[0.0]",
-   "type": "XA",
-   "sector_first": 155988,
-   "sector_last": 157788,
-   "orphan": true
   },
   {
    "idx": 2593,
@@ -28555,16 +28570,19 @@
      "sector_first": 157932,
      "sector_last": 167692,
      "Dimensions": "320x240"
+    },
+    {
+     "idx": 2595,
+     "id": "GG/STR/ACOPA.STR[0.0]",
+     "type": "XA",
+     "sector_first": 157939,
+     "sector_last": 167555,
+     "Channel": "1",
+     "Stereo?": "Yes",
+     "Samples/Sec": "37800",
+     "Sector stride": "8"
     }
    ]
-  },
-  {
-   "idx": 2595,
-   "id": "GG/STR/ACOPA.STR[0.0]",
-   "type": "XA",
-   "sector_first": 157939,
-   "sector_last": 167555,
-   "orphan": true
   },
   {
    "idx": 2596,
@@ -28583,16 +28601,19 @@
      "sector_first": 167693,
      "sector_last": 176401,
      "Dimensions": "320x240"
+    },
+    {
+     "idx": 2598,
+     "id": "GG/STR/ACOPB.STR[0.0]",
+     "type": "XA",
+     "sector_first": 167700,
+     "sector_last": 176396,
+     "Channel": "1",
+     "Stereo?": "Yes",
+     "Samples/Sec": "37800",
+     "Sector stride": "8"
     }
    ]
-  },
-  {
-   "idx": 2598,
-   "id": "GG/STR/ACOPB.STR[0.0]",
-   "type": "XA",
-   "sector_first": 167700,
-   "sector_last": 176396,
-   "orphan": true
   },
   {
    "idx": 2599,
@@ -28611,16 +28632,19 @@
      "sector_first": 176402,
      "sector_last": 192619,
      "Dimensions": "320x240"
+    },
+    {
+     "idx": 2601,
+     "id": "GG/STR/DEMOPLAY.STR[0.0]",
+     "type": "XA",
+     "sector_first": 176409,
+     "sector_last": 192529,
+     "Channel": "1",
+     "Stereo?": "Yes",
+     "Samples/Sec": "37800",
+     "Sector stride": "8"
     }
    ]
-  },
-  {
-   "idx": 2601,
-   "id": "GG/STR/DEMOPLAY.STR[0.0]",
-   "type": "XA",
-   "sector_first": 176409,
-   "sector_last": 192529,
-   "orphan": true
   },
   {
    "idx": 2602,
@@ -28639,16 +28663,19 @@
      "sector_first": 192620,
      "sector_last": 209137,
      "Dimensions": "320x240"
+    },
+    {
+     "idx": 2604,
+     "id": "GG/STR/STAFF.STR[0.0]",
+     "type": "XA",
+     "sector_first": 192627,
+     "sector_last": 208995,
+     "Channel": "1",
+     "Stereo?": "Yes",
+     "Samples/Sec": "37800",
+     "Sector stride": "8"
     }
    ]
-  },
-  {
-   "idx": 2604,
-   "id": "GG/STR/STAFF.STR[0.0]",
-   "type": "XA",
-   "sector_first": 192627,
-   "sector_last": 208995,
-   "orphan": true
   },
   {
    "idx": 2605,
