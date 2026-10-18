@@ -23,8 +23,9 @@ only; resolve the symbols (`--defsym`) before calling it done.
 - the address `VADDR` and where it lives: exe (`0x80011000..0x8004ADA0`) or an
   overlay (`--ovl 201` front end, 202 mission, 203/204 modes; all load at
   `0x8004ADA0`, so say which),
-- the retail function size (next function start − VADDR; from the disassembly or
-  Ghidra), to pass as `--expect-size`,
+- the retail function size (next function start minus VADDR, **including the delay
+  slot after the final `jr ra`**; from the disassembly or Ghidra), to pass as
+  `--expect-size`,
 - the toolchain: `tools/match/vendor/toolchain.json` must exist, else run
   `tools/match/setup.sh` once (minutes; builds cc1 on Windows).
 
