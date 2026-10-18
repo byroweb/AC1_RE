@@ -64,10 +64,10 @@ instance template and is therefore readable/displayable.
 | hw5 | 10 | +0x0E | **rotation** (PSX angle units; 1024/2048/3072 = 1/4 1/2 3/4 of 4096) | CONFIRMED (range) |
 | hw6 | 12 | +0x10 | 0 observed | HYPOTHESIS |
 | **hw7** | 14 | **+0x12** | **resource / class id** (wide, 0..388) — flag-table `0x80198B08` bit key (row = hw9×0x6c); a scale arg. **NOT the behaviour dispatch type (that is hw3); not copied to the instance by the binder** | CONFIRMED (`spawn_marshal`) |
-| hw8 | 16 | +0x14 | param A → instance `+0x32` flag via `(hw8>>4 & 2)` | CONFIRMED (path), HYP (meaning) |
+| hw8 | 16 | +0x14 | param A → instance `+0x32` flag via `(hw8>>4 & 2)`; **also the NPC defense argument**: the damage apply `FUN_80075350` calls `FUN_800752F4(tmpl+0x14, hit)` for every non-player entity (`COMBAT_PHYSICS.md` §8). Live 2026-10-18: hw8=0 ⇒ rifle does its full 218 | CONFIRMED (path + defense arg), value curve open (MIS-1) |
 | hw9 | 18 | +0x16 | flag-table row index (×0x6c into `0x80198B08`) | CONFIRMED (path), HYP |
 | hw10 | 20 | +0x18 | 0 observed | HYPOTHESIS |
-| hw11 | 22 | +0x1A (and → template +0x02) | **HP** — marshaller/binder copy it to instance `+0x160`, `+0x162`, `+0x164` (3 copies into the known AP region); values 1300..9800 | CONFIRMED path; HP = HYP-strong (live watchpoint on +0x160 to seal) |
+| hw11 | 22 | +0x1A (and → template +0x02) | **HP** — copied to entity `+0x160` (current) and `+0x162` (max); `+0x164` holds a related but differently scaled value (8200 for hw11=2050, 50880 for 3180). **Live 2026-10-18 (S-5):** `+0x160` decrements by the damage on each hit; template `+0x02`/`+0x1A` are never written afterwards (not live mirrors) | **CONFIRMED (live)** |
 | hw12 | 24 | +0x1C | per-instance value — 110/130/300/313/480/2500; **candidate sub-stat (range / damage / area-id)** | HYPOTHESIS |
 | hw13 | 26 | +0x1E | 0/600 observed | HYPOTHESIS |
 | hw14 | 28 | +0x20 | 0/2561 observed | HYPOTHESIS |
@@ -158,16 +158,16 @@ therefore **OPEN**.
 - Player AC stats are a separate part-driven path (`FUN_8007EAE8`, data @0x800411xx).
 
 **HYPOTHESIS / OPEN**
-- Exact meaning of `hw8..hw19` — best HP candidate is `hw11` (the distinctive
-  large value on "special" records); `hw11`/`hw12` look group/area-shared on
-  ordinary records. **Ground-truth needed.**
+- `hw11` = HP is now CONFIRMED live (S-5, 2026-10-18); `hw8` is the defense argument
+  (value curve still open). Exact meaning of `hw9`, `hw12`, `hw15` still needs
+  ground-truth (`hw11`/`hw12` are group-shared on ordinary records — `hw12` is
+  not HP).
 - Object/MT display names (likely in MIS.T; index unknown).
 - Whether a per-type numeric table lives in a *lower FDAT entry* loaded by the
   base EXE rather than the overlay (not searched here; out of overlay scope).
 
 ## Single best next step
-In DuckStation, start mission 1, breakpoint `FUN_80078B14` (`0x80078B14`) and watch
-the instance template `0x8019FAB8 + i*44` for a known unit (e.g. the type-5 record
-with `hw11=9800`); then deal damage to it and **watch which instance/object
-halfword decrements** — that pins HP to a concrete offset (test `hw11` @ +0x1A
-first), and the same watch confirms whether `hw12`/`hw8` are range/AI vs HP.
+~~Pin HP live~~ — done 2026-10-18 (`LIVE_CHECKLIST.md` S-5): HP is entity `+0x160`,
+seeded from `hw11`; the template halfwords do not track it. Next: in mission 30 hit the
+hw8=3072 MT (slot 2) and compare the decrement with the 218 seen at hw8=0 to get the
+defense curve of `FUN_800752F4` (MIS-1); then vary `hw12`/`hw15` on the capstone disc.

@@ -403,7 +403,16 @@ The enemy update wrapper `0x800760DC` = `jal 0x80075FC0` (pre/anim) → `jal
 to position `ac+0x08` via per-axis helper `0x8004EF74`; also answers §3) → `jalr
 ac+0x50` (think).
 
-> **CONFLICT (2026-06-15) — confirm live.** A static collision-path recon
+> **RESOLVED 2026-10-18 (LIVE_CHECKLIST S-3): this section's reading is correct.** Trapped
+> on an MT in mission 30: `0x8004F024(ent+0x64, ent+0x08, 0x46)` from the *objobj* MT
+> update; it ends in `0x8004EFB8`, which per axis calls `0x8004EF74(blk+0x20/+0x28/+0x30,
+> pos, blk.byte3)` and stores **s16 X/Y/Z at `+0x08/+0x0A/+0x0C`**. `0x8004EF74` is a
+> Bresenham-style velocity step (`counter -= step`; while >0 `pos += velA` else reload
+> `counter += byte3`, `pos += velB`), observed as X −3 / Y 0 / Z +10 per frame — exactly
+> the `velA` words in the block. COLLISION's "timed value-easing" was that counter.
+> The player's own path (`0x800674B0`, CMB-1) was not re-trapped.
+>
+> ~~**CONFLICT (2026-06-15) — confirm live.**~~ A static collision-path recon
 > (`docs/COLLISION.md`, `scratch/re/collision.md`) reads `0x8004F024`/`0x8004EF74` as a
 > *timed value-easing* routine (no world reads, no GTE), i.e. NOT the integrator. This
 > contradicts the live finding above (called from the enemy update wrapper as the

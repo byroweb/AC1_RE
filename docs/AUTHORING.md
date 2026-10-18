@@ -81,8 +81,10 @@ writes test outputs wherever `--out` points (`…[TAG].bin` next to it is the co
 ## Status vs. plan
 
 - [x] Phase 0 vertical slice — offline round-trip PASS; in-game confirmation pending (DuckStation).
-- [~] Phase 1 spawn fields — chunk-12→template field map being traced statically
-  (`FUN_80073B74`); HP/AI semantics need live ground-truth. Spawn editor done.
+- [~] Phase 1 spawn fields — chunk-12→template field map traced (`FUN_80073B74`);
+  **HP = hw11 CONFIRMED live 2026-10-18** (entity `+0x160`, rifle 218/hit at hw8=0;
+  `LIVE_CHECKLIST.md` S-5); hw8 is the NPC defense argument (curve open); hw9/hw12/hw15
+  still need ground-truth (MIS-1). Spawn editor done.
 - [x] Phase 2 mission VM / objectives — both VMs decoded; secondary VM (dis)assembler
   round-trips 56/56; objective conditions taxonomized (`MISSION_SCRIPT_VM.md`,
   `ENTITY_TYPES.md`). Remaining: `init_unit` inline fields, prompt-cmd live trigger.

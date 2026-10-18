@@ -44,9 +44,14 @@ Two distinct systems, both reusing render data:
 - Chunk 0 (geometry) relocated by `0x80053848` → `0x801A5F34`; the same blocks feed
   render and collision. Chunk 7 supplies placement.
 
-## Disputed (2026-06-15 — confirm live)
-This static recon reads `0x8004F024` / `0x8004EF74` as a timed value-easing routine
-(no world reads, no GTE), i.e. NOT the movement integrator. **This conflicts with the
+## Disputed (2026-06-15) — RESOLVED 2026-10-18: it IS the integrator
+**Live (LIVE_CHECKLIST S-3):** `0x8004F024(ent+0x64, ent+0x08, …)` writes the entity's s16
+X/Y/Z at `+0x08/+0x0A/+0x0C` from per-axis velocity blocks at `+0x64+0x20/+0x28/+0x30`;
+the "timed easing" seen statically is the Bresenham counter inside `0x8004EF74` that
+alternates `velA`/`velB` for fractional speed. `COMBAT_PHYSICS.md` §6 stands.
+
+~~This static recon reads `0x8004F024` / `0x8004EF74` as a timed value-easing routine
+(no world reads, no GTE), i.e. NOT the movement integrator.~~ **This conflicts with the
 live finding in `COMBAT_PHYSICS.md`** (which calls `0x8004F024` the AC movement
 integrator, invoked from the enemy update wrapper `0x800760DC`). One reading is
 mis-scoped — resolve in DuckStation (breakpoint `0x8004F024`; does it write `ac+0x08`

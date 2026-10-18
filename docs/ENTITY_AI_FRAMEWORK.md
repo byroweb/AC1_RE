@@ -58,7 +58,7 @@ the train is the *full* case — mover + HP, on the entity route.
 |---|---|---|
 | `+0x00` | ptr | definition/resource pointer (`*(entity)`; armor stat at its `+0x14`). ⚠ TASVideos reads this as u16 "ID" `+0x00` + u16 "active flags" `+0x02` — the ptr's low half varies by type (looks ID-like); needs reconcile (see `RAMWATCH_CONCORDANCE.md` §D2) |
 | `+0x04` | ptr | geometry-block record table (`0x8019F5xx`) |
-| `+0x08`,`+0x0C` | s16 | render/screen-space position (rebuilt each frame from matrix; used by target scoring) |
+| `+0x08`,`+0x0A`,`+0x0C` | 3×s16 | **world position X/Y/Z** — for MTs written every frame by the mover `0x8004F024` from the velocity blocks at `+0x64+0x20/+0x28/+0x30` (live 2026-10-18, S-3; values are in spawn-record units). Earlier "render/screen-space" reading withdrawn; whether ACs/train use the same triple is ENT-1 |
 | `+0x12` | s16 | **yaw / facing** (corroborated by TASVideos player-yaw `0x801A26CA`; re-verify) |
 | `+0x20`,`+0x24` | 16.16 | **train's** authoritative world X/Z (offset varies by entity type) |
 | `+0x36` | u16 | **faction/team id** in low 3 bits (red AC = 2). Friend/foe knob |
@@ -117,6 +117,8 @@ player free to roam, energy stable.
 > per-mission INIT column, `ENTITY_TYPES.md`): the train/aircraft handlers here produce the
 > position the updater stores at `+0x20/+0x24`; AC movement goes through `+0x54` and the
 > integrator into `+0x08/+0x0C`. HYPOTHESIS — [LIVE_CHECKLIST.md](LIVE_CHECKLIST.md) ENT-1.
+> *2026-10-18:* for an MT the mover `0x8004F024` is called from the objobj update with
+> `a0 = ent+0x64`, `a1 = ent+0x08`, and stores s16 X/Y/Z at `+0x08/+0x0A/+0x0C` (S-3).
 
 Notes: `0x80078xxx` is in the swappable mission overlay, so the patch is
 RAM-only / non-persistent (reload restores it). Damage/collision is **independent

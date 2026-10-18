@@ -66,6 +66,13 @@ Pulse-rifle round damage ≥ 10 ⇒ one-shot (matches what we saw on screen).
 > clearly shows `*(rec+0) = 0` and `*(u16*)(rec+2) = *(u16*)(rec+0x1A)`. Since
 > `hw11`/`+0x1A` is the standing **HP candidate**, `+0x02` is the prime "current HP"
 > field. NEEDS live ground-truth (watchpoint, below) before promoting to CONFIRMED.
+>
+> **Live 2026-10-18 (S-5):** for MTs the current HP is the **entity's `+0x160`**, not the
+> template. Write-watches on template `+0x00..03` and `+0x18..1B` of the hit unit's record
+> stayed at 0 hits across two rifle hits and seconds of play, while entity `+0x160` dropped
+> 2050→1832→1614. So `+0x02` is only the *seed copy* of hw11 (the `+0x02 = +0x1A` fact
+> stands; the "current HP" role does not). World-structure objects (`0x801D0B68` array)
+> are still untested — ENT-9.
 
 ## Destruction behaviour — MT event/script processor `FUN_8008B8xx`
 The per-frame processor that walks `0x8019FAB8` (refs at `0x8008B834`, `0x8008B900`)

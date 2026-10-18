@@ -37,6 +37,10 @@ Entered on mission start. Prologue inits the **mission control block** at
 `0x8019F51C` (see §5), stores the mission number byte `DAT_800411F8` →
 `0x8019F518`, then:
 
+> `0x800411F8` confirmed live 2026-10-18: reads **30** in "Eliminate Squatters", and the
+> RAM spawn table matches FDAT entry 61 (= 2·30+1). Entry 63 (mission 31) carries an
+> identical spawn table.
+
 ```
 read_T_entry(1, 100,            dest=0x800B17C8)   ; RTIM.T common
 read_T_entry(1, missionNum,     dest=0x800B17C8)   ; RTIM.T per-mission
@@ -83,7 +87,7 @@ Source 40-byte record (`hwK` = int16 at byte 2K):
 | `hw3` | **geometry block index** (`-> instance +0x0A`; `-1`=none; binds PA block via `0x8019F538`) **AND the behaviour DISPATCH TYPE** (`-> entity +0x0E -> objective-object INIT column`) — same id, both roles | CONFIRMED |
 | `hw5` | rotation (PSX angle units; `2048` = 1/2 turn) | CONFIRMED (range) |
 | `hw7` | **resource / class id** (wide 0..388; flag-table `0x80198B08` key) — **NOT the dispatch type (that is `hw3`)**, not copied to the instance | CONFIRMED |
-| `hw11` | **HP** (-> instance `+0x160/162/164`) | CONFIRMED path, HP HYP-strong |
+| `hw11` | **HP** (-> entity `+0x160` current, `+0x162` max; `+0x164` related, differently scaled) | **CONFIRMED live 2026-10-18 (S-5)** |
 | `hw8,hw9,hw12,hw15,hw19` | params (flags/row-index/sub-stat/area/orient) — see `OBJECT_STATS.md` | HYPOTHESIS |
 
 Empty slots carry `hw3 == -1` and zero position. Mission 0 has 6 non-empty

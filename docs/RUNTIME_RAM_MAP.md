@@ -51,6 +51,12 @@ cross-checking, not a shared source.
 > int32 at `+0x08` (X) / `+0x0C` (Z); Zinfidel reads a 3×s16 position vector at `+0x20`.
 > These are likely different representations (high-precision integrator vs. a render/GTE
 > vector) — confirm live which the game treats as authoritative.
+>
+> **Live 2026-10-18 (S-3, MT entity):** the mover `0x8004F024` stores the position as
+> **three s16 at `+0x08` (X), `+0x0A` (Y), `+0x0C` (Z)** — e.g. `30 12 7c 00 0e dc` =
+> X 4656, Y 124, Z −9202 (spawn-record units). Reading `+0x08` as an s32 merges X and Y,
+> which explains the "constant X / integrating Z" observation. The player's path has not
+> been re-trapped (CMB-1); `+0x20/+0x24` untested.
 
 ## Camera
 
