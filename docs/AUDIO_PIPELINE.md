@@ -33,10 +33,9 @@ sample` → `disc sector range` mapping exact. Most TALK channels hold a single 
 (~4.5 s); a few hold two or three separated by silence, and every channel is
 zero-padded to the file's end.
 
-The committed `disc_files.json` was built from an older jPSXdec index that does not
-list the STR audio tracks as separate items; the v2.1 index does
-(`GG/STR/ACED1.STR[0.0]` etc.), so the pipeline enumerates streams from its own
-fresh index rather than from the JSON.
+`disc_files.json` lists each STR's audio as an XA child (`GG/STR/ACED1.STR[0.0]`
+etc., with Channel / Stereo? / Samples/Sec / Sector stride); the pipeline still
+enumerates streams from its own fresh jPSXdec index rather than from the JSON.
 
 ## 2. Setup (once)
 
@@ -150,8 +149,6 @@ over `disc_map/voice_manifest.tsv` and commit.
 - Clustering threshold: short, radio-filtered lines make embeddings noisy. If two
   speakers merge, lower `--threshold` (or set `--n-voices`); if one speaker splits,
   raise it. Name the clusters only after the cut looks right.
-- `disc_files.json` has no STR audio children; regenerate it from a v2.1 index
-  (`tools/extract/build_filemap.py`) if the map should list them.
 - Everything runs on CPU. The Intel Arc GPU is unused (no CUDA; CTranslate2 has no
   oneAPI build).
 
