@@ -183,6 +183,13 @@ at `0x4` with a side-by-side diff; a third case (`func_80090C38`, reads a global
 checks masking, `--defsym` resolution and a wrong `--defsym` → MISMATCH.  The tests
 skip (never pass vacuously) when the toolchain or the carved overlay is missing.
 
+## Matched functions
+
+`re/match/manifest.tsv` lists every function that has reached MATCH (address,
+overlay, source, size, extra args) and `re/match/check_all.sh` re-verifies all of
+them in one go; `re/match/ovl201/` holds the sources.  Sizes in the manifest
+include the delay slot after the final `jr ra`.
+
 ## Files
 
 - `setup.sh` — toolchain bring-up (see Install)

@@ -39,7 +39,7 @@ only; resolve the symbols (`--defsym`) before calling it done.
    diff below is in the same objdump syntax.
 
 2. **Write the C** into `re/match/<ovl or exe>/func_<VADDR>.c` (one function per
-   file; `#include "ac1_types.h"` gives `u8/u16/u32/s8/s16/s32`). Declare externals
+   file; look at the four matched examples already in `re/match/ovl201/` first; `#include "ac1_types.h"` gives `u8/u16/u32/s8/s16/s32`). Declare externals
    as `extern` with the names from `ac1_markup.tsv` when they exist (then their
    addresses resolve automatically); otherwise name them `D_<ADDR>` / `func_<ADDR>`
    and pass `--defsym D_<ADDR>=0x<ADDR>`. Jump-table functions (`jr` through a
@@ -66,7 +66,9 @@ only; resolve the symbols (`--defsym`) before calling it done.
    | `andi ..,0xff`/`0xffff` present or missing | implicit narrowing: an expression computed in a narrower type, or an assignment to a `u8/u16` field |
    | `sll`/`sra` pair present or missing | sign extension from a `s8/s16` value, or a `char`/`short` parameter being promoted |
    | `mult`/`div` vs shift-and-add sequences | multiply/divide by a constant vs a variable, or signed vs unsigned operands |
-   | `lui/addiu` or `lui/lw` immediates differ, word marked `m` | an external symbol: pass `--defsym NAME=0x...`, or the symbol has the wrong address |
+   | `lui/addiu` or `lui/lw` immediates differ, word marked `m` | an external symbol: pass `--defsym NAME=0x...` |
+   | a single `lui` (or `addiu`/`lw` offset) differs, everything else matches | the `--defsym` address is wrong; recompute it from the retail `lui`+`addiu`/`lw` pair (negative low halves!) |
+   | `0 differing word(s)` but `size: ours N, expected M` | your size is wrong (forgot the delay-slot `nop`, or the retail function continues), or your C is a strict prefix of the retail function |
    | epilogue / stack frame differs (`addiu sp,sp,-N`, `sw ra`) | number of locals that live across calls, or an `s` register you are not using/using; a `static` or an extra parameter |
    | `jal` target differs | wrong callee name/address; `--defsym` it or check `ac1_markup.tsv` |
    | retail has a `switch` table and yours has `beq` chains (or the reverse) | the retail source used `switch` (dense cases) vs `if` chains; also try reordering cases |
@@ -77,8 +79,10 @@ only; resolve the symbols (`--defsym`) before calling it done.
    against `/tmp/m_<VADDR>/fn.s` (what cc1 emitted) to separate compiler decisions
    from maspsx/assembler ones.
 
-5. **On MATCH** (exit 0, no mask warning, size as expected): commit the C file with
-   the message
+5. **On MATCH** (exit 0, no mask warning, size as expected): add a row to
+   `re/match/manifest.tsv` (vaddr, overlay, source, size, the extra `--defsym`/
+   `--rodata` args), check `re/match/check_all.sh` still says all matched, and commit
+   the C file plus the manifest row with the message
    ```
    matched func_<VADDR> <attempts>
    ```
