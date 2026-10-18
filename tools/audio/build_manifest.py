@@ -32,8 +32,16 @@ Text / kind columns:
                   COLUMN: edit it (TSV or review-page dropdown) and the value sticks
   kind_auto       what classify.py said; kind != kind_auto means "owner overrode"
 confidence = exp(avg_logprob) * (1 - no_speech_prob)   (0..1, higher is better)
+Match columns: a TALK clip's own line (own_line = 16*file + channel) has an
+on-screen subtitle in the sound-sequence blob (match_text.py, xa_refs.py); when
+it does, matched_string_id / matched_text / similarity ARE that subtitle and the
+clip's score against it (id SEQ:<snd>:X<n>) — the line the slot is supposed to
+say — and the free corpus match only shows up in auto_notes / the review page
+when it differs. Clips without an own-line subtitle (STR tracks, the Japanese
+slots no sequence plays) keep the free corpus match.
 status     = empty   nothing transcribed / not speech (ambience, sfx)
-             matched corpus string at similarity >= --match-threshold (85)
+             matched the own line's subtitle (or, without one, a corpus string)
+                     at similarity >= --match-threshold (85)
              check   needs a listen
              verified the owner ticked it
 """
@@ -57,7 +65,7 @@ COLUMNS = [
     "duration_s", "voice", "voice_label", "f0_hz", "processed", "transcript",
     "language", "language_prob", "kind", "kind_auto",
     "confidence", "avg_logprob", "no_speech_prob", "matched_string_id", "matched_text",
-    "similarity", "status", "auto_notes", "verified_text", "verified", "notes",
+    "similarity", "own_line", "status", "auto_notes", "verified_text", "verified", "notes",
 ]
 CARRY = ["verified_text", "verified", "kind", "voice_label", "notes"]
 TRUE = ("1", "yes", "true", "x")
@@ -121,6 +129,27 @@ def transcript_text(t, kind):
     return "" if kind in NONSPEECH else (t.get("text") or "").strip()
 
 
+def pick_match(m, threshold=85.0):
+    """What the match columns show for a matches.json record: (id, text, similarity,
+    source, notes). source is "own_line" when the clip's own TALK line has a
+    subtitle (then that subtitle is the match, whatever the free corpus said),
+    "corpus" for the free fuzzy match, "" for nothing. `notes` explains a free
+    match that beat the own line, or an own line without any subtitle."""
+    m = m or {}
+    own_id = m.get("own_line_id") or ""
+    best_id = m.get("best_id") or ""
+    best_sim = m.get("similarity", 0) or 0
+    notes = []
+    if own_id:
+        own_sim = m.get("own_line_similarity", 0) or 0
+        if best_id and best_id.split("#")[0] != own_id.split("#")[0] and best_sim >= threshold and own_sim < threshold:
+            notes.append(f"transcript matches {best_id} at {best_sim}, not this slot's own subtitle")
+        return own_id, m.get("own_line_text", ""), own_sim, "own_line", notes
+    if m.get("own_line") is not None:
+        notes.append(f"line {m['own_line']}: no sound sequence plays it, so no subtitle")
+    return best_id, m.get("best_text", ""), best_sim, ("corpus" if best_id else ""), notes
+
+
 def build_rows(clips, trans, spk, matches, kinds, old_rows, match_threshold=85.0,
                voice_labels=None):
     """Manifest rows (dicts keyed by COLUMNS) for every clip."""
@@ -145,7 +174,7 @@ def build_rows(clips, trans, spk, matches, kinds, old_rows, match_threshold=85.0
         kind = effective_kind(kind_auto, override)
         text = transcript_text(t, kind)
         conf = math.exp(t["avg_logprob"]) * (1.0 - t["no_speech_prob"])
-        sim = m.get("similarity", 0) or 0
+        match_id, match_text, sim, match_src, match_notes = pick_match(m, match_threshold)
         if kind in NONSPEECH or not text or t["no_speech_prob"] > 0.6:
             status = "empty"
         elif sim >= match_threshold:
@@ -153,6 +182,11 @@ def build_rows(clips, trans, spk, matches, kinds, old_rows, match_threshold=85.0
         else:
             status = "check"
         notes = []
+        if match_src == "own_line" and status == "check" and kind == "speech_en":
+            notes.append(f"own subtitle scores {sim}: mis-transcription, or the slot's audio is not this line")
+        if match_src == "own_line" and kind == "speech_ja":
+            notes.append("slot's subtitle is English but the take is Japanese")
+        notes += match_notes
         if kind in NONSPEECH:
             notes.append(f"{kind}: {k.get('reasons', 'no speech')}")
             heard = (t.get("text") or "").strip()
@@ -196,8 +230,9 @@ def build_rows(clips, trans, spk, matches, kinds, old_rows, match_threshold=85.0
             "kind": kind, "kind_auto": kind_auto if kind_auto in KINDS else "unknown",
             "confidence": round(conf, 3),
             "avg_logprob": t["avg_logprob"], "no_speech_prob": t["no_speech_prob"],
-            "matched_string_id": m.get("best_id", ""), "matched_text": m.get("best_text", ""),
-            "similarity": sim, "status": status,
+            "matched_string_id": match_id, "matched_text": match_text,
+            "similarity": sim, "own_line": m.get("own_line") if m.get("own_line") is not None else "",
+            "status": status,
             "verified_text": old.get("verified_text", ""), "verified": old.get("verified", ""),
             "auto_notes": "; ".join(notes), "notes": old.get("notes", ""),
         }
@@ -248,6 +283,11 @@ def main():
     write_manifest(args.manifest, rows)
     A.log(f"[manifest] {len(rows)} rows -> {args.manifest}")
     A.log(f"[manifest] status {counts(rows, 'status')}")
+    own = [r for r in rows if r["matched_string_id"].startswith("SEQ:") and r["own_line"] != ""]
+    if own:
+        hi = sum(1 for r in own if r["similarity"] >= args.match_threshold)
+        A.log(f"[manifest] own line: {len(own)} TALK clips show their slot's subtitle, "
+              f"{hi} at >={args.match_threshold:.0f}")
     A.log(f"[manifest] kind   {counts(rows, 'kind')}")
     A.log(f"[manifest] lang   {counts(rows, 'language')}"
           + (f"  ({missing} clips had no transcript)" if missing else ""))
@@ -262,7 +302,10 @@ def main():
         wavs = {c["clip_id"]: c["wav"] for c in clips}
         for r in rows:
             r["wav"] = wavs[r["clip_id"]]
-            r["candidates"] = matches.get(r["clip_id"], {}).get("candidates", [])
+            m = matches.get(r["clip_id"], {})
+            r["candidates"] = m.get("candidates", [])
+            r["match_src"] = pick_match(m, args.match_threshold)[3]
+            r["own_line_speaker"] = m.get("own_line_speaker", "")
         payload = {"rows": rows, "voices": spk.get("voices", []), "columns": COLUMNS,
                    "kinds": KINDS, "speech_kinds": sorted(SPEECH),
                    "generated_from": os.path.relpath(args.manifest, A.ROOT).replace("\\", "/")}

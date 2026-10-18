@@ -66,6 +66,8 @@ and the ECAPA speaker model (~80 MB, into `disc_map/extracted/AUDIO/_models/`).
 tools/audio/.venv/Scripts/python tools/audio/run_all.py            # everything, ~35 min CPU
 tools/audio/.venv/Scripts/python tools/audio/run_all.py --from classify   # after editing a kind
 tools/audio/.venv/Scripts/python tools/audio/run_all.py --from refs       # just the reclaim report
+tools/audio/.venv/Scripts/python tools/audio/run_all.py --from match --out /other/checkout/AUDIO \
+    --corpus /other/checkout/MIS_T/toc.json --fdat-entries /other/checkout/FDAT_T/entries   # from a worktree
 tools/audio/.venv/Scripts/python tools/audio/run_all.py --from speakers --threshold 0.65
 tools/audio/.venv/Scripts/python tools/audio/run_all.py -- --model distil-large-v3   # faster Whisper
 tools/audio/.venv/Scripts/python tools/audio/audio_test.py          # unit tests (no disc needed)
@@ -83,7 +85,7 @@ On this PC (24 threads, no CUDA) `large-v3` int8 runs at roughly real time on th
 | 3 transcribe | `transcribe.py` | clips → `transcripts.json` (language per clip, Japanese text + English gloss) |
 | 4 classify | `classify.py` | clips + transcripts (+ the manifest's `kind_override`) → `kinds.json` |
 | 5 speakers | `speakers.py` | speech clips → `speakers.json`, `speakers_emb.npz` |
-| 6 match | `match_text.py` | English text of speech clips + `disc_map/extracted/MIS_T` → `matches.json` |
+| 6 match | `match_text.py` | English text of speech clips + the radio subtitles in `FDAT_T/entries/200.bin` + `disc_map/extracted/MIS_T` → `matches.json` (free match + the clip's own line) |
 | 7 manifest | `build_manifest.py` | all of the above → **`disc_map/voice_manifest.tsv`**, `review.html` |
 | 8 refs | `xa_refs.py` | `disc_map/extracted/FDAT_T/entries/200.bin` (sound sequences) + mission scripts → `xa_line_refs.json` |
 | 9 reclaim | `reclaimable.py` | manifest + refs + `channels.json` → **`disc_map/voice_reclaimable.tsv`** (§7) |
@@ -169,11 +171,37 @@ On this PC (24 threads, no CUDA) `large-v3` int8 runs at roughly real time on th
   earlier clip of the same length are tagged `duplicate_of` (the same recording
   reused in another TALK file) and noted in the manifest.
   `--recluster` re-cuts without re-embedding.
-- **Match.** rapidfuzz `token_sort_ratio` of the normalised transcript against every
-  draw_string message of `GG/MS/MIS.T` (split exactly as `scan_text.py` does, plus
-  per-sentence candidates). Ids follow `disc_map/text_inventory.csv`:
-  `MIS_T:<entry>:+0x<off>[#sN]`. Top-3 candidates are kept for the review page.
-  Add corpora with `--corpus <toc.json>` or `--all-extracted`.
+- **Match.** Two corpora, scored with rapidfuzz `token_sort_ratio` on normalised
+  text (lower-case words, digits spelled out so the subtitles' timer digits
+  "30 seconds" meet Whisper's "thirty seconds"):
+  1. **the radio subtitles** — the sound-sequence blob of `FDAT.T` entry 200 (§7:
+     every sequence is opcodes + the on-screen English subtitle of the line it
+     plays). One candidate per sequence with text, id `SEQ:<snd>:X<n>` (sequence
+     `snd` plays TALK line `n = 16·file + channel`) or `SEQ:<snd>` when the
+     sequence has no `X` opcode (music cues, text-only radio); the leading
+     "Radio:" / "COM :" speaker tag is split into a `speaker` field. On by
+     default when `disc_map/extracted/FDAT_T/entries/200.bin` exists (or an
+     `xa_line_refs.json` from `xa_refs.py` is in the work dir); `--fdat-entries`
+     points elsewhere, `--no-sequences` leaves it out. 163 sequences carry text,
+     78 of them play a TALK line.
+  2. every draw_string message of `GG/MS/MIS.T` (split exactly as `scan_text.py`
+     does, plus per-sentence candidates). Ids follow `disc_map/text_inventory.csv`:
+     `MIS_T:<entry>:+0x<off>[#sN]`. Add corpora with `--corpus <toc.json>` or
+     `--all-extracted`.
+
+  Each clip gets the free best match over the union (`best_*`, top-3 candidates
+  kept for the review page) **and, for TALK clips, a direct hit**: the clip's own
+  line number is known from its file and channel (`xa_refs.line_number`), so the
+  transcript is scored against that line's own subtitle — the whole text, each
+  sentence and each run of consecutive sentences (`#sI-J`), since a channel split
+  into several clips yields a clip per sentence or two — and `own_line_id /
+  own_line_text / own_line_speaker / own_line_similarity` record it. That is the
+  script line the slot is supposed to say, and the manifest prefers it (§4).
+  Result on this disc: **82 TALK clips have their line's subtitle, 81 match it at
+  ≥ 85** (the one below 60 is `TALK01_ch09_c000`: the Japanese take under
+  "A...a friend! W..we're saved! Thank God!!"); the other 23 TALK clips sit in
+  lines 57, 67 and 80–95, which no sequence plays, so they have no subtitle
+  (the Japanese slots). STR clips have no own line and keep the free match.
 
 ## 4. The manifest (`disc_map/voice_manifest.tsv`)
 
@@ -194,8 +222,9 @@ One row per clip, tab-separated:
 | `kind` | `speech_en` / `speech_ja` / `ambience` / `sfx` / `unknown` — **the owner's column**: change it and it sticks (TSV edit or review-page dropdown) |
 | `kind_auto` | what `classify.py` said; `kind != kind_auto` is how a re-run recognises an owner edit |
 | `confidence`, `avg_logprob`, `no_speech_prob` | Whisper decode stats; `confidence = exp(avg_logprob)·(1−no_speech_prob)` |
-| `matched_string_id`, `matched_text`, `similarity` | best corpus string (0–100) |
-| `status` | `empty` (no text, or not speech) / `check` / `matched` (≥85) / `verified` (owner) |
+| `matched_string_id`, `matched_text`, `similarity` | for a TALK clip whose own line has a subtitle: **that subtitle** (`SEQ:<snd>:X<n>[#s…]`) and the transcript's score against it, whatever the free corpus match said; otherwise the best corpus string (0–100) |
+| `own_line` | the TALK line number `16·file + channel` the clip's channel plays as (blank for STR); cross-reference to `voice_reclaimable.tsv` and `xa_refs.py --print` |
+| `status` | `empty` (no text, or not speech) / `check` / `matched` (own subtitle, or without one a corpus string, at ≥85) / `verified` (owner) |
 | `auto_notes` | pipeline flags: the gate's reasons and hidden guess for non-speech, "Japanese line", "classification uncertain", kind overridden, processed voice, same recording as …, cutscene track, low confidence |
 | `verified_text`, `verified`, `kind` (when changed), `notes` | owner columns — survive re-runs (carried over by `clip_id`); `notes` is yours, never auto-filled |
 
@@ -208,7 +237,10 @@ votes its old label onto its new `voice`, so names follow the speaker, not the i
 **Workflow:** open `disc_map/extracted/AUDIO/review.html` (local file, never publish —
 it plays game audio). Rows are sorted lowest confidence first; play, fix the text or
 press *accept* on a corpus match, tick *verified*, name voices in the voice box.
-The *kind · lang* column shows the kind (with the gate's verdict in brackets when
+The *corpus match* column shows the slot's own subtitle for TALK rows (tagged
+*own line* with its speaker tag; the other candidates, including a free corpus
+hit that differs, are the small buttons) and "no subtitle" for the lines no
+sequence plays. The *kind · lang* column shows the kind (with the gate's verdict in brackets when
 you changed it), the detected language and its probability, and the kind
 dropdown; the header counts clips per kind and language and the *kind* filter
 has `uncertain` for the rows the gate was unsure about. Edits persist in the
@@ -227,9 +259,12 @@ field names, and a voice label follows its clip to the clip's current voice id.
   model may move the feature distributions (see the constants in `classify.py`).
 - Language detection is per clip on the first 30 s; a clip that mixes languages
   (none found here) would get one language for the whole clip.
-- The in-mission radio lines have **no on-screen text** in AC1, so most TALK rows will
-  not match the corpus — that is expected; matching exists for the lines that are
-  catalogued (mission names, cutscene text) and to catch near-duplicates.
+- The in-mission radio lines have no text in `MIS.T`; their subtitles live in the
+  sound-sequence blob (§7) and are matched per slot (own line, §3). A TALK row
+  whose own subtitle scores low is either a mis-transcription or a slot whose
+  audio is not the subtitle's line (`auto_notes` says so; TALK01 ch9 is the one
+  such slot on this disc). Only the STR cutscene rows and the Japanese slots are
+  left to the free corpus match.
 - Silero VAD found no speech in `ACOPA`/`ACOPB`/`STAFF`/`DEMOPLAY` (music only).
   `--method energy` or lowering the VAD threshold in `split_by_vad` would force clips
   out of them if a line is suspected.
@@ -502,6 +537,11 @@ operands are small state values (1, 2), not line ids. "Unreferenced" means
 "nothing found", not "never played"; confirm in DuckStation
 (`tools/duckstation/radio_line.py`) before overwriting a slot that matters.
 
-Side finding worth its own task: the sequence blob holds the **on-screen subtitle
-of every radio line** — the text `match_text.py` could never find in `MIS.T`.
-`xa_line_refs.json` (local) carries it per line.
+The sequence blob holds the **on-screen subtitle of every radio line** — the text
+`match_text.py` could never find in `MIS.T`; since the subtitle corpus (§3) it is
+what the manifest's `matched_text` shows for TALK rows. `xa_line_refs.json`
+(local) carries it per line. Font codes `0x80`–`0x89` in the subtitles are a
+second digit set (the timer digits: "30 seconds", "2 minutes", the "3, 2, 1"
+countdown of sequence 15 — inferred from the audio, not from code); a few
+subtitles embed opcode letters (`W11` waits in the countdowns), which
+`decode_text` leaves as `<57><31><31>`.
