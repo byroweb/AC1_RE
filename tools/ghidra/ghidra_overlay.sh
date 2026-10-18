@@ -11,14 +11,20 @@
 #   tools/ghidra/ghidra_overlay.sh disc_map/overlays/ovl202_mission.bin 0x8008ab68
 #
 # First call on an overlay analyzes (~30s); later calls are fast (-process).
+# analyzeHeadless comes from $GHIDRA_INSTALL_DIR (analyzeHeadless.bat on Windows
+# under Git Bash), falling back to the Ubuntu snap's 12.0 build. The cached
+# project dir defaults to $TMPDIR/ghidra_overlays (override: GHIDRA_OVERLAY_PROJDIR).
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")/../.." && pwd)"
-HL=/snap/ghidra/current/ghidra_12.0_PUBLIC/support/analyzeHeadless
+. "$HERE/tools/ghidra/re_env.sh"
+HL="$(re_ghidra_headless)"
 BASE=0x8004ada0
-PROJDIR=/tmp/ghidra_overlays
+TMP="${TMPDIR:-/tmp}"
+PROJDIR="${GHIDRA_OVERLAY_PROJDIR:-$TMP/ghidra_overlays}"
 
 bin="$1"; shift
 [ -f "$bin" ] || { echo "no such overlay bin: $bin" >&2; exit 1; }
+[ -f "$HL" ] || { echo "analyzeHeadless not found at $HL (set GHIDRA_INSTALL_DIR)" >&2; exit 1; }
 name="$(basename "$bin" .bin)"
 mkdir -p "$PROJDIR"
 
@@ -27,8 +33,8 @@ if [ ! -e "$PROJDIR/$name.rep" ] && [ ! -e "$PROJDIR/$name.gpr" ]; then
   echo "[ghidra_overlay] importing+analyzing $name (one-time ~30s)..." >&2
   "$HL" "$PROJDIR" "$name" -import "$bin" \
      -processor "MIPS:LE:32:default" -loader BinaryLoader -loader-baseAddr "$BASE" \
-     -scriptPath "$HERE/ghidra_scripts" >/tmp/${name}_import.log 2>&1 \
-     || { echo "import failed; see /tmp/${name}_import.log" >&2; exit 1; }
+     -scriptPath "$HERE/ghidra_scripts" >"$TMP/${name}_import.log" 2>&1 \
+     || { echo "import failed; see $TMP/${name}_import.log" >&2; exit 1; }
 fi
 
 if [ "$#" -eq 0 ]; then echo "(imported; pass addresses to decompile)"; exit 0; fi

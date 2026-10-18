@@ -13,8 +13,26 @@ their own location and take your local files from these variables:
 | `AC1_BIN` | your pristine `SLUS-01323` v1.1 image (2352-B sectors) | *(required by `extract_fdat.py`, `build_filemap.py`, the Farsi bake)* |
 | `AC1_RE_ROOT` | repo root, for Ghidra scripts run from a copied script dir | parent of `ghidra_scripts/` |
 | `AC1_GHIDRA_PROJECT_DIR` | directory holding `AC_1_USA_2048_RE.gpr` | repo root |
-| `M2C_DIR` | your m2c checkout (venv at `.venv`) | `~/Applications/m2c` |
-| `GHIDRA_EXT_DIR` | Ghidra user Extensions dir | snap layout under `~/snap/ghidra/…` |
+| `M2C_DIR` | your m2c checkout (venv at `.venv`, POSIX `bin/` or Windows `Scripts/` layout) | `~/Applications/m2c` |
+| `GHIDRA_INSTALL_DIR` | unpacked Ghidra release (`ghidraRun[.bat]`, `support/analyzeHeadless[.bat]`) | *(unset → the Ubuntu snap paths)* |
+| `GHIDRA_EXT_DIR` | Ghidra Extensions dir (where `ghidra_psx_ldr` goes) | `$GHIDRA_INSTALL_DIR/Ghidra/Extensions` if that is set, else the snap's `~/snap/ghidra/…` user dir |
+| `MIPS_PREFIX` | cross-toolchain prefix for `gcc`/`objdump`/`objcopy`/`nm`/`as`/`ld` | auto: `mipsel-linux-gnu-` (apt) if on PATH, else `mipsel-none-elf-` (PCSX-Redux prebuilt) |
+
+The shell scripts share this resolution via `tools/ghidra/re_env.sh`; the Python
+tools (`tools/re/disasm_batch.py`, `mods/farsi/build_rtl_patch.py`) apply the same rules.
+
+### Windows note
+Everything here runs under **Git Bash** (MSYS2); PowerShell/cmd are not supported.
+- Toolchain: the PCSX-Redux prebuilt `mipsel-none-elf-*` GCC is picked up unrenamed
+  once its `bin` is on PATH (or set `MIPS_PREFIX=mipsel-none-elf-` explicitly).
+- Python: scripts call `python3` where it exists and fall back to `python`. The
+  Microsoft Store `python3` stub shadows a real install — either disable it in
+  *App execution aliases* or make a `python3.exe` copy next to `python.exe`.
+- Ghidra: set `GHIDRA_INSTALL_DIR` to the unpacked zip; the install-wide
+  Extensions dir is `<install>\Ghidra\Extensions`, while Ghidra's per-user dir
+  (settings, per-user extensions) lives at `%APPDATA%\ghidra\ghidra_<ver>_PUBLIC`.
+- `ghidra_restart.sh` uses PowerShell `Stop-Process` instead of `pkill` and
+  launches `ghidraRun.bat`; `ghidra_overlay.sh` runs `analyzeHeadless.bat`.
 
 ## `setup_re_tools.sh`
 Idempotent installer + health report. Sets up m2c, checks the mipsel toolchain,
@@ -50,7 +68,7 @@ update method). **Two caveats found doing so:**
 
 ## `ghidra_restart.sh`
 Kills Ghidra (GUI + decompiler + headless), clears stale `.lock`/`.lock~` that
-block reopening, and relaunches the snap Ghidra with `AC_1_USA_2048_RE.gpr`. Does
+block reopening, and relaunches Ghidra (`$GHIDRA_INSTALL_DIR`, else the snap) with `AC_1_USA_2048_RE.gpr`. Does
 NOT kill the GhidraMCP python bridge. After the window opens, double-click the
 program so GhidraMCP serves on `:8080` (health: `curl :8080/list_functions`).
 
@@ -63,7 +81,7 @@ supervisor that waits `delay`s, opens a new terminal running
 session. Needs `$CLAUDE_CODE_SESSION_ID` (Claude Code exports it).
 
 ## PSYQ signatures (auto-name SDK functions) — Ghidra, GUI step
-`ghidra_psx_ldr` (installed in the snap Extensions dir) ships PSYQ signature DBs
+`ghidra_psx_ldr` (installed in the Ghidra Extensions dir, see `GHIDRA_EXT_DIR`) ships PSYQ signature DBs
 `psyq260…psyq470.gdt`. To label `libgpu`/`libgte`/`libcd`/`libapi` etc. in the
 base exe: CodeBrowser → `Edit ▸ Options ▸ Program Information ▸ PsyQ Version`,
 set the version, then re-run Auto Analysis with the PsyQ Signatures analyzer on.

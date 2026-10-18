@@ -67,11 +67,23 @@ SELTAB = bytes.fromhex(
     "ffffffffffffff22232425262728292a2b"   # row2: digits ۰..۹ (col7..16)
     "2121fcfcffffffffffffffffffffffffff")  # row3: space,space,END,END,blank...
 
+def _mips_prefix():
+    """Cross-toolchain prefix: $MIPS_PREFIX, else the first of mipsel-linux-gnu-
+    (apt) / mipsel-none-elf- (PCSX-Redux prebuilt) whose gcc is on PATH."""
+    pfx = os.environ.get("MIPS_PREFIX")
+    if pfx:
+        return pfx
+    for pfx in ("mipsel-linux-gnu-", "mipsel-none-elf-"):
+        if shutil.which(pfx + "gcc"):
+            return pfx
+    return "mipsel-linux-gnu-"
+
 def _compile_shaper():
     """Compile farsi_name_shape.c (split code/tables) + farsi_name_input.c into
     flat overlay binaries; return {addr: bytes}. Raises on toolchain error."""
     import subprocess, tempfile
-    GCC = "mipsel-linux-gnu-gcc"; OBJCOPY = "mipsel-linux-gnu-objcopy"
+    PFX = _mips_prefix()
+    GCC = PFX + "gcc"; OBJCOPY = PFX + "objcopy"
     CFLAGS = ("-march=r3000 -mips1 -mfp32 -EL -G0 -Os -falign-functions=4 "
               "-ffreestanding -fno-builtin -fno-pic -mno-abicalls -nostdlib").split()
     d = tempfile.mkdtemp()
@@ -108,7 +120,7 @@ def _compile_shaper():
     # name_xpos: proportional right-justify (sums fmet adv). HAND-ASSEMBLED (GCC
     # -Os emitted ~192B; the asm is 96B to fit the 200B block tail). Tail-jumps to
     # cursext for the label fix.
-    AS = "mipsel-linux-gnu-as"; LD = "mipsel-linux-gnu-ld"
+    AS = PFX + "as"; LD = PFX + "ld"
     xlds = os.path.join(d, "x.ld")
     with open(xlds, "w") as f:
         f.write(f"ENTRY(name_xpos)\nSECTIONS {{ .text 0x{NAME_XPOS:08X} : "

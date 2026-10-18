@@ -81,7 +81,7 @@ just start another Ghidra instance; the projects are separate directories.)
 
 ### Headless reproduction
 ```
-HL=/snap/ghidra/35/ghidra_12.0_PUBLIC/support/analyzeHeadless
+HL="$GHIDRA_INSTALL_DIR/support/analyzeHeadless"   # snap: /snap/ghidra/35/ghidra_12.0_PUBLIC/support/analyzeHeadless
 $HL ghidra_mission202 Mission202 \
   -import .../overlays/mission_overlay_FDAT202_80050000.bin \
   -processor MIPS:LE:32:default -loader BinaryLoader -loader-baseAddr 0x80050000 \
