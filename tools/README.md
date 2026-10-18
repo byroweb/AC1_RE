@@ -75,9 +75,18 @@ tools/ghidra/overlay2c.sh 0x80082190 0x1b0          # decompile the name-input h
 name handler = `farsi_name_input.c`, `box_init` alloc `0x800501bc` + `+0x74`
 update method). **Two caveats found doing so:**
 - `overlay_80050000.bin` is a Jun-6 RAM dump → STALE for anything baked Jun-7
-  (cursor RTL `0x80083a28`, `boxhook`/`cursext` are original/zeros in it). For
-  current baked code, re-dump live RAM (DuckStation `read_memory` path=) on the
-  relevant screen and pass it as `binfile`.
+  (cursor RTL `0x80083a28`, `boxhook`/`cursext` are original/zeros in it), and it
+  is not on this PC. The **current mission-overlay image** is the full 2 MB RAM dump
+  `M30-ctrl-01__20261017.ram.bin` in the save-state library (`$AC1_STATES_DIR`,
+  default `~/dev/ac1_states`): pristine disc, mission 30 live, so FDAT overlay 202
+  is resident at `0x8004ADA0` and the objobj at `0x801C4B40`. Pass it with
+  `base 0x80000000`:
+  ```
+  tools/ghidra/overlay2c.sh 0x8004F1A8 0x200 "$AC1_STATES_DIR/M30-ctrl-01__20261017.ram.bin" 0x80000000
+  ```
+  The same image can be regenerated from the archived state offline
+  (`savestate.py <state> --dump-ram out.bin`). For freshly baked code, re-dump
+  live RAM (DuckStation `read_memory` path=) on the relevant screen instead.
 - m2c can't resolve `jr` **switch/jump tables** ("Unable to determine jump
   table") — decode a sub-range that avoids the dispatcher, or read those in
   Ghidra/live disasm.
