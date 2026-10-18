@@ -4,8 +4,8 @@ Target: **SLUS-01323 (v1.1)**. Extracts every spoken line on the disc, transcrib
 it, groups the clips by speaker, lines each transcript up with the mission-text
 corpus and writes a manifest the owner verifies **by listening instead of typing**.
 Companion to [`AC1_TEXT_SYSTEM.md`](AC1_TEXT_SYSTEM.md) / [`MIS_FORMAT.md`](MIS_FORMAT.md)
-(the text side of a localization) — this is the audio side, and the groundwork for a
-dub.
+(the text side of a localization) — this is the audio side, and §6 is the dub:
+a replacement take goes back into its channel on a copy of the disc.
 
 > No game audio is ever committed. Decoded WAVs, clips, model caches and the
 > generated review page live under `disc_map/extracted/AUDIO/` (gitignored). The
@@ -64,6 +64,7 @@ tools/audio/.venv/Scripts/python tools/audio/run_all.py            # everything,
 tools/audio/.venv/Scripts/python tools/audio/run_all.py --from speakers --threshold 0.65
 tools/audio/.venv/Scripts/python tools/audio/run_all.py -- --model distil-large-v3   # faster Whisper
 tools/audio/.venv/Scripts/python tools/audio/audio_test.py          # unit tests (no disc needed)
+tools/audio/.venv/Scripts/python tools/audio/reinject_test.py       # XA codec / EDC / sector tests
 ```
 
 Every stage resumes from what is on disk; `--force` redoes decode/split/transcribe.
@@ -78,6 +79,7 @@ On this PC (24 threads, no CUDA) `large-v3` int8 runs at roughly real time on th
 | 4 speakers | `speakers.py` | clips → `speakers.json`, `speakers_emb.npz` |
 | 5 match | `match_text.py` | transcripts + `disc_map/extracted/MIS_T` → `matches.json` |
 | 6 manifest | `build_manifest.py` | all of the above → **`disc_map/voice_manifest.tsv`**, `review.html` |
+| 7 dub | `reinject_xa.py` | a take WAV + a manifest row → the row's sectors of a **copy** of the disc (§6) |
 
 ### Stage notes
 - **Split.** TALK channels use a numpy RMS gate (20 ms frames, −40 dBFS open,
@@ -153,35 +155,97 @@ over `disc_map/voice_manifest.tsv` and commit.
 - Everything runs on CPU. The Intel Arc GPU is unused (no CUDA; CTranslate2 has no
   oneAPI build).
 
-## 6. Reinjection — how a dub would go back (HYPOTHESIS, not yet exercised)
+## 6. Reinjection — putting a dub back (CONFIRMED on a copy of the disc)
 
-The game addresses a line as *(file, channel, start sector)*, so a dubbed line must
+The game addresses a line as *(file, channel, sector)*, so a dubbed line must
 occupy **the same channel and no more audio sectors** than the original: for each
 manifest row, `audio_sector_first..audio_sector_last` is the budget
-(`(n+1)·4032/37800` s of mono audio). Longer takes must be trimmed or sped up.
+(`n·4032/37800` s of mono audio — 0.853 s for an 8-sector line). Longer takes
+must be shortened (or `--trim`med). `tools/audio/reinject_xa.py` does the whole
+job from a manifest row:
 
-1. Produce the new take as 37800 Hz mono 16-bit WAV, length ≤ the sector budget
-   (pad with silence to a whole number of sectors).
-2. Encode to XA-ADPCM with the **same parameters**: 37800 Hz, mono, 4-bit, file
-   number 1, channel = the stream's channel, stride 16 (i.e. one sector of this
-   channel every 16 disc sectors). Candidate encoders: **psxavenc** (`-t xa`, set
-   rate/bits/channel). jPSXdec can then write the encoded sectors over the item in
-   place, keeping subheaders and EDC: `java -jar jpsxdec.jar -x ac1.idx -i
-   "GG/BGM/TALK03.XA[12]" -replacexa -xa <encoded.xa>` (v2.1; it refuses a
-   replacement that does not fit — see the manual's *Replace XA* section).
-3. Write each encoded sector over disc sector `sector_first + 16·k` of the original
-   image, **Mode 2 Form 2** layout: 12 sync + 4 header + 8 subheader (file, channel,
-   submode `0x64` = real-time|form2|audio, coding `0x00` mono/37800/4-bit — `0x01`
-   for the stereo STR tracks — repeated once) + 2304 ADPCM bytes + 20 unused + 4-byte
-   EDC. The last sector of a stream carries the EOF/EOR submode bits (`0x80`/`0x01`);
-   copy them from the original sector. `tools/disc/reinject.py` writes Form 1 (2048-B
-   user data at +24) and must not be used as-is for XA; a `--form2` mode that copies
-   the 2336-B payload and recomputes EDC is the obvious extension.
-4. Leave the other 15 channels' sectors untouched (they are interleaved between
-   yours) and re-run `extract_voice.py` on the patched image: the decoded sample
-   counts and `audio_test.py`'s arithmetic are the regression check.
+```bash
+tools/audio/.venv/Scripts/python tools/audio/reinject_xa.py \
+    --clip TALK05_ch00_c000 --wav take.wav --image ~/dev/ac1_dub.bin --verify-jpsxdec
+tools/audio/.venv/Scripts/python tools/audio/reinject_xa.py --clip ... --wav ... --image ... --dry-run
+tools/audio/.venv/Scripts/python tools/audio/reinject_test.py      # codec / EDC / packing unit tests
+```
+
+`--image` is patched **in place** and must be a copy: the script refuses `$AC1_BIN`
+(and the filemap's `source_bin`), and creates the copy from the pristine image
+(+ a `.cue`) when it does not exist yet, so repeating the command dubs several
+lines into one image. Only the TALK rows are accepted (STR rows are stereo
+music+speech mixes, see below).
+
+What it does, per row (all of it verified, see the round trip below):
+
+1. **Take in.** Any WAV; stereo is downmixed, other rates are resampled to
+   37800 Hz (scipy), `--gain-db` applied, then int16. A take longer than the
+   budget is refused with the overshoot in seconds unless `--trim`. The take is
+   padded with silence to the **whole** budget so no tail of the old line survives.
+2. **Encode.** `tools/audio/xa_adpcm.py` is a pure-Python/numpy 4-bit XA-ADPCM
+   codec. Per 28-sample sound unit it tries all 52 (filter 0–3 × shift 0–12)
+   parameter pairs with exact decoder feedback and keeps the least-squares one;
+   groups are packed as 16 parameter bytes (two copies each) + 112 nibble bytes,
+   18 groups = 2304 bytes = 4032 samples per sector. ~45 ms per sector. The
+   decoder's two-sample history runs across units *and sectors*, so before
+   encoding a clip that does not start the stream the script decodes the
+   channel's preceding sectors from the image to seed it (`TALK03_ch09_c002`:
+   history `(63, 66)` after 58 sectors).
+3. **Write Form 2 sectors.** For each of the budget's disc sectors
+   `sector_first + 16·k` the original 24 bytes (sync, header, 8-byte subheader —
+   file 1, channel, submode, coding `0x00` = mono/37800/4-bit) are kept, 2304
+   ADPCM bytes + 20 zero bytes written, and the 4-byte EDC recomputed. Each
+   target sector is checked first (sync, mode 2, channel = manifest channel,
+   submode Form 2|audio, coding 0x00, original EDC valid). The 15 other channels'
+   sectors in between are never touched.
+4. **Read back** every written sector, verify its EDC, decode it and report the
+   SNR against the padded take; `--xa-out` dumps the raw sectors; `--verify-jpsxdec`
+   decodes the whole stream from the patched image and from the pristine one with
+   jPSXdec (reusing `ac1.idx`, the layout is unchanged) and checks: same sample
+   count, everything before the clip bit-identical, re-convergence after the clip
+   within one sector, the stream equal to `xa_adpcm`'s model of the sectors on
+   disc, and the clip's SNR.
+
+### Disc facts (CONFIRMED on SLUS-01323)
+- TALK sectors: subheader `01 cc 64 00` (file 1, channel, RT|Form2|Audio, mono
+  37800 Hz 4-bit); the stream's last sector has submode **`0xE4`** = EOF set, EOR
+  *not* set. The 20 bytes after the sound area are zero. Copying the original
+  subheader keeps all of this.
+- EDC: the CD-ROM EDC (reflected CRC-32, polynomial `0xD8018001`, no init/xor)
+  over bytes 16..2347 (subheader + 2324 user bytes), little-endian at 2348 —
+  byte-exact against the disc's TALK sectors, including the EOF ones.
+- Decoding: emulators use the integer rule `s = (nibble << (12−shift)) +
+  ((p1·K0 + p2·K1 + 32) >> 6)`, K0 = {0, 60, 115, 98}, K1 = {0, 0, −52, −55}
+  (psx-spx). **jPSXdec v2.1 keeps the history as unrounded doubles** and rounds only
+  the output; the two drift apart by up to ~14 LSB on loud speech (65 dB down).
+  `xa_adpcm.decode_sectors_float` reproduces jPSXdec within 1 LSB on ~0.01 % of
+  samples (bit-exact on short streams); `decode_sectors` is the integer rule.
+- jPSXdec v2.1's command line has **no usable replace command** for us: the XA
+  item help lists only `-af`/`-vol`, and `-replacexa`/`-xa` only answers
+  "-replacexa option is missing -xa option" (the GUI may still offer it). The
+  writer above is therefore self-contained; jPSXdec is only the independent
+  decoder for verification.
+
+### Round trip (what "verified" means)
+`extract_voice.py` → clip WAV → `reinject_xa.py` into a copy → `extract_voice.py`
+on the copy, on this disc:
+
+| test | result |
+| --- | --- |
+| `TALK05_ch00_c000` (8 sectors, its own clip WAV re-encoded) | self-check 65.3 dB SNR (integer decoder), jPSXdec decode of the patched copy 70.3 dB vs the take, max error 25 LSB |
+| `extract_voice.py --only TALK` on the patched copy | 96 streams, 0 sample-count mismatches; 95 channel WAVs byte-identical to the pristine decode, only `TALK05_ch00` differs (same 32256 samples) |
+| `TALK03_ch09_c002` (audio sectors 58..64, mid-stream) | 66 dB SNR; 233 856 samples before the clip bit-identical; after it the decode re-converges with the pristine one within 73 samples (1.9 ms) — the ADPCM history transient as the following original sectors start from our last two samples; stable filters make it die out |
+| 1.2 s / 44.1 kHz / stereo synthetic take into a 0.853 s budget | refused ("0.347 s longer"); with `--trim`: downmix + resample + cut, 55 dB SNR |
+| pristine image as `--image` | refused; `--dry-run` reads it without writing |
+
+Not yet exercised: **playback in the game** (DuckStation / hardware) of a patched
+image — the sector format is byte-for-byte what the disc uses, so this is expected
+to just work, but it is the next thing to check, ideally with a mission that
+triggers the dubbed channel.
 
 For the STR endings, the speech sits mixed into the stereo music track; a dub there
 means re-mixing the whole track (music stem is not available separately) and
-re-encoding the stride-8 stereo XA — feasible with the same tools, but it is a
-remix job, not a line swap.
+re-encoding the stride-8 stereo XA — the codec here is mono-only (stereo groups
+interleave L/R units), so that is a remix job plus a small encoder extension, not a
+line swap.
