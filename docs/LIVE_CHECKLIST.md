@@ -30,7 +30,7 @@ the rest can be done in any order.
 
 | ID | Status | Do | Look for | Settles |
 |---|---|---|---|---|
-| S-1 | [ ] | Save a DuckStation state **inside any mission** (after the PA loader has run — e.g. first frame of player control). Keep it with the other backups. | A `.sav` whose `stage_byte()`/`in_mission()` is true in `tools/duckstation/savestate.py`. | `SAVESTATE_FORMAT.md` "Findings" (no in-mission state exists); prerequisite for LVL-1/LVL-2 and every offline VRAM question. |
+| S-1 | [ ] | Save a DuckStation state **inside any mission** (after the PA loader has run — e.g. first frame of player control). Archive it: `tools/duckstation/states.py archive <slot> M<NN>-ctrl-01 --serves S-1,LVL-1` and cite the ID (`disc_map/states/README.md`). | A `.sav` whose `stage_byte()`/`in_mission()` is true in `tools/duckstation/savestate.py`. | `SAVESTATE_FORMAT.md` "Findings" (no in-mission state exists); prerequisite for LVL-1/LVL-2 and every offline VRAM question. |
 | S-2 | [ ] | Boot the offline **capstone disc** (`…[CAPSTONE].bin`, `AUTHORING.md` capstone) and play mission 0. | Edited geometry visible; edited spawn at its new position; edited HP (takes the predicted number of hits); edited script behaviour. Any NOW-LOADING hang = checksum. | `AUTHORING.md` "Status vs. plan": Phase 0 + capstone "in-game confirmation pending". Also doubles as MIS-1's HP test bed. |
 | S-3 | [ ] | `bp 0x8004F024` while an enemy AC is moving. Inspect `a0` (= ac), then step: does the body read `ac+0x64` and write `ac+0x08/+0x0C`? | Writes to `ac+0x08` from `ac+0x64` ⇒ integrator (COMBAT reading). No world/position writes, just a timed value ease ⇒ COLLISION reading. | The `0x8004F024` dispute: `COMBAT_PHYSICS.md` §6 vs `COLLISION.md` "Disputed". Fix whichever doc is wrong. |
 | S-4 | [ ] | Read `0x8004121B` (and `0x8004121D..0x1224`) at `bp 0x8004F1A8` in **three different missions**, plus once in the arena (overlay 204) and once in the garage/mission-assignment screen. `ww 0x8004121B` from the menu through SORTIE. | Byte value per context; the `pc`/`ra` of any write. | `MISSION_STAGES.md` Part 1 vs `LEVEL_LOADING.md` (is the byte ever non-zero? who selects PA01–PA71?). |
@@ -115,6 +115,8 @@ the rest can be done in any order.
 
 ## Results log
 
-Append one line per session: date · items closed · state file(s) saved · docs updated.
+Append one line per session: date · items closed · **state IDs archived** (from
+`disc_map/states/STATES.tsv` via `tools/duckstation/states.py archive`; cite IDs such as
+`M01-ctrl-01`, never slot numbers — slots are scratch) · docs updated.
 
 - *(none yet)*
