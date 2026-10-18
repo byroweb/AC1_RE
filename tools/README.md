@@ -144,7 +144,7 @@ java -jar "$JPSXDEC_JAR" -x ac1.idx -i "GG/STR/ACED1.STR[0.0]" -af wav -dir out 
 ```
 `tools/extract/build_filemap.py` turns such an index into `disc_files.json`.
 
-## `audio/` — spoken voice lines → manifest (`tools/audio/`)
+## `audio/` — spoken voice lines → manifest → dub (`tools/audio/`)
 Extracts the TALK XA channels and STR audio tracks with jPSXdec, splits them into
 clips, transcribes them with faster-whisper (CPU), clusters speakers, matches the
 text against the MIS.T corpus and writes `disc_map/voice_manifest.tsv` plus a local
@@ -156,4 +156,18 @@ tools/audio/.venv/Scripts/python tools/audio/audio_test.py   # unit tests
 ```
 Needs `AC1_BIN`, `JAVA_HOME` (JDK 21) and jPSXdec (above). Decoded audio stays in
 `disc_map/extracted/AUDIO/` (gitignored); only the manifest is committed.
+
+**Re-injection** (`reinject_xa.py`, docs §6): writes a replacement WAV take into
+one TALK channel of a *copy* of the disc, driven by a manifest row. Encodes to
+4-bit XA-ADPCM with `xa_adpcm.py` (pure numpy: codec, Form 2 sector packing,
+CD-ROM EDC), rewrites exactly the clip's sectors keeping the original subheaders,
+refuses takes longer than the clip's sector budget, and can verify the result by
+decoding the patched stream with jPSXdec.
+```
+tools/audio/.venv/Scripts/python tools/audio/reinject_xa.py --clip TALK05_ch00_c000 \
+    --wav take.wav --image ~/dev/ac1_dub.bin --verify-jpsxdec     # copies $AC1_BIN -> --image first
+tools/audio/.venv/Scripts/python tools/audio/reinject_test.py   # codec / EDC / packing tests, no disc
+```
+`--image` must never be the pristine image (the script refuses it); `--dry-run`
+encodes and reports without writing, `--trim` cuts an over-long take.
 
