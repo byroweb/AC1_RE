@@ -87,25 +87,46 @@ boundary and yields garbage).
 
 ```python
 from tools.duckstation.savestate import SaveState
-ss = SaveState("SLUS-01323_resume.sav", disc_bin="Armored Core (v1.1).bin")
+ss = SaveState(r"C:\Users\bross\dev\ac1_states\M30-ctrl-01__20261017__v87.sav",
+               disc_bin=os.environ["AC1_BIN"])
+ss.mission_byte()   # 0x800411F8  (30)
 ss.stage_byte()     # 0x8004121B  (0 = menu/garage)
 ss.in_mission()     # objective-object ptr 0x8019F51C != 0 OR stage set
 ss.u32(0x801A26B8)  # entity array, etc.
 ```
 
-CLI:
+CLI (`--disc` defaults to `$AC1_BIN`; `--header` needs no disc):
 ```sh
-python3 tools/duckstation/savestate.py STATE.sav --disc DISC.bin --read 0x8019F51C
-python3 tools/duckstation/savestate.py STATE.sav --disc DISC.bin --dump-vram /tmp/vram.bin
+python tools/duckstation/savestate.py STATE.sav --header
+python tools/duckstation/savestate.py STATE.sav --read 0x8019F51C
+python tools/duckstation/savestate.py STATE.sav --dump-ram ram.bin
 ```
 
-## Findings on the current backups
+## Archived states (what exists offline)
 
-All 10 backup states (slots 1–10 + `resume`) are **menu/garage** — `stage_byte=0`,
-objective-object ptr `0`, player entity all-zero. So there is **no in-mission VRAM dump
-offline** right now; capturing the per-stage texture bank from VRAM needs a fresh
-in-mission state from the running emulator. (The companion `mods/farsi/docs/screens/vram_full_slot2.png`
-is likewise a garage VRAM — it holds parts/UI pages, not stage texture pages.)
+In-mission states **now exist** (2026-10-17/18 live session, build 0.1-12000, state
+version 87, pristine disc `48d9a31d7533…`), all in the library and in
+`disc_map/states/STATES.tsv`:
+
+| ID | what | reader says |
+| --- | --- | --- |
+| `GAR-main-01` | garage main menu after first boot | `mission=0 stage=0 objobj=0 in_mission=no` |
+| `M30-ctrl-01` | mission 30 "Eliminate Squatters", shortly after player control (saved while running) | `mission=30 stage=0 objobj=0x801C4B40 in_mission=yes` |
+| `M30-mid-01` | same mission after two rifle hits on MT slot 1 (HP 2050→1614), parent `M30-ctrl-01` | `mission=30 stage=0 objobj=0x801C4B40 in_mission=yes` |
+
+The reader is **validated on this PC**: `M30-ctrl-01` was read offline (zstd via the
+`zstandard` package) and its 2 MB RAM matches the live `dump_ram` of the same state
+(`M30-ctrl-01__20261017.ram.bin`, kept in the library) in all 512 pages; the mission byte
+and objective-object pointer agree with the emulator's live reads. So an **in-mission VRAM
+source exists offline** for the first time — the remaining gap is the VRAM offset (next
+section). Note `stage_byte=0` in mission 30 while `objobj` is set: `in_mission()` is true
+through the pointer, and the stage/PA byte's meaning in this mission is a question for
+MIS-11, not a reader fault.
+
+History: the June backups (slots 1–10 + `resume`, old PC) were all reported as
+menu/garage, but with the `0xe6c`-low RAM base described above, so that finding is
+unverified and those files are not on this PC. (`mods/farsi/docs/screens/vram_full_slot2.png`
+is a garage VRAM — parts/UI pages, not stage texture pages.)
 
 ## Caveat — VRAM offset
 
@@ -133,9 +154,8 @@ un-archived slot), `adopt` (register a hand-copied `.sav`), `check` (sha256 ever
 missing/orphan files), `list`, `show`, `refresh` (re-read the automatic columns),
 `set-status`. ID convention, columns and workflow: [`disc_map/states/README.md`](../disc_map/states/README.md).
 
-First entries (2026-10-17, build 0.1-12000, state version 87): `GAR-main-01` (garage after
-first boot) and `M30-ctrl-01` (mission 30 shortly after player control — the first
-in-mission state the project has had offline).
+First entries (2026-10-17/18, build 0.1-12000, state version 87): `GAR-main-01`,
+`M30-ctrl-01`, `M30-mid-01` — see "Archived states" above.
 
 Degradation: without a zstd decoder or without `$AC1_BIN`, `archive` still copies the file
 and records the header; the RAM-derived columns are written as `?`. Test harness on
