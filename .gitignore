@@ -80,3 +80,6 @@ ghidra_mission202/
 
 # Personal scratch / throwaway working files (screenshots, experiments)
 scratch/
+
+# Byte-match toolchain (downloaded/built by tools/match/setup.sh, never vendored)
+tools/match/vendor/

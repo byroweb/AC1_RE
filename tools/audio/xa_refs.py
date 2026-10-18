@@ -3,7 +3,7 @@
 xa_refs.py — which TALK radio lines does the game's data actually reference?
 
 Stage 8 of the voice pipeline: the static cross-check for the reclaimable-space
-report (reclaimable.py, docs/AUDIO_PIPELINE.md §6). The chain, all CONFIRMED on SLUS-01323 by reading the
+report (reclaimable.py, docs/AUDIO_PIPELINE.md §7). The chain, all CONFIRMED on SLUS-01323 by reading the
 mission overlay (`disc_map/overlays/ovl202_mission.bin`, load base 0x8004ADA0):
 
   mission script chunk 4            `play_sound <snd>`  (tools/mission/mission_script.py)

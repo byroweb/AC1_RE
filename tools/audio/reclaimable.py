@@ -2,7 +2,7 @@
 """
 reclaimable.py — disc space held by lines the localisation does not need.
 
-Stage 9 of the voice pipeline (docs/AUDIO_PIPELINE.md §6). Reads the committed
+Stage 9 of the voice pipeline (docs/AUDIO_PIPELINE.md §7). Reads the committed
 manifest (disc_map/voice_manifest.tsv — so the owner's `kind` edits count) and
 lists every clip whose kind is speech_ja, ambience or sfx with where it sits on
 the disc and how much XA payload it holds, plus per-file and grand totals, into
