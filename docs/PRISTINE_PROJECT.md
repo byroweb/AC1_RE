@@ -49,8 +49,10 @@ not C source. Because the resident bytes are identical, it transfers 1:1:
 ## Regenerate from scratch
 
 ```bash
-export XDG_CONFIG_HOME="$HOME/snap/ghidra/current/.config"   # so headless finds ghidra_psx_ldr
-HL=/snap/ghidra/current/ghidra_12.0_PUBLIC/support/analyzeHeadless
+HL="$GHIDRA_INSTALL_DIR/support/analyzeHeadless"   # Windows/Git Bash: …/analyzeHeadless.bat
+# Ubuntu snap instead of a zip install:
+#   export XDG_CONFIG_HOME="$HOME/snap/ghidra/current/.config"   # so headless finds ghidra_psx_ldr
+#   HL=/snap/ghidra/current/ghidra_12.0_PUBLIC/support/analyzeHeadless
 cd <repo>
 rm -rf AC_1_USA_2048_RE.gpr AC_1_USA_2048_RE.rep AC_1_USA_2048_RE.lock*
 
@@ -67,8 +69,9 @@ sed -e 's/farsi_gte_renderer_type6/gte_renderer_type6/g' \
   -postScript ApplyMarkup.java "$PWD/ac1_markup_pristine.tsv"
 ```
 
-> **Headless gotcha:** the PSX loader/language lives in the snap's settings dir,
-> so `analyzeHeadless` (run outside the snap sandbox) only finds it when
-> `XDG_CONFIG_HOME` points at `~/snap/ghidra/current/.config`. Without it you get
-> `Language not found for 'PSX:LE:32:default'`. Use the **12.0** headless
-> (`snap current` → 35); 12.1 lacks the extension.
+> **Headless gotcha (snap install):** the PSX loader/language lives in the snap's
+> settings dir, so `analyzeHeadless` (run outside the snap sandbox) only finds it
+> when `XDG_CONFIG_HOME` points at `~/snap/ghidra/current/.config`. Without it you
+> get `Language not found for 'PSX:LE:32:default'`. Use the **12.0** headless
+> (`snap current` → 35); the snap's 12.1 lacked the extension. A zip install with
+> `ghidra_psx_ldr` in `$GHIDRA_INSTALL_DIR/Ghidra/Extensions` needs none of this.

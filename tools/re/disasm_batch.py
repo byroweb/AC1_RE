@@ -36,9 +36,34 @@ DEFAULT_BIN = os.path.join(REPO, "overlays",
                            "mission_overlay_FDAT202_80050000.bin")
 DEFAULT_BASE = 0x80050000
 
-OBJDUMP = "mipsel-linux-gnu-objdump"
+
+
+def mips_prefix():
+    """Cross-toolchain prefix: $MIPS_PREFIX, else the first of mipsel-linux-gnu-
+    (apt) / mipsel-none-elf- (PCSX-Redux prebuilt) whose objdump is on PATH."""
+    import shutil
+    pfx = os.environ.get("MIPS_PREFIX")
+    if pfx:
+        return pfx
+    for pfx in ("mipsel-linux-gnu-", "mipsel-none-elf-"):
+        if shutil.which(pfx + "objdump"):
+            return pfx
+    return "mipsel-linux-gnu-"
+
+
+def m2c_python(m2c_dir):
+    """m2c venv interpreter: .venv/bin/python (POSIX) or .venv/Scripts/python.exe
+    (Windows), whichever exists."""
+    for rel in (("bin", "python"), ("Scripts", "python.exe")):
+        p = os.path.join(m2c_dir, ".venv", *rel)
+        if os.path.exists(p):
+            return p
+    return os.path.join(m2c_dir, ".venv", "bin", "python")
+
+
+OBJDUMP = mips_prefix() + "objdump"
 M2C_DIR = os.environ.get("M2C_DIR", os.path.expanduser("~/Applications/m2c"))
-M2C_PY = os.path.join(M2C_DIR, ".venv", "bin", "python")
+M2C_PY = m2c_python(M2C_DIR)
 M2C = os.path.join(M2C_DIR, "m2c.py")
 
 
@@ -86,12 +111,15 @@ def disasm_one(binpath, base, addr, length, name):
 
     # 1. objdump the slice as little-endian MIPS-I at its runtime VMA.
     #    objdump needs a real (seekable) file for `-b binary`, so use a temp.
-    with tempfile.NamedTemporaryFile(suffix=".bin") as tf:
-        tf.write(slice_bytes)
-        tf.flush()
+    #    (a closed file in a temp dir, not NamedTemporaryFile: Windows refuses
+    #    to let objdump open a file another process still holds open.)
+    with tempfile.TemporaryDirectory() as td:
+        slice_path = os.path.join(td, "slice.bin")
+        with open(slice_path, "wb") as tf:
+            tf.write(slice_bytes)
         dump = subprocess.run(
             [OBJDUMP, "-D", "-b", "binary", "-m", "mips:isa32", "-EL",
-             f"--adjust-vma={addr}", tf.name],
+             f"--adjust-vma={addr}", slice_path],
             capture_output=True)
     if dump.returncode != 0:
         return (False, False,

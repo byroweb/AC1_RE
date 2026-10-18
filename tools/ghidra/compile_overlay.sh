@@ -12,9 +12,11 @@
 # Toolchain flags per docs/REFERENCE.md §7 (note -march=r3000 REQUIRES -mfp32).
 set -euo pipefail
 SRC=$1; ADDR=$2; ENTRY=$3; OUT=$4; shift 4
-GCC=mipsel-linux-gnu-gcc
-OBJCOPY=mipsel-linux-gnu-objcopy
-NM=mipsel-linux-gnu-nm
+. "$(dirname "$0")/re_env.sh"
+PFX="$(re_mips_prefix)"   # $MIPS_PREFIX, else mipsel-linux-gnu- / mipsel-none-elf- (whichever is on PATH)
+GCC="${PFX}gcc"
+OBJCOPY="${PFX}objcopy"
+NM="${PFX}nm"
 TMP=$(mktemp -d)
 LDS="$TMP/ovl.ld"
 ELF="$TMP/out.elf"

@@ -21,8 +21,11 @@ LEN="${2:?need length}"
 BIN="${3:-$HERE/overlay_80050000.bin}"
 BASE="${4:-0x80050000}"
 
+. "$(dirname "$0")/re_env.sh"
 M2C="${M2C_DIR:-$HOME/Applications/m2c}"   # your m2c checkout (see setup_re_tools.sh)
-OBJDUMP="mipsel-linux-gnu-objdump"
+M2C_PY="$(re_m2c_python "$M2C")"          # .venv/bin/python or .venv/Scripts/python.exe
+OBJDUMP="$(re_mips_prefix)objdump"         # $MIPS_PREFIX, else mipsel-linux-gnu-/mipsel-none-elf-
+PY="$(re_python)"
 
 addr=$(( ADDR ))
 len=$(( LEN ))
@@ -41,7 +44,7 @@ dd if="$BIN" of="$tmp/slice.bin" bs=1 skip="$off" count="$len" status=none
   --adjust-vma="$addr" "$tmp/slice.bin" > "$tmp/dump.txt"
 
 # 3. convert objdump -> m2c asm (labels for branch targets, $-prefixed regs)
-python3 "$HERE/tools/ghidra/objdump2m2c.py" "$addr" < "$tmp/dump.txt" > "$tmp/fn.s"
+"$PY" "$HERE/tools/ghidra/objdump2m2c.py" "$addr" < "$tmp/dump.txt" > "$tmp/fn.s"
 
 # 4. decompile
-"$M2C/.venv/bin/python" "$M2C/m2c.py" -t mips-ido-c "$tmp/fn.s"
+"$M2C_PY" "$M2C/m2c.py" -t mips-ido-c "$tmp/fn.s"
