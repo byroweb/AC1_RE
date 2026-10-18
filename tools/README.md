@@ -119,3 +119,41 @@ via Ghidra + the MCP. Run it from the Ghidra Script Manager. (For one-off
 functions, `overlay2c.sh` is faster.)
 ```
 ```
+
+## jPSXdec (disc indexer + XA / STR decoder)
+The disc map (`disc_map/disc_files.json`) and the voice pipeline both use
+[jPSXdec](https://github.com/m35/jpsxdec) (Java; v2.x runs on the Temurin JDK 21 at
+`JAVA_HOME`). Install once:
+
+1. Download `jpsxdec_v2.1-beta.zip` from the official release page
+   <https://github.com/m35/jpsxdec/releases/tag/v2.1> into its own empty folder
+   (e.g. `~/dev/_dl/jpsxdec_v2.1/`).
+2. Verify it against the release's digest (shown by
+   `gh api repos/m35/jpsxdec/releases/latest --jq '.assets[0].digest'`):
+   `sha256sum jpsxdec_v2.1-beta.zip` → `e11787a2…cd45b` for v2.1.
+3. Unpack to `~/dev/jpsxdec/` (gives `~/dev/jpsxdec/jpsxdec_v2.1-beta/jpsxdec.jar`,
+   plus `doc/jPSXdec-manual.pdf`). The audio scripts find it there; elsewhere set
+   `JPSXDEC_JAR=/path/to/jpsxdec.jar`.
+
+Handy commands (jPSXdec writes `index.log`/`save.log`/`debug00.log` into the cwd —
+run it from a scratch dir, as the audio scripts do):
+```
+java -jar "$JPSXDEC_JAR" -f "$AC1_BIN" -x ac1.idx            # index the disc (~6 s)
+java -jar "$JPSXDEC_JAR" -x ac1.idx -i "GG/BGM/TALK00.XA[3]" -af wav -dir out   # one XA channel
+java -jar "$JPSXDEC_JAR" -x ac1.idx -i "GG/STR/ACED1.STR[0.0]" -af wav -dir out  # a video's audio
+```
+`tools/extract/build_filemap.py` turns such an index into `disc_files.json`.
+
+## `audio/` — spoken voice lines → manifest (`tools/audio/`)
+Extracts the TALK XA channels and STR audio tracks with jPSXdec, splits them into
+clips, transcribes them with faster-whisper (CPU), clusters speakers, matches the
+text against the MIS.T corpus and writes `disc_map/voice_manifest.tsv` plus a local
+review page. Full write-up: [`docs/AUDIO_PIPELINE.md`](../docs/AUDIO_PIPELINE.md).
+```
+tools/audio/setup_audio.sh                                   # venv + deps (once)
+tools/audio/.venv/Scripts/python tools/audio/run_all.py      # end to end
+tools/audio/.venv/Scripts/python tools/audio/audio_test.py   # unit tests
+```
+Needs `AC1_BIN`, `JAVA_HOME` (JDK 21) and jPSXdec (above). Decoded audio stays in
+`disc_map/extracted/AUDIO/` (gitignored); only the manifest is committed.
+

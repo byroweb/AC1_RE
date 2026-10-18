@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AC1 voice review</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Template for the LOCAL voice-line review page. tools/audio/build_manifest.py
+  replaces __ROWS_JSON__ with the manifest rows and writes the result next to
+  the decoded clips (disc_map/extracted/AUDIO/review.html). The generated page
+  references game audio and must never be published or committed.
+
+  Edits (text, voice label, notes, verified) are kept in this browser's
+  localStorage under the clip id, and "Export TSV" downloads a manifest with the
+  edits merged in — drop it over disc_map/voice_manifest.tsv.
+-->
+<style>
+  :root { --bg:#fff; --fg:#1b1b1b; --mut:#666; --line:#ddd; --acc:#2458c9; --ok:#1d8a3a; --warn:#b26a00; --bad:#b3261e; --row:#f7f7f7; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141518; --fg:#e8e8e8; --mut:#9a9a9a; --line:#333; --acc:#7aa2ff; --ok:#5fcf7f; --warn:#f0b35a; --bad:#ff7b72; --row:#1c1d21; } }
+  body { margin:0; padding:12px 16px; background:var(--bg); color:var(--fg); font:14px/1.4 system-ui, sans-serif; }
+  h1 { font-size:18px; margin:0 0 8px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin-bottom:10px; }
+  .bar label { color:var(--mut); }
+  select, input[type=text], button { font:inherit; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:4px; padding:3px 6px; }
+  button { cursor:pointer; } button.primary { background:var(--acc); color:#fff; border-color:var(--acc); }
+  table { border-collapse:collapse; width:100%; }
+  th, td { text-align:left; vertical-align:top; padding:6px 6px; border-bottom:1px solid var(--line); }
+  th { position:sticky; top:0; background:var(--bg); cursor:pointer; white-space:nowrap; }
+  tr.verified td { opacity:.65; }
+  tr:hover td { background:var(--row); }
+  td.txt { min-width:320px; }
+  textarea { width:100%; min-height:44px; font:inherit; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:4px; padding:4px; box-sizing:border-box; resize:vertical; }
+  .m { color:var(--mut); font-size:12px; }
+  .conf { font-variant-numeric:tabular-nums; }
+  .s-empty { color:var(--mut); } .s-check { color:var(--warn); } .s-matched { color:var(--ok); } .s-verified { color:var(--ok); font-weight:600; }
+  .cand { font-size:12px; margin-top:3px; }
+  .cand button { padding:1px 6px; font-size:12px; margin-right:4px; }
+  audio { width:220px; height:28px; }
+  .voices { display:flex; flex-wrap:wrap; gap:6px 14px; margin:6px 0 10px; font-size:12px; color:var(--mut); }
+  .voices b { color:var(--fg); }
+  kbd { border:1px solid var(--line); border-radius:3px; padding:0 4px; font-size:11px; }
+  @media (max-width: 800px) { td.txt { min-width:200px; } audio { width:150px; } }
+</style>
+</head>
+<body>
+<h1>AC1 voice-line review <span class="m" id="count"></span></h1>
+<div class="bar">
+  <label>status <select id="fStatus"><option value="">all</option><option>check</option><option>matched</option><option>empty</option><option>verified</option></select></label>
+  <label>source <select id="fSource"><option value="">all</option></select></label>
+  <label>voice <select id="fVoice"><option value="">all</option></select></label>
+  <label>find <input type="text" id="fText" placeholder="text / clip id" size="22"></label>
+  <label><input type="checkbox" id="hideVerified"> hide verified</label>
+  <button id="exportBtn" class="primary">Export TSV</button>
+  <button id="clearBtn">Clear local edits</button>
+  <span class="m">sorted lowest confidence first · <kbd>Enter</kbd> in a text box = mark verified · <kbd>Esc</kbd> = stop audio</span>
+</div>
+<div class="voices" id="voices"></div>
+<table>
+  <thead><tr>
+    <th data-k="confidence">conf</th><th>play</th><th data-k="clip_id">clip</th><th data-k="voice">voice</th>
+    <th>transcript (edit)</th><th data-k="similarity">corpus match</th><th data-k="status">status</th><th>notes</th>
+  </tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+<script>
+const DATA = __ROWS_JSON__;
+const LS = 'ac1_voice_review_v1';
+let edits = {};
+try { edits = JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) { edits = {}; }
+function saveEdits() { try { localStorage.setItem(LS, JSON.stringify(edits)); } catch (e) {} }
+function ed(id) { return edits[id] || (edits[id] = {}); }
+const voiceLabels = {};
+for (const r of DATA.rows) if (r.voice && r.voice_label) voiceLabels[r.voice] = r.voice_label;
+for (const v of DATA.voices) if (v.label) voiceLabels[v.voice] = v.label;
+for (const id in edits) if (edits[id].voice_label && edits[id].voice) voiceLabels[edits[id].voice] = edits[id].voice_label;
+
+function merged(r) {
+  const e = edits[r.clip_id] || {};
+  const out = Object.assign({}, r, e);
+  out.voice_label = e.voice_label !== undefined ? e.voice_label : (voiceLabels[r.voice] || r.voice_label || '');
+  if (out.verified === '1') out.status = 'verified';
+  else if (r.status === 'verified' && out.verified === '') out.status = r.similarity >= 85 ? 'matched' : 'check';
+  return out;
+}
+let sortKey = 'confidence', sortAsc = true;
+function esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function fillFilters() {
+  const srcs = [...new Set(DATA.rows.map(r => r.source_file))].sort();
+  const voices = [...new Set(DATA.rows.map(r => r.voice))].sort();
+  for (const s of srcs) fSource.insertAdjacentHTML('beforeend', `<option>${esc(s)}</option>`);
+  for (const v of voices) fVoice.insertAdjacentHTML('beforeend', `<option value="${esc(v)}">${esc(v)}${voiceLabels[v] ? ' · ' + esc(voiceLabels[v]) : ''}</option>`);
+  const vdiv = document.getElementById('voices');
+  vdiv.innerHTML = DATA.voices.map(v => `<span><b>${esc(v.voice)}</b> ${esc(voiceLabels[v.voice] || '')} · ${v.n_clips} clips · ${v.total_s}s · F0 ${v.f0_median_hz ?? '?'} Hz${v.processed_frac > 0.5 ? ' · processed' : ''}</span>`).join('');
+}
+
+function render() {
+  const fs = fStatus.value, fsrc = fSource.value, fv = fVoice.value, ft = fText.value.toLowerCase(), hv = hideVerified.checked;
+  let rows = DATA.rows.map(merged).filter(r =>
+    (!fs || r.status === fs) && (!fsrc || r.source_file === fsrc) && (!fv || r.voice === fv) &&
+    (!hv || r.status !== 'verified') &&
+    (!ft || (r.transcript + ' ' + r.verified_text + ' ' + r.clip_id + ' ' + r.matched_text + ' ' + r.auto_notes + ' ' + r.notes).toLowerCase().includes(ft)));
+  rows.sort((a, b) => { const x = a[sortKey], y = b[sortKey]; const c = (typeof x === 'number' && typeof y === 'number') ? x - y : String(x).localeCompare(String(y)); return sortAsc ? c : -c; });
+  document.getElementById('count').textContent = `${rows.length} of ${DATA.rows.length} clips · ${DATA.rows.filter(r => merged(r).status === 'verified').length} verified`;
+  const tb = document.getElementById('rows');
+  tb.innerHTML = rows.map(r => `
+    <tr class="${r.status === 'verified' ? 'verified' : ''}" data-id="${esc(r.clip_id)}">
+      <td class="conf">${r.confidence.toFixed(2)}<div class="m">lp ${r.avg_logprob}<br>nsp ${r.no_speech_prob}</div></td>
+      <td><audio controls preload="none" src="${esc(r.wav)}"></audio><div class="m">${r.duration_s}s · sectors ${r.sector_first}–${r.sector_last}</div></td>
+      <td><b>${esc(r.clip_id)}</b><div class="m">${esc(r.source_file)} ch${r.channel}</div></td>
+      <td>${esc(r.voice)}<br><input type="text" data-f="voice_label" value="${esc(r.voice_label)}" placeholder="name this voice" size="12"><div class="m">F0 ${r.f0_hz || '?'} Hz${r.processed === 1 || r.processed === '1' ? ' · processed?' : ''}</div></td>
+      <td class="txt"><textarea data-f="verified_text" placeholder="${esc(r.transcript)}">${esc(r.verified_text || r.transcript)}</textarea><div class="m">whisper: ${esc(r.transcript)}</div></td>
+      <td>${r.matched_string_id ? `<span class="${r.similarity >= 85 ? 's-matched' : 'm'}">${r.similarity}</span> <span class="m">${esc(r.matched_string_id)}</span><div>${esc(r.matched_text)}</div>
+        <div class="cand"><button data-accept="${esc(r.matched_text)}">accept</button>${(r.candidates || []).slice(1).map(c => `<button data-accept="${esc(c.text)}" title="${esc(c.id)}">${c.similarity}</button>`).join('')}</div>` : '<span class="m">—</span>'}</td>
+      <td class="s-${esc(r.status)}">${esc(r.status)}<br><label class="m"><input type="checkbox" data-f="verified" ${r.verified === '1' ? 'checked' : ''}> verified</label></td>
+      <td><input type="text" data-f="notes" value="${esc(r.notes)}" size="18"><div class="m">${esc(r.auto_notes)}</div></td>
+    </tr>`).join('');
+}
+
+document.getElementById('rows').addEventListener('change', ev => {
+  const tr = ev.target.closest('tr'); if (!tr) return;
+  const id = tr.dataset.id, f = ev.target.dataset.f; if (!f) return;
+  const e = ed(id);
+  if (f === 'verified') e.verified = ev.target.checked ? '1' : '';
+  else e[f] = ev.target.value;
+  if (f === 'voice_label') { const row = DATA.rows.find(r => r.clip_id === id); e.voice = row.voice; voiceLabels[row.voice] = ev.target.value; }
+  saveEdits();
+  if (f === 'verified' || f === 'voice_label') render();
+});
+document.getElementById('rows').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-accept]'); if (!b) return;
+  const tr = b.closest('tr'), id = tr.dataset.id, e = ed(id);
+  e.verified_text = b.dataset.accept; e.verified = '1'; saveEdits(); render();
+});
+document.getElementById('rows').addEventListener('keydown', ev => {
+  if (ev.key === 'Enter' && !ev.shiftKey && ev.target.tagName === 'TEXTAREA') {
+    ev.preventDefault(); const tr = ev.target.closest('tr'), e = ed(tr.dataset.id);
+    e.verified_text = ev.target.value; e.verified = '1'; saveEdits(); render();
+  }
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') document.querySelectorAll('audio').forEach(a => a.pause()); });
+document.querySelectorAll('th[data-k]').forEach(th => th.addEventListener('click', () => {
+  const k = th.dataset.k; if (sortKey === k) sortAsc = !sortAsc; else { sortKey = k; sortAsc = true; } render();
+}));
+for (const id of ['fStatus', 'fSource', 'fVoice', 'hideVerified']) document.getElementById(id).addEventListener('change', render);
+fText.addEventListener('input', render);
+document.getElementById('clearBtn').addEventListener('click', () => { if (confirm('Discard all local edits?')) { edits = {}; saveEdits(); render(); } });
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const cols = DATA.columns;
+  const clean = v => String(v ?? '').replace(/[\t\r\n]+/g, ' ');
+  const lines = [cols.join('\t')];
+  for (const r of DATA.rows) { const m = merged(r); lines.push(cols.map(c => clean(m[c])).join('\t')); }
+  const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/tab-separated-values' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'voice_manifest.tsv'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+fillFilters(); render();
+</script>
+</body>
+</html>

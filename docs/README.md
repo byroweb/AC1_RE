@@ -45,6 +45,10 @@ facts from open questions:
   mission text corpus + thumbnail TIMs).
 - [DISC_TEXT_INVENTORY.md](DISC_TEXT_INVENTORY.md) — disc-wide inventory of every
   player-facing translatable string.
+- [AUDIO_PIPELINE.md](AUDIO_PIPELINE.md) — the spoken voice lines: where the XA speech
+  lives (TALK00–05 channels, STR audio tracks), the extract → transcribe → speaker-cluster
+  → text-match pipeline (`tools/audio/`), the `voice_manifest.tsv` columns and how a dub
+  would be re-injected.
 
 ### Missions / levels
 - [MISSION_STATE_MACHINE.md](MISSION_STATE_MACHINE.md) — **start here for the mission

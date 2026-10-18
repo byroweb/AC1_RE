@@ -1,0 +1,10 @@
+# Voice pipeline deps (tools/audio). Install via tools/audio/setup_audio.sh, which adds
+# the PyTorch CPU wheel index so torch does not pull CUDA builds.
+numpy>=2.0
+scipy>=1.13
+soundfile>=0.12
+rapidfuzz>=3.9
+faster-whisper>=1.1
+torch>=2.4
+torchaudio>=2.4
+speechbrain>=1.0
