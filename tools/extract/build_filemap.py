@@ -93,8 +93,9 @@ def main():
                 files.append(rec)
                 by_id[ident] = rec
             else:
-                # sub-stream: ID looks like "GG/MS/MIS.T[3]" or "GG/BGM/BGM00.XA[0]"
-                base = re.sub(r"\[\d+\]$", "", ident)
+                # sub-stream: ID looks like "GG/MS/MIS.T[3]", "GG/BGM/BGM00.XA[0]" or,
+                # for a video's interleaved audio, "GG/STR/ACED1.STR[0.0]"
+                base = re.sub(r"\[[\d.]+\]$", "", ident)
                 child = {
                     "idx": rec_idx,
                     "id": ident,
@@ -128,6 +129,7 @@ def main():
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(out, f, indent=1)
+        f.write("\n")
 
     # ---- summary + validation against docs/REFERENCE.md §9 ground truth ----
     def find(p):

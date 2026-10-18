@@ -20,7 +20,7 @@ flagged renderable** by the existing renderer. That means the Farsi
 **with no new renderer** — only the bytes change (+ checksum recompute, §6).
 
 ## Deliverables
-- `disc_map/disc_files.json` — exact file map (133 files) from the jPSXdec `.idx`,
+- `disc_map/disc_files.json` — exact file map (124 files, plus their introspected children — Tim, Video, XA) from the jPSXdec `.idx`,
   re-pointed at the **pristine** backup image.
 - `tools/extract/build_filemap.py` — `.idx` → file map (validated vs `REFERENCE.md` §9).
 - `tools/extract/extract_t.py` — generalized `.T` extractor (auto-detects count-first /
