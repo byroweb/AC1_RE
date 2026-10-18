@@ -152,7 +152,7 @@ over `disc_map/voice_manifest.tsv` and commit.
 - Everything runs on CPU. The Intel Arc GPU is unused (no CUDA; CTranslate2 has no
   oneAPI build).
 
-## 6. Reinjection — putting a dub back (CONFIRMED on a copy of the disc)
+## 6. Reinjection — putting a dub back (CONFIRMED on a copy of the disc, plays in DuckStation)
 
 The game addresses a line as *(file, channel, sector)*, so a dubbed line must
 occupy **the same channel and no more audio sectors** than the original: for each
@@ -236,10 +236,103 @@ on the copy, on this disc:
 | 1.2 s / 44.1 kHz / stereo synthetic take into a 0.853 s budget | refused ("0.347 s longer"); with `--trim`: downmix + resample + cut, 55 dB SNR |
 | pristine image as `--image` | refused; `--dry-run` reads it without writing |
 
-Not yet exercised: **playback in the game** (DuckStation / hardware) of a patched
-image — the sector format is byte-for-byte what the disc uses, so this is expected
-to just work, but it is the next thing to check, ideally with a mission that
-triggers the dubbed channel.
+### In-game playback (CONFIRMED in DuckStation, 2026-10-18)
+
+The game plays a line written by `reinject_xa.py`. Test: `TALK00_ch12_c000`
+("This is the guard. We've cornered the enemy...", 42 sectors = 4.48 s) was
+replaced in a copy of the disc by an obviously different take — a 0.4 s 300→3000 Hz
+chirp, 0.1 s silence, then the `TALK01_ch13_c000` line ("I think we've been
+noticed...", another speaker) — with `--verify-jpsxdec` (55 dB SNR). The line was
+then triggered in the running game, on the pristine image and on the patched copy,
+and DuckStation's own media capture (`capture` MCP tool, AAC 44.1 kHz) was decoded
+and cross-correlated (normalised, after resampling to 37800 Hz) against the take and
+against all 96 TALK channel decodes:
+
+| run | drive during the line | best match | NCC |
+| --- | --- | --- | --- |
+| pristine image | streams `TALK00.XA` (LBA 60442 → 62596 at 2×) | `TALK00_ch12` | **0.963** |
+| patched copy | same sectors, same timing | the take (`take_ch12.wav`) | **0.950** |
+| patched copy | | `TALK01_ch13` (the line inside the take) | 0.947 |
+| patched copy | | `TALK00_ch12` (the original line) | < 0.13 (noise floor, like every other channel) |
+
+Per-100 ms windows of the patched run correlate 0.76–1.00 with the take over its
+whole 4.34 s (the chirp windows at 1.00), no window is silent, and the game's radio
+state bytes (`0x80041BBE..C3`, below) go through the same values as with the
+original line, so the dub plays cleanly at the original level with no dropout or
+glitch audible in the capture. Nothing else in the mission changed (the other
+channels are byte-identical anyway).
+
+**How the line was triggered.** Missions 30 and 31 (the two offered on a new game)
+play no radio line in their first 90 s — their chunk-4 scripts have no `play_sound`
+— so the game's own radio player was called directly from the debugger:
+
+- `FUN_8004DB18(u16 id)` is the XA line player (`id == 0xFFFF` stops). `id >> 4`
+  indexes a 36-byte-per-entry XA file table at `0x80031764` (entries **3..8 =
+  `TALK00..05`**, 0/1 = `BGM00/01`, 9..20 = the `CPUxx` arena tracks; `CdlLOC` of the
+  file at `+32`, one u16 per channel at `+2·ch`, `0xE000 | n` for TALK channels),
+  `id & 15` is the XA channel. It stores the id at `0x80041BBE`, builds the
+  `CdlFILTER {file=1, chan}` on the stack, issues `CdControl(CdlSetfilter)` then
+  `CdControl(CdlSetloc)` with the file's `CdlLOC`, and streams. The mission BGM goes
+  through the same function (id `0x16` = `BGM01` channel 6 in mission 30), which is
+  why the music stops while a line plays. The sound-sequence interpreter
+  (`0x800532A0`, called from the script VM's `play_sound`) has an opcode that calls it
+  with `operand + 0x30`, i.e. TALK lines are numbered 0..95 in `TALKnn` channel order.
+- Procedure (sadnescity DuckStation MCP fork, port 2346): boot the copy's `.cue`,
+  load `M30-ctrl-01` — **a state re-points DuckStation at the media path stored in
+  its header**, so a copy of the `.sav` with the path at `offset_to_media_path`
+  (`+0xac`/`+0xa8`) rewritten to the copy's `.cue` was staged in a scratch slot —
+  put an execute breakpoint on a per-frame game function entry (`0x8005804C`),
+  on the hit save all GPRs, set `a0 = 0x3C`, `ra = hook`, `pc = 0x8004DB18`,
+  continue until the hook fires again (≈ the line's `CdControl` sync), restore
+  every GPR, remove the breakpoint, start the capture and continue. After the
+  line the drive keeps reading `TALK00.XA` to its end and the radio state byte
+  `0x80041BC2` goes `0xFF → 0xF0`, on both images.
+
+### Repeating the test: `tools/duckstation/radio_line.py`
+
+The procedure above is one committed tool (standard library only for the emulator
+part; numpy/scipy/PyAV from `tools/audio/.venv` for the correlation). Given a clip id
+from the voice manifest (or a raw `--id`), the `.cue` of the disc copy and a state id
+from `disc_map/states/STATES.tsv`, it stages the state into a scratch slot with the
+header's media path rewritten to that `.cue`, boots the copy (shutting down whatever
+runs first), loads the slot, breaks on `0x8005804C`, calls `FUN_8004DB18(id)` with all
+registers saved and restored, records with the `capture` MCP tool, decodes the MP4 and
+prints the NCC of the take and of every channel decode of the stream against the capture:
+
+```bash
+tools/audio/.venv/Scripts/python tools/duckstation/radio_line.py \
+    --clip TALK00_ch12_c000 --disc ~/dev/ac1_dub.cue --state M30-ctrl-01 --slot 9 \
+    --capture out/dub.mp4 --take take.wav --wav-out out/dub.wav --json out/dub.json \
+    --shutdown --boot-after "${AC1_BIN%.bin}.cue" --load-after 3 --delete-slot
+tools/audio/.venv/Scripts/python tools/duckstation/radio_line.py \
+    --clip TALK00_ch12_c000 --disc "${AC1_BIN%.bin}.cue" --capture out/pristine.mp4   # reference run
+tools/audio/.venv/Scripts/python tools/duckstation/radio_line.py \
+    --clip TALK00_ch12_c000 --analyse-only out/dub.mp4 --take take.wav         # correlate later
+```
+
+`--disc` may be the pristine `.cue` for a reference run (it is only booted, never
+written). The slot is refused unless it is empty, archived in `STATES.tsv`, or was
+written by the tool itself (it leaves a `.radio_line.json` marker next to the slot
+file and `--delete-slot` only removes slots with a matching marker; `--force`
+overrides both). Expect ~3 minutes per run: once a breakpoint has been used, every
+MCP call takes ~2 s for the rest of the emulator session, most of it in the restore
+of the 35 saved registers. The tool checks that the XA file table entry's `CdlLOC`
+matches the manifest's first sector of the stream and that the radio-state id at
+`0x80041BBE` is the requested one, and logs the drive's LBA so a run that never
+read the stream's sectors is visible.
+
+Re-run on 2026-10-18 with the tool on a fresh copy (`TALK00_ch12_c000`, same take,
+state `M30-ctrl-01`, slot 9, 2 min 43 s wall clock): file table entry 3 `CdlLOC` = LBA
+60284 as in the manifest, the player returned in 6.2 s, radio state `3c 00 01 01 ff`
+then `f0` after the line, the drive logged inside `TALK00.XA` throughout (LBA
+60682 → 61640), and the capture's NCC was **0.950 against the take** at 0.56 s,
+0.043 against the original `TALK00_ch12` and ≤ 0.063 against every other channel of
+the stream — the documented result, reproduced.
+
+Not done: hardware (a burned disc / ODE) and a line triggered by a mission script
+rather than the debugger — the latter only needs a save state in a mission whose
+script has `play_sound` (missions 1, 3, 4, 6, 9, 10, 12, 13, 14, 17, 18, 21, 26,
+27, 33, 40, 46, 49), none of which is reachable from the archived states yet.
 
 For the STR endings, the speech sits mixed into the stereo music track; a dub there
 means re-mixing the whole track (music stem is not available separately) and
