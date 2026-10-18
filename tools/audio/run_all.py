@@ -2,7 +2,8 @@
 """
 run_all.py — the whole voice pipeline in one command.
 
-  extract_voice -> split_utterances -> transcribe -> speakers -> match_text -> build_manifest
+  extract_voice -> split_utterances -> transcribe -> classify -> speakers -> match_text
+      -> build_manifest -> xa_refs -> reclaimable
 
 Each stage is a script in this directory and resumes from what is already on
 disk (decoded WAVs, finished transcripts), so re-running after an interruption
@@ -23,10 +24,11 @@ import sys
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-STAGES = ["extract", "split", "transcribe", "speakers", "match", "manifest"]
+STAGES = ["extract", "split", "transcribe", "classify", "speakers", "match", "manifest", "refs", "reclaim"]
 SCRIPTS = {
     "extract": "extract_voice.py", "split": "split_utterances.py", "transcribe": "transcribe.py",
-    "speakers": "speakers.py", "match": "match_text.py", "manifest": "build_manifest.py",
+    "classify": "classify.py", "speakers": "speakers.py", "match": "match_text.py", "manifest": "build_manifest.py",
+    "refs": "xa_refs.py", "reclaim": "reclaimable.py",
 }
 
 
@@ -38,7 +40,7 @@ def main():
         argv, extra = argv[:i], argv[i + 1:]
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--from", dest="start", choices=STAGES, default="extract")
-    ap.add_argument("--to", dest="stop", choices=STAGES, default="manifest")
+    ap.add_argument("--to", dest="stop", choices=STAGES, default="reclaim")
     ap.add_argument("--out", help="work dir (default disc_map/extracted/AUDIO or $AC1_AUDIO_DIR)")
     ap.add_argument("--force", action="store_true", help="redo decoded wavs, clips and transcripts")
     ap.add_argument("--skip-demoplay", action="store_true", help="extract: skip GG/STR/DEMOPLAY.STR")
