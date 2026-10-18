@@ -214,9 +214,22 @@ def main():
             if len(cols) >= 5:
                 cols[4] = re.sub(r"\b" + re.escape(old) + r"\b", e["name"], cols[4], count=1)
             out[i] = "\t".join(cols)
-        for e in missing:
+        # Insert new F rows in address order among the existing F rows
+        # (ac1_markup.tsv keeps its F rows sorted, followed by the C rows).
+        for e in sorted(missing, key=lambda x: x["addr"], reverse=True):
             n = label_name(e)
-            out.append(f"F\t{e['addr']:08x}\t{n}\tunknown\tundefined {n}(void)")
+            row = f"F\t{e['addr']:08x}\t{n}\tunknown\tundefined {n}(void)"
+            pos = len(out)
+            for i, ln in enumerate(out):
+                cols = ln.split("\t")
+                if cols[0] == "F" and len(cols) > 2:
+                    try:
+                        if int(cols[1], 16) > e["addr"]:
+                            pos = i
+                            break
+                    except ValueError:
+                        pass
+            out.insert(pos, row)
         with open(a.merged, "w", encoding="utf-8", newline="\n") as f:
             f.write("\n".join(out) + "\n")
         print(f"merged markup written: {a.merged} "
