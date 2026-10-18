@@ -60,6 +60,10 @@ mods/farsi/docs/screens/vram_full_*.png
 disc_map/*_text.txt
 disc_map/text_inventory.csv
 disc_map/extracted/
+# Decoded voice audio, clips, whisper/speaker caches and the generated review page
+# (tools/audio pipeline) — game audio, never distribute
+disc_map/extracted/AUDIO/
+tools/audio/.venv/
 # Exported meshes / renders derived from game geometry — never distribute
 disc_map/*.obj
 disc_map/**/*.obj
