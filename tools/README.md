@@ -110,6 +110,26 @@ Import in Ghidra: Script Manager → `ImportSymbolsScript.py` → pick the `.txt
 (`name 0xADDR f` per line creates the function + label). `ac1_markup_pristine.tsv` is
 never written. `--source <path>` works offline from a saved copy.
 
+## `wyrelade_layout.py` — every code unit's layout + v1.0 hash, re-verified on your disc
+Same source and same rule (facts only, fetched at run time): the Wyrelade splat configs
+(`configs/USA/*.yaml`, `mission_overlays.txt`) give, for the exe and all 62 `FDAT.T` code
+entries, the load address, size, `.rodata`/`.text`/`.data` boundaries, the v1.0 SHA-1 and
+which mission overlay is a byte-identical alias (168 = 166). The committed table is
+`overlays/CODE_UNITS.tsv`.
+```
+python tools/ghidra/wyrelade_layout.py --out overlays/CODE_UNITS.tsv   # regenerate the table
+python tools/ghidra/wyrelade_layout.py --check                          # carve every unit from $AC1_BIN,
+                                                                        # compare SHA-1 with v1.0
+python tools/ghidra/wyrelade_layout.py --md                             # Markdown table
+```
+`--check` is the reproducible proof behind the "v1.1 code == v1.0 code" note in
+`docs/REFERENCE.md` (2026-10-18: 63 identical, 0 different). The `text_va`/`text_end_va`
+columns are the ranges to feed `disasm_batch.py` / `overlay2c.sh` for each overlay.
+
+What that repo does **not** give us: its `configs/USA/sym.fdat*.txt` symbol files are
+empty and `sym.main.txt` holds only the PsyQ names already covered by `psyq_labels.py`;
+its game-function names live in its C source, which we do not copy.
+
 ## Byte-matching toolchain (retail compiler, optional)
 The retail code is **PsyQ 4.0 `CC1PSX` = GCC 2.7.2 (SN32 3.7.0002)** assembled by
 **ASPSX 2.56** (identification: the Wyrelade repo's compiler probe; details in

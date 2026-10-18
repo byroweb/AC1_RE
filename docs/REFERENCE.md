@@ -46,16 +46,23 @@ mastering (sector layout). Consequences:
   matching decompilation of v1.0 (CC0) is a direct source of **facts** for us —
   addresses, names, splat layout, compiler identification. We do not copy its C.
 - Layout facts carried over from its splat configs (file offsets; the EXE maps at
-  `0x80011000` with a `0x800` header, overlay 201 at `0x8004ADA0`):
+  `0x80011000` with a `0x800` header, program overlays at `0x8004ADA0`). The full
+  63-unit table (exe + 62 `FDAT.T` code entries: load address, size, `.rodata` /
+  `.text` / `.data` boundaries, v1.0 SHA-1, alias pairs) is
+  [`overlays/CODE_UNITS.tsv`](../overlays/CODE_UNITS.tsv), regenerated and
+  re-verified against your own disc by `tools/ghidra/wyrelade_layout.py --check`
+  (2026-10-18 on the SLUS-01323 image: 63 identical, 0 different).
 
 | Unit | `.rodata` | code (`.text`) | data |
 | --- | --- | --- | --- |
-| `SLUS_013.23` / `SCUS_941.82` | file `0x800`–`0x1664` | from `__main` (`0x80011E64`) | from file `0x20DB4` (VA `0x800315B4`) |
-| FDAT 201 (front end) | `0`–`0x2F20` (VA `0x8004ADA0`–`0x8004DCC0`) | `0x2F20`–`0x6C04C` (VA `0x8004DCC0`–`0x800B6DEC`) | to `0x84800` |
-| FDAT 202 / 203 / 204 | — | loaded at `0x8004ADA0` (0x46000 / 0x41800 / 0x41800 bytes) | — |
-| mission overlays 0–98, 120, 140 (even) | — | `0x801C4B40` | followed by the mission's data entry |
-| mission overlays 160–168 (even) | — | `0x801C8460` | base from FDAT 204's loader |
-| mission overlays 180–186 (even) | — | `0x801B80C8` | base from FDAT 203's loader |
+| `SLUS_013.23` / `SCUS_941.82` | file `0x800`–`0x1664` | from `__main` (`0x80011E64`) to `0x800315B4` | from file `0x20DB4` (VA `0x800315B4`) |
+| FDAT 201 (front end, 0x84800 B) | `0`–`0x2F20` | VA `0x8004DCC0`–`0x800B6DEC` | from `0x6C04C` (VA `0x800B6DEC`) |
+| FDAT 202 (mission, 0x46000 B) | `0`–`0x141C` | VA `0x8004C1BC`–`0x8008D91C` | from `0x42B7C` (VA `0x8008D91C`) |
+| FDAT 203 (mode 1, 0x41800 B) | `0`–`0x1070` | VA `0x8004BE10`–`0x800895C4` | from `0x3E824` (VA `0x800895C4`) |
+| FDAT 204 (mode 2, 0x41800 B) | `0`–`0x1018` | VA `0x8004BDB8`–`0x800893C0` | from `0x3E620` (VA `0x800893C0`) |
+| mission overlays 0–98, 120, 140 (even) | small | `0x801C4B40` + per-unit `.text` offset | followed by the mission's data entry |
+| mission overlays 160–168 (even) | small | `0x801C8460` (base from FDAT 204's loader) | 168 is a byte-identical alias of 166 |
+| mission overlays 180–186 (even) | small | `0x801B80C8` (base from FDAT 203's loader) | — |
 
 ### Retail compiler
 
