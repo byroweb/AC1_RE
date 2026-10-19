@@ -55,3 +55,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-19T02:42:25Z	ovl202	0x80087798	match	3	
 2026-10-19T02:43:57Z	ovl201	0x800B4F48	match	8	
 2026-10-19T02:47:38Z	ovl202	0x80079370	giveup	2	first diff 0x0: pad struct D_80040FA8 addressed via base reg in retail (lui/addiu then lhu 670/666, lw 0) but direct lui/lhu here; body structure matches
+2026-10-19T04:13:15Z	ovl202	0x80079370	match	12	
