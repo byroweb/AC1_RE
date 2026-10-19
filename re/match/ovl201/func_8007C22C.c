@@ -1,9 +1,6 @@
-#include "ac1_types.h"
-typedef struct {
-    u8 pad[0x42];
-    u16 a;          /* +0x42 */
-} Func8007C22CObj;
-void func_8007C22C(Func8007C22CObj *o)
+/* ovl201 func_8007C22C - turn the object by -32 about Y. */
+#include "ac1/ac1.h"
+void func_8007C22C(UiObj *o)
 {
-    o->a -= 32;
+    o->rot.vy -= 32;
 }

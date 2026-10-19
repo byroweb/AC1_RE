@@ -146,6 +146,9 @@ def collect(ledger_paths, functions, giveup_attempts):
                 continue
             y = float(e["attempts"])
         else:
+            if e["attempts"] <= 0:       # tool give-up (e.g. inventory mis-split), says nothing about difficulty
+                skipped.append((key, "give-up with 0 attempts"))
+                continue
             y = float(giveup_attempts)
         sample.append({"key": key, "row": r, "status": e["status"], "attempts": y})
     return sample, skipped

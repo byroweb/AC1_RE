@@ -59,7 +59,7 @@ The menu/garage loop (renamed `main_frame_loop`) iterates the pool at stride
   model/particle renderers, 2 = `farsi_gte_renderer_type6`, 6 = `draw_string`).
 - `obj+0x20` = MATRIX, `obj+0x40` = SVECTOR rot, `obj+0x48` = pos VECTOR,
   `obj+0x58` = scale, `obj+0x6c` = parent ptr, `obj+0x68` = attach link.
-- helper `mat_set_translation` (`0x80028074`) copies a VECTOR into MATRIX.t (+0x14).
+- helper `TransMatrix` (`0x80028074`, libgte; was labelled `mat_set_translation` here) copies a VECTOR into MATRIX.t (+0x14).
 > NB: this loop's code is **not resident during a mission** (RAM at 0x8009BD64
 > reads as zero in-arena) — it is the menu overlay. The in-mission frame loop is
 > in the mission overlay and reuses the same pool; its exact per-object dispatch

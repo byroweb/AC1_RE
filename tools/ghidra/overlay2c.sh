@@ -44,7 +44,7 @@ dd if="$BIN" of="$tmp/slice.bin" bs=1 skip="$off" count="$len" status=none
   --adjust-vma="$addr" "$tmp/slice.bin" > "$tmp/dump.txt"
 
 # 3. convert objdump -> m2c asm (labels for branch targets, $-prefixed regs)
-"$PY" "$HERE/tools/ghidra/objdump2m2c.py" "$addr" < "$tmp/dump.txt" > "$tmp/fn.s"
+"$PY" "$HERE/tools/ghidra/objdump2m2c.py" "$(printf 0x%x "$addr")" < "$tmp/dump.txt" > "$tmp/fn.s"
 
 # 4. decompile
-"$M2C_PY" "$M2C/m2c.py" -t mips-ido-c "$tmp/fn.s"
+"$M2C_PY" "$M2C/m2c.py" -t mips-gcc-c "$tmp/fn.s"

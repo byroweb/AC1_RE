@@ -30,15 +30,16 @@ import ledger  # noqa: E402
 
 FUNCTIONS = os.path.join(HERE, "functions.tsv")
 
-# hand-weighted difficulty, last reviewed against 55 ledger rows (refit.py, 2026-10-18)
-# Spearman(score, attempts) = 0.63; see README "Weights" for why the fit is not applied literally.
+# hand-weighted difficulty, reviewed 2026-10-18 against 78 ledger outcomes, 24 of them the
+# harder calibration round (queue-C1..C3).  Spearman(score, attempts) 0.740 -> 0.784 over all,
+# 0.567 -> 0.799 on the calibration round; see README "Weights" for the evidence per weight.
 WEIGHTS = {
     "instructions": 1.00,   # log1p: size dominates (more statements to get right)
-    "branches":     1.00,   # log1p: control flow; both 2026-10-18 give-ups were branch-heavy (0.60 before refit)
-    "gte_ops":      0.80,   # log1p: GTE macros/inline asm are hard to reproduce
-    "stack_size":   0.30,   # log1p: frames; every >1-attempt match had one (0.15 before refit)
-    "jump_tables":  1.50,   # per table: switch layout + --rodata address needed
-    "calls":        0.30,   # log1p, subtracted: calls are cheap instructions
+    "branches":     1.00,   # log1p: control flow, block layout and merging of identical blocks
+    "gte_ops":      1.00,   # log1p: inline-asm GTE macros work; 4 samples (3, 4, 6, give-up)  (0.80 before)
+    "stack_size":   0.80,   # log1p: frames = register pressure + frame-size fiddling  (0.30 before)
+    "jump_tables":  0.25,   # per table: --rodata is pre-filled; 4 samples took 1-3 tries  (1.50 before)
+    "calls":        0.60,   # log1p, subtracted: call lists are glue code (25 calls, 1 try)  (0.30 before)
 }
 MIN_INSTRUCTIONS = 3        # skip `jr ra; nop` empty stubs (--min-instructions 2 to include)
 

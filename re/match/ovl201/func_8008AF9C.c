@@ -1,9 +1,7 @@
-#include "ac1_types.h"
-typedef struct {
-    u8 pad;
-    u8 flag;        /* +0x01 */
-} Func8008AF9CObj;
-void func_8008AF9C(Func8008AF9CObj *o)
+/* ovl201 func_8008AF9C - request retirement: the frame loop calls destroy, then frees
+ * the slot. */
+#include "ac1/ac1.h"
+void func_8008AF9C(UiObj *o)
 {
-    o->flag = 1;
+    o->kill = 1;
 }

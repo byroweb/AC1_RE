@@ -195,6 +195,11 @@ include the delay slot after the final `jr ra`.
 - `setup.sh` — toolchain bring-up (see Install)
 - `match_fn.py` — the oracle
 - `include/ac1_types.h` — `u8/u16/u32/s8/s16/s32` for hand-written sources
+- `include/ac1/ac1.h` — forwarder so a source can `#include "ac1/ac1.h"` and get the shared
+  struct layouts and named globals in `<repo>/include/ac1` (see `include/ac1/README.md`);
+  such rows add `--syms include/ac1/symbols.tsv --syms ac1_markup.tsv`
+- `ctx.py` — keeps `include/ac1/symbols.h` in step with `symbols.tsv`, writes the m2c
+  context, and decompiles one function with it (`ctx.py m2c VADDR --unit 201`)
 - `tests/` — pytest suite, shell runner, the two sources
 - `vendor/` — gitignored toolchain (`cc1[.exe]`, `maspsx/`, `toolchain.json`, `VERSIONS.txt`, `cache/`)
 - `.claude/skills/match-function/SKILL.md` — the Claude loop that uses this
