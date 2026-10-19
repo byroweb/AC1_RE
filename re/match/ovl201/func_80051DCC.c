@@ -1,11 +1,6 @@
-#include "ac1_types.h"
-typedef struct {
-    u8 pad[0x4C];
-    s32 offset;     /* +0x4C */
-    u8 pad2[0x7C - 0x50];
-    s8 *src;        /* +0x7C */
-} Func80051DCCObj;
-void func_80051DCC(Func80051DCCObj *o)
+/* ovl201 func_80051DCC - list row: y = (signed byte at src) * 24. */
+#include "ac1/ac1.h"
+void func_80051DCC(UiObj *o)
 {
-    o->offset = *o->src * 24;
+    o->pos.vy = *(s8 *)o->w.list.src * 24;
 }
