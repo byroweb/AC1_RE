@@ -162,6 +162,7 @@ excludes anyway.  `--no-markup-starts` keeps the pure heuristic for the exe.
 
 ```
 rank.py [-n 20] [--unit ovl201] [--tsv] [--max-score S] [--min-instructions 3] [--calibrate]
+rank.py --missions [...]                 # mission overlays: one function per twin group, by payoff
 ```
 
 Filters `functions.tsv` to `is_psyq == 0`, not in the ledger as `match` or
@@ -209,6 +210,51 @@ next useful calibration data.
 Top of `rank.py --unit ovl201` today: 3-instruction leaf setters
 (`li v0,1; jr ra; sb v0,1(a0)`), then frameless leaves of 4–9 instructions
 without branches; framed functions and functions with branches follow.
+
+### Mission mode (`--missions`)
+
+```
+rank.py --missions [-n 20] [--unit fdat020] [--tsv] [--max-score S] [--min-instructions 3] [--twins F]
+```
+
+For the mission overlays the cost of a function is the same as anywhere else,
+but its value is not: `twins.py replay` turns one matched C file into a
+manifest row for every member of its group (see twins.py below).  This mode
+reads `twins.tsv` instead of walking `functions.tsv` row by row:
+
+- one line per group: the representative (lowest entry, vaddr), or with
+  `--unit` the group's member in that unit (groups without one are skipped);
+- a group is closed as soon as any member has a ledger row, `match` or
+  `giveup`: the body, and so the C, is the same in every member, and a
+  matched member's twins are added by `drive.py --replay-twins`;
+- `--min-instructions` and `--max-score` apply to the shown member, so the
+  8-byte `jr ra; nop` stub group (g0003, 60 members) is hidden by default;
+- sorted by **payoff = n_members / (1 + score)**, highest first: manifest rows
+  gained per unit of difficulty (`1 +` so a score-0 function still costs a
+  turn).  `score` is the ordinary difficulty score above.
+
+Because `score` is logarithmic in size and branches, group size dominates:
+the 34 library groups of 31 members (31 still open) fill most of the top 45,
+and the lowest of them (payoff 2.41) still ranks far above every function
+that occurs only once (163 singletons, payoff <= 0.36).  Run of 2026-10-18,
+388 open groups:
+
+```
+   # group   mem payoff unit    vaddr       size instr  br jal  jt stack score
+   1 g0001    66  14.57 fdat004 0x801C6734    60    15   0   1   0    24  3.53
+   2 g0002    62  10.49 fdat000 0x801C72C4    92    23   2   2   0    24  4.91
+   3 g0041    31  10.07 fdat000 0x801C575C    28     7   0   0   0     0  2.08
+   4 g0035    31   9.70 fdat000 0x801C56E4    32     8   0   0   0     0  2.20
+   ...
+   7 g0034    31   9.12 fdat000 0x801C5634    40    10   0   0   0     0  2.40
+   8 g0004    39   8.61 fdat002 0x801C675C    60    15   0   1   0    24  3.53
+```
+
+The only groups ahead of the 31-member library are larger still: g0001 and
+g0002 (66 and 62 members, small stubs that occur twice per entry).  `--tsv`
+adds `group`, `n_members` and `payoff` in front of the usual columns.  After a
+match, `drive.py try <unit> <vaddr>` then `drive.py --replay-twins` closes the
+group.
 
 ## ledger.py
 
@@ -415,12 +461,14 @@ Results so far:
 | `fdat060/func_801C6E08.c` | 30 | 30 |
 | `fdat060/func_801C6E44.c` | 30 | 30 |
 | `fdat060/func_801C6E60.c` | 30 | 30 |
+| `fdat016/func_801C6AE0.c` | 17 | 17 |
 
-These three are relocation-free, so the `--defsym` derivation was also tested
-on a relocated function outside the repo (fdat016 0x801C6AE0, 48 bytes: one
-`jal` and one function pointer, group g0051): 17/17 twins MATCH with per-entry
-addresses (e.g. fdat020 `func_801CDC7C=0x801CAA3C`), and the oracle reports
-MISMATCH when fdat020 is given fdat016's addresses instead.
+The fdat060 three are relocation-free; `fdat016/func_801C6AE0.c` (48 bytes,
+group g0051: one `jal` and one function pointer, matched with
+`--defsym func_801CDC7C=0x801CDC7C --defsym func_801CDBD4=0x801CDBD4`) tests
+the `--defsym` derivation: 17/17 twins MATCH with per-entry addresses (e.g.
+fdat020 `func_801CDC7C=0x801CAA3C`), and the oracle reports MISMATCH when
+fdat020 is given fdat016's addresses instead.
 
 ## check_all.sh
 
@@ -490,10 +538,9 @@ unmatched in the inventory.
   be merged into the integration branch: `inventory.py` and `units.py` read it
   automatically (text ranges for all 63 units, mission bases, the 168->166
   alias); today the bases come from the fallback table with the same values.
-- Twin replay (`twins.py`, above) covers the three fdat060 matches (90 twins).
+- Twin replay (`twins.py`, above) covers four mission matches (107 twins).
   The cheapest mission work is now the 31-member library groups: one match
-  there is worth 31 manifest rows.  A `rank.py` mode that weights a mission
-  function by its group size is not written yet.
+  there is worth 31 manifest rows; `rank.py --missions` lists them first.
 - `ledger.tsv` keeps two rows for functions the inventory has since re-split
   (`ovl201 0x800A86B0` fragment, `ovl202 0x8004EADC` give-up at the old
   20-byte size); the ledger is append-only, `refit.py` skips keys that are not
