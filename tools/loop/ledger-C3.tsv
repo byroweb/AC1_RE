@@ -1,9 +1,0 @@
-when	unit	vaddr	status	attempts	reason
-2026-10-19T03:13:14Z	ovl201	0x800AD4F8	match	1	
-2026-10-19T03:16:30Z	exe	0x800164A0	match	3	
-2026-10-19T03:20:59Z	exe	0x80016678	match	5	
-2026-10-19T03:21:35Z	ovl204	0x80073EC8	match	1	
-2026-10-19T03:34:35Z	ovl201	0x80060168	match	6	
-2026-10-19T03:41:38Z	ovl202	0x80073714	match	8	
-2026-10-19T03:49:24Z	ovl201	0x8006E148	giveup	10	size and shape match; only block-local temp registers swap (v0/v1/a0) in the L/R row loops at 0x17c (L loop1, R loop1, R row0, R loop2)
-2026-10-19T03:59:53Z	exe	0x80012A78	giveup	10	everything matches except which out-pointer param gets s8: retail keeps py (arg 7) in s8 and reloads px from 76(sp) into t1, ours does the reverse (global-alloc priority tie)
