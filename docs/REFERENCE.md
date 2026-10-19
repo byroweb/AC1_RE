@@ -4,8 +4,10 @@ A consolidated map of what's been reverse-engineered so far: functions, RAM
 addresses, the `.T` container format, FDAT entry-201 (the text/menu overlay),
 the name-entry engine, the patch pipeline, and disc sector locations.
 
-All addresses are for the **North American release, `SLUS-01323` (v1.1)**.
-They will **not** match other regions/revisions.
+All addresses are for the **North American release, `SLUS-01323` (v1.1)**. They
+also hold for the earlier North American pressing **`SCUS-94182` (v1.0)**, whose
+code is byte-identical to ours (see §1, *Revision note*). They will **not** match
+the Japanese (`SLPS`) or European (`SCES`) releases.
 
 > This is factual interoperability documentation. It contains no game code,
 > assets, or data — only addresses, offsets, and behavioral descriptions.
@@ -29,6 +31,64 @@ They will **not** match other regions/revisions.
 SDK: PSY-Q/libps late-1996 build (`bios.c v1.81 1996/12/16`). SN Systems CRT0
 (startup symbol `start` / `__SN_ENTRY_POINT`). ~1056 Ghidra functions total
 (~616 SDK-named, ~440 game-specific).
+
+### Revision note — SLUS-01323 (v1.1) ≡ SCUS-94182 (v1.0) code
+
+Verified 2026-10-18 by SHA-1 against a v1.0 disc: the v1.1 executable
+`SLUS_013.23` hashes to `ee884a2cb3ce30bc13255142fecd5a2f02ba04ad` (169 984 bytes),
+**the same as v1.0's `SCUS_941.82`**; the four `FDAT.T` program overlays (entries
+201–204) and all 58 mission code overlays are byte-identical too. The two pressings
+differ only in the boot file name (`SYSTEM.CNF`), possibly in data files, and in disc
+mastering (sector layout). Consequences:
+
+- Every code address, function boundary and symbol in this repo applies to both.
+- The [Wyrelade/Armored-Core-Decomp](https://github.com/Wyrelade/Armored-Core-Decomp)
+  matching decompilation of v1.0 (CC0) is a direct source of **facts** for us —
+  addresses, names, splat layout, compiler identification. We do not copy its C.
+- Layout facts carried over from its splat configs (file offsets; the EXE maps at
+  `0x80011000` with a `0x800` header, program overlays at `0x8004ADA0`). The full
+  63-unit table (exe + 62 `FDAT.T` code entries: load address, size, `.rodata` /
+  `.text` / `.data` boundaries, v1.0 SHA-1, alias pairs) is
+  [`overlays/CODE_UNITS.tsv`](../overlays/CODE_UNITS.tsv), regenerated and
+  re-verified against your own disc by `tools/ghidra/wyrelade_layout.py --check`
+  (2026-10-18 on the SLUS-01323 image: 63 identical, 0 different).
+
+| Unit | `.rodata` | code (`.text`) | data |
+| --- | --- | --- | --- |
+| `SLUS_013.23` / `SCUS_941.82` | file `0x800`–`0x1664` | from `__main` (`0x80011E64`) to `0x800315B4` | from file `0x20DB4` (VA `0x800315B4`) |
+| FDAT 201 (front end, 0x84800 B) | `0`–`0x2F20` | VA `0x8004DCC0`–`0x800B6DEC` | from `0x6C04C` (VA `0x800B6DEC`) |
+| FDAT 202 (mission, 0x46000 B) | `0`–`0x141C` | VA `0x8004C1BC`–`0x8008D91C` | from `0x42B7C` (VA `0x8008D91C`) |
+| FDAT 203 (mode 1, 0x41800 B) | `0`–`0x1070` | VA `0x8004BE10`–`0x800895C4` | from `0x3E824` (VA `0x800895C4`) |
+| FDAT 204 (mode 2, 0x41800 B) | `0`–`0x1018` | VA `0x8004BDB8`–`0x800893C0` | from `0x3E620` (VA `0x800893C0`) |
+| mission overlays 0–98, 120, 140 (even) | small | `0x801C4B40` + per-unit `.text` offset | followed by the mission's data entry |
+| mission overlays 160–168 (even) | small | `0x801C8460` (base from FDAT 204's loader) | 168 is a byte-identical alias of 166 |
+| mission overlays 180–186 (even) | small | `0x801B80C8` (base from FDAT 203's loader) | — |
+
+### Retail compiler
+
+Identification credit: the Wyrelade repo's differential **compiler probe**
+(`tools/compiler_probe/run.sh` there — 11 retail functions compiled by nine
+compiler builds; retail code also leaves the epilogue delay slot unfilled, which
+rules out GCC 2.8.x).
+
+- **Compiler:** PsyQ 4.0 `CC1PSX` = **GCC 2.7.2 (SN32 3.7.0002)**, identical to
+  decompals' `gcc-2.7.2-psx` build.
+- **Assembler:** **ASPSX 2.56** (`lw d,sym(reg)` expands through `$at`; divides have
+  no divide-by-zero check). Reproduced today with `maspsx`.
+- **Libraries:** PsyQ **3.7** (`libsnd` 3.5, `CARD.OBJ` 3.0); 528 library functions
+  occupy `0x80016EA4`–`0x80030368` plus `AddDrv`/`DelDrv` at `0x80031594`, and the
+  `2MBYTE.OBJ` start-up (`__main`/`__SN_ENTRY_POINT`) at `0x80011E64`. Their names
+  are importable with `tools/ghidra/psyq_labels.py`.
+- **Flags** (the exact `cc1` line for byte-matching):
+
+```
+-O2 -mips1 -mcpu=3000 -w -funsigned-char -fpeephole -ffunction-cse -fpcc-struct-return -fcommon -msoft-float -mgas -fgnu-linker -gcoff -G0 -quiet
+```
+
+Practical consequences: m2c runs with `-t mips-gcc-c` (the code is GCC, not IDO);
+the modern `mipsel` GCC in §7 is for *patches* only and will never byte-match the
+retail output. See `tools/README.md` → *Byte-matching toolchain* for obtaining the
+period compiler.
 
 ---
 

@@ -4,8 +4,17 @@ Reverse-engineering reference and tooling for the PlayStation game *Armored Core
 (1997): file formats, the mission/level pipeline, the text and entity systems, and
 behavioral C models of the engine's subsystems.
 
-This repository targets the **North American release, `SLUS-01323` (v1.1)**. Other
-regions/revisions are not supported and addresses will not match.
+This repository targets the **North American release, `SLUS-01323` (v1.1)**. The
+earlier North American pressing **`SCUS-94182` (v1.0)** carries **byte-identical
+code**: its executable (`SCUS_941.82`, SHA-1 `ee884a2cb3ce30bc13255142fecd5a2f02ba04ad`,
+the same hash as our `SLUS_013.23`), the four `FDAT.T` program overlays (201–204) and
+all 58 mission overlays match ours byte for byte (verified 2026-10-18). Only data
+files or disc mastering can differ between the two pressings, so every address here
+applies to both, and the addresses, symbol names and layout facts in the
+[Wyrelade/Armored-Core-Decomp](https://github.com/Wyrelade/Armored-Core-Decomp)
+matching decompilation of v1.0 apply here directly (we borrow its facts, not its
+source). Other regions (Japanese `SLPS`, European `SCES`) are not supported and their
+addresses will not match.
 
 > **This project ships no game code, assets, or data files.** It is original source
 > code and documentation only (documentation may include screenshots and derived
