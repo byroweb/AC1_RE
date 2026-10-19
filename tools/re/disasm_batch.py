@@ -138,7 +138,7 @@ def disasm_one(binpath, base, addr, length, name):
 
     # 3. m2c decompile (best effort; jump tables make this fail).
     m2c = subprocess.run(
-        [M2C_PY, M2C, "-t", "mips-ido-c", s_path],
+        [M2C_PY, M2C, "-t", "mips-gcc-c", s_path],
         capture_output=True)
     if m2c.returncode == 0 and m2c.stdout.strip():
         with open(c_path, "wb") as f:

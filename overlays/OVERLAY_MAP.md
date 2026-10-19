@@ -33,6 +33,10 @@ Only ONE is resident at a time. **The existing Ghidra project
 (`AC_1_USA_2048_RE`) contains the entry-201 (UI/garage) build** in this region — so
 its `0x80050000+` functions are UI code, NOT mission code.
 
+Per-unit layout (load address, size, `.rodata`/`.text`/`.data` boundaries, v1.0 SHA-1) for
+these four and all 58 mission code entries: [`CODE_UNITS.tsv`](CODE_UNITS.tsv), generated
+by `tools/ghidra/wyrelade_layout.py` (see `tools/README.md`).
+
 ## Byte-mismatch evidence (proves 201 != 202 in this region)
 Address **`0x80083894`**, same RAM address, two different overlays:
 
