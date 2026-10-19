@@ -1,0 +1,9 @@
+when	unit	vaddr	status	attempts	reason
+2026-10-19T03:11:58Z	exe	0x800125D0	match	1	
+2026-10-19T03:12:53Z	ovl202	0x80079CDC	match	2	
+2026-10-19T03:15:22Z	ovl203	0x8007408C	match	3	
+2026-10-19T03:24:40Z	ovl202	0x80079AF8	match	6	
+2026-10-19T03:42:23Z	ovl201	0x80064C18	giveup	10	first diff 0x190: only the SetDrawArea a1=&clip setup is placed differently (retail hoists addiu a1,sp,48 into a load-delay slot in addPrim and fills the jal slot with the prim-ptr store; ours keeps it in the jal slot), +4 bytes; rest incl. GTE asm matches
+2026-10-19T03:48:17Z	ovl201	0x80080224	match	6	
+2026-10-19T03:54:44Z	exe	0x80012794	match	5	
+2026-10-19T03:57:39Z	ovl202	0x8007B160	match	3	
