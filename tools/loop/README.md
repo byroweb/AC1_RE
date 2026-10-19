@@ -44,7 +44,7 @@ worktree, then in `$AC1_DISC_MAP`.
 | `ovl202` | `ovl202_mission.bin` | 0x8004ADA0 | `--ovl 202` |
 | `ovl203` | `ovl203_mode1.bin` | 0x8004ADA0 | `--ovl 203` |
 | `ovl204` | `ovl204_mode2.bin` | 0x8004ADA0 | `--ovl 204` |
-| `fdatNNN` | `disc_map/extracted/FDAT_T/entries/NNN.bin` (`--missions`) | 0x801C4B40 (even 0–98, 120, 140), 0x801C8460 (160–168), 0x801B80C8 (180–186) | `--bin <file> --base <addr>` |
+| `fdatNNN` | `disc_map/extracted/FDAT_T/entries/NNN.bin` (`--missions`) | 0x801C4B40 (even 0–98, 120, 140), 0x801C8460 (160–168), 0x801B80C8 (180–188) | `--bin <file> --base <addr>` |
 
 The four program overlays share one load address, so a `(unit, vaddr)` pair,
 never a bare address, identifies a function everywhere in these tools.
@@ -100,6 +100,38 @@ Current run (2026-10-18): 3582 functions = exe 701 (567 PsyQ) + ovl201 1094 +
 ovl202 622 + ovl203 581 + ovl204 584.  The four functions already matched in
 `re/match/manifest.tsv` come out with exactly the manifest sizes (40, 76, 104,
 252 bytes) and the switch table of `func_800505F0` at 0x8004AEEC.
+
+### Mission overlays (`--missions`)
+
+```bash
+export AC1_DISC_MAP="C:/Users/bross/OneDrive/Desktop/AC1_RE/disc_map"   # only from a worktree without disc_map
+python tools/loop/inventory.py --missions      # ~4 s; adds the fdatNNN rows
+```
+
+`--missions` appends one unit per even `FDAT_T` entry after the exe and ovl
+rows, which it leaves byte-for-byte unchanged (checked: the first 3582 rows of
+the two runs are identical). Run of 2026-10-18: **58 units, 2769 functions**,
+6351 rows in total. The load address per entry (and the alias column) comes
+from `overlays/CODE_UNITS.tsv` when that file is in the checkout, else from
+`MISSION_TABLE` in `inventory.py`; the two agree on all 58 bases
+(`refresh_mission_entries()` warns if they ever differ).
+
+- **fdat168** is byte-identical to fdat166 (`alias_of` in CODE_UNITS.tsv, also
+  `cmp`-verified) and is **skipped** with a printed note, so its functions are
+  not counted twice; `--units fdat168` still inventories it. Match it as fdat166.
+- **fdat188** has no CODE_UNITS.tsv row: a 4096-byte stub whose eight header
+  pointers all target one `jr ra; nop` at 0x801B81E8. It is **listed** with that
+  single 8-byte function (`STUB_TEXT`), below `rank.py`'s default floor.
+- Text ranges are detected when CODE_UNITS.tsv is absent; they agree with it on
+  57/58 units. fdat074's CODE_UNITS `text_va` (0x801C4D48) is 8 bytes before the
+  first prologue and those two words are data, so detection (0x801C4D50) is
+  what `functions.tsv` carries; with CODE_UNITS.tsv present the file's range wins
+  and that one function grows by 8 bytes.
+- Names are all `func_<ADDR>` (no markup rows above 0x801B8000); every extern
+  needs `--defsym`. The oracle takes `--bin disc_map/extracted/FDAT_T/entries/NNN.bin
+  --base <addr>` (no `--ovl`); switch tables (`jt_addrs`) sit in the rodata block
+  between the header and `.text`. Header, load groups and the mission → entry →
+  name table: `docs/MISSION_OVERLAY_CODE.md`.
 
 ### Markup cross-check
 
