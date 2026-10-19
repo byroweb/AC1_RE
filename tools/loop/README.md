@@ -101,7 +101,7 @@ splits the `.text` range into functions:
 | `jt_addrs` | RAM address(es) of the jump tables, for `match_fn.py --rodata` |
 | `evidence` | which candidates established the start (`text`, `ret`, `jal`, `pro`, `ptr`, `mk`) |
 
-Current run (2026-10-18): 3565 functions = exe 694 (561 PsyQ) + ovl201 1091 +
+Current run (2026-10-18): 3565 functions = exe 694 (563 PsyQ) + ovl201 1091 +
 ovl202 619 + ovl203 579 + ovl204 582 (plus 2769 mission-overlay functions with `--missions`).  The four functions already matched in
 `re/match/manifest.tsv` come out with exactly the manifest sizes (40, 76, 104,
 252 bytes) and the switch table of `func_800505F0` at 0x8004AEEC.
@@ -168,8 +168,8 @@ Filters `functions.tsv` to `is_psyq == 0`, not in the ledger as `match` or
 include them), then sorts by
 
 ```
-score = 1.00*log1p(instructions) + 0.60*log1p(branches) + 0.80*log1p(gte_ops)
-      + 0.15*log1p(stack_size) + 1.50*jump_tables - 0.30*log1p(calls)
+score = 1.00*log1p(instructions) + 1.00*log1p(branches) + 0.80*log1p(gte_ops)
+      + 0.30*log1p(stack_size) + 1.50*jump_tables - 0.30*log1p(calls)
 ```
 
 (`WEIGHTS` dict at the top of the file, clamped at 0).  Calls are subtracted
@@ -179,6 +179,30 @@ layout.  `--tsv` prints the same rows machine-readably, `jt_addrs` included,
 for a driver.  `--calibrate` lists every ledger outcome with its score, size
 and attempts so the weights can be refit once there are enough rows (e.g.
 regress attempts, or the give-up rate, on the log1p features).
+
+### Weights (reviewed 2026-10-18 against 55 outcomes)
+
+`refit.py` fits log(attempts) on the same features (ridge, pure Python,
+give-ups = 20 attempts) and prints the current and refit Spearman plus a
+proposed `WEIGHTS`.  On the first 55 outcomes (43 first-try matches, 9 at
+2-3, one at 8, two give-ups):
+
+| | Spearman(score, attempts) |
+|---|---|
+| weights before (br 0.60, stack 0.15) | 0.632 |
+| weights now (br 1.00, stack 0.30) | 0.629 |
+| literal ridge proposal (br 1.6, stack 0.7, calls 2.2, jt 0) | 0.641 in-sample, 0.614 leave-one-out |
+
+The literal proposal is not applied: with `calls` at 2.2 it ranks 1300-byte
+call-heavy functions as score 0, an extrapolation from a sample whose
+functions have at most five calls.  The hand-set change follows the direction
+of the evidence (both give-ups had 13 and 19 branches and a frame; every
+match that took more than one attempt had a frame) without leaving the
+sample's range.  `gte_ops` had zero variance (no GTE code in ovl201/202
+candidates so far) and `jump_tables` one data point, so both keep their
+prior.  The sample is too easy to discriminate weights: 43 of 55 outcomes
+were first-try matches, so a round of harder functions (score 6.5-9) is the
+next useful calibration data.
 
 Top of `rank.py --unit ovl201` today: 3-instruction leaf setters
 (`li v0,1; jr ra; sb v0,1(a0)`), then frameless leaves of 4–9 instructions
@@ -366,15 +390,18 @@ unmatched in the inventory.
 
 ## Not done / follow-ups
 
-- `drive.py try` auto-adds `--rodata` from `jt_addrs` for jump-table
-  functions; that is the table address, which is only the object's `.rodata`
-  start when the table comes first.  Verify it against the retail `lui/addiu`
-  pair when such a function refuses to match.
-- `drive.py` has no attempt budget of its own: `giveup` is a decision the
-  matcher takes (the skill says ~15 attempts without progress).
-- The exe image for `units.py image exe` is carved into `tools/loop/cache/`
-  (gitignored by `*.bin`); delete it to re-carve.
-- Weights are hand-set; refit from `rank.py --calibrate` once the ledger has a
-  few dozen rows.
-- Mission overlays (`--missions`) are inventoried but their names are all
-  `func_<ADDR>` and the oracle needs `--bin/--base` for them.
+- Calibration data is flat (43/55 first-try matches): run a harder queue
+  (`make_queues.py --bands 6.5,8,9.5`) before trusting a refit.
+- `overlays/CODE_UNITS.tsv` (branch `claude/xenodochial-mclean-55b2b3`) should
+  be merged into the integration branch: `inventory.py` and `units.py` read it
+  automatically (text ranges for all 63 units, mission bases, the 168->166
+  alias); today the bases come from the fallback table with the same values.
+- Mission overlays share code: 2769 fdat functions are only 362 distinct masked
+  bodies.  One matched C file could be replayed against its twins with other
+  `--defsym` values (not attempted).
+- `ledger.tsv` keeps two rows for functions the inventory has since re-split
+  (`ovl201 0x800A86B0` fragment, `ovl202 0x8004EADC` give-up at the old
+  20-byte size); the ledger is append-only, `refit.py` skips keys that are not
+  in `functions.tsv`.
+- `tools/mission/type_catalog.py` / `mission_parse.py` assume one mission base
+  and compose lui/lo16 without sign extension (see docs/MISSION_OVERLAY_CODE.md).

@@ -30,12 +30,13 @@ import ledger  # noqa: E402
 
 FUNCTIONS = os.path.join(HERE, "functions.tsv")
 
-# hand-weighted difficulty; refit from ledger.tsv when it has enough rows ------
+# hand-weighted difficulty, last reviewed against 55 ledger rows (refit.py, 2026-10-18)
+# Spearman(score, attempts) = 0.63; see README "Weights" for why the fit is not applied literally.
 WEIGHTS = {
     "instructions": 1.00,   # log1p: size dominates (more statements to get right)
-    "branches":     0.60,   # log1p: control flow (ordering, inverted conditions)
+    "branches":     1.00,   # log1p: control flow; both 2026-10-18 give-ups were branch-heavy (0.60 before refit)
     "gte_ops":      0.80,   # log1p: GTE macros/inline asm are hard to reproduce
-    "stack_size":   0.15,   # log1p: locals that live across calls, register pressure
+    "stack_size":   0.30,   # log1p: frames; every >1-attempt match had one (0.15 before refit)
     "jump_tables":  1.50,   # per table: switch layout + --rodata address needed
     "calls":        0.30,   # log1p, subtracted: calls are cheap instructions
 }
