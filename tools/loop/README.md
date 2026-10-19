@@ -14,6 +14,8 @@ drive.py      -> stdout, re/match/<unit>/func_<ADDR>.c
                                  the driver: next work package / try the oracle / give up / status / verify
 make_queues.py                   rebuilds queue-A.tsv / queue-B.tsv from rank.py
 merge_manifest.py                dedupes + sorts re/match/manifest.tsv after a merge
+twins.py      -> twins.tsv, re/match/twin_replay.tsv
+                                 mission-overlay clones: group by masked body, replay a matched C file on its twins
 ```
 
 `drive.py` is the only one that compiles anything, and it does so by calling
@@ -370,6 +372,94 @@ Environment: `AC1_LEDGER`, `M2C_DIR` (default `~/dev/m2c`, then
 `inventory.py` and `match_fn.py` read (`AC1_BIN`, `AC1_DISC_MAP`,
 `MIPS_PREFIX`, `AC1_CC1`, `AC1_MASPSX`, ...).
 
+## twins.py (mission-overlay clones)
+
+```
+twins.py group  [--functions F] [--out tools/loop/twins.tsv]
+twins.py replay [--manifest re/match/manifest.tsv] [--twins F] [--report F] [--dry-run] [--no-ledger] [-j 4]
+drive.py --replay-twins [replay options]          # forwards to twins.py replay
+```
+
+The 58 mission overlays link one object library at per-entry addresses, so
+most mission functions occur in many entries with only absolute addresses
+changed.  `twins.py` makes one matched C file count for every such clone.
+
+**`group`** reads every `fdatNNN` row of `functions.tsv` from its image and
+masks exactly the words that carry a relocation: `jal`/`j` targets, a `lui`
+of a RAM high half (0x8000..0x8020), and the low half (`addiu`/`ori`, or a
+load/store offset) of every instruction whose base register still holds that
+`lui`, also through an `addu` with an index (`lui at; addu at,at,v0;
+lw v0,%lo(at)`, i.e. switch tables and indexed globals).  Everything else is
+kept.  Equal masked bodies form a group; the representative is the member with
+the lowest (entry, vaddr).  `twins.tsv` has one line per member:
+
+| column | meaning |
+|---|---|
+| `group` | `gNNNN`, biggest groups first |
+| `rep_unit`, `rep_vaddr` | representative |
+| `unit`, `vaddr`, `size` | this member |
+| `n_members` | group size |
+| `same_slots` / `diff_slots` | relocation targets equal to / different from the representative's |
+| `deltas` | the differing targets, `REP>MEMBER(+delta)`, unique, in code order |
+
+Run of 2026-10-18: **2769 functions -> 393 groups**, 163 singletons, 2604
+functions with a twin in another entry; 34 groups of 31 members (the common
+library), the largest groups (60-66 members) are tiny stubs that occur several
+times per entry.  Size distribution, members: groups:
+
+```
+1:163  2:62  3:41  4:6  5:11  6:7  7:5  8:5  9:1  10:7  11:13  12:3  14:4  15:2
+16:8  17:4  18:1  20:1  21:2  23:1  25:1  26:1  29:3  31:34  32:1  33:1  36:1
+39:1  60:1  62:1  66:1
+```
+
+The earlier count of 362 (docs/MISSION_OVERLAY_CODE.md) masked *every*
+`addiu`/load/store immediate, which also merges functions that need different
+C: struct offsets (the three fdat060 matches, bit index from `+0x2D` vs
+`+0x06`, are one body under that mask), frame sizes (`addiu sp,sp,-24` vs
+`-168`) and `li` constants (100 vs 500, 3000 vs 5000).  21 coarse groups split
+here (into 52); every differing word was checked: 27 `li` constants, 8 frame
+fields on `sp`, 19 offsets/constants on a register that holds no RAM `lui`;
+none is a relocation.
+
+**`replay`** takes every manifest row whose unit is `fdatNNN` and whose source
+lives in that unit's own directory (an original match), and compiles the same
+C file against each other member of its group with `match_fn.py --bin <member
+image> --base <member base> --expect-size <member size>`.  Each
+`--defsym NAME=A` (and `--rodata`) of the matched row is moved by the delta of
+the member's relocation slot that targets `A` (or the nearest slot at `A+off`,
+`off < 0x1000`); a symbol no slot references is kept when it lies outside the
+matched unit's image (exe/ovl globals) and is an error inside it.  Per twin:
+
+- **MATCH** (exit 0, final line `MATCH`): a manifest row `vaddr unit
+  <shared source> size --base ... --defsym ...` (deduped, sorted as
+  `merge_manifest.py` does), and a ledger row `match`, attempts `0`, reason
+  `twin of <unit> <vaddr> (<source>)`.  Attempts 0 means unknown, which
+  `refit.py` skips, so clones do not flatten the calibration sample; `rank.py`
+  and `drive.py next` stop offering them.  `--no-ledger` skips the ledger.
+- anything else is listed as `NOT MATCHED` on stdout and in the report with
+  the oracle's final line; nothing is silently dropped.
+
+`re/match/twin_replay.tsv` (committed) lists every attempted twin: group,
+source, matched-as, unit, vaddr, size, result, oracle final line, the derived
+flags.  Re-running is idempotent (rows already present are re-verified, not
+re-added).  Exit 0 only when every twin matched.  Run it after every new
+mission-overlay match.
+
+Results so far:
+
+| matched C file | twins | MATCH |
+|---|---|---|
+| `fdat060/func_801C6E08.c` | 30 | 30 |
+| `fdat060/func_801C6E44.c` | 30 | 30 |
+| `fdat060/func_801C6E60.c` | 30 | 30 |
+
+These three are relocation-free, so the `--defsym` derivation was also tested
+on a relocated function outside the repo (fdat016 0x801C6AE0, 48 bytes: one
+`jal` and one function pointer, group g0051): 17/17 twins MATCH with per-entry
+addresses (e.g. fdat020 `func_801CDC7C=0x801CAA3C`), and the oracle reports
+MISMATCH when fdat020 is given fdat016's addresses instead.
+
 ## check_all.sh
 
 `re/match/check_all.sh` re-verifies every manifest row with the oracle and
@@ -380,7 +470,11 @@ fail with *unrecognized arguments*), passes `--ovl` only when the unit column
 is numeric, nothing for `exe`, and for `fdatNNN` rows adds
 `--bin "$(python tools/loop/units.py image $unit)"` (plus `--base` from
 `units.py` when the extra column has none).  `drive.py verify` is the same
-check without bash.
+check without bash.  Replayed twin rows (an `fdatNNN` row whose source is in
+another unit's directory) are verified like every other row and counted on a
+separate line; in addition every `MATCH` row of `re/match/twin_replay.tsv`
+must still have its manifest row (same vaddr, unit and source), else that is a
+`FAIL`.
 
 ## make_queues.py / merge_manifest.py
 
@@ -437,9 +531,10 @@ unmatched in the inventory.
   show only as an address gap); `drive.py try` counts a try even when the
   source is unchanged since the last one.
 - Give-ups worth a second look: ovl201 0x80064C18 (one delay-slot fill short).
-- Mission overlays share code: 2769 fdat functions are only 362 distinct masked
-  bodies.  One matched C file could be replayed against its twins with other
-  `--defsym` values (not attempted).
+- Twin replay (`twins.py`, above) covers the three fdat060 matches (90 twins).
+  The cheapest mission work is now the 31-member library groups: one match
+  there is worth 31 manifest rows.  A `rank.py` mode that weights a mission
+  function by its group size is not written yet.
 - `ledger.tsv` keeps two rows for functions the inventory has since re-split
   (`ovl201 0x800A86B0` fragment, `ovl202 0x8004EADC` give-up at the old
   20-byte size); the ledger is append-only, `refit.py` skips keys that are not
