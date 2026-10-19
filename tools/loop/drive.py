@@ -64,6 +64,10 @@ MANIFEST_HEADER = ("# vaddr\tovl\tsource\tsize\textra match_fn.py args (one line
 GIVEUP_MARK = "NOT MATCHED"
 COMMIT_TRAILER = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 AUTO_SYM = re.compile(r"^(func|D)_([0-9A-Fa-f]{8})$")
+# A source that includes the shared headers resolves names from both tables. Any --syms
+# switches off match_fn's implicit ac1_markup.tsv, so the markup is passed explicitly too.
+AC1_INCLUDE = re.compile(r'^\s*#\s*include\s*"ac1/ac1\.h"', re.M)
+AC1_SYMS = ["include/ac1/symbols.tsv", "ac1_markup.tsv"]
 QUEUE_COLS = ["unit", "vaddr", "name", "size", "instructions", "branches", "calls",
               "jump_tables", "gte_ops", "stack_size", "jt_addrs", "score"]
 
@@ -240,12 +244,66 @@ def m2c_draft(gas):
 # ---------------------------------------------------------------------------
 # oracle
 # ---------------------------------------------------------------------------
+def uses_ac1_h(cpath):
+    try:
+        with open(cpath, encoding="utf-8", errors="replace") as fh:
+            return bool(AC1_INCLUDE.search(fh.read()))
+    except OSError:
+        return False
+
+
+def syms_args(cpath):
+    """--syms for a source that includes ac1/ac1.h (repo-relative: the oracle runs in REPO)."""
+    out = []
+    if uses_ac1_h(cpath):
+        for f in AC1_SYMS:
+            out += ["--syms", f]
+    return out
+
+
+def table_syms(files=AC1_SYMS):
+    """name -> address from the --syms tables, parsed the way match_fn.load_symbols does."""
+    syms = {}
+    for f in files:
+        try:
+            fh = open(os.path.join(REPO, f), encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        with fh:
+            for line in fh:
+                parts = line.rstrip("\r\n").split("\t")
+                if len(parts) >= 3 and re.fullmatch(r"[0-9a-fA-F]{6,8}", parts[1]):
+                    syms.setdefault(parts[2], int(parts[1], 16))
+                elif len(parts) >= 2 and re.fullmatch(r"(0x)?[0-9a-fA-F]{6,8}", parts[0]):
+                    syms.setdefault(parts[1], int(parts[0], 16))
+    return syms
+
+
+def drop_table_defsyms(defsyms, syms):
+    """Drop NAME=ADDR entries a table already resolves to the same address; a --defsym that
+    disagrees with the table still wins in match_fn, so it is kept (with a warning)."""
+    keep = []
+    for d in defsyms:
+        n, _, v = d.partition("=")
+        try:
+            addr = int(v, 0)
+        except ValueError:
+            addr = None
+        if n in syms and syms[n] == addr:
+            continue
+        if n in syms:
+            print("warning: --defsym %s overrides the table address 0x%08X" % (d, syms[n]))
+        keep.append(d)
+    return keep
+
+
 def oracle_argv(u, vaddr, cpath, size, rodata=None, defsyms=(), keep=None, row=None):
     argv = ["0x%08X" % vaddr, rel(cpath)] + list(u.oracle_flags)
     if size:
         argv += ["--expect-size", str(size)]
     if rodata:
         argv += ["--rodata", rodata]
+    argv += syms_args(cpath)
     for d in defsyms:
         argv += ["--defsym", d]
     if keep:
@@ -467,7 +525,7 @@ def parse_shard(s):
 
 def skeleton(cpath, row, draft):
     body = (draft or "/* no m2c draft */").replace("*/", "* /").rstrip("\n")
-    lines = ["#include \"ac1_types.h\"",
+    lines = ["#include \"ac1/ac1.h\"",
              "/* %s %s  size %d  score %.3f  %s" % (row["unit"], row["vaddr"], row["size"],
                                                     row["score"], datetime.date.today().isoformat()),
              " * m2c draft:",
@@ -530,12 +588,6 @@ def cmd_next(args):
         print("\n-- m2c draft")
         print(draft.rstrip("\n") if draft else "m2c draft unavailable: " + err)
     rodata = pick["jt_addrs"].split(",")[0].strip() if int(pick["jump_tables"]) and pick.get("jt_addrs") else None
-    argv = oracle_argv(u, vaddr, cpath, size, rodata=rodata)
-    print("\n-- oracle")
-    print(oracle_cmdline(argv) + ("   # --rodata from jt_addrs: verify" if rodata else ""))
-    print("python tools/loop/drive.py try %s %s%s" % (unit, pick["vaddr"],
-                                                   (" --rodata " + rodata) if rodata else ""))
-    print("\n-- C file")
     if os.path.isfile(cpath):
         state = "exists (%d attempt(s) so far)" % len(read_sidecar(sidecar_path(re_dir, unit, pick["vaddr"])))
     elif args.dry_run:
@@ -543,6 +595,13 @@ def cmd_next(args):
     else:
         skeleton(cpath, pick, draft)
         state = "skeleton written"
+    # the oracle line reflects the file's includes, so build it after the skeleton exists
+    argv = oracle_argv(u, vaddr, cpath, size, rodata=rodata)
+    print("\n-- oracle")
+    print(oracle_cmdline(argv) + ("   # --rodata from jt_addrs: verify" if rodata else ""))
+    print("python tools/loop/drive.py try %s %s%s" % (unit, pick["vaddr"],
+                                                   (" --rodata " + rodata) if rodata else ""))
+    print("\n-- C file")
     print("%s  %s" % (rel(cpath), state))
     return 0
 
@@ -629,7 +688,9 @@ def cmd_try(args):
         extra += ["--base", u.oracle_flags[u.oracle_flags.index("--base") + 1]]
     if rodata:
         extra += ["--rodata", rodata]
-    for d in defsyms:
+    syms = syms_args(cpath)
+    extra += syms
+    for d in (drop_table_defsyms(defsyms, table_syms()) if syms else defsyms):
         extra += ["--defsym", d]
     src = "%s/%s.c" % (unit, fn_name(vaddr_s))
     added = manifest_append(vaddr_s, u.manifest_unit, src, ours, " ".join(extra))
