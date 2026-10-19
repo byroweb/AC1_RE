@@ -39,6 +39,16 @@ Method
     ac1_markup.tsv and the agreement is printed before the markup rows are
     merged in.
 
+    Mission overlays (--missions) are the even FDAT_T entries: 0..98 (less the
+    three "Omitted" missions 32/58/78), 120, 140 (loaded by ovl202 to
+    0x801C4B40), 160..168 (ovl204, 0x801C8460) and 180..188 (ovl203,
+    0x801B80C8).  Their load address and alias status come from the vram /
+    alias_of columns of overlays/CODE_UNITS.tsv when that file exists, else
+    from the MISSION_TABLE below.  fdat168 is byte-identical to fdat166 and is
+    skipped by --missions (name it in --units to force it); fdat188 is not in
+    CODE_UNITS.tsv (a 4096-byte stub whose header pointers all target one
+    `jr ra; nop`) and is listed with that single 8-byte function.
+
 Environment
     AC1_BIN       disc image (.bin); the PS-X EXE is carved from sectors 39-121
     MIPS_PREFIX   cross toolchain prefix, e.g. mipsel-none-elf- (default: auto)
@@ -48,7 +58,7 @@ Environment
 Example
     MIPS_PREFIX=mipsel-none-elf- python tools/loop/inventory.py
     python tools/loop/inventory.py --units ovl202 --out /tmp/ovl202.tsv
-    python tools/loop/inventory.py --missions            # + 32 mission overlays
+    python tools/loop/inventory.py --missions            # + the 58 mission overlays
 """
 import argparse
 import json
@@ -87,14 +97,25 @@ PSYQ_RANGES = (
     (0x80016EA4, 0x800315B4, "PsyQ 3.7 libraries"),
 )
 
-# mission overlays: FDAT_T entry number -> load address (disc_map/extracted/FDAT_T/entries)
-MISSION_ENTRIES = {}
+# mission overlays: FDAT_T entry number -> load address (disc_map/extracted/FDAT_T/entries).
+# MISSION_TABLE is the fallback; refresh_mission_entries() rewrites MISSION_ENTRIES and
+# MISSION_ALIASES from overlays/CODE_UNITS.tsv (vram / alias_of columns) when that file
+# exists.  Bases checked against CODE_UNITS.tsv and the three loaders 2026-10-18:
+# ovl202 0x8004F77C -> 0x801C4B40, ovl204 0x8004FB74 -> 0x801C8460, ovl203 0x8005007C
+# -> 0x801B80C8 (docs/MISSION_OVERLAY_CODE.md).
+MISSION_TABLE = {}
 for _n in list(range(0, 99, 2)) + [120, 140]:
-    MISSION_ENTRIES[_n] = 0x801C4B40
+    MISSION_TABLE[_n] = 0x801C4B40
 for _n in (160, 162, 164, 166, 168):
-    MISSION_ENTRIES[_n] = 0x801C8460
-for _n in (180, 182, 184, 186):
-    MISSION_ENTRIES[_n] = 0x801B80C8
+    MISSION_TABLE[_n] = 0x801C8460
+for _n in (180, 182, 184, 186, 188):
+    MISSION_TABLE[_n] = 0x801B80C8
+MISSION_ENTRIES = dict(MISSION_TABLE)   # entry -> base; updated IN PLACE (importers keep the object)
+MISSION_ALIASES = {168: 166}            # entry -> byte-identical entry it duplicates
+# fdat188 has no CODE_UNITS.tsv row: 4096 bytes, eight header pointers to one
+# `jr ra; nop` at 0x801B81E8 (file offset 0x120, where every 18x entry's text starts).
+STUB_TEXT = {"fdat188": (0x801B81E8, 0x801B81F0)}
+DEFAULT_CODE_UNITS = os.path.join(REPO, "overlays", "CODE_UNITS.tsv")
 
 # a prologue this many words after another start candidate belongs to it
 PROLOGUE_SLACK = 4
@@ -643,30 +664,78 @@ def load_markup(path):
     return names
 
 
-def load_code_units(path):
-    """unit/entry -> (text_va, text_end_va) from overlays/CODE_UNITS.tsv."""
-    out = {}
+def read_code_units(path):
+    """Rows of overlays/CODE_UNITS.tsv as dicts keyed by the header (empty if absent)."""
+    rows = []
     if not path or not os.path.isfile(path):
-        return out
+        return rows
     with open(path) as fh:
         header = fh.readline().rstrip("\n").split("\t")
-        col = {h: k for k, h in enumerate(header)}
         for line in fh:
             parts = line.rstrip("\n").split("\t")
             if len(parts) < len(header):
                 continue
-            try:
-                rng = (int(parts[col["text_va"]], 16), int(parts[col["text_end_va"]], 16))
-            except (KeyError, ValueError):
-                continue
-            kind = parts[col.get("kind", 2)]
-            entry = parts[col.get("entry", 1)]
-            if kind == "exe":
-                out["exe"] = rng
-            elif entry.isdigit():
-                n = int(entry)
-                out["ovl%d" % n if n in PROGRAM_OVERLAYS else "fdat%03d" % n] = rng
+            rows.append(dict(zip(header, parts)))
+    return rows
+
+
+def code_unit_name(row):
+    """exe | ovlNNN | fdatNNN for a CODE_UNITS.tsv row, or None."""
+    if row.get("kind") == "exe":
+        return "exe"
+    entry = row.get("entry", "")
+    if entry.isdigit():
+        n = int(entry)
+        return "ovl%d" % n if n in PROGRAM_OVERLAYS else "fdat%03d" % n
+    return None
+
+
+def load_code_units(path):
+    """unit/entry -> (text_va, text_end_va) from overlays/CODE_UNITS.tsv."""
+    out = {}
+    for row in read_code_units(path):
+        unit = code_unit_name(row)
+        if not unit:
+            continue
+        try:
+            out[unit] = (int(row["text_va"], 16), int(row["text_end_va"], 16))
+        except (KeyError, ValueError):
+            continue
     return out
+
+
+def refresh_mission_entries(path=DEFAULT_CODE_UNITS):
+    """Rewrite MISSION_ENTRIES / MISSION_ALIASES in place from CODE_UNITS.tsv.
+
+    Mission rows supply entry -> vram and entry -> alias_of; entries the file
+    does not list (fdat188) keep their MISSION_TABLE base.  Without the file
+    both dicts fall back to the table.  Returns the number of mission rows used.
+    """
+    bases, aliases = {}, {}
+    for row in read_code_units(path):
+        if row.get("kind") != "mission" or not row.get("entry", "").isdigit():
+            continue
+        n = int(row["entry"])
+        try:
+            bases[n] = int(row["vram"], 16)
+        except (KeyError, ValueError):
+            continue
+        m = re.fullmatch(r"fdat(\d+)", row.get("alias_of", ""))
+        if m:
+            aliases[n] = int(m.group(1))
+    for n, base in bases.items():
+        if n in MISSION_TABLE and MISSION_TABLE[n] != base:
+            warn("CODE_UNITS.tsv loads entry %d at 0x%08X, MISSION_TABLE says 0x%08X; using the file"
+                 % (n, base, MISSION_TABLE[n]))
+    MISSION_ENTRIES.clear()
+    MISSION_ENTRIES.update(MISSION_TABLE)
+    MISSION_ENTRIES.update(bases)
+    MISSION_ALIASES.clear()
+    MISSION_ALIASES.update(aliases if bases else {168: 166})
+    return len(bases)
+
+
+refresh_mission_entries()
 
 
 def is_psyq(unit, va):
@@ -690,7 +759,12 @@ def unit_list(args):
     else:
         units = ["exe"] + ["ovl%d" % n for n in sorted(PROGRAM_OVERLAYS)]
         if args.missions:
-            units += ["fdat%03d" % n for n in sorted(MISSION_ENTRIES)]
+            for n in sorted(MISSION_ENTRIES):
+                if n in MISSION_ALIASES:
+                    print("fdat%03d: byte-identical to fdat%03d (CODE_UNITS alias_of), skipped; "
+                          "match it as fdat%03d" % (n, MISSION_ALIASES[n], MISSION_ALIASES[n]))
+                    continue
+                units.append("fdat%03d" % n)
     return units
 
 
@@ -735,8 +809,9 @@ def main():
     ap.add_argument("--markup", default=MARKUP, help="ac1_markup.tsv (names + exe cross-check)")
     ap.add_argument("--no-markup-starts", action="store_true",
                     help="do not add markup rows as exe function starts (pure heuristic)")
-    ap.add_argument("--code-units", default=os.path.join(REPO, "overlays", "CODE_UNITS.tsv"),
-                    help="CODE_UNITS.tsv with text_va/text_end_va per unit (used when present)")
+    ap.add_argument("--code-units", default=DEFAULT_CODE_UNITS,
+                    help="CODE_UNITS.tsv with text_va/text_end_va per unit and the mission "
+                         "overlay bases/aliases (used when present)")
     ap.add_argument("--text", action="append", metavar="UNIT=0xSTART:0xEND",
                     help="override the .text range of a unit (repeatable)")
     ap.add_argument("--tmp", default=None, help="scratch dir for objdump input (default: system temp)")
@@ -749,9 +824,16 @@ def main():
 
     markup = load_markup(args.markup)
     known_text = {"exe": EXE_TEXT, "ovl201": OVL201_TEXT}
+    known_text.update(STUB_TEXT)
     cu = load_code_units(args.code_units)
     if cu:
-        print("text ranges from %s: %d units" % (args.code_units, len(cu)))
+        n_mis = refresh_mission_entries(args.code_units)
+        print("text ranges from %s: %d units; mission overlay bases/aliases from its %d mission rows"
+              % (args.code_units, len(cu), n_mis))
+    else:
+        refresh_mission_entries(args.code_units)
+        print("no CODE_UNITS.tsv at %s: text ranges detected, mission overlay bases from MISSION_TABLE"
+              % args.code_units)
     known_text.update(cu)
     known_text.update(parse_text_overrides(args.text))
 
