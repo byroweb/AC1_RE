@@ -92,6 +92,10 @@ at the same address in another entry. Reading: FromSoftware linked a common
 "objective object library" into every mission together with the mission-specific
 methods; the library lands wherever the mission's own code leaves it. For matching
 this means one C file can serve up to ~30 units, differing only in `--defsym` values.
+Masking only the immediates that carry a relocation (`tools/loop/twins.py group`) gives
+**393** groups: the coarser mask above also merges functions that differ in struct
+offsets, frame sizes or `li` constants and so need different C. `twins.py replay`
+recompiles each matched mission C file against its clones (tools/loop/README.md).
 
 ---
 

@@ -750,6 +750,10 @@ def cmd_verify(args):
 
 # ---------------------------------------------------------------------------
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["--replay-twins"]:          # implemented in twins.py (see README)
+        import twins
+        return twins.main(["replay"] + list(argv[1:]))
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd")
