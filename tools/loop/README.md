@@ -500,7 +500,7 @@ Results so far:
 | `fdat060/func_801C6E44.c` | 30 | 30 |
 | `fdat060/func_801C6E60.c` | 30 | 30 |
 | `fdat016/func_801C6AE0.c` | 17 | 17 |
-| 28 files in `fdat000/` (the 31-member library groups) | 840 | 840 |
+| 31 files in `fdat000/` (the 31-member library groups) | 930 | 930 |
 
 The fdat060 three are relocation-free; `fdat016/func_801C6AE0.c` (48 bytes,
 group g0051: one `jal` and one function pointer, matched with
@@ -509,13 +509,12 @@ the `--defsym` derivation: 17/17 twins MATCH with per-entry addresses (e.g.
 fdat020 `func_801CDC7C=0x801CAA3C`), and the oracle reports MISMATCH when
 fdat020 is given fdat016's addresses instead.
 
-The mission library (2026-10-19): 28 of the 31 open 31-member groups from
+The mission library (2026-10-19): all 31 open 31-member groups from
 `rank.py --missions` are matched in `re/match/fdat000/` and replayed onto their 30
-twins each (947 replayed rows in all, every one MATCH).  Open: `801C8C68` (84 B,
-9 words, load order around the `abs` pattern), `801C75BC` (1376 B; retail compiles
-its `switch` on events {0, 1..3, 4, 8, 9} as a compare tree, where this cc1's
-`stmt.c` rule, count 6 >= `CASE_VALUES_THRESHOLD` 5 and span 9 <= 10 x count, emits
-a jump table) and `801C7DA8` (2004 B, not attempted).
+twins each (1037 replayed rows in all, every one MATCH).  `801C75BC`'s event
+dispatch is a compare tree that one `switch` cannot give with this cc1 (`stmt.c`:
+count 6 >= `CASE_VALUES_THRESHOLD` 5 and span 9 <= 10 x count emit a jump table);
+the source is an if/goto chain laid out like GCC's case tree.
 
 ## check_all.sh
 
@@ -588,9 +587,8 @@ unmatched in the inventory.
   show only as an address gap); `drive.py try` counts a try even when the
   source is unchanged since the last one.
 - Give-ups worth a second look: ovl201 0x80064C18 (one delay-slot fill short).
-- Twin replay (`twins.py`, above) covers 32 mission matches (947 twins); 28 of
-  the 31-member library groups are done.  Left there: 801C8C68, 801C75BC (switch
-  lowering, see above), 801C7DA8; then `rank.py --missions` moves on to the
+- Twin replay (`twins.py`, above) covers 35 mission matches (1037 twins); all
+  31-member library groups are done, so `rank.py --missions` moves on to the
   15..29-member groups.
 - `ledger.tsv` keeps two rows for functions the inventory has since re-split
   (`ovl201 0x800A86B0` fragment, `ovl202 0x8004EADC` give-up at the old
