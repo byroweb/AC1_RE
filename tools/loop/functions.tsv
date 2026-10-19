@@ -54,8 +54,7 @@ exe	0x80014898	76	func_80014898	0	19	0	0	0	0	0		ret
 exe	0x800148E4	60	func_800148E4	0	15	2	0	0	0	0		jal+ret
 exe	0x80014920	16	func_80014920	0	4	0	0	0	0	0		jal+ret
 exe	0x80014930	32	func_80014930	0	8	1	0	0	0	0		ret
-exe	0x80014950	20	func_80014950	0	5	0	0	0	0	0		jal+ret
-exe	0x80014964	36	func_80014964	0	9	0	1	0	0	24		pro
+exe	0x80014950	56	func_80014950	0	14	0	1	0	0	24		jal+pro+ret
 exe	0x80014988	36	func_80014988	0	9	0	0	0	0	0		jal+ret
 exe	0x800149AC	40	func_800149AC	0	10	0	1	0	0	24		pro
 exe	0x800149D4	148	func_800149D4	0	37	0	1	0	7	40		pro+ret
@@ -158,7 +157,7 @@ exe	0x80017108	28	PATCH_OBJ_F4	1	7	1	0	0	0	0		mk
 exe	0x80017124	108	_patch_card2	1	27	1	2	0	0	0		jal+mk+ret
 exe	0x80017190	36	func_80017190	1	9	1	0	0	0	0		ret
 exe	0x800171B4	128	func_800171B4	1	32	1	3	0	0	0		jal
-exe	0x80017234	48	StSetRing	1	12	0	1	0	0	24		mk+pro
+exe	0x80017234	48	StSetRing	1	12	0	1	0	0	24		mk
 exe	0x80017264	144	CdInit	1	36	3	5	0	0	24		jal+mk+pro+ret
 exe	0x800172F4	40	def_cbsync	1	10	0	1	0	0	24		mk+pro+ret
 exe	0x8001731C	40	def_cbready	1	10	0	1	0	0	24		mk+pro+ret
@@ -191,7 +190,7 @@ exe	0x800182E0	716	CD_ready	1	179	20	7	0	0	64		jal+mk+pro+ret
 exe	0x800185AC	1052	CD_cw	1	263	27	10	0	0	72		jal+mk+pro+ret
 exe	0x800189C8	136	CD_vol	1	34	0	0	0	0	0		jal+mk+ret
 exe	0x80018A50	224	CD_flush	1	56	2	0	0	0	0		jal+mk+ret
-exe	0x80018B30	244	CD_initvol	1	61	2	0	0	0	8		jal+mk+ret
+exe	0x80018B30	244	CD_initvol	1	61	2	0	0	0	8		jal+mk+pro+ret
 exe	0x80018C24	80	CD_initintr	1	20	0	2	0	0	24		jal+mk+pro+ret
 exe	0x80018C74	492	CD_init	1	123	5	9	0	0	24		jal+mk+pro+ret
 exe	0x80018E60	364	CD_datasync	1	91	6	5	0	0	48		jal+mk+pro+ret
@@ -746,7 +745,7 @@ ovl201	0x8004FFF4	132	func_8004FFF4	0	33	0	7	0	0	32		pro+ret
 ovl201	0x80050078	116	func_80050078	0	29	5	0	0	0	0		jal+ret
 ovl201	0x800500EC	112	func_800500EC	0	28	5	0	0	0	0		jal+ret
 ovl201	0x8005015C	96	func_8005015C	0	24	4	0	0	0	0		jal+ret
-ovl201	0x800501BC	932	func_800501BC	0	233	26	0	1	0	8	0x8004AE94	jal+ret
+ovl201	0x800501BC	932	func_800501BC	0	233	26	0	1	0	8	0x8004AE94	jal+pro+ret
 ovl201	0x80050560	144	func_80050560	0	36	3	0	0	0	32		pro+ret
 ovl201	0x800505F0	252	func_800505F0	0	63	13	0	1	0	0	0x8004AEEC	jal+ret
 ovl201	0x800506EC	264	func_800506EC	0	66	13	0	1	0	0	0x8004AF3C	jal+ret
@@ -1618,8 +1617,7 @@ ovl201	0x800A7A68	2808	func_800A7A68	0	702	28	58	0	0	72		pro+ret
 ovl201	0x800A8560	148	func_800A8560	0	37	0	1	0	0	24		jal+pro+ret
 ovl201	0x800A85F4	36	func_800A85F4	0	9	0	0	0	0	0		ret
 ovl201	0x800A8618	132	func_800A8618	0	33	3	6	0	0	24		jal+pro+ret
-ovl201	0x800A869C	20	func_800A869C	0	5	0	0	0	0	0		jal+ret
-ovl201	0x800A86B0	32	func_800A86B0	0	8	0	1	0	0	24		pro
+ovl201	0x800A869C	52	func_800A869C	0	13	0	1	0	0	24		jal+pro+ret
 ovl201	0x800A86D0	552	func_800A86D0	0	138	10	13	0	0	56		jal+pro+ret
 ovl201	0x800A88F8	124	func_800A88F8	0	31	0	4	0	0	24		jal+pro+ret
 ovl201	0x800A8974	76	func_800A8974	0	19	0	1	0	0	40		jal+pro+ret
@@ -1836,8 +1834,7 @@ ovl202	0x8004E98C	176	func_8004E98C	0	44	5	0	0	0	0		jal+ret
 ovl202	0x8004EA3C	92	func_8004EA3C	0	23	3	0	0	0	0		jal+ret
 ovl202	0x8004EA98	56	func_8004EA98	0	14	3	0	0	0	0		jal+ret
 ovl202	0x8004EAD0	12	func_8004EAD0	0	3	0	0	0	0	0		jal+ret
-ovl202	0x8004EADC	20	func_8004EADC	0	5	0	0	0	0	0		ret
-ovl202	0x8004EAF0	264	func_8004EAF0	0	66	13	0	0	0	16		pro
+ovl202	0x8004EADC	284	func_8004EADC	0	71	13	0	0	0	16		pro+ret
 ovl202	0x8004EBF8	84	func_8004EBF8	0	21	2	0	0	0	0		jal+ret
 ovl202	0x8004EC4C	92	func_8004EC4C	0	23	3	0	0	0	0		jal+ret
 ovl202	0x8004ECA8	116	func_8004ECA8	0	29	4	0	0	0	24		jal+pro+ret
@@ -1850,8 +1847,7 @@ ovl202	0x8004F024	92	func_8004F024	0	23	0	3	0	0	32		jal+pro+ret
 ovl202	0x8004F080	84	func_8004F080	0	21	0	2	0	0	32		jal+pro+ret
 ovl202	0x8004F0D4	204	func_8004F0D4	0	51	0	7	0	0	32		jal+pro+ret
 ovl202	0x8004F1A0	8	func_8004F1A0	0	2	0	0	0	0	0		ret
-ovl202	0x8004F1A8	20	func_8004F1A8	0	5	0	0	0	0	0		jal+ret
-ovl202	0x8004F1BC	844	func_8004F1BC	0	211	9	12	0	0	48		pro
+ovl202	0x8004F1A8	864	func_8004F1A8	0	216	9	12	0	0	48		jal+pro+ret
 ovl202	0x8004F508	1340	func_8004F508	0	335	14	34	0	0	40		jal+pro+ret
 ovl202	0x8004FA44	856	func_8004FA44	0	214	26	2	0	0	64		jal+pro+ret
 ovl202	0x8004FD9C	272	func_8004FD9C	0	68	5	1	0	0	64		jal+pro+ret
@@ -1932,8 +1928,7 @@ ovl202	0x800572A8	184	func_800572A8	0	46	0	1	0	0	24		jal+pro+ret
 ovl202	0x80057360	376	func_80057360	0	94	0	13	0	0	40		jal+pro+ret
 ovl202	0x800574D8	1212	func_800574D8	0	303	23	0	1	0	8	0x8004B184	jal+pro+ret
 ovl202	0x80057994	64	func_80057994	0	16	0	1	0	0	24		jal+pro+ret
-ovl202	0x800579D4	20	func_800579D4	0	5	0	0	0	0	0		ret
-ovl202	0x800579E8	24	func_800579E8	0	6	0	0	0	0	8		pro
+ovl202	0x800579D4	44	func_800579D4	0	11	0	0	0	0	8		pro+ret
 ovl202	0x80057A00	580	func_80057A00	0	145	5	1	0	0	32		jal+pro+ret
 ovl202	0x80057C44	816	func_80057C44	0	204	6	1	0	43	48		jal+pro+ret
 ovl202	0x80057F74	180	func_80057F74	0	45	4	0	0	11	0		jal+ret
@@ -2235,7 +2230,7 @@ ovl202	0x80078EC8	56	func_80078EC8	0	14	1	2	0	0	24		pro+ret
 ovl202	0x80078F00	412	func_80078F00	0	103	13	1	0	0	24		jal+pro+ret
 ovl202	0x8007909C	400	func_8007909C	0	100	11	1	0	0	24		jal+pro+ret
 ovl202	0x8007922C	324	func_8007922C	0	81	7	5	0	0	32		jal+pro+ret
-ovl202	0x80079370	436	func_80079370	0	109	19	0	0	0	0		jal+ret
+ovl202	0x80079370	436	func_80079370	0	109	19	0	0	0	16		jal+ret
 ovl202	0x80079524	120	func_80079524	0	30	3	1	0	0	24		jal+pro+ret
 ovl202	0x8007959C	344	func_8007959C	0	86	10	6	0	0	32		jal+pro+ret
 ovl202	0x800796F4	52	func_800796F4	0	13	0	1	0	0	24		jal+pro+ret
@@ -2458,8 +2453,7 @@ ovl203	0x8004EBA8	176	func_8004EBA8	0	44	5	0	0	0	0		jal+ret
 ovl203	0x8004EC58	92	func_8004EC58	0	23	3	0	0	0	0		jal+ret
 ovl203	0x8004ECB4	56	func_8004ECB4	0	14	3	0	0	0	0		jal+ret
 ovl203	0x8004ECEC	12	func_8004ECEC	0	3	0	0	0	0	0		jal+ret
-ovl203	0x8004ECF8	20	func_8004ECF8	0	5	0	0	0	0	0		ret
-ovl203	0x8004ED0C	264	func_8004ED0C	0	66	13	0	0	0	16		pro
+ovl203	0x8004ECF8	284	func_8004ECF8	0	71	13	0	0	0	16		pro+ret
 ovl203	0x8004EE14	84	func_8004EE14	0	21	2	0	0	0	0		jal+ret
 ovl203	0x8004EE68	92	func_8004EE68	0	23	3	0	0	0	0		jal+ret
 ovl203	0x8004EEC4	116	func_8004EEC4	0	29	4	0	0	0	24		jal+pro+ret
@@ -2545,8 +2539,7 @@ ovl203	0x80056CA4	184	func_80056CA4	0	46	0	1	0	0	24		jal+pro+ret
 ovl203	0x80056D5C	376	func_80056D5C	0	94	0	13	0	0	40		jal+pro+ret
 ovl203	0x80056ED4	1212	func_80056ED4	0	303	23	0	1	0	8	0x8004AE10	jal+pro+ret
 ovl203	0x80057390	64	func_80057390	0	16	0	1	0	0	24		jal+pro+ret
-ovl203	0x800573D0	20	func_800573D0	0	5	0	0	0	0	0		ret
-ovl203	0x800573E4	24	func_800573E4	0	6	0	0	0	0	8		pro
+ovl203	0x800573D0	44	func_800573D0	0	11	0	0	0	0	8		pro+ret
 ovl203	0x800573FC	580	func_800573FC	0	145	5	1	0	0	32		jal+pro+ret
 ovl203	0x80057640	804	func_80057640	0	201	5	1	0	43	48		jal+pro+ret
 ovl203	0x80057964	180	func_80057964	0	45	4	0	0	11	0		jal+ret
@@ -2839,12 +2832,12 @@ ovl203	0x80077A7C	124	func_80077A7C	0	31	2	2	0	0	32		pro+ret
 ovl203	0x80077AF8	164	func_80077AF8	0	41	2	1	0	0	24		jal+pro+ret
 ovl203	0x80077B9C	172	func_80077B9C	0	43	2	1	0	0	32		pro+ret
 ovl203	0x80077C48	56	func_80077C48	0	14	1	2	0	0	24		pro+ret
-ovl203	0x80077C80	400	func_80077C80	0	100	19	0	0	0	0		jal+ret
+ovl203	0x80077C80	400	func_80077C80	0	100	19	0	0	0	16		jal+ret
 ovl203	0x80077E10	688	func_80077E10	0	172	10	6	0	0	32		jal+pro+ret
 ovl203	0x800780C0	252	func_800780C0	0	63	5	6	0	0	32		jal+pro+ret
 ovl203	0x800781BC	52	func_800781BC	0	13	0	1	0	0	24		jal+pro+ret
 ovl203	0x800781F0	104	func_800781F0	0	26	1	1	0	0	40		jal+pro+ret
-ovl203	0x80078258	236	func_80078258	0	59	11	0	0	0	0		jal+ret
+ovl203	0x80078258	236	func_80078258	0	59	11	0	0	0	8		jal+pro+ret
 ovl203	0x80078344	124	func_80078344	0	31	2	2	0	0	32		pro+ret
 ovl203	0x800783C0	124	func_800783C0	0	31	2	2	0	0	32		pro+ret
 ovl203	0x8007843C	368	func_8007843C	0	92	10	4	0	0	40		pro+ret
@@ -3041,8 +3034,7 @@ ovl204	0x8004EA8C	176	func_8004EA8C	0	44	5	0	0	0	0		jal+ret
 ovl204	0x8004EB3C	92	func_8004EB3C	0	23	3	0	0	0	0		jal+ret
 ovl204	0x8004EB98	56	func_8004EB98	0	14	3	0	0	0	0		jal+ret
 ovl204	0x8004EBD0	12	func_8004EBD0	0	3	0	0	0	0	0		jal+ret
-ovl204	0x8004EBDC	20	func_8004EBDC	0	5	0	0	0	0	0		ret
-ovl204	0x8004EBF0	264	func_8004EBF0	0	66	13	0	0	0	16		pro
+ovl204	0x8004EBDC	284	func_8004EBDC	0	71	13	0	0	0	16		pro+ret
 ovl204	0x8004ECF8	84	func_8004ECF8	0	21	2	0	0	0	0		jal+ret
 ovl204	0x8004ED4C	92	func_8004ED4C	0	23	3	0	0	0	0		jal+ret
 ovl204	0x8004EDA8	116	func_8004EDA8	0	29	4	0	0	0	24		jal+pro+ret
@@ -3127,8 +3119,7 @@ ovl204	0x8005631C	280	func_8005631C	0	70	0	1	0	0	24		jal+pro+ret
 ovl204	0x80056434	596	func_80056434	0	149	0	17	0	0	40		jal+pro+ret
 ovl204	0x80056688	1212	func_80056688	0	303	23	0	1	0	8	0x8004ADB8	jal+pro+ret
 ovl204	0x80056B44	64	func_80056B44	0	16	0	1	0	0	24		jal+pro+ret
-ovl204	0x80056B84	20	func_80056B84	0	5	0	0	0	0	0		ret
-ovl204	0x80056B98	24	func_80056B98	0	6	0	0	0	0	8		pro
+ovl204	0x80056B84	44	func_80056B84	0	11	0	0	0	0	8		pro+ret
 ovl204	0x80056BB0	580	func_80056BB0	0	145	5	1	0	0	32		jal+pro+ret
 ovl204	0x80056DF4	804	func_80056DF4	0	201	5	1	0	43	48		jal+pro+ret
 ovl204	0x80057118	180	func_80057118	0	45	4	0	0	11	0		jal+ret
@@ -3422,12 +3413,12 @@ ovl204	0x8007789C	124	func_8007789C	0	31	2	2	0	0	32		pro+ret
 ovl204	0x80077918	164	func_80077918	0	41	2	1	0	0	24		jal+pro+ret
 ovl204	0x800779BC	172	func_800779BC	0	43	2	1	0	0	32		pro+ret
 ovl204	0x80077A68	56	func_80077A68	0	14	1	2	0	0	24		pro+ret
-ovl204	0x80077AA0	400	func_80077AA0	0	100	19	0	0	0	0		jal+ret
+ovl204	0x80077AA0	400	func_80077AA0	0	100	19	0	0	0	16		jal+ret
 ovl204	0x80077C30	168	func_80077C30	0	42	2	1	0	0	24		jal+pro+ret
 ovl204	0x80077CD8	416	func_80077CD8	0	104	8	6	0	0	32		jal+pro+ret
 ovl204	0x80077E78	52	func_80077E78	0	13	0	1	0	0	24		jal+pro+ret
 ovl204	0x80077EAC	92	func_80077EAC	0	23	0	1	0	0	40		jal+pro+ret
-ovl204	0x80077F08	236	func_80077F08	0	59	11	0	0	0	0		jal+ret
+ovl204	0x80077F08	236	func_80077F08	0	59	11	0	0	0	8		jal+pro+ret
 ovl204	0x80077FF4	124	func_80077FF4	0	31	2	2	0	0	32		pro+ret
 ovl204	0x80078070	124	func_80078070	0	31	2	2	0	0	32		pro+ret
 ovl204	0x800780EC	368	func_800780EC	0	92	10	4	0	0	40		pro+ret

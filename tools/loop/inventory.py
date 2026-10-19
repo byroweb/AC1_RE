@@ -118,7 +118,7 @@ STUB_TEXT = {"fdat188": (0x801B81E8, 0x801B81F0)}
 DEFAULT_CODE_UNITS = os.path.join(REPO, "overlays", "CODE_UNITS.tsv")
 
 # a prologue this many words after another start candidate belongs to it
-PROLOGUE_SLACK = 4
+PROLOGUE_SLACK = 8
 
 PROGRAM_OVERLAYS = {201: "front_end", 202: "mission", 203: "mode1", 204: "mode2"}
 
