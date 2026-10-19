@@ -296,7 +296,7 @@ mips:3000`), the GAS that `tools/ghidra/objdump2m2c.py` makes from the
 printed and skipped), the exact oracle command line (`--expect-size` from the
 row, `--rodata <first jt_addrs>` marked *verify* when the function has a jump
 table) and the C path.  If `re/match/<unit>/func_<ADDR>.c` does not exist it
-writes a skeleton (`#include "ac1_types.h"`, a header comment with unit /
+writes a skeleton (`#include "ac1/ac1.h"`, a header comment with unit /
 vaddr / size / score / date, the m2c draft in a comment, an empty function);
 that is the only file `next` writes.  With `--queue tools/loop/queue-A.tsv`
 the rows come from that queue in order, skipping rows whose state in the
@@ -309,7 +309,10 @@ both ledgers, filtered by `--unit`, `--max-score` and `--shard k/n`
 
 **`try`** builds the oracle command from `units.py` flags, `--expect-size`
 from `functions.tsv`, `--rodata` (yours, else the row's first `jt_addrs` when
-`jump_tables > 0`, with a note) and your `--defsym`s, runs
+`jump_tables > 0`, with a note), your `--defsym`s and, when the C file
+contains `#include "ac1/ac1.h"`, `--syms include/ac1/symbols.tsv --syms
+ac1_markup.tsv` (any `--syms` switches off the oracle's implicit markup, so
+both tables go in), runs
 `match_fn.py --json -` and splits the JSON from the final line.  Unresolved
 symbols named `func_<ADDR>` / `D_<ADDR>` are their own address: they are added
 as `--defsym` and the oracle is rerun once (`--no-auto-defsym` disables this);
@@ -338,7 +341,9 @@ vs compares; drift after the first diff; else the first differing pair).
 
 On a clean MATCH `try` appends the manifest row
 `vaddr<TAB><manifest unit><TAB><unit>/func_<ADDR>.c<TAB><size><TAB><extra>`
-(extra keeps `--base`, `--rodata`, `--defsym`, never `--bin`; deduped on
+(extra keeps `--base`, `--rodata`, the two `--syms` for an `ac1/ac1.h`
+source, then `--defsym` minus any NAME=ADDR either table already resolves to
+the same address, never `--bin`; deduped on
 (vaddr, unit); the file's existing line-ending style is kept), records
 `ledger.record("match", unit, vaddr, attempts)` in `$AC1_LEDGER` (or
 `ledger.tsv`) unless that ledger already says `match`, and prints

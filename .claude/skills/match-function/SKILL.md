@@ -9,7 +9,7 @@ Goal: a C function that, compiled with the retail toolchain, produces exactly th
 retail bytes at the given address. The only judge is
 
 ```bash
-python tools/match/match_fn.py <VADDR> <file.c> [--ovl N] [--defsym NAME=ADDR ...]
+python tools/match/match_fn.py <VADDR> <file.c> [--ovl N] [--syms FILE.tsv ...] [--defsym NAME=ADDR ...]
 ```
 
 **Only exit status 0 with a final line `MATCH <fn> <n>` counts as matched.**
@@ -29,27 +29,55 @@ only; resolve the symbols (`--defsym`) before calling it done.
 - the toolchain: `tools/match/vendor/toolchain.json` must exist, else run
   `tools/match/setup.sh` once (minutes; builds cc1 on Windows).
 
+## Shared types and names
+
+Matched code shares one set of struct headers and one name table (details and
+the field-level evidence: `include/ac1/README.md`):
+
+- `#include "ac1/ac1.h"` gives `u8`..`s32`, the PsyQ `SVECTOR`/`VECTOR`/`MATRIX`,
+  and the structs: `UiObj` (0xD0, overlay 201 front-end object), `AcEntity`
+  (0x170, overlay 202 actor), `Projectile` (0xE0) and `WeaponDef` (0x1C), plus
+  `MissionCtl` / `WorldStruct`. Each ends in a size assert. The `extern`
+  declarations for every named global and function come from the generated
+  `symbols.h`, so do not redeclare them.
+- `include/ac1/symbols.tsv` (address, name, C type, unit) holds the shared
+  names. Look an address up there (and in `ac1_markup.tsv` for exe/PsyQ names)
+  before you invent a `func_<ADDR>` / `D_<ADDR>` placeholder.
+- To add a name: add a row to `symbols.tsv`, run `python tools/match/ctx.py gen`
+  (regenerates `symbols.h`), then `python tools/match/ctx.py check`. Commit the two
+  files separately from the `matched ...` commit.
+- A source that includes `ac1/ac1.h` needs both tables on the oracle line:
+  `--syms include/ac1/symbols.tsv --syms ac1_markup.tsv`. Any `--syms` switches
+  off the implicit `ac1_markup.tsv`, so always pass both. `tools/loop/drive.py try`
+  adds them by itself when it sees the include.
+
 ## Loop
 
-1. **Carve + decompile.**  Disassemble the retail bytes and get a first draft:
+1. **Carve + decompile.**  Get a typed first draft with the shared context:
    ```bash
-   tools/ghidra/overlay2c.sh 0x<VADDR> 0x<SIZE> disc_map/overlays/ovl201_front_end.bin 0x8004ADA0
+   python tools/match/ctx.py m2c 0x<VADDR> --unit 201 --proto "void func_<VADDR>(UiObj *o);"
    ```
-   (`overlay2c.sh` runs objdump + m2c with target `mips-gcc-c`; for the exe pass
-   the carved exe and base `0x80010800`). Keep the raw disassembly next to you; the
-   diff below is in the same objdump syntax.
+   It carves the bytes (length from `tools/loop/functions.tsv`, or pass it), turns
+   `jal` targets and `lui`/`%lo` pairs found in `symbols.tsv` into names, and runs
+   m2c (`mips-gcc-c`) with `ac1/ac1.h` as context, so fields print as `o->update`
+   instead of `*(s32 *)(arg0 + 0x74)`. `--proto` types the function itself; use
+   `UiObj *` in 201, `AcEntity *` or `Projectile *` in 202. `--raw` gives the
+   untyped draft that `tools/ghidra/overlay2c.sh` prints. Keep the raw disassembly
+   next to you; the diff below is in the same objdump syntax.
 
 2. **Write the C** into `re/match/<ovl or exe>/func_<VADDR>.c` (one function per
-   file; look at the four matched examples already in `re/match/ovl201/` first; `#include "ac1_types.h"` gives `u8/u16/u32/s8/s16/s32`). Declare externals
-   as `extern` with the names from `ac1_markup.tsv` when they exist (then their
-   addresses resolve automatically); otherwise name them `D_<ADDR>` / `func_<ADDR>`
-   and pass `--defsym D_<ADDR>=0x<ADDR>`. Jump-table functions (`jr` through a
-   table) need `--rodata <VA of the table>`.
+   file). Start from `#include "ac1/ac1.h"` and the struct types above; the matched
+   sources in `re/match/` that include it are the examples (e.g.
+   `re/match/ovl201/func_8007CECC.c`). Names from `symbols.tsv` and
+   `ac1_markup.tsv` resolve through `--syms`; anything else is `extern` as
+   `D_<ADDR>` / `func_<ADDR>` with `--defsym D_<ADDR>=0x<ADDR>` (or add it to
+   `symbols.tsv`, see above). Jump-table functions (`jr` through a table) need
+   `--rodata <VA of the table>`.
 
 3. **Run the oracle** with `--expect-size` and `--keep /tmp/m_<VADDR>` so cc1's
    `fn.s` and the two `.bin` slices stay around:
    ```bash
-   python tools/match/match_fn.py 0x<VADDR> re/match/ovl201/func_<VADDR>.c --ovl 201 --expect-size <SIZE> --keep /tmp/m_<VADDR>
+   python tools/match/match_fn.py 0x<VADDR> re/match/ovl201/func_<VADDR>.c --ovl 201 --expect-size <SIZE>        --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --keep /tmp/m_<VADDR>
    ```
    Exit 2 (`ERROR:`) is a broken build (syntax, missing symbol, toolchain), not a
    near miss: read the toolchain log it prints, fix, rerun.
@@ -63,7 +91,7 @@ only; resolve the symbols (`--defsym`) before calling it done.
    | missing or extra `nop` after a load | load-delay slot: a value used right after its load. Restructure so the use is further away, or the use is actually of a different variable; `volatile` on a struct field/global changes this too |
    | `lh` vs `lhu`, `lb` vs `lbu`, `lw` vs `lh` | wrong field type (signed vs unsigned, width); remember `-funsigned-char`: plain `char` is unsigned |
    | `addiu v0,v0,N` vs `addu` with a register, or `sll`+`addu` chains | wrong struct stride / array element size, or index arithmetic written on a different type (`int` vs `short`) |
-   | wrong immediate on `lw rX,N(base)` | wrong field offset: fix the struct, do not cast pointer arithmetic |
+   | wrong immediate on `lw rX,N(base)` | wrong field offset or wrong struct type. If the retail bytes prove a field in `include/ac1/*.h` wrong, fix the header (pads keep the size assert) and rerun `re/match/check_all.sh`, since other matches use it; do not cast pointer arithmetic |
    | `andi ..,0xff`/`0xffff` present or missing | implicit narrowing: an expression computed in a narrower type, or an assignment to a `u8/u16` field |
    | `sll`/`sra` pair present or missing | sign extension from a `s8/s16` value, or a `char`/`short` parameter being promoted |
    | `mult`/`div` vs shift-and-add sequences | multiply/divide by a constant vs a variable, or signed vs unsigned operands |
@@ -81,8 +109,9 @@ only; resolve the symbols (`--defsym`) before calling it done.
    from maspsx/assembler ones.
 
 5. **On MATCH** (exit 0, no mask warning, size as expected): add a row to
-   `re/match/manifest.tsv` (vaddr, overlay, source, size, the extra `--defsym`/
-   `--rodata` args), check `re/match/check_all.sh` still says all matched, and commit
+   `re/match/manifest.tsv` (vaddr, overlay, source, size, the extra `--rodata`/
+   `--syms`/`--defsym` args; `drive.py try` writes this row itself and leaves out
+   a `--defsym` the tables already resolve), check `re/match/check_all.sh` still says all matched, and commit
    the C file plus the manifest row with the message
    ```
    matched func_<VADDR> <attempts>
