@@ -85,9 +85,11 @@ installs/verifies the Ghidra PSX loader + PSYQ signatures, and confirms the
 overlay-import script. Safe to re-run; only fetches what's missing.
 
 ## `overlay2c.sh <hex_addr> <len> [binfile] [base]`  — the daily workhorse
-Decompiles a slice of MIPS to C via `objdump` + **m2c**. The name/menu code lives
-in a runtime overlay Ghidra's base project doesn't cover, so this turns a live
-address range into readable C in one step.
+Decompiles a slice of MIPS to C via `objdump` + **m2c** (target `mips-gcc-c`: the
+retail code is GCC 2.7.2, see *Byte-matching toolchain* below — the old `mips-ido-c`
+target produced IDO-style output for a compiler the game never used). The name/menu
+code lives in a runtime overlay Ghidra's base project doesn't cover, so this turns a
+live address range into readable C in one step.
 ```
 tools/ghidra/overlay2c.sh 0x80082190 0x1b0          # decompile the name-input handler
 ```
@@ -119,6 +121,68 @@ update method). **Two caveats found doing so:**
 - m2c can't resolve `jr` **switch/jump tables** ("Unable to determine jump
   table") — decode a sub-range that avoids the dispatcher, or read those in
   Ghidra/live disasm.
+
+## `psyq_labels.py` — PsyQ library names from the v1.0 decomp
+SLUS-01323 and SCUS-94182 share byte-identical code (`docs/REFERENCE.md` §1), so the
+signature-identified PsyQ 3.7 library list in the CC0
+[Wyrelade/Armored-Core-Decomp](https://github.com/Wyrelade/Armored-Core-Decomp) repo
+(`configs/USA/psyq_funcs.txt`, 528 functions in `0x80016EA4`–`0x80030368` + `AddDrv`/`DelDrv`)
+applies to our exe address for address. The script **downloads that file at run time**
+(nothing vendored), emits a label list and compares it with `ac1_markup.tsv`:
+```
+python tools/ghidra/psyq_labels.py --out psyq_labels.txt      # Ghidra ImportSymbolsScript.py format
+python tools/ghidra/psyq_labels.py --format tsv --named-only  # ac1_markup-style F rows
+python tools/ghidra/psyq_labels.py -v                         # list every gained / corrected name
+python tools/ghidra/psyq_labels.py --merged ac1_markup_psyq.tsv   # markup copy with names applied
+```
+Import in Ghidra: Script Manager → `ImportSymbolsScript.py` → pick the `.txt`
+(`name 0xADDR f` per line creates the function + label). `ac1_markup_pristine.tsv` is
+never written. `--source <path>` works offline from a saved copy.
+
+## `wyrelade_layout.py` — every code unit's layout + v1.0 hash, re-verified on your disc
+Same source and same rule (facts only, fetched at run time): the Wyrelade splat configs
+(`configs/USA/*.yaml`, `mission_overlays.txt`) give, for the exe and all 62 `FDAT.T` code
+entries, the load address, size, `.rodata`/`.text`/`.data` boundaries, the v1.0 SHA-1 and
+which mission overlay is a byte-identical alias (168 = 166). The committed table is
+`overlays/CODE_UNITS.tsv`.
+```
+python tools/ghidra/wyrelade_layout.py --out overlays/CODE_UNITS.tsv   # regenerate the table
+python tools/ghidra/wyrelade_layout.py --check                          # carve every unit from $AC1_BIN,
+                                                                        # compare SHA-1 with v1.0
+python tools/ghidra/wyrelade_layout.py --md                             # Markdown table
+```
+`--check` is the reproducible proof behind the "v1.1 code == v1.0 code" note in
+`docs/REFERENCE.md` (2026-10-18: 63 identical, 0 different). The `text_va`/`text_end_va`
+columns are the ranges to feed `disasm_batch.py` / `overlay2c.sh` for each overlay.
+
+What that repo does **not** give us: its `configs/USA/sym.fdat*.txt` symbol files are
+empty and `sym.main.txt` holds only the PsyQ names already covered by `psyq_labels.py`;
+its game-function names live in its C source, which we do not copy.
+
+## Byte-matching toolchain (retail compiler, optional)
+The retail code is **PsyQ 4.0 `CC1PSX` = GCC 2.7.2 (SN32 3.7.0002)** assembled by
+**ASPSX 2.56** (identification: the Wyrelade repo's compiler probe; details in
+`docs/REFERENCE.md` → *Retail compiler*). The modern `mipsel` GCC used for the patches
+will never reproduce retail bytes; for matching experiments you need the period compiler:
+
+- **Compiler:** [decompals/old-gcc](https://github.com/decompals/old-gcc) builds
+  `gcc-2.7.2-psx` in Docker (`cd 2.7.2-psx && docker build .`, or take the prebuilt
+  release tarball from that repo's Releases page). You get `cc1` (and `cpp`); the SN
+  build is bit-identical to PsyQ 4.0's `CC1PSX.EXE`, so a real PsyQ 4.0 install works too.
+- **Assembler:** [mkst/maspsx](https://github.com/mkst/maspsx) (`pip install` from the
+  checkout, or run `maspsx.py`) turns `cc1`'s `-mgas` output into what ASPSX 2.56 would
+  have emitted (`$at` expansion of `lw d,sym(reg)`, no div-by-zero traps), then feeds a
+  modern `mipsel-*-as`; the link step is plain GNU `ld`.
+- **The exact retail `cc1` line** (same for the exe and every overlay):
+  ```
+  cpp -lang-c -undef -D__GNUC__=2 -Dmips -D__mips__ -D__mips -Dpsx -D__psx__ -D__psx -D_PSYQ -D__EXTENSIONS__ -D_MIPSEL -D__CHAR_UNSIGNED__ -D_LANGUAGE_C -DLANGUAGE_C src.c     | cc1 -O2 -mips1 -mcpu=3000 -w -funsigned-char -fpeephole -ffunction-cse -fpcc-struct-return -fcommon -msoft-float -mgas -fgnu-linker -gcoff -G0 -quiet -o out.s
+  maspsx.py --aspsx-version=2.56 out.s | mipsel-none-elf-as -EL -march=r3000 -mabi=32 -no-pad-sections -O1 -G0 -o out.o
+  ```
+  The `cc1` flags are the verified retail set; the `cpp` defines and the `as` line are
+  the conventional PsyQ-decomp ones (same recipe the Wyrelade `tools/build_ac.py` uses)
+  and may need trimming to taste. Compare with `objdiff` or `asm-differ` against the
+  bytes carved from your own disc (`disc_map/overlays/ovl201_front_end.bin`, base
+  `0x8004ADA0`).
 
 ## `ghidra_restart.sh`
 Kills Ghidra (GUI + decompiler + headless), clears stale `.lock`/`.lock~` that
