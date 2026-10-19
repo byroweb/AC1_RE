@@ -15,3 +15,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-19T01:12:32Z	ovl202	0x8006E7B8	match	1	
 2026-10-19T01:14:13Z	ovl201	0x80050804	match	1	
 2026-10-19T01:14:13Z	ovl202	0x8006DB90	match	1	
+2026-10-19T01:14:13Z	ovl202	0x800783F8	match	1	
