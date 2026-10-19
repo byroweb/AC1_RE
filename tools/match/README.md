@@ -203,6 +203,26 @@ skip (never pass vacuously) when the toolchain or the carved overlay is missing.
 `test_maspsx_patch.py` runs maspsx + `as` on tiny `.ent`-framed sequences and checks
 the load-delay `nop` before `l* $r,%lo(sym)($base)` (needs only the toolchain).
 
+## Codegen probes
+
+`probes/pNN_*.c` are A/B pairs of tiny functions, one per row of the "GCC 2.7.2
+divergence families" part of the match-function skill table (register coloring,
+address materialization, empty frames, epilogue fill, exit merging, operand order,
+loops).  `python tools/match/probes/run_probes.py` compiles both variants through
+`match_fn.py`, checks that B differs from (or equals) A as claimed and that each
+variant's disassembly has the claimed shape; `tests/test_probes.py` runs it.
+26/26 hold with the pinned toolchain (2026-10-19).
+
+## Known cc1 problem
+
+Both MinGW-built `cc1.exe` binaries tried (this worktree and another checkout)
+crash with an access violation (exit 3221225477) on two one-trip loops:
+`for (i = 0; i < 1; i++) p = &G;` and the same loop around
+`v = (p->l | p->r) & p->cur;` with `p = &G` set before it.
+`for (i = 0; i < 1; i++) s += G[i];` and ordinary loops compile fine.
+match_fn.py reports it as `ERROR: cc1.exe failed`.  Not checked against the Linux
+tarball (no WSL here); avoid the shape or cross-check on Linux.
+
 ## Matched functions
 
 `re/match/manifest.tsv` lists every function that has reached MATCH (address,
@@ -217,5 +237,6 @@ include the delay slot after the final `jr ra`.
 - `match_fn.py` — the oracle
 - `include/ac1_types.h` — `u8/u16/u32/s8/s16/s32` for hand-written sources
 - `tests/` — pytest suite, shell runner, the two sources
+- `probes/` — A/B codegen probes behind the skill table, `run_probes.py`
 - `vendor/` — gitignored toolchain (`cc1[.exe]`, `maspsx/`, `toolchain.json`, `VERSIONS.txt`, `cache/`)
 - `.claude/skills/match-function/SKILL.md` — the Claude loop that uses this
