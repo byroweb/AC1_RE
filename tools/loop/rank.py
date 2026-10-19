@@ -9,6 +9,16 @@ matched or given up, and prints the N easiest candidates.
     rank.py --unit ovl201 -n 50  # one unit
     rank.py --tsv                # machine-readable (unit vaddr name size score ...)
     rank.py --calibrate          # ledger outcomes with their scores, to refit WEIGHTS
+    rank.py --missions           # one open fdat function per twins.tsv group, by payoff
+
+Mission mode (--missions) reads tools/loop/twins.tsv (twins.py group): one
+matched C file replays onto every member of its group, so each open group is
+listed once (its representative, or its member in --unit) and sorted by
+
+    payoff = n_members / (1 + score)
+
+i.e. manifest rows gained per unit of difficulty.  A group with any ledger row
+(match or give-up) on any member is done: the body is the same C everywhere.
 
 Difficulty score (lower = easier):
 
@@ -29,6 +39,7 @@ sys.path.insert(0, HERE)
 import ledger  # noqa: E402
 
 FUNCTIONS = os.path.join(HERE, "functions.tsv")
+TWINS = os.path.join(HERE, "twins.tsv")
 
 # hand-weighted difficulty, reviewed 2026-10-18 against 78 ledger outcomes, 24 of them the
 # harder calibration round (queue-C1..C3).  Spearman(score, attempts) 0.740 -> 0.784 over all,
@@ -90,6 +101,80 @@ def candidates(rows, done, unit=None, min_instructions=MIN_INSTRUCTIONS, include
     return out
 
 
+def load_twins(path=TWINS):
+    """{group: [(unit, vaddr), ...]} in twins.tsv order (representative first)."""
+    if not os.path.isfile(path):
+        sys.exit("rank.py: %s not found; run tools/loop/twins.py group first" % path)
+    groups = {}
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            if line.startswith("#") or not line.strip():
+                continue
+            p = line.rstrip("\n").split("\t")
+            g = groups.setdefault(p[0], [(p[1], p[2])])
+            if (p[3], p[4]) != g[0]:
+                g.append((p[3], p[4]))
+    return groups
+
+
+def mission_candidates(rows, done, groups, unit=None, min_instructions=MIN_INSTRUCTIONS):
+    """One open function per twin group, highest payoff (members per 1 + score) first.
+
+    Returns (candidates, n_done_groups)."""
+    by_key = {(r["unit"], r["vaddr"]): r for r in rows}
+    out, n_done = [], 0
+    for gid, members in groups.items():
+        key = members[0]
+        if unit:
+            pick = [m for m in members if m[0] == unit]
+            if not pick:
+                continue
+            key = pick[0]
+        if any(m in done for m in members):
+            n_done += 1
+            continue
+        r = by_key.get(key)
+        if r is None or r["is_psyq"] or r["instructions"] < min_instructions:
+            continue
+        r = dict(r)
+        r["score"] = score(r)
+        r["group"] = gid
+        r["n_members"] = len(members)
+        r["payoff"] = len(members) / (1.0 + r["score"])
+        out.append(r)
+    out.sort(key=lambda r: (-r["payoff"], r["score"], r["unit"], r["vaddr"]))
+    return out, n_done
+
+
+def main_missions(args, unit, rows, done):
+    groups = load_twins(args.twins)
+    cands, n_done = mission_candidates(rows, done, groups, unit, args.min_instructions)
+    if args.max_score is not None:
+        cands = [c for c in cands if c["score"] <= args.max_score]
+    top = cands[:args.n] if args.n > 0 else cands
+
+    cols = ["group", "n_members", "payoff", "unit", "vaddr", "name", "size", "instructions",
+            "branches", "calls", "jump_tables", "gte_ops", "stack_size", "jt_addrs", "score"]
+    if args.tsv:
+        print("\t".join(cols))
+        for c in top:
+            c["payoff"] = "%.3f" % c["payoff"]
+            c["score"] = "%.3f" % c["score"]
+            print("\t".join(str(c[k]) for k in cols))
+        return
+
+    print("%d open group(s)%s, %d group(s) already in the ledger; showing %d"
+          % (len(cands), " with a member in %s" % unit if unit else "", n_done, len(top)))
+    print("%4s %-6s %4s %6s %-7s %-10s %5s %5s %3s %3s %3s %5s %5s"
+          % ("#", "group", "mem", "payoff", "unit", "vaddr", "size", "instr", "br", "jal", "jt",
+             "stack", "score"))
+    for i, c in enumerate(top, 1):
+        print("%4d %-6s %4d %6.2f %-7s %-10s %5d %5d %3d %3d %3d %5d %5.2f%s"
+              % (i, c["group"], c["n_members"], c["payoff"], c["unit"], c["vaddr"], c["size"],
+                 c["instructions"], c["branches"], c["calls"], c["jump_tables"], c["stack_size"],
+                 c["score"], ("  rodata " + c["jt_addrs"]) if c["jt_addrs"] else ""))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("-n", type=int, default=20, help="how many candidates (default 20)")
@@ -101,11 +186,18 @@ def main():
     ap.add_argument("--tsv", action="store_true", help="tab-separated output with a header")
     ap.add_argument("--calibrate", action="store_true",
                     help="list ledger outcomes with their scores (to refit WEIGHTS)")
+    ap.add_argument("--missions", action="store_true",
+                    help="one open fdat function per twins.tsv group, by members / (1 + score)")
+    ap.add_argument("--twins", default=TWINS, help="twins.tsv path (with --missions)")
     args = ap.parse_args()
 
     unit = ledger.norm_unit(args.unit) if args.unit else None
     rows = load_functions(args.functions)
     done = ledger.load(args.ledger)
+
+    if args.missions:
+        main_missions(args, unit, rows, done)
+        return
 
     if args.calibrate:
         by_key = {(r["unit"], r["vaddr"]): r for r in rows}
