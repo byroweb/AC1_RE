@@ -9,7 +9,16 @@ match is the oracle, `tools/match/match_fn.py` (final line `MATCH ...` or
 inventory.py  -> functions.tsv   every function in the exe + overlays, with difficulty features
 rank.py       -> stdout          unmatched, non-PsyQ functions, easiest first
 ledger.py     -> ledger.tsv      append-only outcomes: match / give-up per function
+units.py      -> stdout          unit name -> image file, load address, match_fn.py flags
+drive.py      -> stdout, re/match/<unit>/func_<ADDR>.c
+                                 the driver: next work package / try the oracle / give up / status / verify
+make_queues.py                   rebuilds queue-A.tsv / queue-B.tsv from rank.py
+merge_manifest.py                dedupes + sorts re/match/manifest.tsv after a merge
 ```
+
+`drive.py` is the only one that compiles anything, and it does so by calling
+`tools/match/match_fn.py`; the LLM (or human) writes the C, the scripts do the
+rest.
 
 Run from Git Bash in the repo root with the cross toolchain and the disc set:
 
@@ -155,6 +164,141 @@ newest row per `(unit, vaddr)` wins, so a later match supersedes a give-up.
 taking the attempt count from the `matched func_<ADDR> <n>` commit subjects.
 `$AC1_LEDGER` points the tools at another ledger file (tests).
 
+## units.py
+
+```
+units.py flags <unit>    # exe -> (nothing); ovl201 -> --ovl 201; fdat060 -> --bin <abs path> --base 0x801C4B40
+units.py image <unit>    # absolute path of the image (the exe is carved once into tools/loop/cache/)
+units.py base  <unit>    # 0x%08X load address of byte 0 of that image
+```
+
+`units.resolve(unit)` returns `Unit(name, image_path, base, text_lo, text_hi,
+oracle_flags, manifest_unit)`; `manifest_unit` is what goes in the manifest's
+second column (`exe`, `201`, `fdat060`).  Imports only `load_unit`,
+`find_in_disc_map`, `find_objdump`, `MISSION_ENTRIES` and `load_code_units`
+from `inventory.py`.  Mission-overlay bases and aliases come from
+`overlays/CODE_UNITS.tsv` when it is checked out, else from the inventory
+table; alias units (`fdat168` = `fdat166`) are refused so a function is only
+ever matched under one name.
+
+## drive.py
+
+```
+drive.py next   [--unit U] [--queue FILE] [--shard k/n] [--max-score S] [--no-m2c] [--dry-run] [--re-dir DIR]
+drive.py try    <unit> <vaddr> [--defsym NAME=ADDR]... [--rodata VA] [--no-auto-defsym] [--commit] [--keep] [--re-dir DIR]
+drive.py giveup <unit> <vaddr> <reason...>
+drive.py status [--queue FILE]
+drive.py verify [--manifest FILE]
+```
+
+A matcher's turn is `next` -> edit the C -> `try` until exit 0 -> (`--commit`) ->
+`next`; `giveup` when the attempt budget is spent.
+
+**`next`** prints a work package and exits 0, or exits 3 when nothing is open:
+the `functions.tsv` row with its score, the retail disassembly (`objdump -m
+mips:3000`), the GAS that `tools/ghidra/objdump2m2c.py` makes from the
+`mips:isa32` listing, the m2c draft (`-t mips-gcc-c --valid-syntax
+--deterministic-vars --stop-on-error`, retried with `--no-andor`; a failure is
+printed and skipped), the exact oracle command line (`--expect-size` from the
+row, `--rodata <first jt_addrs>` marked *verify* when the function has a jump
+table) and the C path.  If `re/match/<unit>/func_<ADDR>.c` does not exist it
+writes a skeleton (`#include "ac1_types.h"`, a header comment with unit /
+vaddr / size / score / date, the m2c draft in a comment, an empty function);
+that is the only file `next` writes.  With `--queue tools/loop/queue-A.tsv`
+the rows come from that queue in order, skipping rows whose state in the
+current ledger is not `open` or whose C file already carries a `NOT MATCHED`
+header; `--queue` refuses to run unless `$AC1_LEDGER` points at the matcher's
+own ledger (the shared `ledger.tsv` is merged by the lead).  Without
+`--queue` the candidates are `rank.candidates()` over `functions.tsv` minus
+both ledgers, filtered by `--unit`, `--max-score` and `--shard k/n`
+(`int(vaddr,16)//4 % n == k`).
+
+**`try`** builds the oracle command from `units.py` flags, `--expect-size`
+from `functions.tsv`, `--rodata` (yours, else the row's first `jt_addrs` when
+`jump_tables > 0`, with a note) and your `--defsym`s, runs
+`match_fn.py --json -` and splits the JSON from the final line.  Unresolved
+symbols named `func_<ADDR>` / `D_<ADDR>` are their own address: they are added
+as `--defsym` and the oracle is rerun once (`--no-auto-defsym` disables this);
+other names are reported as *needs --defsym or a markup name*.  Exit status:
+
+| exit | meaning |
+|---|---|
+| 0 | clean MATCH: oracle exit 0, `masked_words == 0`, size equals `functions.tsv` |
+| 1 | MISMATCH, or a MATCH with masked words (shape only) |
+| 2 | ERROR (build failure, bad address, missing toolchain) |
+
+Every `try` appends one line (`iso-time  result  first_diff_offset|-  diff_words`)
+to `re/match/<unit>/func_<ADDR>.attempts`; the line count is the attempt
+number (the sidecars are gitignored via `re/match/.gitignore`).  The output is
+the result line (`result`, `size ours/expected`, `first diff`, `attempts`),
+the oracle's own side-by-side diff, and **one** hint picked by rule from the
+diff-pattern table of `.claude/skills/match-function/SKILL.md` (in order:
+build error; masked MATCH; size differs with/without word diffs; same
+instructions with registers swapped; same instructions reordered (exactly, or
+up to register renaming); only load/store offsets differ; only a `lui`/low
+half differs with a resolved symbol; stack frame / epilogue; `jal` target;
+inverted branch; `nop` count; `lh`/`lhu`-style width/signedness; `andi`
+narrowing; `sll`/`sra` sign extension; `mult`/`div` vs shifts; switch table
+vs compares; drift after the first diff; else the first differing pair).
+`--keep` passes `--keep <tmp>/m_<unit>_<ADDR>` and prints the directory.
+
+On a clean MATCH `try` appends the manifest row
+`vaddr<TAB><manifest unit><TAB><unit>/func_<ADDR>.c<TAB><size><TAB><extra>`
+(extra keeps `--base`, `--rodata`, `--defsym`, never `--bin`; deduped on
+(vaddr, unit); the file's existing line-ending style is kept), records
+`ledger.record("match", unit, vaddr, attempts)` in `$AC1_LEDGER` (or
+`ledger.tsv`) unless that ledger already says `match`, and prints
+
+```
+git add re/match/<unit>/func_<ADDR>.c re/match/manifest.tsv <ledger> && git commit -m "matched func_<ADDR> <attempts>"
+```
+
+`--commit` runs it (the ledger is only added when it lives inside the repo).
+`--re-dir DIR` points all of `next`/`try`/`giveup`/`status` at another
+`re/match`-shaped directory; a clean MATCH there is reported but not recorded.
+
+**`giveup`** records `giveup` with `attempts = sidecar lines` and the reason,
+and prepends `/* NOT MATCHED: <reason>, <n> attempts */` to the C file unless
+it already has one.  **`status`** lists unit, vaddr, name, score, ledger state
+(`giveup*` = header in the C but no ledger row), attempts and the last sidecar
+result for a queue (`--queue`) or for every function the ledger or a sidecar
+knows, with totals.  **`verify`** is `check_all.sh` in Python: every manifest
+row through the oracle with `units.py` flags, `ok`/`FAIL` per row,
+`N/M matched`, exit 0 only when all match.
+
+Environment: `AC1_LEDGER`, `M2C_DIR` (default `~/dev/m2c`, then
+`~/Applications/m2c`; its `.venv` python is used when present), plus what
+`inventory.py` and `match_fn.py` read (`AC1_BIN`, `AC1_DISC_MAP`,
+`MIPS_PREFIX`, `AC1_CC1`, `AC1_MASPSX`, ...).
+
+## check_all.sh
+
+`re/match/check_all.sh` re-verifies every manifest row with the oracle and
+prints `ok`/`FAIL` per row and `N/M matched` (exit 0 only when all match).
+It strips a trailing `\r` from every field (the manifest checks out with CRLF
+under `core.autocrlf=true`; an empty extra column used to arrive as `"\r"` and
+fail with *unrecognized arguments*), passes `--ovl` only when the unit column
+is numeric, nothing for `exe`, and for `fdatNNN` rows adds
+`--bin "$(python tools/loop/units.py image $unit)"` (plus `--base` from
+`units.py` when the extra column has none).  `drive.py verify` is the same
+check without bash.
+
+## make_queues.py / merge_manifest.py
+
+`make_queues.py [--units ovl201,ovl202] [--out-dir DIR]` rebuilds the matcher
+queues: `rank.candidates()` over the units, sorted by (score rounded to 3
+decimals, size), cut into bands `< 2.5`, `2.5-4.5`, `4.5-6.5`, from which
+2x14, 2x6 and 2x4 rows are taken at `round(i*(n-1)/(k-1))` across each band's
+pool and dealt alternately to A and B.  The default is a dry run that prints
+both queues; `--out-dir` writes them, and the committed `tools/loop/queue-*.tsv`
+are only overwritten with `--force`.  It reproduces the committed queues byte
+for byte.
+
+`merge_manifest.py [MANIFEST] [--check]` reads `re/match/manifest.tsv` even
+with git conflict markers or duplicate rows, keeps the union, dedupes on
+(vaddr, unit), sorts by (unit, vaddr) with `exe` first, then 201..204, then
+`fdatNNN`, and rewrites the file with LF endings and the `#` header kept.
+
 ## How the loop fits together
 
 ```
@@ -185,8 +329,14 @@ unmatched in the inventory.
 
 ## Not done / follow-ups
 
-- The driver itself (m2c draft → C file → oracle → ledger) lives in the
-  `match-function` skill and is not scripted here.
+- `drive.py try` auto-adds `--rodata` from `jt_addrs` for jump-table
+  functions; that is the table address, which is only the object's `.rodata`
+  start when the table comes first.  Verify it against the retail `lui/addiu`
+  pair when such a function refuses to match.
+- `drive.py` has no attempt budget of its own: `giveup` is a decision the
+  matcher takes (the skill says ~15 attempts without progress).
+- The exe image for `units.py image exe` is carved into `tools/loop/cache/`
+  (gitignored by `*.bin`); delete it to re-carve.
 - Weights are hand-set; refit from `rank.py --calibrate` once the ledger has a
   few dozen rows.
 - Mission overlays (`--missions`) are inventoried but their names are all
