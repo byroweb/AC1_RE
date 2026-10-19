@@ -1,10 +1,7 @@
-#include "ac1_types.h"
-typedef struct {
-    u8 pad[0x74];
-    void (*fn)(void);   /* +0x74 */
-} Func8008BF90Obj;
-extern void func_8008BFA0(void);
-void func_8008BF90(Func8008BF90Obj *o)
+/* ovl201 func_8008BF90 - switch update to func_8008BFA0. */
+#include "ac1/ac1.h"
+extern void func_8008BFA0(UiObj *o);
+void func_8008BF90(UiObj *o)
 {
-    o->fn = func_8008BFA0;
+    o->update = func_8008BFA0;
 }

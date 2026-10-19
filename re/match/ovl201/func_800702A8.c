@@ -1,12 +1,6 @@
-#include "ac1_types.h"
-typedef struct {
-    u8 pad[0x4C];
-    s32 result;     /* +0x4C */
-    u8 pad2[0x7C - 0x50];
-    u8 *ptr;        /* +0x7C */
-    s16 base;       /* +0x80 */
-} Func800702A8Obj;
-void func_800702A8(Func800702A8Obj *o)
+/* ovl201 func_800702A8 - list row: y = base + (byte at src) * 16. */
+#include "ac1/ac1.h"
+void func_800702A8(UiObj *o)
 {
-    o->result = o->base + (*o->ptr << 4);
+    o->pos.vy = o->w.list.base + (*(u8 *)o->w.list.src << 4);
 }
