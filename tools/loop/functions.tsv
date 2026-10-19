@@ -55,8 +55,7 @@ exe	0x800148E4	60	func_800148E4	0	15	2	0	0	0	0		jal+ret
 exe	0x80014920	16	func_80014920	0	4	0	0	0	0	0		jal+ret
 exe	0x80014930	32	func_80014930	0	8	1	0	0	0	0		ret
 exe	0x80014950	56	func_80014950	0	14	0	1	0	0	24		jal+pro+ret
-exe	0x80014988	36	func_80014988	0	9	0	0	0	0	0		jal+ret
-exe	0x800149AC	40	func_800149AC	0	10	0	1	0	0	24		pro
+exe	0x80014988	76	func_80014988	0	19	0	1	0	0	24		jal+ret
 exe	0x800149D4	148	func_800149D4	0	37	0	1	0	7	40		pro+ret
 exe	0x80014A68	124	func_80014A68	0	31	0	1	0	7	40		pro+ret
 exe	0x80014AE4	144	func_80014AE4	0	36	0	3	0	0	40		jal+pro+ret
@@ -115,8 +114,7 @@ exe	0x80016190	40	func_80016190	0	10	0	1	0	0	24		jal+pro+ret
 exe	0x800161B8	32	func_800161B8	0	8	0	1	0	0	24		pro+ret
 exe	0x800161D8	32	func_800161D8	0	8	0	1	0	0	24		pro+ret
 exe	0x800161F8	40	func_800161F8	0	10	0	2	0	0	24		jal+pro+ret
-exe	0x80016220	40	func_80016220	0	10	0	0	0	0	0		ret
-exe	0x80016248	48	func_80016248	0	12	1	0	0	0	24		pro
+exe	0x80016220	88	func_80016220	0	22	1	0	0	0	24		ret
 exe	0x80016278	20	func_80016278	0	5	0	0	0	0	0		ret
 exe	0x8001628C	20	func_8001628C	0	5	0	0	0	0	0		ret
 exe	0x800162A0	72	func_800162A0	0	18	1	1	0	0	24		pro+ret
@@ -299,8 +297,7 @@ exe	0x8001E8E8	256	Snd_SetPlayMode	1	64	3	1	0	0	24		jal+mk+pro+ret
 exe	0x8001E9E8	148	SsSetSerialAttr	1	37	6	1	0	0	64		jal+mk+pro+ret
 exe	0x8001EA7C	916	SpuSetCommonAttr	1	229	54	0	2	0	16	0x80011830,0x80011850	jal+mk+pro+ret
 exe	0x8001EE10	80	SsSetMVol	1	20	0	1	0	0	64		jal+mk+pro+ret
-exe	0x8001EE60	52	SsSetRVol	1	13	0	0	0	0	0		mk+ret
-exe	0x8001EE94	84	func_8001EE94	1	21	0	1	0	0	48		pro
+exe	0x8001EE60	136	SsSetRVol	1	34	0	1	0	0	0		mk+ret
 exe	0x8001EEE8	120	SpuSetReverbDepth	1	30	4	0	0	0	0		jal+mk+ret
 exe	0x8001EF60	616	_SsStart	1	154	27	8	0	0	32		jal+mk+pro+ret
 exe	0x8001F1C8	32	SpuInitHot	1	8	0	1	0	0	24		mk+pro+ret
@@ -342,8 +339,7 @@ exe	0x80021EF0	128	_SpuIsInAllocateArea	1	32	7	0	0	0	0		mk+ret
 exe	0x80021F70	140	_SpuIsInAllocateArea_	1	35	7	0	0	0	0		jal+mk+ret
 exe	0x80021FFC	1232	_spu_setReverbAttr	1	308	64	0	0	0	0		jal+mk+ret
 exe	0x800224CC	412	SpuClearReverbWorkArea	1	103	12	5	0	0	56		jal+mk+pro+ret
-exe	0x80022668	52	SsUtSetReverbDepth	1	13	0	0	0	0	0		jal+mk+ret
-exe	0x8002269C	100	func_8002269C	1	25	0	1	0	0	24		pro
+exe	0x80022668	152	SsUtSetReverbDepth	1	38	0	1	0	0	0		jal+mk+ret
 exe	0x80022700	164	SsUtSetReverbType	1	41	6	2	0	0	24		jal+mk+pro+ret
 exe	0x800227A4	16	SsUtGetReverbType	1	4	0	0	0	0	0		mk+ret
 exe	0x800227B4	208	SpuSetReverb	1	52	7	1	0	0	24		jal+mk+pro+ret
@@ -373,12 +369,10 @@ exe	0x8002425C	52	_SsVmSeKeyOff	1	13	0	1	0	0	24		mk+pro+ret
 exe	0x80024290	8	KeyOnCheck	1	2	0	0	0	0	0		mk+ret
 exe	0x80024298	196	note2pitch	1	49	5	0	0	0	0		jal+mk+ret
 exe	0x8002435C	252	note2pitch2	1	63	5	0	0	0	0		jal+mk+ret
-exe	0x80024458	232	vmNoiseOn	1	58	0	0	0	0	0		jal+mk+ret
-exe	0x80024540	996	func_80024540	1	249	15	0	0	0	8		pro
+exe	0x80024458	1228	vmNoiseOn	1	307	15	0	0	0	0		jal+mk+ret
 exe	0x80024924	68	vmNoiseOff	1	17	0	0	0	0	0		jal+mk+ret
 exe	0x80024968	208	_SsVmKeyOffNow	1	52	2	0	0	0	0		jal+mk+ret
-exe	0x80024A38	120	_SsVmKeyOnNow	1	30	0	0	0	0	0		jal+mk+ret
-exe	0x80024AB0	1132	func_80024AB0	1	283	14	0	0	0	16		pro
+exe	0x80024A38	1252	_SsVmKeyOnNow	1	313	14	0	0	0	0		jal+mk+ret
 exe	0x80024F1C	512	_SsVmPBVoice	1	128	8	1	0	0	24		jal+mk+pro+ret
 exe	0x8002511C	240	_SsVmPitchBend	1	60	2	2	0	0	64		jal+mk+pro+ret
 exe	0x8002520C	1344	_SsVmSetSeqVol	1	336	17	0	0	0	24		jal+mk+pro+ret
@@ -1360,8 +1354,7 @@ ovl201	0x8008E6C4	72	func_8008E6C4	0	18	1	1	0	0	24		pro+ret
 ovl201	0x8008E70C	212	func_8008E70C	0	53	0	3	0	0	32		jal+pro+ret
 ovl201	0x8008E7E0	160	func_8008E7E0	0	40	1	3	0	0	40		pro+ret
 ovl201	0x8008E880	944	func_8008E880	0	236	10	0	0	0	24		jal+pro+ret
-ovl201	0x8008EC30	228	func_8008EC30	0	57	0	0	0	0	0		jal+ret
-ovl201	0x8008ED14	372	func_8008ED14	0	93	4	0	0	0	8		pro
+ovl201	0x8008EC30	600	func_8008EC30	0	150	4	0	0	0	0		jal+ret
 ovl201	0x8008EE88	76	func_8008EE88	0	19	2	0	0	0	0		jal+ret
 ovl201	0x8008EED4	440	func_8008EED4	0	110	12	0	1	0	0	0x8004CCC8	jal+ret
 ovl201	0x8008F08C	488	func_8008F08C	0	122	12	0	1	0	0	0x8004CCF0	jal+ret
@@ -1686,8 +1679,7 @@ ovl201	0x800AE418	556	func_800AE418	0	139	23	4	1	0	24	0x8004D76C	pro+ret
 ovl201	0x800AE644	280	func_800AE644	0	70	4	4	0	0	40		pro+ret
 ovl201	0x800AE75C	72	func_800AE75C	0	18	1	1	0	0	24		pro+ret
 ovl201	0x800AE7A4	148	func_800AE7A4	0	37	1	0	0	0	0		jal+ret
-ovl201	0x800AE838	96	func_800AE838	0	24	0	0	0	0	0		jal+ret
-ovl201	0x800AE898	260	func_800AE898	0	65	1	2	0	0	24		pro
+ovl201	0x800AE838	356	func_800AE838	0	89	1	2	0	0	0		jal+ret
 ovl201	0x800AE99C	164	func_800AE99C	0	41	0	1	0	0	24		jal+pro+ret
 ovl201	0x800AEA40	36	func_800AEA40	0	9	0	0	0	0	0		ret
 ovl201	0x800AEA64	168	func_800AEA64	0	42	0	1	0	0	24		jal+pro+ret

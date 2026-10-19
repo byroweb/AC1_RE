@@ -598,6 +598,25 @@ def split_functions(lst, text, markup_starts=None, use_markup=False):
 
     starts = sorted(i for i in cand if is_start(i))
 
+    # A prologue is the only evidence that is not a control-flow fact: GCC
+    # 2.7.2 may schedule dozens of words (loads, mults, address arithmetic)
+    # above `addiu sp,sp,-N`, farther than PROLOGUE_SLACK.  A start backed only
+    # by a prologue whose preceding block does not end in a return/jump is
+    # therefore the middle of a function: drop it (merge with the block before).
+    def ends_in_jump(s, e):
+        k = e
+        while k > s and words[k - 1] == 0:        # trailing nop padding
+            k -= 1
+        return any(is_jr_ra(words[j]) or is_jr_reg(words[j]) or is_j(words[j])
+                   for j in range(max(s, k - 2), k))
+
+    kept = []
+    for k, st in enumerate(starts):
+        if k > 0 and cand[st] == {"pro"} and not ends_in_jump(kept[-1], st):
+            continue
+        kept.append(st)
+    starts = kept
+
     # 2. merge nop-only blocks (alignment padding) into the previous function --
     bounds = []
     for k, s in enumerate(starts):

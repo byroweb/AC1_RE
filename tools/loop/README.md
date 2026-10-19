@@ -75,7 +75,12 @@ splits the `.text` range into functions:
    of another candidate confirms that candidate instead of splitting.
    `jr tN` right after `li tN,0xB0` (BIOS thunks such as AddDrv) counts as a
    return.
-4. **Padding.**  Blocks that are only `nop` are merged into the previous
+4. **Fall-through.**  A start whose only evidence is a prologue (`pro`) and
+   whose preceding block does not end in `jr`/`j` is the middle of a function
+   (GCC scheduled up to 57 words above `addiu sp` in ovl201); it is dropped.
+   After this no overlay function ends without a return; the exe keeps 11
+   such blocks, all hand-written PsyQ library objects.
+5. **Padding.**  Blocks that are only `nop` are merged into the previous
    function.
 
 ### Output: `functions.tsv`
@@ -96,7 +101,7 @@ splits the `.text` range into functions:
 | `jt_addrs` | RAM address(es) of the jump tables, for `match_fn.py --rodata` |
 | `evidence` | which candidates established the start (`text`, `ret`, `jal`, `pro`, `ptr`, `mk`) |
 
-Current run (2026-10-18, PROLOGUE_SLACK 8): 3573 functions = exe 700 (567 PsyQ) + ovl201 1093 +
+Current run (2026-10-18): 3565 functions = exe 694 (561 PsyQ) + ovl201 1091 +
 ovl202 619 + ovl203 579 + ovl204 582 (plus 2769 mission-overlay functions with `--missions`).  The four functions already matched in
 `re/match/manifest.tsv` come out with exactly the manifest sizes (40, 76, 104,
 252 bytes) and the switch table of `func_800505F0` at 0x8004AEEC.
@@ -111,7 +116,7 @@ python tools/loop/inventory.py --missions      # ~4 s; adds the fdatNNN rows
 `--missions` appends one unit per even `FDAT_T` entry after the exe and ovl
 rows, which it leaves byte-for-byte unchanged (checked: the exe/ovl rows of
 the two runs are identical). Run of 2026-10-18: **58 units, 2769 functions**,
-6342 rows in total. The load address per entry (and the alias column) comes
+6334 rows in total. The load address per entry (and the alias column) comes
 from `overlays/CODE_UNITS.tsv` when that file is in the checkout, else from
 `MISSION_TABLE` in `inventory.py`; the two agree on all 58 bases
 (`refresh_mission_entries()` warns if they ever differ).
