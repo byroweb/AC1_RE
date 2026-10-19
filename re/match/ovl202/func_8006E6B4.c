@@ -1,19 +1,18 @@
-#include "ac1_types.h"
-typedef struct {
-    u8 pad[0x40];
-} Func8006E6B4Ent;
-extern Func8006E6B4Ent D_801D0B68[];
-extern Func8006E6B4Ent *func_8006E380(Func8006E6B4Ent *start);
-s32 func_8006E6B4(s32 idx)
+/* ovl202 func_8006E6B4 = world_section_find: index of the world structure
+ * func_8006E380 picks, starting after `hint` (-1 = from the start), or -1.
+ * The second argument (a position) passes through untouched in a1. */
+#include "ac1/ac1.h"
+extern WorldStruct *func_8006E380(WorldStruct *start);
+s32 func_8006E6B4(s32 hint)
 {
-    Func8006E6B4Ent *r;
-    if (idx == -1) {
+    WorldStruct *r;
+    if (hint == -1) {
         r = func_8006E380(0);
     } else {
-        r = func_8006E380(&D_801D0B68[idx]);
+        r = func_8006E380(&g_world_structs[hint]);
     }
     if (r == 0) {
         return -1;
     }
-    return r - D_801D0B68;
+    return r - g_world_structs;
 }

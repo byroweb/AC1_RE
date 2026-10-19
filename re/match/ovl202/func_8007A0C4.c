@@ -1,10 +1,7 @@
-#include "ac1_types.h"
-typedef struct {
-    u8 pad[0x15C];
-    u32 flags;      /* +0x15C */
-} Func8007A0C4Obj;
+/* ovl202 func_8007A0C4 - toggle AI flag bit D_8004124B of an entity. */
+#include "ac1/ac1.h"
 extern u8 D_8004124B;
-void func_8007A0C4(Func8007A0C4Obj *o)
+void func_8007A0C4(AcEntity *e)
 {
-    o->flags ^= 1 << D_8004124B;
+    e->flags ^= 1 << D_8004124B;
 }

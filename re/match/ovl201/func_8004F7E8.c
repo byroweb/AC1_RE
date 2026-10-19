@@ -1,13 +1,8 @@
-#include "ac1_types.h"
-typedef struct {
-    u8 pad[0x40];
-    u16 x;          /* +0x40 */
-    u16 y;          /* +0x42 */
-    u16 w;          /* +0x44 */
-} Func8004F7E8Obj;
-void func_8004F7E8(Func8004F7E8Obj *o)
+/* ovl201 func_8004F7E8 - turn the object by (64, 32, 16) per call. */
+#include "ac1/ac1.h"
+void func_8004F7E8(UiObj *o)
 {
-    o->x += 64;
-    o->y += 32;
-    o->w += 16;
+    o->rot.vx += 64;
+    o->rot.vy += 32;
+    o->rot.vz += 16;
 }

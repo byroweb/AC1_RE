@@ -1,10 +1,7 @@
-#include "ac1_types.h"
-typedef struct {
-    u8 pad[0x74];
-    void (*handler)(void);  /* +0x74 */
-} Func8009A7C4Obj;
-extern void func_8009A7D4(void);
-void func_8009A7C4(Func8009A7C4Obj *o)
+/* ovl201 func_8009A7C4 - switch update to func_8009A7D4. */
+#include "ac1/ac1.h"
+extern void func_8009A7D4(UiObj *o);
+void func_8009A7C4(UiObj *o)
 {
-    o->handler = func_8009A7D4;
+    o->update = func_8009A7D4;
 }

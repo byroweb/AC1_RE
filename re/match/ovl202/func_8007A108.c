@@ -1,13 +1,11 @@
-#include "ac1_types.h"
-typedef struct {
-    u8 pad[0x15C];
-    u32 flags;      /* +0x15C */
-} Func8007A108Obj;
+/* ovl202 func_8007A108 - set one AI flag bit of an entity, the bit index coming
+ * from the record's byte +0x03. */
+#include "ac1/ac1.h"
 typedef struct {
     u8 pad[3];
     u8 bit;         /* +0x03 */
 } Func8007A108Src;
-void func_8007A108(Func8007A108Obj *o, Func8007A108Src *s)
+void func_8007A108(AcEntity *e, Func8007A108Src *s)
 {
-    o->flags |= 1 << s->bit;
+    e->flags |= 1 << s->bit;
 }
