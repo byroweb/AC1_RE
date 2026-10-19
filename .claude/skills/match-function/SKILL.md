@@ -102,6 +102,35 @@ the field-level evidence: `include/ac1/README.md`):
    | `jal` target differs | wrong callee name/address; `--defsym` it or check `ac1_markup.tsv` |
    | retail has a `switch` table and yours has `beq` chains (or the reverse) | the retail source used `switch` (dense cases) vs `if` chains; also try reordering cases |
    | everything matches except after a point, then total drift | a missing/extra early `return` or an inverted condition earlier in the function |
+   | **GCC 2.7.2 divergence families** (tags = probe in `tools/match/probes/` that reproduces the remedy through `match_fn.py`; *unverified* = no probe yet) | |
+   | register coloring: `v0`↔`v1` (or the two `subu`/`and` operands) swapped, same instructions | swap the two statements that compute the values: allocation follows first use, declaration order alone changes nothing (p01, p02) |
+   | `s0`↔`s1` swapped for values kept across calls | s0 goes to the value with more uses per live range; at equal priority the later-defined value gets s0 (two params: x→s1, y→s0). Add/drop a use or swap the defining statements (p03, p04) |
+   | retail `lui/addiu rB` then `l* rX,N(rB)` (N≠0); ours a `lui`+`%lo` per field | `p = &G; p->f` alone does **not** do it: GCC folds a known pointer back to direct access (p05). A base survives only where CSE cannot fold it: pointer set before a join and used after it (p07); `G.a += G.b` plus clamp stores to both after joins, plain globals (p06); fields re-read after a join, where the field read *first* becomes the base and the rest go relative (read `cur` first for `670/666/0($b)`, p08); a store CSE cannot see through between the entry reads and the re-reads, e.g. `{ S *p = &H; p->x = 0; }` (p09); an extern-array element RMW in a branch plus a re-read after the join gives `A[-16]` as `-32($b)` (p11) |
+   | retail field direct (`lui; lw %lo`) while ours shares a base with the other fields | retail accessed it as a **scalar**: declare `extern T D_<field addr>;` and use that name; scalars are plain symbol addresses and never join a base (func_80079370 `prev`/`vel`/`timer`; p09 A) |
+   | the base form is right after the first CSE pass but gone in ours | the CSE rerun (`-frerun-cse-after-loop`, on at -O2) refolds `base+const` when it knows the base. Confirm with a throwaway `--cc1` wrapper adding `-fno-rerun-cse-after-loop` (diagnostic only, never a match), then change the source per the row above (func_80079370 diagnostic run) |
+   | retail `move rA,rB` in a branch delay slot, then `and ..,rA` in the target; ours the `and` in the slot | the field was re-read into a named local *before* the `if`; the CSE rerun turns the load into a copy that combine cannot merge across the block boundary (p10) |
+   | indexed global: `lui $at; addu; lw %lo($at)` vs `lui/addiu; addu; lw 0` | split form = one access to that array in the block, la form = two or more (p12). `static` vs `extern` changes only the relocation (match_fn masks a static's own `.bss`: no `--defsym` for it) (p13) |
+   | every direct access has its own `lui` | normal: `lw $r,sym` is an assembler macro expanded per access; a shared `lui` with several `%lo` offsets is a base-register case above. *Observed in every probe, no dedicated probe* |
+   | `addiu sp,sp,-8` / `-16` with no `sp` loads or stores | empty slots: an `s16` local (or reloaded `s16`) live across a branch costs 8 (p14; `int` costs nothing), an unused local array its size (p15), a `for`/`while` loop 8 (p22). Count these before inventing a dummy array |
+   | epilogue: retail `lw ra; sw ..; jr ra; addiu sp` (filled), ours `addiu sp; jr ra; nop` | filled only when `ra` is the only saved register and the last statement is one word that can sit after `lw ra` (a store through a pointer). A final global store (`lui $at` macro), a final load, or a saved `s` register gives the unfilled form (p16, p17) |
+   | frameless leaf: `jr ra; move v0,..` vs `jr ra; nop` | a single-exit result variable fills the slot; early `return`s leave `nop` (p18) |
+   | one shared tail reached by `j` from several arms vs a copy per arm | early `return`s with identical tails are cross-jumped into one; a result variable with `else if` keeps one tail per arm (p19) |
+   | `and v0,a1,a0` vs `and v0,a0,a1` | commutative operands keep source order: swap them (p20) |
+   | OR/AND chain shaped differently | no reassociation: parenthesise like retail, `a|b|c|d` = left chain, `(a|b)|(c|d)` = balanced (p21) |
+   | loop: `blez n` guard (with `i = 0` in its slot) + bottom test + empty 8-byte frame | `for`/`while`. No guard: `do {} while`. Guard without the frame: `if (n > 0) do {} while` (p22, p23) |
+   | loop counts down (`addiu -1; bgez`) vs up | GCC reversed it because the index only feeds stores; forward needs an order dependency, e.g. a volatile target (p25) |
+   | invariant load before vs after the loop guard | a global read in the body is hoisted to after the guard; a local copy taken before the loop is loaded before it (p24) |
+   | `nop` in a loop-branch delay slot where a store could go | a store to a bare global is a two-word `lui $at` macro and never fills a slot; `volatile` makes no difference here (p26) |
+   | `nop` before `l* $r,%lo(sym)($base)` right after a load of `$base` | ASPSX keeps the load-delay `nop` for this form; our patched maspsx emits it (`tools/match/patches/`, `tests/test_maspsx_patch.py`). If ours lacks it, rerun `tools/match/setup.sh` |
+
+   Re-check every family row in one go with
+   `python tools/match/probes/run_probes.py` (`-v` prints both disassemblies of each
+   pair; `pytest tools/match/tests/test_probes.py` runs it too). Before you add a row,
+   add a probe pair that reproduces it, and mark the row *unverified* until it passes.
+   For a near miss, reproduce the suspect shape in a 5-line probe file through
+   `match_fn.py --bin <zeros> --base 0x80100000 --keep DIR` first (without `-q`:
+   `ours.bin` is only written with the side-by-side). It costs no attempts on the
+   real function and is how the rows above were found.
 
    Do not "fix" by inline asm, by `#pragma`, by changing the pinned flags, or by
    editing `match_fn.py`. If a diff makes no sense after a few attempts, compare

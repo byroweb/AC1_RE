@@ -187,3 +187,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-19T03:54:44Z	exe	0x80012794	match	5	
 2026-10-19T03:57:39Z	ovl202	0x8007B160	match	3	
 2026-10-19T03:59:53Z	exe	0x80012A78	giveup	10	everything matches except which out-pointer param gets s8: retail keeps py (arg 7) in s8 and reloads px from 76(sp) into t1, ours does the reverse (global-alloc priority tie)
+2026-10-19T04:13:15Z	ovl202	0x80079370	match	12	

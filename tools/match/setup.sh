@@ -4,7 +4,9 @@
 #   tools/match/setup.sh [--force] [--cc1 PATH] [--wsl] [--keep-build]
 #
 # What it installs (exact pins in tools/match/README.md and vendor/VERSIONS.txt):
-#   vendor/maspsx/          mkst/maspsx at $MASPSX_COMMIT (ASPSX 2.56 emulation)
+#   vendor/maspsx/          mkst/maspsx at $MASPSX_COMMIT (ASPSX 2.56 emulation), plus our
+#                           fixes from tools/match/patches/maspsx-*.patch (applied after
+#                           the checkout, never committed into the clone)
 #   vendor/cc1[.exe|.sh]    GCC 2.7.2 "psx" cc1, the retail Armored Core compiler:
 #       Linux/macOS : decompals/old-gcc release $OLDGCC_RELEASE prebuilt tarball
 #       Windows     : built here from the stock GNU gcc-2.7.2 source plus the
@@ -80,15 +82,44 @@ VERSIONS="$VENDOR/VERSIONS.txt"
 : > "$VERSIONS"
 
 # ---------------------------------------------------------------- 1. maspsx
-if [ ! -f "$VENDOR/maspsx/maspsx.py" ] || $FORCE; then
+# maspsx is a few hundred KB: whenever the clone is missing, at the wrong commit, or our
+# patches neither apply to it nor are already in it (a hand-edited clone), it is simply
+# re-cloned.  That never touches cc1 (step 2), so fixing maspsx costs seconds, not a cc1
+# rebuild.  CRLF clones (core.autocrlf=true) are fine: git apply converts line endings.
+clone_maspsx() {
   rm -rf "$VENDOR/maspsx"
   say "clone maspsx @ $MASPSX_COMMIT"
-  git clone -q "$MASPSX_REPO" "$VENDOR/maspsx"
+  # LF checkout whatever the user's core.autocrlf says (byte-identical to upstream).
+  git clone -q -c core.autocrlf=false "$MASPSX_REPO" "$VENDOR/maspsx"
   git -C "$VENDOR/maspsx" -c advice.detachedHead=false checkout -q "$MASPSX_COMMIT"
+}
+maspsx_usable() {  # right commit, and every patch either applied already or applicable
+  [ -f "$VENDOR/maspsx/maspsx.py" ] || return 1
+  [ "$(git -C "$VENDOR/maspsx" rev-parse HEAD 2>/dev/null)" = "$MASPSX_COMMIT" ] || return 1
+  local p
+  for p in "$HERE"/patches/maspsx-*.patch; do
+    [ -f "$p" ] || continue
+    git -C "$VENDOR/maspsx" apply --reverse --check "$p" 2>/dev/null && continue
+    git -C "$VENDOR/maspsx" apply --check "$p" 2>/dev/null && continue
+    return 1
+  done
+}
+if $FORCE || ! maspsx_usable; then
+  [ -d "$VENDOR/maspsx" ] && ! $FORCE && say "vendor/maspsx is stale (wrong commit or edited): re-cloning it, cc1 is left alone"
+  clone_maspsx
+  maspsx_usable || die "fresh maspsx clone at $MASPSX_COMMIT still rejects tools/match/patches/ (patch out of date?)"
 fi
-MASPSX_HEAD="$(git -C "$VENDOR/maspsx" rev-parse HEAD)"
-[ "$MASPSX_HEAD" = "$MASPSX_COMMIT" ] || die "maspsx is at $MASPSX_HEAD, expected $MASPSX_COMMIT (use --force)"
 echo "maspsx $MASPSX_COMMIT ($MASPSX_REPO)" >> "$VERSIONS"
+# Our maspsx fixes (tools/match/patches/maspsx-*.patch), idempotent: a patch already in the
+# tree is left alone.
+for p in "$HERE"/patches/maspsx-*.patch; do
+  [ -f "$p" ] || continue
+  if ! git -C "$VENDOR/maspsx" apply --reverse --check "$p" 2>/dev/null; then
+    say "patch maspsx: $(basename "$p")"
+    git -C "$VENDOR/maspsx" apply "$p"
+  fi
+  echo "maspsx patch $(basename "$p") sha256=$(sha256_of "$p")" >> "$VERSIONS"
+done
 
 # ---------------------------------------------------------------- 2. cc1
 CC1=""

@@ -1,0 +1,2 @@
+# Patches for vendored tools are applied with `git apply` to LF checkouts: keep them LF.
+tools/match/patches/*.patch text eol=lf

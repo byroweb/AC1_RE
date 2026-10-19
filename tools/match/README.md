@@ -133,7 +133,7 @@ where things are.  Pins (all in `setup.sh`):
 
 | component | pin |
 |---|---|
-| maspsx | `mkst/maspsx` commit `670417cf5bd5d9dae4a962b18f400363670da5c5` (2026-10-17) |
+| maspsx | `mkst/maspsx` commit `670417cf5bd5d9dae4a962b18f400363670da5c5` (2026-10-17, = upstream HEAD on 2026-10-18), cloned with `core.autocrlf=false`, plus `patches/maspsx-*.patch` |
 | cc1, Linux | `decompals/old-gcc` release **0.17** `gcc-2.7.2-psx.tar.gz`, sha256 `500a459b3485e885a8d302cac23c2a4632f3900e03a09153f6190699fd723571` |
 | cc1, macOS | same release, `gcc-2.7.2-psx-macos.tar.gz` |
 | cc1, Windows | built locally: GNU `gcc-2.7.2.tar.gz` (sha256 `7cd8bce5c3aeec59a72ecc2d3d5123864a817b14cdbd0680b1a969c3bccc5da5`) + the `patches/` of `decompals/old-gcc` commit `cf70ec58bce58128732062bc9930045c82904cbb`, following `gcc-2.7.2-psx.Dockerfile` |
@@ -167,6 +167,25 @@ untested here since this PC has no WSL).  `setup.sh --cc1 PATH` registers a cc1
 you already own, e.g. PsyQ 4.0 `CC1PSX.EXE` (a native Win32 binary, the actual
 retail compiler) — nothing is downloaded for it.
 
+### Our maspsx patches
+
+`setup.sh` applies every `tools/match/patches/maspsx-*.patch` to the pinned clone
+(idempotent; recorded with its sha256 in `VERSIONS.txt`).  Currently one:
+
+- `maspsx-lo-load-nop.patch`: a load whose offset is already `%lo(sym)` off a base
+  register (`lw/lh/lhu/lb/lbu/lwl/lwr $r,%lo(sym)($base)`) is a single instruction
+  that ASPSX does not route through `$at`, the same as the store form maspsx already
+  handles.  Unpatched maspsx treats it like the bare-symbol macro `lw $r,sym($base)`
+  and drops the load-delay `nop` when the previous instruction loads `$base`.  The
+  fact comes from the Wyrelade AC1 decomp (checked by him against real ASPSX); the
+  patch text is ours.  `tests/test_maspsx_patch.py` fails without it.  The 53
+  manifest functions are unaffected (`check_all.sh` output identical before/after).
+
+A checkout whose `vendor/maspsx` predates this just needs a plain
+`tools/match/setup.sh` (no `--force`): it patches the existing clone in place, CRLF or
+not, and re-clones only maspsx if the clone is at the wrong commit or hand-edited.
+cc1 is never rebuilt for this (`--force` is the only thing that rebuilds cc1).
+
 Environment overrides read by `match_fn.py`: `AC1_CC1`, `AC1_AS`, `AC1_MASPSX`,
 `AC1_CPP`, `MIPS_PREFIX`, `AC1_BIN` (disc image, for exe addresses),
 `AC1_OVERLAYS` (directory with `overlays.json`).
@@ -178,10 +197,32 @@ python -m pytest tools/match/tests      # or: bash tools/match/tests/run.sh
 ```
 
 `func_8004F7E8.c` (overlay 201, 10-instruction leaf: three `u16` fields bumped)
-must MATCH; `func_8004F7E8_perturbed.c` (two statements swapped) must MISMATCH
+must MATCH (`test_match_fn.py`); `func_8004F7E8_perturbed.c` (two statements swapped) must MISMATCH
 at `0x4` with a side-by-side diff; a third case (`func_80090C38`, reads a global)
 checks masking, `--defsym` resolution and a wrong `--defsym` → MISMATCH.  The tests
 skip (never pass vacuously) when the toolchain or the carved overlay is missing.
+`test_maspsx_patch.py` runs maspsx + `as` on tiny `.ent`-framed sequences and checks
+the load-delay `nop` before `l* $r,%lo(sym)($base)` (needs only the toolchain).
+
+## Codegen probes
+
+`probes/pNN_*.c` are A/B pairs of tiny functions, one per row of the "GCC 2.7.2
+divergence families" part of the match-function skill table (register coloring,
+address materialization, empty frames, epilogue fill, exit merging, operand order,
+loops).  `python tools/match/probes/run_probes.py` compiles both variants through
+`match_fn.py`, checks that B differs from (or equals) A as claimed and that each
+variant's disassembly has the claimed shape; `tests/test_probes.py` runs it.
+26/26 hold with the pinned toolchain (2026-10-19).
+
+## Known cc1 problem
+
+Both MinGW-built `cc1.exe` binaries tried (this worktree and another checkout)
+crash with an access violation (exit 3221225477) on two one-trip loops:
+`for (i = 0; i < 1; i++) p = &G;` and the same loop around
+`v = (p->l | p->r) & p->cur;` with `p = &G` set before it.
+`for (i = 0; i < 1; i++) s += G[i];` and ordinary loops compile fine.
+match_fn.py reports it as `ERROR: cc1.exe failed`.  Not checked against the Linux
+tarball (no WSL here); avoid the shape or cross-check on Linux.
 
 ## Matched functions
 
@@ -193,6 +234,7 @@ include the delay slot after the final `jr ra`.
 ## Files
 
 - `setup.sh` — toolchain bring-up (see Install)
+- `patches/` — our fixes to vendored tools, applied by `setup.sh`
 - `match_fn.py` — the oracle
 - `include/ac1_types.h` — `u8/u16/u32/s8/s16/s32` for hand-written sources
 - `include/ac1/ac1.h` — forwarder so a source can `#include "ac1/ac1.h"` and get the shared
@@ -201,5 +243,6 @@ include the delay slot after the final `jr ra`.
 - `ctx.py` — keeps `include/ac1/symbols.h` in step with `symbols.tsv`, writes the m2c
   context, and decompiles one function with it (`ctx.py m2c VADDR --unit 201`)
 - `tests/` — pytest suite, shell runner, the two sources
+- `probes/` — A/B codegen probes behind the skill table, `run_probes.py`
 - `vendor/` — gitignored toolchain (`cc1[.exe]`, `maspsx/`, `toolchain.json`, `VERSIONS.txt`, `cache/`)
 - `.claude/skills/match-function/SKILL.md` — the Claude loop that uses this
