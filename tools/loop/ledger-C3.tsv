@@ -5,3 +5,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-19T03:21:35Z	ovl204	0x80073EC8	match	1	
 2026-10-19T03:34:35Z	ovl201	0x80060168	match	6	
 2026-10-19T03:41:38Z	ovl202	0x80073714	match	8	
+2026-10-19T03:49:24Z	ovl201	0x8006E148	giveup	10	size and shape match; only block-local temp registers swap (v0/v1/a0) in the L/R row loops at 0x17c (L loop1, R loop1, R row0, R loop2)
