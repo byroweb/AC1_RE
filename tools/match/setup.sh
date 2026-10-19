@@ -4,7 +4,9 @@
 #   tools/match/setup.sh [--force] [--cc1 PATH] [--wsl] [--keep-build]
 #
 # What it installs (exact pins in tools/match/README.md and vendor/VERSIONS.txt):
-#   vendor/maspsx/          mkst/maspsx at $MASPSX_COMMIT (ASPSX 2.56 emulation)
+#   vendor/maspsx/          mkst/maspsx at $MASPSX_COMMIT (ASPSX 2.56 emulation), plus our
+#                           fixes from tools/match/patches/maspsx-*.patch (applied after
+#                           the checkout, never committed into the clone)
 #   vendor/cc1[.exe|.sh]    GCC 2.7.2 "psx" cc1, the retail Armored Core compiler:
 #       Linux/macOS : decompals/old-gcc release $OLDGCC_RELEASE prebuilt tarball
 #       Windows     : built here from the stock GNU gcc-2.7.2 source plus the
@@ -83,12 +85,27 @@ VERSIONS="$VENDOR/VERSIONS.txt"
 if [ ! -f "$VENDOR/maspsx/maspsx.py" ] || $FORCE; then
   rm -rf "$VENDOR/maspsx"
   say "clone maspsx @ $MASPSX_COMMIT"
-  git clone -q "$MASPSX_REPO" "$VENDOR/maspsx"
+  # LF checkout whatever the user's core.autocrlf says, so our patches apply byte-exactly.
+  git clone -q -c core.autocrlf=false "$MASPSX_REPO" "$VENDOR/maspsx"
   git -C "$VENDOR/maspsx" -c advice.detachedHead=false checkout -q "$MASPSX_COMMIT"
 fi
 MASPSX_HEAD="$(git -C "$VENDOR/maspsx" rev-parse HEAD)"
 [ "$MASPSX_HEAD" = "$MASPSX_COMMIT" ] || die "maspsx is at $MASPSX_HEAD, expected $MASPSX_COMMIT (use --force)"
 echo "maspsx $MASPSX_COMMIT ($MASPSX_REPO)" >> "$VERSIONS"
+# Our maspsx fixes (tools/match/patches/maspsx-*.patch), idempotent: a patch that is already
+# in the tree is left alone, one that neither applies nor reverts means a stale clone.
+for p in "$HERE"/patches/maspsx-*.patch; do
+  [ -f "$p" ] || continue
+  if git -C "$VENDOR/maspsx" apply --reverse --check "$p" 2>/dev/null; then
+    :
+  elif git -C "$VENDOR/maspsx" apply --check "$p" 2>/dev/null; then
+    say "patch maspsx: $(basename "$p")"
+    git -C "$VENDOR/maspsx" apply "$p"
+  else
+    die "maspsx patch $(basename "$p") does not apply to vendor/maspsx (CRLF or edited clone? rerun with --force)"
+  fi
+  echo "maspsx patch $(basename "$p") sha256=$(sha256_of "$p")" >> "$VERSIONS"
+done
 
 # ---------------------------------------------------------------- 2. cc1
 CC1=""

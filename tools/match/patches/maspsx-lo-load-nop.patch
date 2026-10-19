@@ -1,0 +1,19 @@
+diff --git a/maspsx/__init__.py b/maspsx/__init__.py
+index e8d93a3..10a2588 100644
+--- a/maspsx/__init__.py
++++ b/maspsx/__init__.py
+@@ -194,6 +194,14 @@ def uses_at(line: str) -> bool:
+     ):
+         return False
+ 
++    # lw	$2,%lo(sym)($3)   (likewise lb, lbu, lh, lhu, lwl, lwr)
++    # AC1_RE patch: a load whose offset is already %lo(sym) off a base register is a
++    # single machine instruction, the same as the store case above.  ASPSX does not
++    # route it through $at, so a load in the slot before it still needs its
++    # load-delay nop.  Only the bare-symbol form `lw $2,sym($3)` expands via $at.
++    if re.match(r"^l(?:[bh]u?|w[lr]?)\s+(\$[a-z0-9]+),\s*%lo\(([^(]+)\)\(([^)]+)\)", line):
++        return False
++
+     # sw	$2,D_801813A4
+     # sw	$3,g_CurrentRoom+40
+     # sw	$2,D_us_8017863C.4
