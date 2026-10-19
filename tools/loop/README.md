@@ -101,7 +101,7 @@ splits the `.text` range into functions:
 | `jt_addrs` | RAM address(es) of the jump tables, for `match_fn.py --rodata` |
 | `evidence` | which candidates established the start (`text`, `ret`, `jal`, `pro`, `ptr`, `mk`) |
 
-Current run (2026-10-18): 3565 functions = exe 694 (563 PsyQ) + ovl201 1091 +
+Current run (2026-10-18, with `overlays/CODE_UNITS.tsv` merged): 3565 functions = exe 694 (563 PsyQ) + ovl201 1091 +
 ovl202 619 + ovl203 579 + ovl204 582 (plus 2769 mission-overlay functions with `--missions`).  The four functions already matched in
 `re/match/manifest.tsv` come out with exactly the manifest sizes (40, 76, 104,
 252 bytes) and the switch table of `func_800505F0` at 0x8004AEEC.
@@ -119,7 +119,9 @@ the two runs are identical). Run of 2026-10-18: **58 units, 2769 functions**,
 6334 rows in total. The load address per entry (and the alias column) comes
 from `overlays/CODE_UNITS.tsv` when that file is in the checkout, else from
 `MISSION_TABLE` in `inventory.py`; the two agree on all 58 bases
-(`refresh_mission_entries()` warns if they ever differ).
+(`refresh_mission_entries()` warns if they ever differ).  With CODE_UNITS.tsv
+merged the only boundary change is fdat074, whose text starts 8 bytes earlier
+(0x801C4D48), so its first function is 1008 bytes instead of 1000.
 
 - **fdat168** is byte-identical to fdat166 (`alias_of` in CODE_UNITS.tsv, also
   `cmp`-verified) and is **skipped** with a printed note, so its functions are
@@ -392,10 +394,6 @@ unmatched in the inventory.
 
 - Calibration data is flat (43/55 first-try matches): run a harder queue
   (`make_queues.py --bands 6.5,8,9.5`) before trusting a refit.
-- `overlays/CODE_UNITS.tsv` (branch `claude/xenodochial-mclean-55b2b3`) should
-  be merged into the integration branch: `inventory.py` and `units.py` read it
-  automatically (text ranges for all 63 units, mission bases, the 168->166
-  alias); today the bases come from the fallback table with the same values.
 - Mission overlays share code: 2769 fdat functions are only 362 distinct masked
   bodies.  One matched C file could be replayed against its twins with other
   `--defsym` values (not attempted).
