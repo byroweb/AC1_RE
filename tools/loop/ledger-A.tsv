@@ -14,3 +14,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-19T01:13:28Z	ovl202	0x8005E97C	match	1	
 2026-10-19T01:13:29Z	ovl201	0x80068458	match	1	
 2026-10-19T01:13:29Z	ovl202	0x8004EADC	giveup	0	inventory mis-split: hoisted loads of the function at 0x8004EAF0 (prologue 5 words after start), no jr ra in the 20 bytes
+2026-10-19T01:15:39Z	ovl201	0x8008DD50	match	1	
