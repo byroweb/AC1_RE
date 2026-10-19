@@ -82,27 +82,41 @@ VERSIONS="$VENDOR/VERSIONS.txt"
 : > "$VERSIONS"
 
 # ---------------------------------------------------------------- 1. maspsx
-if [ ! -f "$VENDOR/maspsx/maspsx.py" ] || $FORCE; then
+# maspsx is a few hundred KB: whenever the clone is missing, at the wrong commit, or our
+# patches neither apply to it nor are already in it (a hand-edited clone), it is simply
+# re-cloned.  That never touches cc1 (step 2), so fixing maspsx costs seconds, not a cc1
+# rebuild.  CRLF clones (core.autocrlf=true) are fine: git apply converts line endings.
+clone_maspsx() {
   rm -rf "$VENDOR/maspsx"
   say "clone maspsx @ $MASPSX_COMMIT"
-  # LF checkout whatever the user's core.autocrlf says, so our patches apply byte-exactly.
+  # LF checkout whatever the user's core.autocrlf says (byte-identical to upstream).
   git clone -q -c core.autocrlf=false "$MASPSX_REPO" "$VENDOR/maspsx"
   git -C "$VENDOR/maspsx" -c advice.detachedHead=false checkout -q "$MASPSX_COMMIT"
+}
+maspsx_usable() {  # right commit, and every patch either applied already or applicable
+  [ -f "$VENDOR/maspsx/maspsx.py" ] || return 1
+  [ "$(git -C "$VENDOR/maspsx" rev-parse HEAD 2>/dev/null)" = "$MASPSX_COMMIT" ] || return 1
+  local p
+  for p in "$HERE"/patches/maspsx-*.patch; do
+    [ -f "$p" ] || continue
+    git -C "$VENDOR/maspsx" apply --reverse --check "$p" 2>/dev/null && continue
+    git -C "$VENDOR/maspsx" apply --check "$p" 2>/dev/null && continue
+    return 1
+  done
+}
+if $FORCE || ! maspsx_usable; then
+  [ -d "$VENDOR/maspsx" ] && ! $FORCE && say "vendor/maspsx is stale (wrong commit or edited): re-cloning it, cc1 is left alone"
+  clone_maspsx
+  maspsx_usable || die "fresh maspsx clone at $MASPSX_COMMIT still rejects tools/match/patches/ (patch out of date?)"
 fi
-MASPSX_HEAD="$(git -C "$VENDOR/maspsx" rev-parse HEAD)"
-[ "$MASPSX_HEAD" = "$MASPSX_COMMIT" ] || die "maspsx is at $MASPSX_HEAD, expected $MASPSX_COMMIT (use --force)"
 echo "maspsx $MASPSX_COMMIT ($MASPSX_REPO)" >> "$VERSIONS"
-# Our maspsx fixes (tools/match/patches/maspsx-*.patch), idempotent: a patch that is already
-# in the tree is left alone, one that neither applies nor reverts means a stale clone.
+# Our maspsx fixes (tools/match/patches/maspsx-*.patch), idempotent: a patch already in the
+# tree is left alone.
 for p in "$HERE"/patches/maspsx-*.patch; do
   [ -f "$p" ] || continue
-  if git -C "$VENDOR/maspsx" apply --reverse --check "$p" 2>/dev/null; then
-    :
-  elif git -C "$VENDOR/maspsx" apply --check "$p" 2>/dev/null; then
+  if ! git -C "$VENDOR/maspsx" apply --reverse --check "$p" 2>/dev/null; then
     say "patch maspsx: $(basename "$p")"
     git -C "$VENDOR/maspsx" apply "$p"
-  else
-    die "maspsx patch $(basename "$p") does not apply to vendor/maspsx (CRLF or edited clone? rerun with --force)"
   fi
   echo "maspsx patch $(basename "$p") sha256=$(sha256_of "$p")" >> "$VERSIONS"
 done

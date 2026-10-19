@@ -181,9 +181,10 @@ retail compiler) — nothing is downloaded for it.
   patch text is ours.  `tests/test_maspsx_patch.py` fails without it.  The 53
   manifest functions are unaffected (`check_all.sh` output identical before/after).
 
-A checkout whose `vendor/maspsx` predates this (CRLF clone, unpatched) is fixed by
-`tools/match/setup.sh --force` (rebuilds cc1 too on Windows) or by deleting
-`vendor/maspsx` and rerunning `setup.sh`.
+A checkout whose `vendor/maspsx` predates this just needs a plain
+`tools/match/setup.sh` (no `--force`): it patches the existing clone in place, CRLF or
+not, and re-clones only maspsx if the clone is at the wrong commit or hand-edited.
+cc1 is never rebuilt for this (`--force` is the only thing that rebuilds cc1).
 
 Environment overrides read by `match_fn.py`: `AC1_CC1`, `AC1_AS`, `AC1_MASPSX`,
 `AC1_CPP`, `MIPS_PREFIX`, `AC1_BIN` (disc image, for exe addresses),
