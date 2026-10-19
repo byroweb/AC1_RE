@@ -62,7 +62,7 @@ MANIFEST = os.path.join(RE_MATCH, "manifest.tsv")
 MANIFEST_HEADER = ("# vaddr\tovl\tsource\tsize\textra match_fn.py args (one line per matched "
                    "function; re/match/check_all.sh re-verifies every row)")
 GIVEUP_MARK = "NOT MATCHED"
-COMMIT_TRAILER = "Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
+COMMIT_TRAILER = "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 AUTO_SYM = re.compile(r"^(func|D)_([0-9A-Fa-f]{8})$")
 QUEUE_COLS = ["unit", "vaddr", "name", "size", "instructions", "branches", "calls",
               "jump_tables", "gte_ops", "stack_size", "jt_addrs", "score"]

@@ -14,6 +14,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
+cd "$ROOT" || exit 2                         # manifest paths (-I include, --syms ...) are repo-relative
 PY=python3; command -v python3 >/dev/null 2>&1 || PY=python
 fail=0; n=0; twins=0
 while IFS=$'\t' read -r vaddr unit src size extra; do

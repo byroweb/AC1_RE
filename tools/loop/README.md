@@ -103,7 +103,7 @@ splits the `.text` range into functions:
 | `jt_addrs` | RAM address(es) of the jump tables, for `match_fn.py --rodata` |
 | `evidence` | which candidates established the start (`text`, `ret`, `jal`, `pro`, `ptr`, `mk`) |
 
-Current run (2026-10-18): 3565 functions = exe 694 (563 PsyQ) + ovl201 1091 +
+Current run (2026-10-18, with `overlays/CODE_UNITS.tsv` merged): 3565 functions = exe 694 (563 PsyQ) + ovl201 1091 +
 ovl202 619 + ovl203 579 + ovl204 582 (plus 2769 mission-overlay functions with `--missions`).  The four functions already matched in
 `re/match/manifest.tsv` come out with exactly the manifest sizes (40, 76, 104,
 252 bytes) and the switch table of `func_800505F0` at 0x8004AEEC.
@@ -121,7 +121,9 @@ the two runs are identical). Run of 2026-10-18: **58 units, 2769 functions**,
 6334 rows in total. The load address per entry (and the alias column) comes
 from `overlays/CODE_UNITS.tsv` when that file is in the checkout, else from
 `MISSION_TABLE` in `inventory.py`; the two agree on all 58 bases
-(`refresh_mission_entries()` warns if they ever differ).
+(`refresh_mission_entries()` warns if they ever differ).  With CODE_UNITS.tsv
+merged the only boundary change is fdat074, whose text starts 8 bytes earlier
+(0x801C4D48), so its first function is 1008 bytes instead of 1000.
 
 - **fdat168** is byte-identical to fdat166 (`alias_of` in CODE_UNITS.tsv, also
   `cmp`-verified) and is **skipped** with a printed note, so its functions are
@@ -171,41 +173,72 @@ Filters `functions.tsv` to `is_psyq == 0`, not in the ledger as `match` or
 include them), then sorts by
 
 ```
-score = 1.00*log1p(instructions) + 1.00*log1p(branches) + 0.80*log1p(gte_ops)
-      + 0.30*log1p(stack_size) + 1.50*jump_tables - 0.30*log1p(calls)
+score = 1.00*log1p(instructions) + 1.00*log1p(branches) + 1.00*log1p(gte_ops)
+      + 0.80*log1p(stack_size) + 0.25*jump_tables - 0.60*log1p(calls)
 ```
 
 (`WEIGHTS` dict at the top of the file, clamped at 0).  Calls are subtracted
 because a `jal` plus argument setup is the cheapest code to reproduce; a
-switch table is a flat cost because it needs `--rodata` and the right case
-layout.  `--tsv` prints the same rows machine-readably, `jt_addrs` included,
+switch table is a small flat cost (the case layout; `--rodata` is pre-filled by
+`drive.py`).  `--tsv` prints the same rows machine-readably, `jt_addrs` included,
 for a driver.  `--calibrate` lists every ledger outcome with its score, size
 and attempts so the weights can be refit once there are enough rows (e.g.
 regress attempts, or the give-up rate, on the log1p features).
 
-### Weights (reviewed 2026-10-18 against 55 outcomes)
+### Weights (reviewed 2026-10-18 against 78 outcomes)
 
 `refit.py` fits log(attempts) on the same features (ridge, pure Python,
-give-ups = 20 attempts) and prints the current and refit Spearman plus a
-proposed `WEIGHTS`.  On the first 55 outcomes (43 first-try matches, 9 at
-2-3, one at 8, two give-ups):
+give-ups = 20 attempts, give-ups with 0 attempts skipped as tool failures)
+and prints the current and refit Spearman plus a proposed `WEIGHTS`.
 
-| | Spearman(score, attempts) |
-|---|---|
-| weights before (br 0.60, stack 0.15) | 0.632 |
-| weights now (br 1.00, stack 0.30) | 0.629 |
-| literal ridge proposal (br 1.6, stack 0.7, calls 2.2, jt 0) | 0.641 in-sample, 0.614 leave-one-out |
+**Round 1** (55 outcomes, scores up to 8.3) was too easy to tell weightings
+apart: 43 first-try matches.  The only change then was branches 0.60 -> 1.00
+and stack 0.15 -> 0.30 (Spearman 0.63 either way).
 
-The literal proposal is not applied: with `calls` at 2.2 it ranks 1300-byte
-call-heavy functions as score 0, an extrapolation from a sample whose
-functions have at most five calls.  The hand-set change follows the direction
-of the evidence (both give-ups had 13 and 19 branches and a frame; every
-match that took more than one attempt had a frame) without leaving the
-sample's range.  `gte_ops` had zero variance (no GTE code in ovl201/202
-candidates so far) and `jump_tables` one data point, so both keep their
-prior.  The sample is too easy to discriminate weights: 43 of 55 outcomes
-were first-try matches, so a round of harder functions (score 6.5-9) is the
-next useful calibration data.
+**Calibration round** (`queue-C1..C3.tsv`, built by `pick_calibration.py`): 24
+functions, scores 5-11, exe and all four overlays, 4 with GTE ops and 3 with
+switch tables, no feature-identical twins.  Three matchers, cap 10 tries,
+every compile through `drive.py try`.
+
+| queue | matched | give-ups | attempts |
+|---|---|---|---|
+| C1 | 8 | 0 | 19 |
+| C2 | 7 | 1 | 36 |
+| C3 | 6 | 2 | 44 |
+
+Give-ups: ovl201 0x80064C18 (GTE, one scheduling difference at +0x190, 668 vs
+664 bytes), ovl201 0x8006E148 (temp registers swapped in two row loops) and
+exe 0x80012A78 (s8/t1 allocation of two stack arguments).  The matchers'
+notes agree that the cost is GCC 2.7.2 behaviour, not size: register
+allocation ties, loop shape (for vs do-while, down-counting walking
+pointers), merging of identical blocks and block layout, struct-vs-scalar
+globals for load order, and frame size.  Two counted tries were wasted on
+unchanged sources (exe 0x80016678, exe 0x80012A78); the ledger keeps the
+counts as recorded.
+
+Spearman(score, log attempts):
+
+| weights | all 78 | calibration 24 | C1 / C2 / C3 | top-100 open, largest |
+|---|---|---|---|---|
+| round-1 weights (gte 0.8, stack 0.3, jt 1.5, calls 0.3) | 0.740 | 0.567 | 0.47 / 0.52 / 0.89 | 28 B |
+| **now** (gte 1.0, stack 0.8, jt 0.25, calls 0.6) | **0.784** | **0.799** | 0.91 / 0.63 / 0.93 | 28 B |
+| literal ridge (gte 1.27, stack 0.77, jt 0, calls 1.83) | 0.767 | 0.767 | | 2236 B |
+| size only | 0.721 | 0.512 | | 28 B |
+
+How the weights were set: a grid over gte {0.8..1.5} x jt {0..1.5} x stack
+{0.3..0.8} x calls {0.3..0.9}.  Two directions are robust: **jump tables are
+cheap** (all four took 1-3 tries) and **frames matter more** (stack 0.8 tops
+the grid at every other setting).  GTE and calls are flat across their range
+(all within 0.002 of the best), so they get middle values.  The new weights
+beat the old on 487 of 500 bootstrap resamples.  Caveat: they were chosen on
+the same data they are scored on; the per-queue column is not out-of-sample.
+The literal ridge fit is still rejected for its `calls` weight, which ranks a
+2236-byte call-heavy function among the 100 easiest.
+
+What the score cannot see: in the calibration round a 10.5 switch function
+took 3 tries and a 7.2 leaf took 6.  Within a band, attempts depend on
+compiler quirks no static feature captures, so expect the ranking to order
+bands well and individual functions loosely.
 
 Top of `rank.py --unit ovl201` today: 3-instruction leaf setters
 (`li v0,1; jr ra; sb v0,1(a0)`), then frameless leaves of 4–9 instructions
@@ -234,24 +267,24 @@ reads `twins.tsv` instead of walking `functions.tsv` row by row:
   turn).  `score` is the ordinary difficulty score above.
 
 Because `score` is logarithmic in size and branches, group size dominates:
-the 34 library groups of 31 members (31 still open) fill most of the top 45,
-and the lowest of them (payoff 2.41) still ranks far above every function
-that occurs only once (163 singletons, payoff <= 0.36).  Run of 2026-10-18,
-388 open groups:
+the 34 library groups of 31 members (31 still open) fill 28 of the top 45,
+and the lowest of them (payoff 2.30) still ranks far above every function
+that occurs only once (163 singletons, payoff <= 0.36).  Run of 2026-10-19
+(calibrated WEIGHTS, stack 0.8), 388 open groups:
 
 ```
    # group   mem payoff unit    vaddr       size instr  br jal  jt stack score
-   1 g0001    66  14.57 fdat004 0x801C6734    60    15   0   1   0    24  3.53
-   2 g0002    62  10.49 fdat000 0x801C72C4    92    23   2   2   0    24  4.91
-   3 g0041    31  10.07 fdat000 0x801C575C    28     7   0   0   0     0  2.08
-   4 g0035    31   9.70 fdat000 0x801C56E4    32     8   0   0   0     0  2.20
+   1 g0001    66  11.13 fdat004 0x801C6734    60    15   0   1   0    24  4.93
+   2 g0041    31  10.07 fdat000 0x801C575C    28     7   0   0   0     0  2.08
+   3 g0035    31   9.70 fdat000 0x801C56E4    32     8   0   0   0     0  2.20
    ...
-   7 g0034    31   9.12 fdat000 0x801C5634    40    10   0   0   0     0  2.40
-   8 g0004    39   8.61 fdat002 0x801C675C    60    15   0   1   0    24  3.53
+   6 g0034    31   9.12 fdat000 0x801C5634    40    10   0   0   0     0  2.40
+   7 g0002    62   8.62 fdat000 0x801C72C4    92    23   2   2   0    24  6.19
+   8 g0004    39   6.57 fdat002 0x801C675C    60    15   0   1   0    24  4.93
 ```
 
-The only groups ahead of the 31-member library are larger still: g0001 and
-g0002 (66 and 62 members, small stubs that occur twice per entry).  `--tsv`
+The only group ahead of the frameless 31-member leaves is larger still:
+g0001 (66 members, a small stub that occurs twice per entry).  `--tsv`
 adds `group`, `n_members` and `payoff` in front of the usual columns.  After a
 match, `drive.py try <unit> <vaddr>` then `drive.py --replay-twins` closes the
 group.
@@ -532,12 +565,15 @@ unmatched in the inventory.
 
 ## Not done / follow-ups
 
-- Calibration data is flat (43/55 first-try matches): run a harder queue
-  (`make_queues.py --bands 6.5,8,9.5`) before trusting a refit.
-- `overlays/CODE_UNITS.tsv` (branch `claude/xenodochial-mclean-55b2b3`) should
-  be merged into the integration branch: `inventory.py` and `units.py` read it
-  automatically (text ranges for all 63 units, mission bases, the 168->166
-  alias); today the bases come from the fallback table with the same values.
+- Weights were set on the data they are scored on.  The next matching round
+  is the out-of-sample check: compare `refit.py` Spearman before and after it.
+- exe functions that read `.sdata` gp-relative cannot come out of the pinned
+  `-G0` flags; the C3 matcher used `register u32 *gp asm("$28")`, which matches
+  but is not original source.  A `-G` setting per exe file would fix it.
+- `drive.py next` hides runs of zero words in its disassembly (GTE `nop`s
+  show only as an address gap); `drive.py try` counts a try even when the
+  source is unchanged since the last one.
+- Give-ups worth a second look: ovl201 0x80064C18 (one delay-slot fill short).
 - Twin replay (`twins.py`, above) covers four mission matches (107 twins).
   The cheapest mission work is now the 31-member library groups: one match
   there is worth 31 manifest rows; `rank.py --missions` lists them first.
