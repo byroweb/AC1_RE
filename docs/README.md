@@ -90,6 +90,7 @@ facts from open questions:
 ### Project / build
 - [PRISTINE_PROJECT.md](PRISTINE_PROJECT.md) — the clean, unmodified Ghidra project
   for the pristine USA v1.1 build.
+- [CODE_ARCHAEOLOGY.md](CODE_ARCHAEOLOGY.md) — inferred TU map, style clusters A/B/C, mission-unit lineage, 202/203/204 divergences, matching priors (`tools/archaeology/`).
 
 ### Downstream consumers (not RE)
 - [AC1MOD_VISION.md](AC1MOD_VISION.md) — pointer to the AC1mod companion
