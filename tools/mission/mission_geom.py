@@ -65,9 +65,10 @@ PLACE_REC_LEN = 52
 
 # Chunk-0 blocks are authored at 4x the placement scale (the engine renders them
 # through a down-scaling GTE matrix): world = block_local * SCALE + translation.
-# CONFIRMED universal: every chunk-7 section bbox is exactly 0.25x its block's bbox,
-# and the 2500-unit cell translations only tile without overlap at this scale.
-# Spawn X,Y,Z (chunk 12) are in the same 4x space.
+# Missions 0-49: placed at 0.25, 4673 of 6602 sections lie inside their chunk-7 world
+# bbox (+-4; the rest overhang by <= 625), against 138 at 1.0. Spawn X,Y,Z (chunk 12)
+# are already WORLD units, not 4x: unscaled, 571 of 1192 spawns stand within 100 of
+# a floor face below them, against 122 when scaled by 0.25.
 SCALE = 0.25
 
 
