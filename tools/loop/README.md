@@ -501,6 +501,7 @@ Results so far:
 | `fdat060/func_801C6E60.c` | 30 | 30 |
 | `fdat016/func_801C6AE0.c` | 17 | 17 |
 | 31 files in `fdat000/` (the 31-member library groups) | 930 | 930 |
+| 22 files in `fdat000/ fdat002/ fdat004/ fdat008/ fdat016/` (15..29-member groups) | 398 | 398 |
 
 The fdat060 three are relocation-free; `fdat016/func_801C6AE0.c` (48 bytes,
 group g0051: one `jal` and one function pointer, matched with
@@ -515,6 +516,11 @@ twins each (1037 replayed rows in all, every one MATCH).  `801C75BC`'s event
 dispatch is a compare tree that one `switch` cannot give with this cc1 (`stmt.c`:
 count 6 >= `CASE_VALUES_THRESHOLD` 5 and span 9 <= 10 x count emit a jump table);
 the source is an if/goto chain laid out like GCC's case tree.
+
+The 15..29-member groups (2026-10-20): 22 of 23 are matched and replayed (398 more
+twins).  Most took one or two oracle runs.  The 23rd, `fdat000 801C981C` (4912 B,
+the AI movement state machine installed as `fn_move`, 12 jump tables), is matched on
+its own branch (`claude/fdat000-801C981C`).
 
 ## check_all.sh
 
@@ -587,9 +593,11 @@ unmatched in the inventory.
   show only as an address gap); `drive.py try` counts a try even when the
   source is unchanged since the last one.
 - Give-ups worth a second look: ovl201 0x80064C18 (one delay-slot fill short).
-- Twin replay (`twins.py`, above) covers 35 mission matches (1037 twins); all
-  31-member library groups are done, so `rank.py --missions` moves on to the
-  15..29-member groups.
+- Twin replay (`twins.py`, above) covers 57 mission matches (1435 twins); the
+  31-member groups and the groups of 15..29 members are done (801C981C on its own
+  branch).  `rank.py --missions` still lists a few larger open
+  groups (g0001 66, g0002 62, g0004 39, g0006 33, g0007 32 members) that are not
+  31-member library groups.
 - `ledger.tsv` keeps two rows for functions the inventory has since re-split
   (`ovl201 0x800A86B0` fragment, `ovl202 0x8004EADC` give-up at the old
   20-byte size); the ledger is append-only, `refit.py` skips keys that are not
