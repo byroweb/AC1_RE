@@ -502,6 +502,7 @@ Results so far:
 | `fdat016/func_801C6AE0.c` | 17 | 17 |
 | 31 files in `fdat000/` (the 31-member library groups) | 930 | 930 |
 | 22 files in `fdat000/ fdat002/ fdat004/ fdat008/ fdat016/` (15..29-member groups) | 398 | 398 |
+| 5 files in `fdat000/ fdat002/ fdat004/` (the 32..66-member groups g0001 g0002 g0004 g0006 g0007) | 227 | 227 |
 
 The fdat060 three are relocation-free; `fdat016/func_801C6AE0.c` (48 bytes,
 group g0051: one `jal` and one function pointer, matched with
@@ -521,6 +522,10 @@ The 15..29-member groups (2026-10-20): 22 of 23 are matched and replayed (398 mo
 twins).  Most took one or two oracle runs.  The 23rd, `fdat000 801C981C` (4912 B,
 the AI movement state machine installed as `fn_move`, 12 jump tables), is matched on
 its own branch (`claude/fdat000-801C981C`).
+
+The five largest open groups (g0001 66, g0002 62, g0004 39, g0006 33, g0007 32
+members) are small installers and wrappers (60..92 B); all matched in one or two runs
+(227 more twins).
 
 ## check_all.sh
 
@@ -593,11 +598,9 @@ unmatched in the inventory.
   show only as an address gap); `drive.py try` counts a try even when the
   source is unchanged since the last one.
 - Give-ups worth a second look: ovl201 0x80064C18 (one delay-slot fill short).
-- Twin replay (`twins.py`, above) covers 57 mission matches (1435 twins); the
-  31-member groups and the groups of 15..29 members are done (801C981C on its own
-  branch).  `rank.py --missions` still lists a few larger open
-  groups (g0001 66, g0002 62, g0004 39, g0006 33, g0007 32 members) that are not
-  31-member library groups.
+- Twin replay (`twins.py`, above) covers 62 mission matches (1662 twins); of the
+  groups with 15 or more members only g0005 (36 members, fdat002 801C6504, 600 B:
+  the event hook func_801C675C installs) is open (801C981C is on its own branch).
 - `ledger.tsv` keeps two rows for functions the inventory has since re-split
   (`ovl201 0x800A86B0` fragment, `ovl202 0x8004EADC` give-up at the old
   20-byte size); the ledger is append-only, `refit.py` skips keys that are not
