@@ -71,7 +71,8 @@ PLACE_REC_LEN = 52
 # through a down-scaling GTE matrix): world = block_local * SCALE + translation.
 # CONFIRMED universal: every chunk-7 section bbox is exactly 0.25x its block's bbox,
 # and the 2500-unit cell translations only tile without overlap at this scale.
-# Spawn X,Y,Z (chunk 12) are in the same 4x space.
+# Spawn X,Y,Z (chunk 12) are already WORLD units (not x SCALE): measured on missions
+# 0-49, 571 spawns stand within 100 units above a floor face unscaled, 122 at x0.25.
 SCALE = 0.25
 
 
