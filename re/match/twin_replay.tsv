@@ -1,4 +1,4 @@
-# twin replay (tools/loop/twins.py replay): every clone of a matched mission function, compiled from the shared C file
+# twin replay (tools/loop/twins.py replay): every clone of a matched function, compiled from the shared C file
 # group	source	matched_as	unit	vaddr	size	result	oracle_final_line	extra
 g0048	fdat000/func_801C5314.c	fdat000 0x801C5314	fdat002	0x801C6798	192	MATCH	MATCH func_801C5314 192	--base 0x801C4B40 --defsym D_801A26CE=0x801A26CE --defsym D_801D0B68=0x801D0B68 --defsym func_8008A0B0=0x8008A0B0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 g0048	fdat000/func_801C5314.c	fdat000 0x801C5314	fdat006	0x801C5D0C	192	MATCH	MATCH func_801C5314 192	--base 0x801C4B40 --defsym D_801A26CE=0x801A26CE --defsym D_801D0B68=0x801D0B68 --defsym func_8008A0B0=0x8008A0B0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
@@ -1725,3 +1725,92 @@ g0040	fdat060/func_801C6E60.c	fdat060 0x801C6E60	fdat096	0x801C6C20	28	MATCH	MAT
 g0040	fdat060/func_801C6E60.c	fdat060 0x801C6E60	fdat098	0x801C7980	28	MATCH	MATCH func_801C6E60 28	--base 0x801C4B40
 g0040	fdat060/func_801C6E60.c	fdat060 0x801C6E60	fdat120	0x801C553C	28	MATCH	MATCH func_801C6E60 28	--base 0x801C4B40
 g0040	fdat060/func_801C6E60.c	fdat060 0x801C6E60	fdat140	0x801C56D8	28	MATCH	MATCH func_801C6E60 28	--base 0x801C4B40
+p0047	ovl201/func_800515F8.c	ovl201 0x800515F8	201	0x80051608	16	MATCH	MATCH func_800515F8 16	--defsym D_801BC473=0x801BC472
+p0047	ovl201/func_800515F8.c	ovl201 0x800515F8	201	0x80051618	16	MATCH	MATCH func_800515F8 16	--defsym D_801BC473=0x801BC471
+p0047	ovl201/func_800515F8.c	ovl201 0x800515F8	201	0x8008C3DC	16	MATCH	MATCH func_800515F8 16	--defsym D_801BC473=0x8019C090
+p0046	ovl201/func_80051DCC.c	ovl201 0x80051DCC	201	0x80051C20	36	MATCH	MATCH func_80051DCC 36	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0046	ovl201/func_80051DCC.c	ovl201 0x80051DCC	201	0x80051D14	36	MATCH	MATCH func_80051DCC 36	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0046	ovl201/func_80051DCC.c	ovl201 0x80051DCC	201	0x800A38A8	36	MATCH	MATCH func_80051DCC 36	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x8004FD3C	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x8004FD4C --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x800531A8	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x800531B8 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x80054D34	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x80054D44 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x80055940	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x80055950 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x800569D8	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x800569E8 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x80056D48	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x80056D58 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x8008BF90	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x8008BFA0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x8008C064	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x8008C074 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x8009A6F0	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x8009A700 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x8009A7C4	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x8009A7D4 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x800A2EA0	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x800A2EB0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x800A2FD0	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x800A2FE0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x800A3554	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x800A3564 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x800A74A4	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x800A74B4 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_800551A0.c	ovl201 0x800551A0	201	0x800A7808	16	MATCH	MATCH func_800551A0 16	--defsym func_800551B0=0x800A7A68 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0590	ovl201/func_800580E0.c	ovl201 0x800580E0	201	0x8005A1C4	32	MATCH	MATCH func_800580E0 32	--defsym func_8002A400=0x8002A400
+p0586	ovl201/func_80068458.c	ovl201 0x80068458	201	0x80073718	40	MATCH	MATCH func_80068458 40	--defsym func_80016F7C=0x80073904 --defsym func_80016ED8=0x80073740 --defsym InitCARD=0x800738B0 --defsym StartCARD=0x80073904 --defsym _bu_init=0x80073740 --defsym _card_clear=0x8007370C --defsym _card_info=0x80073870 --defsym _card_load=0x80073880 --defsym _card_write=0x80073890 --defsym _new_card=0x800738A0
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	exe	0x80016170	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x8002A1A4
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	exe	0x800161B8	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x8002A3C8
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	exe	0x800161D8	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x8002A3C8
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	201	0x800518A4	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x8002A3C8
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	201	0x80066974	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x800685E8
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	201	0x80068480	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x80016FB4
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	201	0x800A7880	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x800A6EA0
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	201	0x800A7908	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x800A6EA0
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	201	0x800A7990	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x800A6EA0
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	201	0x800B506C	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x800B52DC
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	202	0x8006DA78	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x8006DA20
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	202	0x80080D00	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x8007DF98
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	203	0x8006CF18	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x8006CEC0
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	203	0x8007F938	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x8007CB90
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	204	0x8006CD54	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x8006CCFC
+p0007	ovl201/func_800728D8.c	ovl201 0x800728D8	204	0x8007F5E4	32	MATCH	MATCH func_800728D8 32	--defsym func_80072958=0x8007C83C
+p0415	ovl201/func_8007C22C.c	ovl201 0x8007C22C	201	0x800804DC	20	MATCH	MATCH func_8007C22C 20	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0415	ovl201/func_8007C22C.c	ovl201 0x8007C22C	201	0x8008530C	20	MATCH	MATCH func_8007C22C 20	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8008B568	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8008B604	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8008B76C	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8008BD9C	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8008BEEC	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8008BFA8	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8008C07C	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x80093B4C	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x80095124	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x800953A0	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x80095778	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x80095F4C	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x800960B4	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x800997BC	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x80099E30	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x80099ECC	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8009A4FC	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8009A64C	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8009A708	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008AF9C.c	ovl201 0x8008AF9C	201	0x8009A7DC	12	MATCH	MATCH func_8008AF9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0004	ovl201/func_8008BD9C.c	ovl201 0x8008BD9C	201	0x8008AF9C	12	MATCH	MATCH func_8008BD9C 12	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0008	ovl201/func_8008BF90.c	ovl201 0x8008BF90	201	0x800551A0	16	MATCH	MATCH func_8008BF90 16	--defsym func_8008BFA0=0x800551B0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0569	ovl201/func_8008DD50.c	ovl201 0x8008DD50	201	0x80094E08	80	MATCH	MATCH func_8008DD50 80	--defsym func_8008DDA0=0x80094E58 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0034	ovl201/func_800B2018.c	ovl201 0x800B2018	201	0x80084038	36	MATCH	MATCH func_800B2018 36	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0034	ovl201/func_800B2018.c	ovl201 0x800B2018	201	0x800A85F4	36	MATCH	MATCH func_800B2018 36	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0034	ovl201/func_800B2018.c	ovl201 0x800B2018	201	0x800AEA40	36	MATCH	MATCH func_800B2018 36	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0034	ovl201/func_800B2018.c	ovl201 0x800B2018	201	0x800AEB0C	36	MATCH	MATCH func_800B2018 36	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0302	ovl202/func_8004CF0C.c	ovl202 0x8004CF0C	203	0x8004D114	112	MATCH	MATCH func_8004CF0C 112	--defsym D_80042086=0x80042086 --defsym D_80041BD0=0x80041BD0 --defsym func_80021940=0x80021940
+p0302	ovl202/func_8004CF0C.c	ovl202 0x8004CF0C	204	0x8004CF94	112	MATCH	MATCH func_8004CF0C 112	--defsym D_80042086=0x80042086 --defsym D_80041BD0=0x80041BD0 --defsym func_80021940=0x80021940
+p0248	ovl202/func_8004DF54.c	ovl202 0x8004DF54	203	0x8004E170	164	MATCH	MATCH func_8004DF54 164	--defsym func_800131D0=0x800131D0
+p0248	ovl202/func_8004DF54.c	ovl202 0x8004DF54	204	0x8004E054	164	MATCH	MATCH func_8004DF54 164	--defsym func_800131D0=0x800131D0
+p0394	ovl202/func_8005E97C.c	ovl202 0x8005E97C	203	0x8005E19C	44	MATCH	MATCH func_8005E97C 44	
+p0394	ovl202/func_8005E97C.c	ovl202 0x8005E97C	204	0x8005D928	44	MATCH	MATCH func_8005E97C 44	
+p0340	ovl202/func_8006DB90.c	ovl202 0x8006DB90	203	0x8006D030	84	MATCH	MATCH func_8006DB90 84	
+p0340	ovl202/func_8006DB90.c	ovl202 0x8006DB90	204	0x8006CE6C	84	MATCH	MATCH func_8006DB90 84	
+p0320	ovl202/func_8006E6B4.c	ovl202 0x8006E6B4	203	0x8006DB54	100	MATCH	MATCH func_8006E6B4 100	--defsym func_8006E380=0x8006D820 --defsym g_mission_ctl=0x801C40C8 --defsym g_world_structs=0x801C40F0 --defsym world_section_find=0x8006DB54 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0320	ovl202/func_8006E6B4.c	ovl202 0x8006E6B4	204	0x8006D990	100	MATCH	MATCH func_8006E6B4 100	--defsym func_8006E380=0x8006D65C --defsym g_mission_ctl=0x801D4460 --defsym g_world_structs=0x801D4488 --defsym world_section_find=0x8006D990 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0332	ovl202/func_80070A00.c	ovl202 0x80070A00	203	0x8006FD84	88	MATCH	MATCH func_80070A00 88	
+p0332	ovl202/func_80070A00.c	ovl202 0x80070A00	204	0x8006FBC0	88	MATCH	MATCH func_80070A00 88	
+p0280	ovl202/func_800783F8.c	ovl202 0x800783F8	203	0x80077148	132	MATCH	MATCH func_800783F8 132	--defsym func_80086C9C=0x80085948
+p0280	ovl202/func_800783F8.c	ovl202 0x800783F8	204	0x80076F8C	132	MATCH	MATCH func_800783F8 132	--defsym func_80086C9C=0x800856F8
+p0411	ovl202/func_8007A108.c	ovl202 0x8007A108	203	0x80078BF8	28	MATCH	MATCH func_8007A108 28	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0411	ovl202/func_8007A108.c	ovl202 0x8007A108	204	0x800788A8	28	MATCH	MATCH func_8007A108 28	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0007	ovl202/func_80080D00.c	ovl202 0x80080D00	201	0x800728D8	32	MATCH	MATCH func_80080D00 32	--defsym func_8007DF98=0x80072958
+p0150	ovl202/func_80087070.c	ovl202 0x80087070	203	0x80085D1C	348	MATCH	MATCH func_80087070 348	--defsym D_8008EC88=0x8008A978 --defsym func_80089ECC=0x80088B78 --defsym func_80085764=0x80084410 --defsym func_80085510=0x800841BC
+p0150	ovl202/func_80087070.c	ovl202 0x80087070	204	0x80085ACC	348	MATCH	MATCH func_80087070 348	--defsym D_8008EC88=0x8008A7A4 --defsym func_80089ECC=0x80088928 --defsym func_80085764=0x800841C0 --defsym func_80085510=0x80083F6C
+p0137	ovl202/func_80087798.c	ovl202 0x80087798	203	0x80086444	404	MATCH	MATCH func_80087798 404	--defsym D_8008EC88=0x8008A978 --defsym D_80090364=0x8008C054 --defsym func_8002A4A0=0x8002A4A0 --defsym func_80085580=0x8008422C --defsym func_80085764=0x80084410 --defsym func_80089ECC=0x80088B78
+p0137	ovl202/func_80087798.c	ovl202 0x80087798	204	0x800861F4	404	MATCH	MATCH func_80087798 404	--defsym D_8008EC88=0x8008A7A4 --defsym D_80090364=0x8008BE80 --defsym func_8002A4A0=0x8002A4A0 --defsym func_80085580=0x80083FDC --defsym func_80085764=0x800841C0 --defsym func_80089ECC=0x80088928
