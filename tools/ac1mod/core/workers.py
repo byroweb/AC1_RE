@@ -9,8 +9,9 @@ from pathlib import Path
 from PyQt6.QtCore import QThread, pyqtSignal
 from core.jpsxdec import (
     build_index, extract_all, parse_index_file, IndexEntry, _run,
-    save_tim_for_item, extract_audio_for_item, replace_tim, inject_audio_into_bin,
+    save_tim_for_item, extract_audio_for_item, replace_tim,
 )
+from core.xa import inject_wav
 
 # Log to a file next to the script so the user can inspect it
 LOG_PATH = Path(__file__).parent.parent / "ac1mod_debug.log"
@@ -206,7 +207,7 @@ class BuildWorker(QThread):
                 fail += 1
                 self.progress.emit(f"  Warning: {name} failed — {msg[:80]}")
 
-        # 4. Inject audio replacements (XA ADPCM sector overwrite)
+        # 4. Inject audio replacements (tools/audio/reinject_xa: this channel's sectors only)
         audio_replacements = self.project.audio_replacements
         audio_total = len(audio_replacements)
         for i, (entry_num, wav_path_str) in enumerate(audio_replacements.items(), 1):
@@ -225,9 +226,7 @@ class BuildWorker(QThread):
                 fail += 1
                 continue
 
-            ok, msg = inject_audio_into_bin(
-                self.output_bin_path, entry.sector_start, entry.sector_end, wav_path
-            )
+            ok, msg = inject_wav(self.output_bin_path, entry, wav_path)
             log.info(f"  inject_audio #{entry_num} ok={ok} msg={msg[:80]!r}")
             if ok:
                 success += 1

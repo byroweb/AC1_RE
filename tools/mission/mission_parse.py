@@ -15,12 +15,18 @@ A mission N is described by a PAIR of FDAT.T entries (file id 2):
                       OBJECT-INSTANCE / MT-SPAWN table fed to FUN_80073B74
                       (-> instance table 0x8019FAB8, 256 x 44).
 
-Each 40-byte spawn record = 20 int16 halfwords:
-  hw0,hw1,hw2 = X,Y,Z position             (CONFIRMED)
-  hw3         = geometry block index        (-> instance +0x0A; -1 = none) CONFIRMED
-  hw5         = rotation (PSX angle units)   HYPOTHESIS
-  hw7         = object / MT type id          CONFIRMED (varies per mission)
-  hw8..hw19   = per-type params (HP?, flags, link ids) HYPOTHESIS
+Each 40-byte spawn record = 20 int16 halfwords (docs/OBJECT_STATS.md §1):
+  hw0,hw1,hw2 = X,Y,Z position, world units  CONFIRMED
+  hw3         = geometry block index AND the behaviour dispatch type
+                (-> template +0x0A, entity +0x0E; -1 = none)   CONFIRMED
+  hw5         = rotation (PSX angle units, 4096 = 360 deg)     CONFIRMED (range)
+  hw7         = resource / class id (wide, 0..388; flag-table key; NOT the
+                dispatch type, not copied to the instance)     CONFIRMED
+  hw8         = param A; also the NPC defense argument of the damage apply
+                CONFIRMED (path), value curve open
+  hw11        = HP (-> entity +0x160 current / +0x162 max)     CONFIRMED (live)
+  hw9,hw10,hw12..hw19 = per-instance params (flags, link ids)  HYPOTHESIS
+A slot is empty when hw3 == -1, hw0..hw2 == 0 and hw7 == 0 (empty_record).
 
 Usage:
   tools/mission/mission_parse.py --fdat disc_map/extracted/FDAT_T/entries  --mission 0
@@ -61,6 +67,49 @@ def walk_chunks(buf, limit=64):
         idx += 1
 
 
+def chunk_span(buf, want):
+    """(payload_off, length) of chunk `want`, or None if the stream stops first."""
+    for idx, off, ln, stop in walk_chunks(buf):
+        if stop:
+            return None
+        if idx == want:
+            return (off + 4, ln)
+    return None
+
+
+def spawn_records(buf):
+    """[(slot, hw[20])] for every 40-byte record of the chunk-12 table (empty
+    slots included), or None if the stream has no chunk 12."""
+    span = chunk_span(buf, SPAWN_CHUNK)
+    if span is None:
+        return None
+    off, ln = span
+    return [(i, struct.unpack_from("<20h", buf, off + i * SPAWN_REC_LEN))
+            for i in range(ln // SPAWN_REC_LEN)]
+
+
+def empty_record(hw):
+    """True for an unused chunk-12 slot: no block (hw3 == -1), origin position and
+    type 0.  The tools that list "non-empty records" skip exactly these."""
+    return (hw[3] == -1 and hw[0] == 0 and hw[1] == 0
+            and hw[2] == 0 and hw[7] == 0)
+
+
+def spawns(buf):
+    """Non-empty chunk-12 slots as dicts: i (slot), x, y, z, blk (hw3: block
+    index and dispatch type), rot, typ (hw7: resource/class id) and params =
+    hw8..hw19.  Empty slots are the ones empty_record() matches; a record with
+    hw7 == 0 but a block or position is real (e.g. mission 6 slot 8, hw3 = 2,
+    HP 3600).  [] if the stream has no chunk 12."""
+    out = []
+    for i, hw in spawn_records(buf) or ():
+        if empty_record(hw):
+            continue
+        out.append(dict(i=i, x=hw[0], y=hw[1], z=hw[2], blk=hw[3], rot=hw[5],
+                        typ=hw[7], params=list(hw[8:])))
+    return out
+
+
 def dump_chunks(buf):
     print(f"chunk stream: {len(buf)} bytes")
     for idx, off, ln, stop in walk_chunks(buf):
@@ -75,22 +124,15 @@ def dump_chunks(buf):
 
 
 def dump_spawns(buf, show_empty=False):
-    spawn = next((c for c in walk_chunks(buf)
-                  if c[0] == SPAWN_CHUNK and not c[3]), None)
-    if spawn is None:
+    recs = spawn_records(buf)
+    if recs is None:
         print("no spawn chunk (index 12) found", file=sys.stderr)
         return
-    _, off, ln, _ = spawn
-    pay = buf[off + 4: off + 4 + ln]
-    n = ln // SPAWN_REC_LEN
-    print(f"spawn/instance table: {n} records of {SPAWN_REC_LEN} bytes")
+    print(f"spawn/instance table: {len(recs)} records of {SPAWN_REC_LEN} bytes")
     print(" idx  type  blk        X       Y       Z     rot   hw8  hw9  hw11  hw12  hw15")
     active = 0
-    for i in range(n):
-        hw = struct.unpack_from("<20h", pay, i * SPAWN_REC_LEN)
-        empty = (hw[3] == -1 and hw[0] == 0 and hw[1] == 0
-                 and hw[2] == 0 and hw[7] == 0)
-        if empty and not show_empty:
+    for i, hw in recs:
+        if empty_record(hw) and not show_empty:
             continue
         active += 1
         print(f" {i:3d}  {hw[7]:4d}  {hw[3]:3d}  {hw[0]:7d} {hw[1]:7d} {hw[2]:7d}  "

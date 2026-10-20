@@ -86,18 +86,12 @@ def load_spawn_types(buf):
       hp        {hw3: sorted [hw11]}  - HP values seen per logical type
       res_by_logical {hw3: sorted [hw7]} - which resources use each logical type
     """
-    spawn = next((c for c in mp.walk_chunks(buf)
-                  if c[0] == mp.SPAWN_CHUNK and not c[3]), None)
-    if spawn is None:
+    recs = mp.spawn_records(buf)
+    if recs is None:
         return {"resource": {}, "logical": {}, "hp": {}, "res_by_logical": {}}
-    _, off, ln, _ = spawn
-    pay = buf[off + 4: off + 4 + ln]
     resource, logical, hp, rbl = {}, {}, {}, {}
-    for i in range(ln // mp.SPAWN_REC_LEN):
-        hw = struct.unpack_from("<20h", pay, i * mp.SPAWN_REC_LEN)
-        empty = (hw[3] == -1 and hw[0] == 0 and hw[1] == 0
-                 and hw[2] == 0 and hw[7] == 0)
-        if empty:
+    for _, hw in recs:
+        if mp.empty_record(hw):
             continue
         resource[hw[7]] = resource.get(hw[7], 0) + 1
         logical[hw[3]] = logical.get(hw[3], 0) + 1
@@ -153,9 +147,7 @@ def collect(fdat):
             rec["logical"] = sv["logical"]      # hw3 dispatch type
             rec["hp"] = sv["hp"]
             rec["res_by_logical"] = sv["res_by_logical"]
-            rec["has_spawn_chunk"] = bool(
-                next((c for c in mp.walk_chunks(buf)
-                      if c[0] == mp.SPAWN_CHUNK and not c[3]), None))
+            rec["has_spawn_chunk"] = mp.chunk_span(buf, mp.SPAWN_CHUNK) is not None
         if os.path.exists(op):
             rec["has_objobj"] = True
             rec["init"] = load_init_table(open(op, "rb").read())

@@ -174,6 +174,8 @@ class IndexEntry:
     audio_sample_rate: Optional[int] = None
     audio_channels: Optional[int] = None
     audio_xa_channel: Optional[int] = None   # CD subheader channel (XA interleave)
+    audio_xa_file: Optional[int] = None      # CD subheader file number
+    audio_sector_stride: Optional[int] = None  # disc sectors between this channel's sectors
 
     # Paths set after extraction
     png_path: Optional[Path] = None
@@ -310,7 +312,7 @@ def parse_index_file(index_path: Path) -> list[IndexEntry]:
                     entry.palette_count = int(pal)
 
             # Parse audio metadata where jPSXdec provides it. AC1's XA lines look
-            # like: |Channel:0|Stereo?:Yes|Samples/Sec:37800|Bits/Sample:4
+            # like: |File:1|Channel:0|Stereo?:No|Samples/Sec:37800|Bits/Sample:4|Sector stride:16
             if entry_type == "Audio":
                 for key in ("Samples/Sec", "SampleRate", "SamplesPerSecond", "Freq"):
                     if key in fields and fields[key].isdigit():
@@ -326,6 +328,10 @@ def parse_index_file(index_path: Path) -> list[IndexEntry]:
                 # CD subheader channel number — which interleaved stream this is.
                 if "Channel" in fields and fields["Channel"].lstrip("-").isdigit():
                     entry.audio_xa_channel = int(fields["Channel"])
+                if fields.get("File", "").isdigit():
+                    entry.audio_xa_file = int(fields["File"])
+                if fields.get("Sector stride", "").isdigit():
+                    entry.audio_sector_stride = int(fields["Sector stride"])
 
             entries.append(entry)
 
@@ -351,6 +357,7 @@ class TimInfo:
     image_width: int       # actual pixel width (accounts for bpp packing)
     image_height: int
     file_size: int
+    clut_words: tuple = ()  # the CLUT's u16 entries, all rows (encode_to_tim keeps their STP bits)
 
 
 def decode_tim_to_rgba(tim_path: Path, palette_index: int = 0) -> Optional[tuple[int, int, bytes]]:
@@ -611,6 +618,7 @@ def parse_tim(tim_path: Path) -> Optional[TimInfo]:
 
     offset = 8
     clut_x = clut_y = clut_w = clut_h = 0
+    clut_words = ()
 
     if has_clut:
         if len(data) < offset + 12:
@@ -621,6 +629,8 @@ def parse_tim(tim_path: Path) -> Optional[TimInfo]:
         clut_w = struct.unpack_from("<H", data, offset + 8)[0]
         clut_h = struct.unpack_from("<H", data, offset + 10)[0]
         clut_block_len = struct.unpack_from("<I", data, offset)[0]
+        n_words = min(clut_w * clut_h, max(0, (len(data) - offset - 12) // 2))
+        clut_words = struct.unpack_from(f"<{n_words}H", data, offset + 12)
         offset += clut_block_len
 
     if len(data) < offset + 12:
@@ -654,6 +664,7 @@ def parse_tim(tim_path: Path) -> Optional[TimInfo]:
         image_width=img_w,
         image_height=pix_h,
         file_size=len(data),
+        clut_words=tuple(clut_words),
     )
 
 
@@ -849,245 +860,6 @@ def validate_and_encode_audio(
 
 
 # ---------------------------------------------------------------------------
-# XA ADPCM encoder + BIN sector injection
-# ---------------------------------------------------------------------------
-
-_XA_FILTER_COEF = [(0, 0), (60, 0), (115, -52), (98, -55)]
-_CD_SECTOR_BYTES = 2352
-_XA_DATA_OFFSET  = 24       # bytes 24–2347 = 2324 bytes of data
-_XA_DATA_SIZE    = 2324
-_XA_AUDIO_BYTES  = 2304     # 18 sound groups × 128 bytes
-_XA_GROUPS       = 18
-_XA_SUS          = 8        # sound units per group
-_XA_SU_SAMPLES   = 28       # PCM samples per sound unit
-
-
-def _xa_range_for_residuals(residuals: list) -> int:
-    """Smallest range r (0–12) s.t. 7 × 2^r ≥ max(|residuals|)."""
-    max_abs = max(abs(e) for e in residuals) if residuals else 0
-    r = 0
-    while r < 12 and (7 << r) < max_abs:
-        r += 1
-    return r
-
-
-def _encode_su(
-    samples: list, fi: int, r: int, p1: int, p2: int
-) -> tuple:
-    """Encode 28 int16 PCM samples → (nibbles[28], new_p1, new_p2)."""
-    k0, k1 = _XA_FILTER_COEF[fi]
-    nibs = []
-    for s in samples:
-        pred = (k0 * p1 + k1 * p2 + 32) >> 6
-        err  = s - pred
-        n    = ((err + (1 << (r - 1))) >> r) if r > 0 else err
-        n    = max(-8, min(7, n))
-        decoded = max(-32768, min(32767, (n << r) + pred))
-        nibs.append(n & 0xF)
-        p2, p1 = p1, decoded
-    return nibs, p1, p2
-
-
-def _best_su_params(samples: list, p1: int, p2: int) -> tuple:
-    """Return (filter_idx, range_val) minimising MSE over 28 samples."""
-    best = (0, 0, float('inf'))
-    for fi in range(4):
-        k0, k1 = _XA_FILTER_COEF[fi]
-        pp1, pp2 = p1, p2
-        residuals = []
-        for s in samples:
-            pred = (k0 * pp1 + k1 * pp2 + 32) >> 6
-            residuals.append(s - pred)
-            pp2, pp1 = pp1, max(-32768, min(32767, s))
-        r = _xa_range_for_residuals(residuals)
-        # Measure actual MSE at this (fi, r)
-        nibs, _, _ = _encode_su(samples, fi, r, p1, p2)
-        dp1, dp2, mse = p1, p2, 0
-        for s, nb in zip(samples, nibs):
-            signed_n = nb if nb < 8 else nb - 16
-            pred = (k0 * dp1 + k1 * dp2 + 32) >> 6
-            dec  = max(-32768, min(32767, (signed_n << r) + pred))
-            mse += (s - dec) ** 2
-            dp2, dp1 = dp1, dec
-        if mse < best[2]:
-            best = (fi, r, mse)
-    return best[0], best[1]
-
-
-def _build_sound_group(
-    left_chunk: list,
-    right_chunk: list,
-    su_state: list,
-) -> bytes:
-    """
-    Build one 128-byte XA ADPCM sound group.
-    left_chunk : 224 samples (mono) or 112 samples (stereo L)
-    right_chunk: []            (mono) or 112 samples (stereo R)
-    su_state   : list of 8 (p1, p2) tuples, updated in-place.
-    """
-    stereo = bool(right_chunk)
-    if stereo:
-        su_samples, li, ri = [], 0, 0
-        for i in range(_XA_SUS):
-            if i % 2 == 0:
-                su_samples.append(left_chunk[li:li + _XA_SU_SAMPLES]); li += _XA_SU_SAMPLES
-            else:
-                su_samples.append(right_chunk[ri:ri + _XA_SU_SAMPLES]); ri += _XA_SU_SAMPLES
-    else:
-        su_samples = [
-            left_chunk[i * _XA_SU_SAMPLES:(i + 1) * _XA_SU_SAMPLES]
-            for i in range(_XA_SUS)
-        ]
-
-    params  = bytearray(8)
-    all_nibs = []
-    for si in range(_XA_SUS):
-        chunk = list(su_samples[si])
-        if len(chunk) < _XA_SU_SAMPLES:
-            chunk += [0] * (_XA_SU_SAMPLES - len(chunk))
-        p1, p2 = su_state[si]
-        fi, r  = _best_su_params(chunk, p1, p2)
-        nibs, new_p1, new_p2 = _encode_su(chunk, fi, r, p1, p2)
-        all_nibs.append(nibs)
-        su_state[si] = (new_p1, new_p2)
-        params[si] = ((fi & 0x3) << 4) | (r & 0xF)
-
-    group = bytearray(128)
-    group[0:8]  = params
-    group[8:16] = params   # mandatory duplicate
-    # Interleave: byte 16+j*4+b has nibbles for SU b*2 (lo) and SU b*2+1 (hi)
-    for j in range(_XA_SU_SAMPLES):
-        base = 16 + j * 4
-        for b in range(4):
-            group[base + b] = (all_nibs[b * 2][j] & 0xF) | ((all_nibs[b * 2 + 1][j] & 0xF) << 4)
-    return bytes(group)
-
-
-_EDC_TABLE: list | None = None
-
-def _get_edc_table() -> list:
-    global _EDC_TABLE
-    if _EDC_TABLE is not None:
-        return _EDC_TABLE
-    table = []
-    for i in range(256):
-        v = i
-        for _ in range(8):
-            v = (v >> 1) ^ 0x8001801B if (v & 1) else (v >> 1)
-        table.append(v & 0xFFFFFFFF)
-    _EDC_TABLE = table
-    return table
-
-
-def _xa_edc(data: bytes) -> int:
-    """CD-ROM EDC (CRC-32 variant, poly 0x8001801B) over a byte block."""
-    table = _get_edc_table()
-    crc = 0
-    for b in data:
-        crc = (crc >> 8) ^ table[(crc ^ b) & 0xFF]
-    return crc & 0xFFFFFFFF
-
-
-def inject_audio_into_bin(
-    bin_path: Path,
-    sector_start: int,
-    sector_end: int,
-    wav_path: Path,
-) -> tuple:
-    """
-    Encode a 16-bit PCM WAV to XA ADPCM and inject into BIN sectors
-    [sector_start..sector_end].
-
-    The WAV must already be normalised (16-bit, correct sample rate + channels,
-    correct frame count) — run validate_and_encode_audio first.
-
-    Only sectors whose submode byte has bit 2 (audio) set are written.
-    EDC is recalculated for each modified sector.
-    Returns (ok, message).
-    """
-    import wave   as _wv
-    import array  as _arr
-
-    if not wav_path.exists():
-        return False, f"WAV not found: {wav_path}"
-
-    try:
-        with _wv.open(str(wav_path), 'rb') as wf:
-            n_ch     = wf.getnchannels()
-            sw       = wf.getsampwidth()
-            n_frames = wf.getnframes()
-            raw      = wf.readframes(n_frames)
-    except Exception as e:
-        return False, f"Could not read WAV: {e}"
-
-    if sw != 2:
-        return False, f"WAV must be 16-bit PCM (got {sw * 8}-bit)"
-
-    all_samples = list(_arr.array('h', raw))
-    if n_ch == 1:
-        left_samples, right_samples = all_samples, []
-        left_per_group = _XA_SUS * _XA_SU_SAMPLES          # 224 mono samples
-    else:
-        left_samples  = all_samples[0::2]
-        right_samples = all_samples[1::2]
-        left_per_group = 4 * _XA_SU_SAMPLES                 # 112 per-channel samples
-
-    su_state: list = [(0, 0)] * _XA_SUS
-    left_pos = right_pos = 0
-    injected_sectors = 0
-    cur_sec = sector_start
-
-    try:
-        with open(str(bin_path), 'r+b') as f:
-            for cur_sec in range(sector_start, sector_end + 1):
-                offset = cur_sec * _CD_SECTOR_BYTES
-                f.seek(offset)
-                sector = bytearray(f.read(_CD_SECTOR_BYTES))
-                if len(sector) < _CD_SECTOR_BYTES:
-                    break
-
-                submode = sector[18]
-                if not (submode & 0x04):    # bit 2 = audio sector
-                    continue
-
-                # Pull samples for this sector
-                lcount = _XA_GROUPS * left_per_group
-                chunk_left  = left_samples[left_pos:left_pos + lcount]
-                chunk_right = (
-                    right_samples[right_pos:right_pos + lcount]
-                    if n_ch > 1 else []
-                )
-                left_pos  += lcount
-                right_pos += lcount
-
-                # Encode 18 sound groups
-                audio_data = bytearray()
-                sg_lp = sg_rp = 0
-                for _ in range(_XA_GROUPS):
-                    g_l = list(chunk_left[sg_lp:sg_lp + left_per_group])
-                    g_r = list(chunk_right[sg_rp:sg_rp + left_per_group]) if n_ch > 1 else []
-                    sg_lp += left_per_group
-                    sg_rp += left_per_group
-                    audio_data += _build_sound_group(g_l, g_r, su_state)
-
-                # Overwrite audio payload + zero-pad trailing 20 bytes
-                sector[_XA_DATA_OFFSET:_XA_DATA_OFFSET + _XA_AUDIO_BYTES] = audio_data
-                sector[_XA_DATA_OFFSET + _XA_AUDIO_BYTES:_XA_DATA_OFFSET + _XA_DATA_SIZE] = bytes(20)
-
-                # Recalculate EDC (covers bytes 16..2347)
-                struct.pack_into('<I', sector, 2348, _xa_edc(bytes(sector[16:2348])))
-
-                f.seek(offset)
-                f.write(bytes(sector))
-                injected_sectors += 1
-
-    except Exception as e:
-        return False, f"Injection failed at sector {cur_sec}: {e}"
-
-    return True, f"Injected {injected_sectors} audio sectors"
-
-
-# ---------------------------------------------------------------------------
 # TIM encoder — convert PNG/GIF/TIM → TIM matching a reference TimInfo
 # ---------------------------------------------------------------------------
 
@@ -1147,7 +919,10 @@ def encode_to_tim(input_path: Path, ref: TimInfo, out_path: Path) -> tuple[bool,
     All positional/structural fields are taken from ref:
       pixel_x, pixel_y, pixel_width, pixel_height, bpp, has_clut,
       clut_x, clut_y, clut_width, clut_height.
-    Only CLUT color data and pixel data come from input_path.
+    Only CLUT color data and pixel data come from input_path. Every CLUT row of a
+    multi-palette TIM gets the same quantized palette. A CLUT word keeps the STP
+    bit of ref's word at the same position (0x8000 when ref.clut_words is empty);
+    opaque black is always 0x8000, since 0x0000 is the transparent sentinel.
     """
     suffix = input_path.suffix.lower()
     if suffix == ".tim":
@@ -1186,19 +961,18 @@ def encode_to_tim(input_path: Path, ref: TimInfo, out_path: Path) -> tuple[bool,
             total = ref.clut_width * ref.clut_height
             words = []
             for i in range(total):
-                if i < len(palette):
-                    r8, g8, b8 = palette[i]
-                    if i == 0 and has_transparency:
-                        w = 0x0000  # transparent sentinel
-                    else:
-                        r5 = r8 >> 3
-                        g5 = g8 >> 3
-                        b5 = b8 >> 3
-                        w = r5 | (g5 << 5) | (b5 << 10)
-                        if w:
-                            w |= 0x8000  # STP bit prevents accidental black→transparent
+                k = i % n_colors            # entry k of palette row i // n_colors
+                r8, g8, b8 = palette[k]
+                if k == 0 and has_transparency:
+                    w = 0x0000  # transparent sentinel
                 else:
-                    w = 0
+                    w = (r8 >> 3) | ((g8 >> 3) << 5) | ((b8 >> 3) << 10)
+                    if not w:
+                        w = 0x8000  # opaque black: 0x0000 would be transparent
+                    elif i < len(ref.clut_words):
+                        w |= ref.clut_words[i] & 0x8000  # keep the original STP bit
+                    else:
+                        w |= 0x8000
                 words.append(w)
             clut_data = struct.pack(f"<{len(words)}H", *words)
             buf += struct.pack("<I", 12 + len(clut_data))

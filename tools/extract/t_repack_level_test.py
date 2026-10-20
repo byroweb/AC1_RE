@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.join(HERE, "tools", "extract"))
 sys.path.insert(0, os.path.join(HERE, "disc_map", "trace"))
 import t_repack as T
 import assemble_levels as AL
+import mission_geom as MG     # on sys.path via assemble_levels
 
 ENTRY      = 67                 # RTT level (mission 33)
 REC        = 2                  # chunk-7 record to move (block 8; also instanced
@@ -39,11 +40,12 @@ FLAT_OUT = os.path.join(SCRATCH, "fdat_rtt_moved.T")
 
 def moved_section_world(entry, rec_idx):
     """World-space vertices of the section placed by chunk-7 record `rec_idx`."""
-    blocks = AL.blocks_of(entry)
-    plc = AL.placements_of(entry, len(blocks))      # [(blk, p2, light), ...]
+    blocks = MG.geom_blocks(entry)
+    plc = MG.placements(entry, len(blocks))         # [(blk, p2, light), ...]
     blk, p2, _ = plc[rec_idx]
     bv, _ = AL.block_mesh(blocks[blk])
-    return blk, p2, [(x + p2[0], y + p2[1], z + p2[2]) for (x, y, z) in bv]
+    S = MG.SCALE
+    return blk, p2, [(x * S + p2[0], y * S + p2[1], z * S + p2[2]) for (x, y, z) in bv]
 
 
 def main():
@@ -58,8 +60,7 @@ def main():
     print(f"FDAT entry {ENTRY}: {len(e)//2048} sectors, checksum {'OK' if T.verify(e) else 'BAD'}")
 
     # --- locate the record + capture the section's world mesh BEFORE the edit ---
-    ch = AL.chunks_of(e)
-    toff = ch[7][0]
+    toff = MG.chunk_span(e, MG.PLACE_CHUNK)[0]
     rec_abs = toff + REC * REC_STRIDE + TRANS_OFF
     p2_before = struct.unpack_from("<3h", e, rec_abs)
     blk, p2_chk, world_before = moved_section_world(e, REC)

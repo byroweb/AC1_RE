@@ -68,6 +68,8 @@ class MemoryCard:
         self.raw = bytearray(self.path.read_bytes())
         if len(self.raw) < BLOCK * N_BLOCKS:
             raise ValueError(f"not a 128K PS1 card: {len(self.raw)} bytes")
+        if self.raw[0:2] != b"MC":
+            raise ValueError("not a raw PS1 card image: no 'MC' header at offset 0")
         self.saves: list[SaveFile] = []
         self._parse_directory()
 

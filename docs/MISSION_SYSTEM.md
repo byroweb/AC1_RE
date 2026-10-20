@@ -226,7 +226,7 @@ In the HUD (`0x80050960`–`0x80050AAC`): when `DAT_800411FB & 3 == 1`, it compu
 | --- | --- | --- | --- |
 | `0x8019F51C` | -2788 | ptr to active **objective object** (`= 0x801C4B40`); `+0/+4/+8/+0x14` = vtable methods called by the runtime | CONFIRMED |
 | `0x8019F520` | -2784 | chunk-stream / work-buffer dest ptr (reused) | CONFIRMED |
-| `0x8019F524` | -2780 | **result/objective FLAGS** (0x100=success,0x200=fail,0x400,0x1000=timer-warn,0x2400=objective-pending) | CONFIRMED |
+| `0x8019F524` | -2780 | **result/objective FLAGS** (0x100=success,0x200=fail,0x400=scripted-sequence/player input off + untargetable (§6),0x1000=timer-warn,0x2400=objective-pending) | CONFIRMED |
 | `0x8019F528` | -2776 | **mission-END sequence frame counter** (set to 100 by `FUN_8004C318`; counts to 0 → exit) | CONFIRMED |
 | `0x8019F52A` | -2774 | timer-mode / end-anim counter (state 60 special; `<16` shows timer) | CONFIRMED |
 | `0x8019F52C` | -2772 | **displayed MISSION TIMER** (frames; MM:SS on HUD) | CONFIRMED |
@@ -261,7 +261,12 @@ skill). Ghidra names below are in the **isolated `Mission202` project** — see
    **`FUN_8004C318(0x80)`** writes `0x8019F524` and arms `0x8019F528 = 100`, the
    ~100-frame countdown that transitions to the **debrief / "Income and expense
    report"** screen. Live-observed `0x8019F524 = 0x480` at the exit = `0x80`
-   (cmd 5) + the `0x400` bit already noted in §5 (its setter not yet pinned).
+   (cmd 5) + the `0x400` bit already noted in §5. **Setter pinned (static, 2026-10-19):**
+   the chunk-4 VM tail, bit `0x80000` (opcode `0x0013`), at `0x8008C05C..0x8008C074`:
+   `0x8019F524 |= 0x400; 0x800796F4()`. Effects: the pad sampler `0x80079524` zeroes the
+   gameplay buttons `0x80040FA8` while it's set, `acquire 0x80073714` skips the player, and
+   the player fire/lock paths test it (`0x8007E0CC/E7E0/E884`). So it's the
+   scripted-sequence / player-locked-out bit (`PLAYER_CONTROL.md` §1).
 
 ### Per-frame masker defeats a naïve watchpoint  CONFIRMED
 `FUN_8008A8F8` (the state machine, §3) re-writes `0x8019F524` **every frame**

@@ -2,32 +2,33 @@
 core/mission.py — assemble a mission's populated 3D scene for AC1mod.
 
 Reads mission N's spawn table (FDAT entry 2N+1, chunk 12: 256×40-byte records),
-and builds a Scene of placed objects. Until block-index→geometry resolution lands
-(agent task), each spawn is a typed 3D MARKER at its world position; metadata
-(type, position, rotation, block, params) feeds the info dropdown. Designed so the
-marker mesh can later be swapped for the real PA geometry block per spawn.
+and builds a Scene of placed objects. Each spawn is a 3D MARKER at its world
+position, coloured by its resource/class id; metadata (dispatch type, class id,
+position, rotation, params) feeds the info dropdown. The marker mesh could later be
+swapped for the spawn's geometry block (hw3 → block record, docs/MISSION_STAGES.md).
 
-Spawn record layout (20 int16, verified): hw2-4 = X,Y,Z; hw5 = geometry block index
-(-1 = none); hw7 = rotation (0/1024/2048/3072 = 0/90/180/270°); hw9 = type id.
+The spawn records are decoded by tools/mission/mission_parse.py (spawns: hw0-2 =
+X,Y,Z in world units; hw3 = geometry block index AND dispatch type (-1 = none);
+hw5 = rotation (4096 = 360°); hw7 = resource/class id; hw8..hw19 = params, hw8 =
+defense argument, hw11 = HP; docs/OBJECT_STATS.md). This module builds the Scene.
 """
 from __future__ import annotations
-import struct, math, colorsys
+import math, colorsys
+from core import _tools  # noqa: F401  (puts tools/mission on sys.path)
 from core import pa_parser as PP
 from core.scene import Scene, SceneObject
 from core.fdat import mission_entry
+import mission_parse
 
-SPAWN_CHUNK = 12
-REC = 40
-
-# Filled in as object/MT stat tables are reverse-engineered (agent task). Maps a
-# spawn type id -> a human label; empty -> shown as "type N".
+# Maps a spawn resource/class id (hw7) -> a human label; empty -> shown as
+# "class N". Filled in as the class ids are named.
 TYPE_LABELS: dict = {}
 
-# Per-instance spawn params hw8..hw19 (index 0..11). RE found NO global per-type
-# stat table — these in-record values carry per-instance numbers. Labels are
-# best-guess pending a DuckStation HP/damage confirm; hw11 (index 3) is the
-# leading HP candidate.
-PARAM_LABELS = {3: "HP? (hw11)", 4: "hw12 (range/area?)", 0: "hw8 (AI?)"}
+# Per-instance spawn params hw8..hw19 (index 0..11). There is no global per-type
+# stat table; these in-record values carry the per-instance numbers
+# (docs/OBJECT_STATS.md §1). hw11 = HP is CONFIRMED live; hw8 is the defense
+# argument passed to the damage apply (its value curve is still open).
+PARAM_LABELS = {3: "HP (hw11)", 4: "hw12 (range/area?)", 0: "defense (hw8)"}
 
 MIS_SECTORS = (101920, 103449)   # MIS.T (mission text corpus)
 
@@ -54,34 +55,10 @@ def mission_names(bin_path, index_path=None):
     return names
 
 
-def _walk_chunks(buf, limit=64):
-    off = 0
-    for idx in range(limit):
-        if off + 4 > len(buf):
-            return
-        ln = struct.unpack_from("<I", buf, off)[0]
-        if ln == 0 or off + 4 + ln > len(buf):
-            return
-        yield idx, off + 4, ln
-        off += 4 + ln
-
-
 def spawns(bin_path, n, index_path=None):
-    buf = mission_entry(bin_path, n, odd=True, index_path=index_path)
-    sp = next((c for c in _walk_chunks(buf) if c[0] == SPAWN_CHUNK), None)
-    if not sp:
-        return []
-    _, off, ln = sp
-    out = []
-    for i in range(ln // REC):
-        hw = struct.unpack_from("<20h", buf, off + i * REC)
-        # at the true chunk payload start: X,Y,Z,blk = hw0..3; rot = hw5; type = hw7
-        x, y, z, blk, rot, typ = hw[0], hw[1], hw[2], hw[3], hw[5], hw[7]
-        if typ <= 0:                 # type 0 = empty/sentinel slot
-            continue
-        out.append(dict(i=i, x=x, y=y, z=z, blk=blk, rot=rot, typ=typ,
-                        params=list(hw[8:])))
-    return out
+    """Mission N's occupied spawn slots (mission_parse.spawns dicts)."""
+    return mission_parse.spawns(mission_entry(bin_path, n, odd=True,
+                                              index_path=index_path))
 
 
 def type_color(t):
@@ -115,13 +92,11 @@ def mission_scene(bin_path, n, index_path=None, marker_size=None,
                                meta={"sections": len(lm.groups),
                                      "ceilings": ceilings}))
     sp = spawns(bin_path, n, index_path)
-    # Spawn X,Y,Z live in the same 4x "native" space as the block geometry (the engine
-    # scales both by the GTE matrix); the level mesh is already down-scaled by SCALE,
-    # so scale marker positions to match. (meta['pos'] keeps the raw data values.)
-    from core.level import SCALE
+    # Spawn X,Y,Z are already WORLD units, the same space as the placed level mesh
+    # (only chunk-0 block geometry is authored at 4x; see mission_geom.SCALE).
     if marker_size is None and sp:
         xs = [s["x"] for s in sp]; zs = [s["z"] for s in sp]
-        extent = max(max(xs) - min(xs), max(zs) - min(zs), 1000) * SCALE
+        extent = max(max(xs) - min(xs), max(zs) - min(zs), 1000)
         marker_size = max(extent * 0.018, 120)     # ~2% of world span
     for s in sp:
         meta = {
@@ -131,10 +106,10 @@ def mission_scene(bin_path, n, index_path=None, marker_size=None,
             "params": s["params"],
         }
         sc.add(SceneObject(
-            name=f"#{s['i']} type{s['typ']}",
+            name=f"#{s['i']} class{s['typ']}",
             mesh=_marker_mesh(marker_size),
             rot_y=s["rot"] * 2 * math.pi / 4096,
-            trans=(s["x"] * SCALE, s["y"] * SCALE, s["z"] * SCALE),
+            trans=(s["x"], s["y"], s["z"]),
             color=type_color(s["typ"]),
             meta=meta,
         ))

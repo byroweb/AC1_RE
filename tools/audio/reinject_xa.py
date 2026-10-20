@@ -54,7 +54,8 @@ import wave
 
 import numpy as np
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+if os.path.dirname(os.path.abspath(__file__)) not in sys.path:  # AC1mod appends it instead
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import ac1audio as A  # noqa: E402
 import xa_adpcm as X  # noqa: E402
 
@@ -95,6 +96,23 @@ class Target:
                      f"do not agree with audio sectors {self.audio_first}-{self.audio_last} x stride {self.stride}")
         # first sector of the whole stream (audio sector 0)
         self.stream_first = self.sector_first - self.stride * self.audio_first
+        # subheader file number the sectors must carry (None: not checked)
+        self.file_no = int(row["file"]) if row.get("file") not in (None, "") else None
+
+    @classmethod
+    def whole_stream(cls, source_file, channel, stride, sector_first, sector_last,
+                     file_no=None, rate=37800):
+        """A Target covering one XA item end to end, as a jPSXdec index line
+        describes it (Sectors:a-b|File:f|Channel:c|Sector stride:s)."""
+        if stride < 1 or (sector_last - sector_first) % stride:
+            sys.exit(f"{source_file}[{channel}]: sectors {sector_first}-{sector_last} "
+                     f"are not a whole number of strides of {stride}")
+        n = (sector_last - sector_first) // stride + 1
+        return cls({"clip_id": f"{source_file}[{channel}]", "source_file": source_file,
+                    "stream": f"{source_file}[{channel}]", "channel": channel, "stride": stride,
+                    "sector_first": sector_first, "sector_last": sector_last,
+                    "audio_sector_first": 0, "audio_sector_last": n - 1, "rate": rate,
+                    "file": file_no})
 
     @property
     def budget_samples(self):
@@ -185,6 +203,8 @@ def check_target_sector(sec, raw, t, k):
     if raw[15] != 2:
         sys.exit(f"sector {sec}: mode {raw[15]}, expected 2")
     fno, ch, sm, coding = X.subheader(raw)
+    if t.file_no is not None and fno != t.file_no:
+        sys.exit(f"sector {sec}: XA file {fno} but the stream is file {t.file_no}")
     if ch != t.channel:
         sys.exit(f"sector {sec}: XA channel {ch} but the manifest says channel {t.channel} "
                  f"- manifest / image mismatch")
@@ -226,6 +246,55 @@ def pristine_paths():
 
 def same_file(a, b):
     return os.path.normcase(os.path.abspath(a)) == os.path.normcase(os.path.abspath(b))
+
+
+# ------------------------------------------------------------------ patch
+def patch_image(f, t, padded, write=True, progress=None):
+    """Rewrite t's budget sectors of the open image `f` with `padded` (int16, exactly
+    t.budget_samples long): check every target sector is this file/channel's mono
+    Form 2 audio, seed the ADPCM history from the stream's preceding sectors,
+    encode, and (if `write`) write, read back and check each sector's EDC.
+    Exits (SystemExit) on any check failure. Returns a dict of what happened."""
+    if len(padded) != t.budget_samples:
+        raise ValueError(f"take is {len(padded)} samples, budget is {t.budget_samples}")
+    sectors = t.target_sectors()
+    originals = []
+    for k, sec in zip(range(t.audio_first, t.audio_last + 1), sectors):
+        raw = read_sector(f, sec)
+        check_target_sector(sec, raw, t, k)
+        originals.append(raw)
+    p1, p2 = seed_history(f, t)
+    datas, _, _, _ = X.encode_stream(padded, p1, p2, progress=progress)
+    new_sectors = [X.build_form2_sector(o, d) for o, d in zip(originals, datas)]
+    dec, _, _ = X.decode_sectors(datas, p1, p2)
+    res = {
+        "sectors": sectors, "new_sectors": new_sectors, "p1": p1, "p2": p2,
+        "self_snr": X.snr_db(padded, dec),
+        "self_max_err": int(np.max(np.abs(dec.astype(np.int64) - padded.astype(np.int64)))),
+        "changed": sum(1 for o, n in zip(originals, new_sectors) if o != n),
+    }
+    if not write:
+        return res
+    for sec, s in zip(sectors, new_sectors):
+        f.seek(sec * X.SECTOR_RAW)
+        f.write(s)
+    f.flush()
+    back = [read_sector(f, sec) for sec in sectors]
+    for sec, s, b in zip(sectors, new_sectors, back):
+        if b != s:
+            sys.exit(f"sector {sec}: read-back differs from what was written")
+        if int.from_bytes(b[X.EDC_OFF:X.EDC_OFF + 4], "little") != X.form2_edc(b):
+            sys.exit(f"sector {sec}: EDC does not verify after write")
+    rb, _, _ = X.decode_sectors([X.sector_sound_area(b) for b in back], p1, p2)
+    res["readback_samples"] = len(rb)
+    res["readback_snr"] = X.snr_db(padded, rb)
+    return res
+
+
+def refuse_pristine(image):
+    for p in pristine_paths():
+        if same_file(image, p):
+            sys.exit(f"refusing to write the pristine image {image}; give --image a copy")
 
 
 # ------------------------------------------------------------------ verify
@@ -355,9 +424,7 @@ def main():
 
     # --- the image
     if not args.dry_run:
-        for p in pristine_paths():
-            if same_file(args.image, p):
-                sys.exit(f"refusing to write the pristine image {args.image}; give --image a copy")
+        refuse_pristine(args.image)
         if not os.path.exists(args.image):
             src = args.copy_from or A.disc_bin()
             A.log(f"[reinject] copying {src} -> {args.image}")
@@ -373,51 +440,26 @@ def main():
         image = args.copy_from or (args.image if os.path.exists(args.image) else A.disc_bin())
         mode = "rb"
 
+    def prog(i, n):
+        if i == n or i % 10 == 0:
+            A.log(f"  encoding sector {i}/{n}")
     with open(image, mode) as f:
-        sectors = t.target_sectors()
-        originals = []
-        for k, sec in zip(range(t.audio_first, t.audio_last + 1), sectors):
-            raw = read_sector(f, sec)
-            check_target_sector(sec, raw, t, k)
-            originals.append(raw)
-        p1, p2 = seed_history(f, t)
-        A.log(f"  decoder history at clip start: ({p1}, {p2}) from {t.audio_first} preceding sector(s)")
-
-        def prog(i, n):
-            if i == n or i % 10 == 0:
-                A.log(f"  encoding sector {i}/{n}")
-        datas, _, _, sq = X.encode_stream(padded, p1, p2, progress=prog)
-        new_sectors = [X.build_form2_sector(o, d) for o, d in zip(originals, datas)]
-        dec, _, _ = X.decode_sectors(datas, p1, p2)
-        A.log(f"  encoder self-check: SNR {X.snr_db(padded, dec):.1f} dB over {len(padded)} samples "
-              f"(max |err| {int(np.max(np.abs(dec.astype(np.int64) - padded.astype(np.int64))))})")
-        changed = sum(1 for o, n in zip(originals, new_sectors) if o != n)
-
-        if args.xa_out:
-            with open(args.xa_out, "wb") as xo:
-                for s in new_sectors:
-                    xo.write(s)
-            A.log(f"  wrote {len(new_sectors)} raw sectors to {args.xa_out}")
-
-        if args.dry_run:
-            A.log(f"[reinject] dry run: would rewrite {len(new_sectors)} sectors "
-                  f"({changed} differ from the image) of {image}")
-            return
-
-        for sec, s in zip(sectors, new_sectors):
-            f.seek(sec * X.SECTOR_RAW)
-            f.write(s)
-        f.flush()
-        # read back
-        back = [read_sector(f, sec) for sec in sectors]
-        for sec, s, b in zip(sectors, new_sectors, back):
-            if b != s:
-                sys.exit(f"sector {sec}: read-back differs from what was written")
-            if int.from_bytes(b[X.EDC_OFF:X.EDC_OFF + 4], "little") != X.form2_edc(b):
-                sys.exit(f"sector {sec}: EDC does not verify after write")
-        rb, _, _ = X.decode_sectors([X.sector_sound_area(b) for b in back], p1, p2)
-    A.log(f"[reinject] wrote {len(new_sectors)} sectors of {t.source_file} channel {t.channel} "
-          f"into {args.image}; read-back decodes to {len(rb)} samples, SNR {X.snr_db(padded, rb):.1f} dB vs the take")
+        res = patch_image(f, t, padded, write=not args.dry_run, progress=prog)
+    A.log(f"  decoder history at clip start: ({res['p1']}, {res['p2']}) from {t.audio_first} preceding sector(s)")
+    A.log(f"  encoder self-check: SNR {res['self_snr']:.1f} dB over {len(padded)} samples "
+          f"(max |err| {res['self_max_err']})")
+    if args.xa_out:
+        with open(args.xa_out, "wb") as xo:
+            for s in res["new_sectors"]:
+                xo.write(s)
+        A.log(f"  wrote {len(res['new_sectors'])} raw sectors to {args.xa_out}")
+    if args.dry_run:
+        A.log(f"[reinject] dry run: would rewrite {len(res['new_sectors'])} sectors "
+              f"({res['changed']} differ from the image) of {image}")
+        return
+    A.log(f"[reinject] wrote {len(res['new_sectors'])} sectors of {t.source_file} channel {t.channel} "
+          f"into {args.image}; read-back decodes to {res['readback_samples']} samples, "
+          f"SNR {res['readback_snr']:.1f} dB vs the take")
 
     if args.verify_jpsxdec:
         idx = args.idx or os.path.join(A.AUDIO_DIR, "ac1.idx")

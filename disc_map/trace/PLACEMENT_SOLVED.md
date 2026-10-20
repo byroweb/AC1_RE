@@ -18,7 +18,7 @@ in-game briefing map). 56 levels batch-assembled (`assemble_levels.py`).
 | +0x00| s16[3] | P0 — world bbox MIN of placed section |
 | +0x06| s16    | cell/PVS index; **-1 = end of table** |
 | +0x08| s16[3] | P1 — world bbox MAX |
-| +0x10| s16[3] | **P2 — PLACEMENT TRANSLATION** (`world = block_local + P2`) |
+| +0x10| s16[3] | **P2 — PLACEMENT TRANSLATION** (`world = block_local * SCALE + P2`, SCALE = 0.25: see tools/mission/mission_geom.py) |
 | +0x18| s16[3] | copy of P0 |
 | +0x1e| s16    | **GEOMETRY BLOCK INDEX** (into chunk 0; reused → instancing) |
 | +0x26| s16    | per-section zone/portal index |

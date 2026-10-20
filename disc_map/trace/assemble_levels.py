@@ -8,7 +8,7 @@ Where everything lives (FDAT entry 2N+1 = per-mission chunk stream [u32 len][pay
       +0x00 s16[3]  P0   world bbox MIN of the placed section
       +0x06 s16     index (PVS/cell); -1 terminates the table
       +0x08 s16[3]  P1   world bbox MAX
-      +0x10 s16[3]  P2   PLACEMENT TRANSLATION (world = block_local + P2)
+      +0x10 s16[3]  P2   PLACEMENT TRANSLATION (world = block_local * SCALE + P2)
       +0x18 s16[3]  copy of P0
       +0x1e s16     GEOMETRY BLOCK INDEX into chunk 0 (blocks are REUSED -> instancing)
       +0x26 s16     per-section small index (zone/portal)
@@ -27,58 +27,17 @@ Output: disc_map/levels_assembled/level_eNNN_mMM.obj (floor/ceiling/wall groups,
 WORLD coordinates) + _topdown.png + _index.json. All outputs are game-derived ->
 gitignored, never distribute.
 """
-import sys, os, struct, math, json, colorsys
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "tools", "pa"))
+import sys, os, math, json, colorsys
+_TOOLS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "tools")
+sys.path.insert(0, os.path.join(_TOOLS, "pa"))
+sys.path.insert(0, os.path.join(_TOOLS, "mission"))
 import pa_obj
+import mission_geom as MG   # chunk walk + chunk-0 blocks + chunk-7 placement
+from mission_geom import SCALE
 
 OUTDIR = os.path.join(pa_obj.HERE, "disc_map", "levels_assembled")
 os.makedirs(OUTDIR, exist_ok=True)
 HORIZ = 0.7
-
-
-def chunks_of(e):
-    out, off = [], 0
-    while off + 4 <= len(e):
-        ln = struct.unpack_from("<I", e, off)[0]
-        if ln == 0 or off + 4 + ln > len(e):
-            break
-        out.append((off + 4, ln))
-        off += 4 + ln
-    return out
-
-
-def blocks_of(e):
-    geom_end = struct.unpack_from("<I", e, 0)[0]
-    blocks, off = [], 8
-    while off < geom_end:
-        sz = struct.unpack_from("<I", e, off)[0]
-        if sz < 12 or off + sz > len(e):
-            break
-        blocks.append(e[off:off + sz])
-        off += sz
-    return blocks
-
-
-def placements_of(e, nblocks):
-    ch = chunks_of(e)
-    if len(ch) < 8:
-        return []
-    toff, tlen = ch[7]
-    out = []
-    for i in range(tlen // 52):
-        r = e[toff + i * 52: toff + i * 52 + 52]
-        if len(r) < 52:
-            break
-        f6, = struct.unpack_from("<h", r, 6)
-        if f6 == -1:
-            break
-        p2 = struct.unpack_from("<3h", r, 0x10)
-        blk, = struct.unpack_from("<h", r, 0x1e)
-        light = r[0x28]
-        if not (0 <= blk < nblocks):
-            continue
-        out.append((blk, p2, light))
-    return out
 
 
 def fnormal(V, f):
@@ -115,10 +74,10 @@ def block_mesh(b):
 
 
 def assemble(ei, e):
-    blocks = blocks_of(e)
+    blocks = MG.geom_blocks(e)
     if len(blocks) < 2:
         return None
-    plc = placements_of(e, len(blocks))
+    plc = MG.placements(e, len(blocks))
     if not plc:
         return None
     meshes = {}
@@ -128,7 +87,8 @@ def assemble(ei, e):
             meshes[blk] = block_mesh(blocks[blk])
         bv, bf = meshes[blk]
         base = len(V)
-        V.extend((x + p2[0], y + p2[1], z + p2[2]) for (x, y, z) in bv)
+        V.extend((x * SCALE + p2[0], y * SCALE + p2[1], z * SCALE + p2[2])
+                 for (x, y, z) in bv)
         faces.extend([base + i for i in f] for f in bf)
     if len(V) < 50:
         return None
@@ -136,9 +96,11 @@ def assemble(ei, e):
     for f in faces:
         ny = fnormal(V, f)[1]
         if abs(ny) > HORIZ:
-            # PSX Y is DOWN: a walkable floor's front face points -Y (world up).
-            # (Verified in the AC1mod viewer 2026-06-12 — earlier convention was flipped.)
-            grp["floor" if ny < 0 else "ceiling"].append(f)
+            # PSX Y is DOWN: a walkable floor sits at the bottom of a room (larger Y)
+            # and its winding normal points +Y; the ceiling's points -Y. (AC1mod
+            # core/level.py corrected this 2026-06-18 from the mean Y of each class;
+            # the 2026-06-12 note here had it swapped.)
+            grp["ceiling" if ny < 0 else "floor"].append(f)
         else:
             grp["wall"].append(f)
     return V, grp, len(blocks), len(plc)

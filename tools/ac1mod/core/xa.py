@@ -11,6 +11,10 @@ decode_stream_float() decodes them. That pure-Python decode is slow, so the
 serial ADPCM IIR also exists as a bit-identical C port (core/xa.c, auto-built to
 libxa.dll/.so and called via ctypes); without a compiler we use the Python one,
 and callers can fall back to jPSXdec if this raises.
+
+inject_wav() is the other direction, for the Build step: it hands a replacement
+WAV to tools/audio/reinject_xa.py (patch_image), which encodes with xa_adpcm and
+rewrites only this file/channel's sectors, checked and EDC'd.
 """
 from __future__ import annotations
 import os
@@ -22,6 +26,7 @@ import numpy as np
 
 from core import _tools  # noqa: F401  (puts tools/audio on sys.path)
 import xa_adpcm
+import reinject_xa
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SRC = os.path.join(_HERE, "xa.c")
@@ -108,3 +113,33 @@ def decode_xa_to_wav(bin_path, sector_start, sector_end, out_path,
         wf.setframerate(sample_rate)
         wf.writeframes(pcm.tobytes())
     return out_path
+
+
+def inject_wav(bin_path, entry, wav_path):
+    """Replace the XA stream of jPSXdec index `entry` in `bin_path` (a copy of the
+    disc, written in place) with `wav_path`. The stream's sectors are
+    entry.sector_start + k * entry.audio_sector_stride, each checked to be
+    entry.audio_xa_file / audio_xa_channel mono 4-bit Form 2 audio; nothing else
+    on the disc is touched. A shorter take is padded with silence to the whole
+    stream. Returns (ok, message)."""
+    if entry.audio_sector_stride is None or entry.audio_xa_channel is None:
+        return False, "index line has no Channel / Sector stride (rebuild the index)"
+    try:
+        reinject_xa.refuse_pristine(str(bin_path))
+        t = reinject_xa.Target.whole_stream(
+            entry.full_id or entry.name, entry.audio_xa_channel, entry.audio_sector_stride,
+            entry.sector_start, entry.sector_end, entry.audio_xa_file,
+            entry.audio_sample_rate or 37800)
+        take, _ = reinject_xa.prepare_take(str(wav_path), t.rate)
+        if len(take) > t.budget_samples:
+            return False, (f"take is {len(take)} samples, the stream holds "
+                           f"{t.budget_samples} ({t.n_sectors} sectors)")
+        padded = xa_adpcm.pad_to_sectors(take, t.n_sectors)
+        with open(bin_path, "r+b") as f:
+            res = reinject_xa.patch_image(f, t, padded)
+    except SystemExit as e:  # reinject_xa reports refused checks this way
+        return False, str(e)
+    except Exception as e:
+        return False, f"{type(e).__name__}: {e}"
+    return True, (f"wrote {len(res['sectors'])} sectors of channel {t.channel}, "
+                  f"read-back SNR {res['readback_snr']:.1f} dB")
