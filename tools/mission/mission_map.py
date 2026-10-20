@@ -13,33 +13,16 @@ a PNG with one dot per spawn, coloured by type id, sized for visibility.
 Usage:
   python3 tools/mission/mission_map.py disc_map/extracted/FDAT_T/entries/003.bin -o /tmp/m1.png
 """
-import sys, os, struct, argparse, colorsys
+import sys, os, argparse, colorsys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from mission_parse import walk_chunks, SPAWN_CHUNK
+from mission_parse import spawns  # occupied chunk-12 slots (hw7 > 0)
 from PIL import Image, ImageDraw   # Pillow (AC1mod venv has it)
-
-REC = 40
 
 
 def type_color(t):
     h = (t * 0.137) % 1.0
     r, g, b = colorsys.hsv_to_rgb(h, 0.65, 1.0)
     return (int(r * 255), int(g * 255), int(b * 255))
-
-
-def spawns(buf):
-    sp = next((c for c in walk_chunks(buf) if c[0] == SPAWN_CHUNK), None)
-    if not sp:
-        return []
-    _, off, ln, _ = sp
-    out = []
-    for i in range(ln // REC):
-        hw = struct.unpack_from("<20h", buf, off + i * REC)
-        x, y, z, blk, rot, typ = hw[2], hw[3], hw[4], hw[5], hw[7], hw[9]
-        if (x, y, z, typ) == (0, 0, 0, 0) and blk == 0:
-            continue                      # empty slot
-        out.append(dict(i=i, x=x, y=y, z=z, blk=blk, rot=rot, typ=typ))
-    return out
 
 
 def render(recs, out, W=900, H=900, pad=40):

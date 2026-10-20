@@ -50,7 +50,7 @@ import struct
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from mission_parse import walk_chunks, SPAWN_CHUNK, SPAWN_REC_LEN  # reuse, do not edit
+from mission_parse import chunk_span, spawn_records, empty_record  # the one chunk walker
 
 # ---- (1) PA loader constants (CONFIRMED from FDAT entry-202 disasm) -----------
 # FUN_8004F1A8: path "P{byte//20}\PA{byte:02d}.T", PA file number == stage byte.
@@ -98,11 +98,11 @@ def decode_stage(stage_byte, subres_bytes=None):
 def chunk11_records(buf):
     """Return list of (subrec_len) for chunk-11; index i -> 0x8019F538 record i+1.
     Handler: count = u32[0]; per record sublen = u32; advance sublen+4."""
-    ch = next((c for c in walk_chunks(buf) if c[0] == CHUNK11 and not c[3]), None)
-    if ch is None:
+    span = chunk_span(buf, CHUNK11)
+    if span is None:
         return []
-    _, off, ln, _ = ch
-    pay = buf[off + 4: off + 4 + ln]
+    off, ln = span
+    pay = buf[off: off + ln]
     if len(pay) < 4:
         return []
     count = struct.unpack_from("<I", pay, 0)[0]
@@ -138,20 +138,14 @@ def dump_mission(buf, stage_byte=None, subres_bytes=None, stage_full=None):
     print(f"\nchunk-11 geometry records: {n11} "
           f"(-> 0x8019F538 records 1..{n11}; sub-lens {recs11})")
     # spawn table
-    spawn = next((c for c in walk_chunks(buf)
-                  if c[0] == SPAWN_CHUNK and not c[3]), None)
-    if spawn is None:
+    recs = spawn_records(buf)
+    if recs is None:
         print("no spawn chunk", file=sys.stderr)
         return
-    _, off, ln, _ = spawn
-    pay = buf[off + 4: off + 4 + ln]
-    print(f"\nspawn block-index resolution ({ln // SPAWN_REC_LEN} slots):")
+    print(f"\nspawn block-index resolution ({len(recs)} slots):")
     print(" idx  type  hw3(blk)  resolves to")
-    for i in range(ln // SPAWN_REC_LEN):
-        hw = struct.unpack_from("<20h", pay, i * SPAWN_REC_LEN)
-        empty = (hw[3] == -1 and hw[0] == 0 and hw[1] == 0
-                 and hw[2] == 0 and hw[7] == 0)
-        if empty:
+    for i, hw in recs:
+        if empty_record(hw):
             continue
         desc = resolve_block(hw[3], n11,
                              stage_full or "(stage PA file - pass --stage)")

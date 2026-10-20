@@ -32,7 +32,6 @@ Usage:
 """
 import argparse
 import os
-import struct
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -73,20 +72,8 @@ STAT_HWS = [8, 9, 10, 11, 12, 13, 14, 15]
 
 def load_spawns(buf):
     """Return list of (idx, hw[20]) for every non-empty spawn record."""
-    spawn = next((c for c in mp.walk_chunks(buf)
-                  if c[0] == mp.SPAWN_CHUNK and not c[3]), None)
-    if spawn is None:
-        return []
-    _, off, ln, _ = spawn
-    pay = buf[off + 4: off + 4 + ln]
-    out = []
-    for i in range(ln // mp.SPAWN_REC_LEN):
-        hw = struct.unpack_from("<20h", pay, i * mp.SPAWN_REC_LEN)
-        empty = (hw[3] == -1 and hw[0] == 0 and hw[1] == 0
-                 and hw[2] == 0 and hw[7] == 0)
-        if not empty:
-            out.append((i, hw))
-    return out
+    return [(i, hw) for i, hw in mp.spawn_records(buf) or ()
+            if not mp.empty_record(hw)]
 
 
 def decode_record(hw):

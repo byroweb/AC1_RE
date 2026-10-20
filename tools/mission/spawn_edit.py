@@ -13,33 +13,20 @@ Spawn record = 20 int16 halfwords (CONFIRMED layout, see mission_parse.py):
 
 Field aliases: x=hw0 y=hw1 z=hw2 blk=hw3 rot=hw5 type=hw7 (else hwN).
 """
-import struct, sys
+import os, struct, sys
 
-SPAWN_CHUNK = 12
-SPAWN_REC_LEN = 40   # 20 * int16
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mission_parse import chunk_span, SPAWN_CHUNK, SPAWN_REC_LEN  # noqa: E402
+
 NREC = 256
 
 ALIAS = {"x": 0, "y": 1, "z": 2, "blk": 3, "rot": 5, "type": 7}
 
 
-def walk_chunks(buf, limit=64):
-    off = idx = 0
-    n = len(buf)
-    while off + 4 <= n and idx < limit:
-        ln = struct.unpack_from("<I", buf, off)[0]
-        if ln == 0 or off + 4 + ln > n:
-            return
-        yield idx, off, ln
-        off += ln + 4
-        idx += 1
-
-
 def spawn_payload_offset(buf):
     """Byte offset of the chunk-12 payload within the stream, or None."""
-    for idx, off, ln in walk_chunks(buf):
-        if idx == SPAWN_CHUNK and ln:
-            return off + 4
-    return None
+    span = chunk_span(buf, SPAWN_CHUNK)
+    return span[0] if span else None
 
 
 def _field_index(field):

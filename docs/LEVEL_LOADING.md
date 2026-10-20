@@ -157,8 +157,11 @@ the shared pack. e200's internal layout differs (geometry from +0x28; lighting a
 3. **Placement is not rotation+translation** (PLACEMENT_INVESTIGATION) — blocks
    are pre-rotated on disc; placement is translation-only. The "4 orientations"
    live in the render/lighting path, not in placement data.
-4. **Floor/ceiling convention:** PSX Y is DOWN — a walkable floor's front face
-   normal points -Y. (Earlier extractor tagged these inverted.)
+4. **Floor/ceiling convention:** PSX Y is DOWN — a walkable floor sits at the
+   bottom of a room and its winding normal `cross(b-a, c-a)` points **+Y**; a
+   ceiling's points -Y. (Corrected 2026-06-18 in AC1mod `core/level.py`. On
+   missions 0-49, 571 chunk-12 spawns stand within 100 units above a +Y face and
+   4 above a -Y face. The 2026-06-12 "-Y = floor" note had it inverted.)
 
 ---
 

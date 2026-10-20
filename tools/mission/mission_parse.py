@@ -82,6 +82,13 @@ def spawn_records(buf):
             for i in range(ln // SPAWN_REC_LEN)]
 
 
+def empty_record(hw):
+    """True for an unused chunk-12 slot: no block (hw3 == -1), origin position and
+    type 0.  The tools that list "non-empty records" skip exactly these."""
+    return (hw[3] == -1 and hw[0] == 0 and hw[1] == 0
+            and hw[2] == 0 and hw[7] == 0)
+
+
 def spawns(buf):
     """Occupied chunk-12 slots as dicts: i (slot), x, y, z, blk, rot, typ and
     params = hw8..hw19.  A slot is occupied when its type id hw7 > 0 (type 0 is
@@ -117,9 +124,7 @@ def dump_spawns(buf, show_empty=False):
     print(" idx  type  blk        X       Y       Z     rot   hw8  hw9  hw11  hw12  hw15")
     active = 0
     for i, hw in recs:
-        empty = (hw[3] == -1 and hw[0] == 0 and hw[1] == 0
-                 and hw[2] == 0 and hw[7] == 0)
-        if empty and not show_empty:
+        if empty_record(hw) and not show_empty:
             continue
         active += 1
         print(f" {i:3d}  {hw[7]:4d}  {hw[3]:3d}  {hw[0]:7d} {hw[1]:7d} {hw[2]:7d}  "
