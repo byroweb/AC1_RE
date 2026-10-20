@@ -55,11 +55,13 @@ GUI), or the single `*.ac1mod` file in `tools/ac1mod/` if there is exactly one.
 ## Relation to the rest of `tools/`
 AC1mod imports the repo's format decoders instead of carrying its own:
 PA geometry from `tools/pa/pa_obj.py`, `.T` containers from
-`tools/extract/{extract_t,t_repack}.py` and XA-ADPCM from
-`tools/audio/xa_adpcm.py` (`core/_tools.py` puts those directories on
-`sys.path`). `core/pa_parser.py`, `core/fdat.py`, `core/mis.py` and `core/xa.py`
-only adapt their output (Mesh objects, material colours, FDAT mission slots, the
-C fast path in `core/xa.c`, which is a bit-identical port of
+`tools/extract/{extract_t,t_repack}.py`, XA-ADPCM from
+`tools/audio/xa_adpcm.py` and the mission chunk stream (chunk-0 blocks, chunk-7
+placement, chunk-12 spawns) from `tools/mission/{mission_geom,mission_parse}.py`
+(`core/_tools.py` puts those directories on `sys.path`). `core/pa_parser.py`,
+`core/fdat.py`, `core/mis.py`, `core/level.py`, `core/mission.py` and `core/xa.py`
+only adapt their output (Mesh objects, material colours, FDAT mission slots, level
+face classing and dedupe, spawn markers, the C fast path in `core/xa.c`, which is a bit-identical port of
 `xa_adpcm.decode_stream_float`). A format fix goes into `tools/`. See
 [docs/AC1MOD_INTEGRATION.md](../../docs/AC1MOD_INTEGRATION.md).
 

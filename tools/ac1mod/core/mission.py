@@ -7,17 +7,17 @@ and builds a Scene of placed objects. Until block-index→geometry resolution la
 (type, position, rotation, block, params) feeds the info dropdown. Designed so the
 marker mesh can later be swapped for the real PA geometry block per spawn.
 
-Spawn record layout (20 int16, verified): hw2-4 = X,Y,Z; hw5 = geometry block index
-(-1 = none); hw7 = rotation (0/1024/2048/3072 = 0/90/180/270°); hw9 = type id.
+The spawn records are decoded by tools/mission/mission_parse.py (spawns: hw0-2 =
+X,Y,Z; hw3 = geometry block index (-1 = none); hw5 = rotation (0/1024/2048/3072 =
+0/90/180/270°); hw7 = type id; hw8..hw19 = params). This module builds the Scene.
 """
 from __future__ import annotations
-import struct, math, colorsys
+import math, colorsys
+from core import _tools  # noqa: F401  (puts tools/mission on sys.path)
 from core import pa_parser as PP
 from core.scene import Scene, SceneObject
 from core.fdat import mission_entry
-
-SPAWN_CHUNK = 12
-REC = 40
+import mission_parse
 
 # Filled in as object/MT stat tables are reverse-engineered (agent task). Maps a
 # spawn type id -> a human label; empty -> shown as "type N".
@@ -54,34 +54,10 @@ def mission_names(bin_path, index_path=None):
     return names
 
 
-def _walk_chunks(buf, limit=64):
-    off = 0
-    for idx in range(limit):
-        if off + 4 > len(buf):
-            return
-        ln = struct.unpack_from("<I", buf, off)[0]
-        if ln == 0 or off + 4 + ln > len(buf):
-            return
-        yield idx, off + 4, ln
-        off += 4 + ln
-
-
 def spawns(bin_path, n, index_path=None):
-    buf = mission_entry(bin_path, n, odd=True, index_path=index_path)
-    sp = next((c for c in _walk_chunks(buf) if c[0] == SPAWN_CHUNK), None)
-    if not sp:
-        return []
-    _, off, ln = sp
-    out = []
-    for i in range(ln // REC):
-        hw = struct.unpack_from("<20h", buf, off + i * REC)
-        # at the true chunk payload start: X,Y,Z,blk = hw0..3; rot = hw5; type = hw7
-        x, y, z, blk, rot, typ = hw[0], hw[1], hw[2], hw[3], hw[5], hw[7]
-        if typ <= 0:                 # type 0 = empty/sentinel slot
-            continue
-        out.append(dict(i=i, x=x, y=y, z=z, blk=blk, rot=rot, typ=typ,
-                        params=list(hw[8:])))
-    return out
+    """Mission N's occupied spawn slots (mission_parse.spawns dicts)."""
+    return mission_parse.spawns(mission_entry(bin_path, n, odd=True,
+                                              index_path=index_path))
 
 
 def type_color(t):

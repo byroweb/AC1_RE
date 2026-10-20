@@ -16,6 +16,8 @@ adapters that reshape their output for the viewer:
 | `core/pa_parser.read_container` | `tools/extract/extract_t.read_sectors` + `tools/extract/t_repack.unpack` | the sector range comes from the jPSXdec index |
 | `core/fdat.py` | `read_container` above | FDAT.T sector lookup, mission N -> entries 2N / 2N+1, tree labels |
 | `core/mis.py` | `tools/extract/extract_t.read_sectors` | the MIS.T preview-TIM scan |
+| `core/level.py` | `tools/mission/mission_geom.py` (`geom_blocks`: chunk-0 PA block run; `placements` over `placement_records`: chunk-7 52-byte section table; `SCALE` = 0.25) | world-space `Mesh` (one group per placed section), floor/wall/ceiling face classing and tint, ceiling toggle, same-wound duplicate-face dedupe, OBJ export by class |
+| `core/mission.py` | `tools/mission/mission_parse.py` (`chunk_span`, `spawn_records`, `spawns`: chunk-12 40-byte records, type id > 0 = occupied) | `Scene` of spawn markers, type colours, marker sizing, info-dropdown labels; `mission_names` (MIS.T name array) |
 | `core/xa.py` | `tools/audio/xa_adpcm.py` (`stream_sound_areas`, `decode_stream_float`, mono + stereo) | `core/xa.c`, a bit-identical C port of `decode_stream_float` for fast preview (checked on all 43.8M samples of the disc's TALK and ACED streams) |
 
 A format fix goes into `tools/` only; AC1mod picks it up on the next run. See:
@@ -85,7 +87,9 @@ the current backups are all garage).
 
 - **Mission scene = FDAT entry `2N+1` chunks**: chunk 0 = local geometry (PA-format
   blocks), chunk 7 = section placement, chunk 12 = spawns, chunk 4 = mission script.
-  Tools: `tools/mission/mission_parse.py` (now prints chunk ROLE labels),
+  Tools: `tools/mission/mission_parse.py` (now prints chunk ROLE labels; `spawns()`
+  is what AC1mod's spawn overlay reads), `tools/mission/mission_geom.py`
+  (`geom_blocks`, `placements`: what AC1mod's level view reads),
   `disc_map/trace/assemble_levels.py` (full level OBJ). Collision = the render mesh
   itself (no separate data — [COLLISION.md](COLLISION.md)), so a viewer can show
   collision = geometry directly.
