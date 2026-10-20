@@ -323,9 +323,12 @@ def cmd_replay(args):
     key2g, g2m = read_twins(args.twins)
     header, rows = merge_manifest.parse(open(args.manifest, encoding="utf-8").read())
     have = {(units.norm(r[1] or "exe"), int(r[0], 16)) for r in rows if r[0].startswith("0x")}
-    # originals: fdat rows whose source lives in that unit's own directory
+    # originals: fdat rows whose source lives in that unit's own directory and is named
+    # after that row's address (a group can have several members in one unit, e.g.
+    # fdat004 func_801C6734.c also matches 0x801C6A28 and 0x801C6D80: those are twins)
     origs = [r for r in rows if (r[1] or "").startswith("fdat")
-             and r[2].split("/")[0] == units.norm(r[1])]
+             and r[2].split("/")[0] == units.norm(r[1])
+             and os.path.basename(r[2]).lower() == "func_%08x.c" % int(r[0], 16)]
     jobs = []
     for r in origs:
         unit, va, src, size, extra = units.norm(r[1]), int(r[0], 16), r[2], int(r[3]), r[4]
