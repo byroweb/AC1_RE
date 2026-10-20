@@ -2639,3 +2639,4 @@
 0x801B847C	fdat186	fdat004/func_801C6948.c	224	--base 0x801B80C8 --defsym func_8004D610=0x8004D82C --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x801B855C	fdat186	fdat004/func_801C6734.c	60	--base 0x801B80C8 --defsym func_80073674=0x800729F8 --defsym func_801C6720=0x801B847C --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x801B87D4	fdat186	fdat004/func_801C6734.c	60	--base 0x801B80C8 --defsym func_80073674=0x800729F8 --defsym func_801C6720=0x801B86E4 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x800705D8	202	ovl202/func_800705D8.c	1064	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_8006E0C0=0x8006E0C0 --defsym func_8006FB6C=0x8006FB6C --defsym func_8006FD6C=0x8006FD6C --defsym func_80070A58=0x80070A58 --defsym func_80070168=0x80070168 --defsym func_8006FA30=0x8006FA30 --defsym D_801E8B70=0x801E8B70 --defsym D_80091228=0x80091228 --defsym D_801E8B74=0x801E8B74
