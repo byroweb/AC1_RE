@@ -12,6 +12,14 @@ typedef s16 M2C_UNK16;
 typedef s32 M2C_UNK32;
 typedef long long M2C_UNK64;
 
+/* m2c names soft-float double helpers' values u64/s64; ac1 types.h has no 64-bit names */
+#ifndef u64
+#define u64 unsigned long long
+#endif
+#ifndef s64
+#define s64 long long
+#endif
+
 /* field of unknown struct type at a byte offset; type_ptr is a pointer type */
 #define M2C_FIELD(expr, type_ptr, offset) (*(type_ptr)((s8 *)(expr) + (offset)))
 #define M2C_BITWISE(type, expr) ((type)(expr))
