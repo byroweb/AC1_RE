@@ -19,6 +19,7 @@ adapters that reshape their output for the viewer:
 | `core/level.py` | `tools/mission/mission_geom.py` (`geom_blocks`: chunk-0 PA block run; `placements` over `placement_records`: chunk-7 52-byte section table; `SCALE` = 0.25) | world-space `Mesh` (one group per placed section), floor/wall/ceiling face classing and tint, ceiling toggle, same-wound duplicate-face dedupe, OBJ export by class |
 | `core/mission.py` | `tools/mission/mission_parse.py` (`chunk_span`, `spawn_records`, `spawns`: chunk-12 40-byte records, type id > 0 = occupied) | `Scene` of spawn markers, type colours, marker sizing, info-dropdown labels; `mission_names` (MIS.T name array) |
 | `core/xa.py` | `tools/audio/xa_adpcm.py` (`stream_sound_areas`, `decode_stream_float`, mono + stereo) | `core/xa.c`, a bit-identical C port of `decode_stream_float` for fast preview (checked on all 43.8M samples of the disc's TALK and ACED streams) |
+| `core/xa.inject_wav` (Build step) | `tools/audio/reinject_xa.py` (`Target.whole_stream`, `prepare_take`, `patch_image`: file/channel/Form 2/coding checks per sector, seeded history, `xa_adpcm.encode_stream` + `build_form2_sector`, EDC read-back) | the stream's sectors come from the jPSXdec index line (`Sectors`, `File`, `Channel`, `Sector stride`); the WAV is first padded to the stream by `validate_and_encode_audio`. Mono 4-bit TALK streams only; stereo is refused |
 
 A format fix goes into `tools/` only; AC1mod picks it up on the next run. See:
 
