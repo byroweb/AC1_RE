@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """csrc.py - source-level idioms in the matched C (re/match/manifest.tsv).
 
-    python tools/archaeology/csrc.py [--styles tools/archaeology/tu_styles.tsv]
+    python tools/archaeology/csrc.py [--with-sweep]
 
 Matched C is the recovered original style: every construct in it was needed
 (or at least allowed) for GCC 2.7.2 to emit the retail bytes.  This script
@@ -16,13 +16,13 @@ function bodies:
               comments that say the shape was forced for the match
     pointers  p++ / *p++ walks, -> member access, array indexing
 
-Each file is attributed to its manifest unit; program-overlay files are also
-attributed to the TU (tus.py) and style cluster (styles.py output) that
-contains their address.  Output: one table per group (unit / cluster / mission
-library vs mission-specific).
+Each file is attributed to its manifest unit and to the doc's habit cluster
+(A = ovl201 outside 0x800866FC-0x8009A7E8, B = that band, C = everything
+else).  m2c drafts committed by tools/loop/sweep.py are skipped by default:
+they carry m2c's idioms, not the original programmer's.  Output: one table
+per group (unit / cluster / mission library vs mission-specific).
 """
 import argparse
-import csv
 import os
 import re
 import sys
@@ -31,7 +31,6 @@ from collections import Counter, defaultdict
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 MANIFEST = os.path.join(REPO, "re", "match", "manifest.tsv")
-STYLES = os.path.join(HERE, "tu_styles.tsv")
 TWINS = os.path.join(REPO, "tools", "loop", "twins.tsv")
 
 PATTERNS = {
@@ -81,16 +80,19 @@ def unit_group(unit):
     return "fdat"
 
 
-def load_styles(path):
-    out = defaultdict(list)
-    if not os.path.exists(path):
-        return out
-    with open(path, encoding="utf-8") as fh:
-        for r in csv.DictReader(fh, delimiter="\t"):
-            if r["unit"] == "fdat":
-                continue
-            out[r["unit"]].append((int(r["start"], 16), int(r["end"], 16), r["tu"], r["cluster"]))
-    return out
+# the doc's habit clusters (docs/CODE_ARCHAEOLOGY.md section 2), by address
+B_BAND = (0x800866FC, 0x8009A7E8)
+
+
+def doc_cluster(group, va):
+    if group == "ovl201":
+        return "B" if B_BAND[0] <= va < B_BAND[1] else "A"
+    return "C"
+
+
+def is_sweep(src):
+    """True for m2c drafts committed by tools/loop/sweep.py (m2c style, not recovered style)."""
+    return "m2c_compat" in src or "M2C_" in src
 
 
 def fdat_spread():
@@ -108,9 +110,10 @@ def fdat_spread():
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--styles", default=STYLES)
+    ap.add_argument("--with-sweep", action="store_true",
+                    help="also count the m2c sweep drafts (excluded by default)")
     a = ap.parse_args(argv)
-    styles = load_styles(a.styles)
+    swept = 0
     spread = fdat_spread()
     seen = set()
     groups = defaultdict(Counter)
@@ -128,18 +131,14 @@ def main(argv=None):
                 continue
             with open(path, encoding="utf-8", errors="replace") as f:
                 src = f.read()
+            if is_sweep(src) and not a.with_sweep:
+                swept += 1
+                continue
             body, comments = strip(src)
             g = unit_group(p[1])
-            keys = [g]
+            keys = [g, "cluster " + doc_cluster(g, int(p[0], 16))]
             if g == "fdat":
                 keys.append("fdat-library (>=10 twins)" if spread[p[2]] >= 10 else "fdat-specific (<10)")
-            else:
-                uname = {"ovl201": "ovl201", "exe": "exe"}.get(g, "ovl202")
-                va = int(p[0], 16)
-                for lo, hi, tu, cl in styles.get(uname, []):
-                    if lo <= va < hi:
-                        keys.append("cluster " + cl)
-                        break
             c = Counter()
             for k, pat in PATTERNS.items():
                 c[k] = len(re.findall(pat, body, re.M))
@@ -150,6 +149,8 @@ def main(argv=None):
             for k in keys:
                 groups[k].update(c)
                 files[k] += 1
+    if swept:
+        print("(%d m2c sweep drafts skipped; --with-sweep counts them)" % swept)
     cols = ["lines", "do_while", "while", "for", "goto", "switch", "ternary", "else", "return",
             "register", "volatile", "asm", "s8", "u8", "s16", "u16", "s32", "u32",
             "cast_narrow", "ptr_walk", "arrow", "index", "macro", "forced_note"]

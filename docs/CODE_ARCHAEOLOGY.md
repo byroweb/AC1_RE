@@ -28,7 +28,7 @@ addresses, counts and offsets.
 | `doc_labels.tsv` | input | ~200 function addresses that existing docs tie to a subsystem (used to name TUs) |
 
 ```bash
-python tools/archaeology/tus.py          # ~2 min (O(n^2) DP over ovl201's 1091 functions)
+python tools/archaeology/tus.py          # under a minute (O(n^2) DP; ovl201 has 1091 functions)
 python tools/archaeology/styles.py       # + --regions
 python tools/archaeology/csrc.py
 python tools/archaeology/missions.py
@@ -304,20 +304,29 @@ narrow counters and 24 `sext16` per 1000 instructions, which is strongly A-like.
 
 ### Source idioms in the matched C (`csrc.py`)
 
-Distinct files only (twins share one): 43 ovl201, 24 ovl202-family, 5 exe and 64
-mission-library files. Rates are per 100 non-blank body lines.
+Distinct hand-matched files only: twins share one file, and the 46 m2c drafts committed by
+`tools/loop/sweep.py` are skipped because they carry m2c's idioms. The sample is 42 ovl201
+files (31 A, 11 B), 24 ovl202-family, 6 exe and 64 mission-library files. Rates are per 100
+non-blank body lines.
 
 | group | `s16`/`short` | `s32`/`int` | `u8` | `goto` | `switch` | `else` | `->` | asm/volatile barriers | `#define` |
 |---|---|---|---|---|---|---|---|---|---|
-| ovl201 (A) | 2.50 | 2.35 | 2.50 | 0.15 | 0.73 | 1.03 | 22.8 | 1.17 | 2.50 |
-| ovl202-family (C) | 3.70 | 9.32 | 4.98 | 1.13 | 0.16 | 3.54 | 31.7 | 0.48 | 0.48 |
-| exe (C) | 0.56 | 14.1 | 0.56 | 6.78 | 0 | 0 | 22.6 | 1.13 (`register … asm("$28")`) | 0 |
-| mission library (C) | 2.91 | 3.36 | 6.65 | 1.93 | 1.02 | 3.33 | 54.0 | 0 | 0 |
+| cluster A | 3.01 | 2.12 | 2.48 | 0.18 | 0.53 | 1.24 | 24.8 | 1.42 | 3.01 |
+| cluster B (11 tiny files, mostly getters) | 0 | 3.57 | 2.68 | 0 | 1.79 | 0 | 13.4 | 0 | 0 |
+| cluster C, all | 2.93 | 4.99 | 6.03 | 2.03 | 0.81 | 3.19 | 48.3 | 0.15 | 0.09 |
+| C: ovl202-family | 3.70 | 9.32 | 4.98 | 1.13 | 0.16 | 3.54 | 31.7 | 0.48 | 0.48 |
+| C: exe | 0.55 | 13.8 | 0.55 | 6.63 | 0 | 0 | 22.1 | 1.10 (`register … asm("$28")`) | 0 |
+| C: mission library | 2.91 | 3.36 | 6.65 | 1.93 | 1.02 | 3.33 | 54.0 | 0 | 0 |
 
-These counts agree with the asm on the type habit. The A files declare `short` about as
-often as `int`; the C files are `int`-dominant and use `->` heavily (object/method code).
+These counts agree with the asm on the type habit:
+
+- The A files declare `short` more often than `int` and use `#define`s and asm/volatile
+  barriers.
+- The C files are `int`-dominant and use `->` two to four times as often (object and
+  method code).
+
 The sample is small and biased toward short functions. `goto` in the exe and mission files
-mostly comes from forced matches, so treat this table as weak support only.
+mostly comes from forced matches. Treat this table as weak support only.
 
 ---
 
