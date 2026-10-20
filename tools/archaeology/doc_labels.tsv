@@ -1,0 +1,188 @@
+# Code addresses that the existing docs / ac1_markup.tsv tie to a role (collected 2026-10-20).
+# kind: fn = function entry, site = an instruction inside a function, label = jump-table case / internal label.
+# system = coarse subsystem used to name TUs in docs/CODE_ARCHAEOLOGY.md.
+unit	addr	role	system	kind	source
+exe	0x80011F28	main: init CD/pad/card, enter game loop	frame loop/main	fn	REFERENCE §2, markup
+exe	0x800121AC	NOW-LOADING screen (RTIM.T entry 0x65)	CD/loader	fn	MXT_LOADER
+exe	0x800122A8	game loop / boot driver, overlay select	frame loop/main	fn	REFERENCE §2, MXT_LOADER §4
+exe	0x800126D8	sphere/box proximity primitive	collision	fn	COLLISION §1
+exe	0x80012E5C	swept segment-vs-AABB primitive	collision	fn	COLLISION §1
+exe	0x800135E8	rotate light matrices	render/GTE	fn	LEVEL_LOADING §2
+exe	0x80014AE4	3D delta -> azimuth/elevation (ratan2)	math	fn	COMBAT_PHYSICS §7, PERCEPTION_MODEL §1b
+exe	0x80015258	reticle box stage / set aim	HUD	fn	COMBAT_PHYSICS §7, PERCEPTION_MODEL P-7
+exe	0x80015538	wmemset word fill	util	fn	REFERENCE §3
+exe	0x800158C8	CdPosToInt (CdlLOC -> LBA)	CD/loader	fn	MXT_LOADER §3
+exe	0x80015A08	base LBA+offset -> CdlLOC / seek	CD/loader	fn	MXT_LOADER, REFERENCE §3
+exe	0x80015B24	mxt_verify .T entry checksum	CD/loader	fn	MXT_LOADER §5, REFERENCE §6
+exe	0x80016328	raw_read sectors (CdRead, 3x retry)	CD/loader	fn	MXT_LOADER §3
+exe	0x800165A8	mxt_load_raw	CD/loader	fn	MXT_LOADER
+exe	0x800165E4	read_T_entry / mxt_load_entry	CD/loader	fn	MXT_LOADER, REFERENCE §3
+exe	0x80016678	load_T_file / mxt_register	CD/loader	fn	MXT_LOADER
+exe	0x80016A84	pad_read	pad	fn	PLAYER_CONTROL §1
+ovl201	0x80050078	obj_find_by_handle	menu object pool	fn	markup
+ovl201	0x8005015C	obj_find_by_id	menu object pool	fn	markup
+ovl201	0x80057190	model renderer (draw cmd type 4)	render/GTE	fn	AC1_TEXT_SYSTEM §3, COMBAT_PHYSICS §1
+ovl201	0x80059B50	GTE/poly text renderer (cmd type 6)	text/font	fn	AC1_TEXT_SYSTEM §3, markup
+ovl201	0x8005B648	box_init	menu UI	fn	markup
+ovl201	0x8005C2A8	box_init_caller	menu UI	fn	markup
+ovl201	0x8005CB94	type-6 draw-cmd constructor	menu UI	fn	AC1_TEXT_SYSTEM §3
+ovl201	0x8005D15C	MoveImage VRAM text blitter	text/font	fn	AC1_TEXT_SYSTEM §3
+ovl201	0x8005D80C	type-7 label (draw_string) ctor	menu UI	fn	AC1_TEXT_SYSTEM §3
+ovl201	0x8005F5E8	draw-cmd renderer type 8	menu UI	fn	AC1_TEXT_SYSTEM §3
+ovl201	0x80064874	draw-cmd renderer type 2	menu UI	fn	AC1_TEXT_SYSTEM §3
+ovl201	0x80064EB0	draw-cmd renderer default	menu UI	fn	AC1_TEXT_SYSTEM §3
+ovl201	0x800653D4	draw-cmd renderer type 3	menu UI	fn	AC1_TEXT_SYSTEM §3
+ovl201	0x800656B8	draw-cmd renderer type 5	menu UI	fn	AC1_TEXT_SYSTEM §3
+ovl201	0x8006599C	draw_string (SJIS walker)	text/font	fn	AC1_TEXT_SYSTEM §2, markup
+ovl201	0x80065DBC	draw_kanji 2-byte glyph path	text/font	fn	AC1_TEXT_SYSTEM §2, markup
+ovl201	0x800660C4	draw_char one glyph -> SPRT	text/font	fn	AC1_TEXT_SYSTEM §2, markup
+ovl201	0x80066454	draw-cmd renderer type 1	menu UI	fn	AC1_TEXT_SYSTEM §3
+ovl201	0x800714B8	store mission number 0x800411F8 (=70)	mission launch	site	MISSION_OVERLAY_CODE §c
+ovl201	0x800810B0	name entry 7-loop	name entry	fn	REFERENCE §5
+ovl201	0x800811F8	PILOT NAME entry	name entry	fn	REFERENCE §5
+ovl201	0x800814A0	name entry kana grid loop	name entry	fn	REFERENCE §5
+ovl201	0x8008151C	name entry Latin grid loop	name entry	fn	AC1_TEXT_SYSTEM §4
+ovl201	0x80082190	name_input_handler	name entry	fn	markup
+ovl201	0x80083A28	cursor_update	menu UI	fn	markup
+ovl201	0x800865FC	AC NAME entry	name entry	fn	REFERENCE §5
+ovl201	0x8008878C	free-if-nonnull wrapper (markup __builtin_delete at +8 is a signature false positive)	util	fn	markup (corrected here)
+ovl201	0x8008A890	store mission number from menu table	mission launch	site	MISSION_OVERLAY_CODE §c
+ovl201	0x8009B414	front-end code run by game loop	frame loop/main	fn	REFERENCE §2
+ovl201	0x8009BCE0	main_frame_loop (menu/garage pool)	frame loop/main	fn	markup
+ovl201	0x8009C07C	render_dispatcher (menu draw-cmd queue)	menu UI	fn	markup
+ovl201	0x8009C964	AC stat/def-byte builder (25.5 KB, uses double)	garage/assembly	fn	COMBAT_PHYSICS §8a (site 0x8009D990)
+ovl201	0x800A4224	GameState mission byte store	mission launch	site	MISSION_OVERLAY_CODE §c
+ovl201	0x800A5E24	GameState mission byte store	mission launch	site	MISSION_OVERLAY_CODE §c
+ovl201	0x800A8060	arena/versus stage byte store	mission launch	site	MISSION_OVERLAY_CODE §c
+ovl201	0x800AABE0	clear 0x80049D2A mode bit / stage stores	mission launch	site	MISSION_OVERLAY_CODE §c
+ovl201	0x800B597C	GsMapModelingData	library (libgs)	fn	markup
+ovl201	0x800B59F4	__adddf3 .. _err_math soft-float block	library (libgcc)	fn	markup
+ovl202	0x8004C318	mission_set_result	mission state	fn	OVERLAY_MAP, MISSION_SYSTEM §4
+ovl202	0x8004C340	ovl202 main / per-frame state handler	frame loop/main	fn	MXT_LOADER §6
+ovl202	0x8004C854	chunk-5 handler	mission loader	fn	MISSION_SYSTEM §1
+ovl202	0x8004C98C	periodic effect spawn	effects	fn	MISSION_SCRIPT_VM
+ovl202	0x8004DB18	XA radio/BGM line player	sound	fn	AUDIO_PIPELINE §6
+ovl202	0x8004E98C	spawn_at8/9 unit place helper	mission VM	fn	MISSION_SCRIPT_VM
+ovl202	0x8004EC4C	movement step (VM tail 0x100)	movement	fn	MISSION_SCRIPT_VM
+ovl202	0x8004F024	entity movement integrator	movement	fn	COMBAT_PHYSICS §6, COLLISION
+ovl202	0x8004F1A8	PA pack loader	CD/loader	fn	REFERENCE §11, MISSION_STAGES
+ovl202	0x8004F508	mission scene loader (chunk walk, INIT)	mission loader	fn	MISSION_SYSTEM §1
+ovl202	0x800500AC	camera/HUD/radar slot-0 refs	HUD	site	PLAYER_CONTROL §2
+ovl202	0x80050FC4	copy+relocate geometry/collision resources	mission loader	fn	OVERLAY_MAP
+ovl202	0x80052338	READY-GATE idle test	mission VM	fn	MISSION_SYSTEM §4
+ovl202	0x80052350	sound-sequence opcode parser	sound	fn	AUDIO_PIPELINE §7
+ovl202	0x800529F0	play sound sequence / jingle	sound	fn	AUDIO_PIPELINE §7
+ovl202	0x80052A2C	text/prompt wait-for-button loop	text/prompt	fn	MISSION_SYSTEM §4
+ovl202	0x80052B28	text string-format interpreter	text/prompt	fn	MISSION_SYSTEM §4
+ovl202	0x800532A0	sound-sequence interpreter	sound	fn	AUDIO_PIPELINE §6
+ovl202	0x8005360C	generic FDAT block loader	CD/loader	fn	OBJECT_STATS §2
+ovl202	0x80053848	chunk 0-2 geometry relocation	mission loader	fn	MISSION_SYSTEM §1
+ovl202	0x80054750	model-pack consumer (GTE render)	render/GTE	fn	OBJECT_STATS §2
+ovl202	0x80055A40	model-pack draw-descriptor consumer	render/GTE	fn	OBJECT_STATS §2
+ovl202	0x80056958	per-section lighting table builder	render/GTE	fn	LEVEL_LOADING §2
+ovl202	0x80056AD0	chunk-10 handler	mission loader	fn	MISSION_SYSTEM §1
+ovl202	0x80056B54	rotate helper (missile turn)	missiles	fn	COMBAT_PHYSICS §5
+ovl202	0x800574D8	PA geometry relocation walker	PA geometry	fn	PA_FORMAT
+ovl202	0x80057994	chunk-3 handler	mission loader	fn	MISSION_SYSTEM §1
+ovl202	0x80057C44	sub-object bbox cull/transform	render/GTE	fn	PA_FORMAT, LEVEL_LOADING §3
+ovl202	0x8005804C	per-frame game function	frame loop/main	fn	AUDIO_PIPELINE §6
+ovl202	0x80058104	sub-object setup, LOD selection	PA geometry	fn	PA_FORMAT
+ovl202	0x80058B04	primitive emitter, matrix variant	PA geometry	fn	PA_FORMAT
+ovl202	0x8005A57C	PA primitive emitter (GPU walker)	PA geometry	fn	PA_FORMAT
+ovl202	0x8005C904	missile steer toward target	missiles	fn	COMBAT_PHYSICS §5
+ovl202	0x8005DEC4	object/MT render dispatcher	render/GTE	fn	LEVEL_LOADING §3
+ovl202	0x800639D8	level section renderer	render/GTE	fn	LEVEL_LOADING §3
+ovl202	0x80065AA8	AC player part renderer	render/GTE	fn	PLACEMENT_SOLVED
+ovl202	0x800674B0	hot per-frame transform/collision	movement	fn	COMBAT_PHYSICS §2
+ovl202	0x8006D534	object raycast	collision	fn	COLLISION §1
+ovl202	0x8006D628	broadphase point query	collision	fn	COLLISION §1
+ovl202	0x8006D9DC	chunk-6 handler	mission loader	fn	MISSION_SYSTEM §1
+ovl202	0x8006DB9C	bit-grid cell set	collision	fn	COLLISION §2
+ovl202	0x8006E6B4	position -> section index	perception	fn	PERCEPTION_MODEL §2
+ovl202	0x8006EE8C	world polygon test	collision	fn	COLLISION §2
+ovl202	0x8006F4D8	world collision narrowphase	collision	fn	COLLISION §2
+ovl202	0x8006FB6C	bit-grid broadphase	collision	fn	COLLISION §2
+ovl202	0x800705D8	world segment ray	collision	fn	PERCEPTION_MODEL §1e
+ovl202	0x80070F30	swept-AABB world collision API	collision	fn	COLLISION §2
+ovl202	0x80071E14	chunk-7 handler (METHOD_B)	mission loader	fn	MISSION_SYSTEM §1
+ovl202	0x80073104	VM tail 0x40000 callee	mission VM	fn	MISSION_SCRIPT_VM
+ovl202	0x800731E8	chunk-9 registrar (METHOD_C)	mission loader	fn	MISSION_SYSTEM §1
+ovl202	0x8007334C	chunk-8 handler	mission loader	fn	MISSION_SYSTEM §1
+ovl202	0x80073598	prop collision loop	collision	fn	COLLISION §1
+ovl202	0x800736AC	broadcast to 512 flag records	mission object	fn	MISSION_SCRIPT_VM
+ovl202	0x80073714	acquire nearest non-ally target	entity AI	fn	PERCEPTION_MODEL §1a
+ovl202	0x800739AC	chunk-11 handler	mission loader	fn	MISSION_STAGES
+ovl202	0x80073B74	chunk-12 spawn table	mission loader	fn	MISSION_SYSTEM §2
+ovl202	0x80073C2C	aim cone (range/FOV/active-set)	perception	fn	PERCEPTION_MODEL §1b
+ovl202	0x80073F38	radar/targeting scan	radar	fn	COMBAT_PHYSICS §7
+ovl202	0x800745D0	model-node world position	entity AI	fn	PERCEPTION_MODEL §1c
+ovl202	0x80074728	entity AABB collision loop	collision	fn	COLLISION §1
+ovl202	0x80075280	player defense calc	combat	fn	COMBAT_PHYSICS §8
+ovl202	0x80075350	entity damage apply	combat	fn	COMBAT_PHYSICS §8
+ovl202	0x80075FC0	enemy update pre/anim step	entity AI	fn	COMBAT_PHYSICS §6
+ovl202	0x80077B78	AI fire weapon	combat	fn	ENTITY_AI_FRAMEWORK §5
+ovl202	0x8007816C	los_ray segment sightline	perception	fn	PERCEPTION_MODEL §1e
+ovl202	0x800781E8	has_los target sightline	perception	fn	PERCEPTION_MODEL §1e
+ovl202	0x80078250	node FX emitter	effects	fn	MISSION_DAMAGE_EVENTS §1
+ovl202	0x800788C8	mission_resource_loader	entity framework	fn	OVERLAY_MAP
+ovl202	0x80078A2C	enemy slot alloc	entity framework	fn	OVERLAY_MAP
+ovl202	0x80078CFC	spawn routine (INIT_BY_TYPE)	entity framework	fn	OVERLAY_MAP, ENTITY_TYPES
+ovl202	0x80078D78	despawn entity	entity framework	fn	MISSION_SCRIPT_VM
+ovl202	0x80078F00	proximity spawner	entity framework	fn	PERCEPTION_MODEL §2
+ovl202	0x8007922C	per-frame section active-set build	perception	fn	PERCEPTION_MODEL §2
+ovl202	0x80079524	pad sample -> gameplay buttons	pad	fn	PLAYER_CONTROL §1
+ovl202	0x8007959C	mission tick	frame loop/main	fn	PLAYER_CONTROL §1
+ovl202	0x80079888	player per-frame update wrapper	player	fn	PLAYER_CONTROL §1
+ovl202	0x8007A334	segment hitscan	combat	fn	MISSION_DAMAGE_EVENTS §2
+ovl202	0x8007BA2C	radar/lock slot init	radar	fn	COMBAT_PHYSICS §7
+ovl202	0x8007BA98	reticle/lock update	radar	fn	COMBAT_PHYSICS §7
+ovl202	0x8007BEB8	lock-on jingle	sound	fn	COMBAT_PHYSICS §7
+ovl202	0x8007CA0C	player fire handler	combat	fn	COMBAT_PHYSICS §4
+ovl202	0x8007DB98	player targeting method	player	fn	PLAYER_CONTROL §1
+ovl202	0x8007DF98	player weapon/fire think	combat	fn	PLAYER_CONTROL §1
+ovl202	0x8007EAE8	player_init	player	fn	PLAYER_CONTROL §1
+ovl202	0x8007EF94	player pad-control think, set A	player	fn	PLAYER_CONTROL §1
+ovl202	0x8008080C	player movement state machine, set A	player	fn	PLAYER_CONTROL §1
+ovl202	0x80080D20	player handler set A installer	player	fn	PLAYER_CONTROL §1
+ovl202	0x800813D8	player pad-control think, set B	player	fn	PLAYER_CONTROL §1
+ovl202	0x8008238C	player movement state machine, set B	player	fn	PLAYER_CONTROL §1
+ovl202	0x80082BC4	player handler set B installer	player	fn	PLAYER_CONTROL §1
+ovl202	0x80082C58	init step before START	mission loader	fn	MISSION_OVERLAY_CODE §b
+ovl202	0x800835A0	init step before START	mission loader	fn	MISSION_OVERLAY_CODE §b
+ovl202	0x800835E8	damage router by target region	combat	fn	COMBAT_PHYSICS §8
+ovl202	0x80083A10	projectile round think	combat	fn	COMBAT_PHYSICS §8
+ovl202	0x800851A8	ballistic round think	combat	fn	COMBAT_PHYSICS §5
+ovl202	0x8008523C	guided missile / FX sprite stepper	missiles	fn	COMBAT_PHYSICS §5
+ovl202	0x80085764	projectile initialiser	combat	fn	COMBAT_PHYSICS §4
+ovl202	0x80085E98	projectile spawn	combat	fn	COMBAT_PHYSICS §4
+ovl202	0x80086854	impact/explosion FX spawner	effects	fn	MISSION_DAMAGE_EVENTS §1
+ovl202	0x80089ECC	projectile/FX pool allocator	combat	fn	COMBAT_PHYSICS §4
+ovl202	0x80089F7C	fire FX/recoil	combat	fn	COMBAT_PHYSICS §4
+ovl202	0x8008A048	primary-VM COM/broadcast	mission VM	fn	OVERLAY_MAP
+ovl202	0x8008A0B0	primary objective-command VM	mission VM	fn	OVERLAY_MAP, MISSION_SYSTEM §4
+ovl202	0x8008A344	init step before START	mission loader	fn	MISSION_OVERLAY_CODE §b
+ovl202	0x8008A778	mission timer set helper	mission state	fn	MISSION_SYSTEM §3
+ovl202	0x8008A80C	objective-step primitive	mission object	fn	MISSION_SYSTEM §4
+ovl202	0x8008A8F8	end-anim/timer state machine	mission state	fn	MISSION_SYSTEM §3
+ovl202	0x8008AB68	per-frame mission driver (TICK)	mission state	fn	OVERLAY_MAP
+ovl202	0x8008AF2C	QUERY caller, end-result eval	mission object	fn	MISSION_OVERLAY_CODE §b
+ovl202	0x8008AFC0	equipped-parts value loop	garage/assembly	fn	OBJECT_STATS §3
+ovl202	0x8008B320	actor sub restart	mission VM	fn	MISSION_SCRIPT_VM
+ovl202	0x8008B380	secondary actor-thread VM	mission VM	fn	MISSION_SCRIPT_VM
+ovl202	0x8008C178	vm_load_threads	mission VM	fn	MISSION_SCRIPT_VM
+ovl202	0x8008C2FC	load secondary-VM set	mission VM	fn	MISSION_SCRIPT_VM
+ovl202	0x8008D48C	objective/location markers	HUD	site	PLAYER_CONTROL §2
+ovl202	0x8008D8DC	init step before START	mission loader	fn	MISSION_OVERLAY_CODE §b
+ovl203	0x8004BF94	mode1 main entry	frame loop/main	fn	MXT_LOADER §6
+ovl203	0x8004FE84	mode1 scene loader	mission loader	fn	MISSION_OVERLAY_CODE §c
+ovl203	0x80071198	METHOD_B dispatch	mission loader	fn	MISSION_OVERLAY_CODE §b
+ovl203	0x8007256C	METHOD_C registrar	mission loader	fn	MISSION_OVERLAY_CODE §b
+ovl203	0x80077A7C	spawn, INIT_BY_TYPE	entity framework	fn	MISSION_OVERLAY_CODE §b
+ovl203	0x80088D2C	EVENT(id) caller	mission VM	fn	MISSION_OVERLAY_CODE §b
+ovl204	0x8004BF3C	mode2 main entry	frame loop/main	fn	MXT_LOADER §6
+ovl204	0x8004F964	mode2 scene loader	mission loader	fn	MISSION_OVERLAY_CODE §c
+ovl204	0x80070FD4	METHOD_B dispatch	mission loader	fn	MISSION_OVERLAY_CODE §b
+ovl204	0x800723A8	METHOD_C registrar	mission loader	fn	MISSION_OVERLAY_CODE §b
+ovl204	0x8007789C	spawn, INIT_BY_TYPE	entity framework	fn	MISSION_OVERLAY_CODE §b
+ovl204	0x8008156C	instantiate AC (called twice)	entity framework	fn	MXT_LOADER §6
+ovl204	0x80088ADC	EVENT(id) caller	mission VM	fn	MISSION_OVERLAY_CODE §b
