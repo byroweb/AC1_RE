@@ -17,8 +17,8 @@ WHAT WAS DETERMINED (evidence in scratch/re/mission_geom_notes.md)
        [u32 0x80]                 constant header word (payload byte 0)
        [block0][block1]...[blockN] size-prefixed PA geometry blocks (start payload+4)
        [tail]                     run of 0x00000004 words (4-byte block stubs) padding
-                                  chunk 0 out to its declared length; blocks_of() in
-                                  assemble_levels.py STOPs here (size 4 < 12).
+                                  chunk 0 out to its declared length; geom_blocks()
+                                  STOPs here (size 4 < 12).
 
    We model chunk 0 as: header span (payload[0:4]) + N GeomBlock segments + tail span.
    The header and tail are kept as raw bytes, so splice is byte-exact.
@@ -57,6 +57,10 @@ _PA = os.path.join(HERE, "tools", "pa")
 if _PA not in sys.path:            # an importer (e.g. AC1mod) may already have it
     sys.path.insert(0, _PA)
 import pa_encode  # noqa: E402  (byte-exact PA geometry block encoder)
+_MISSION = os.path.join(HERE, "tools", "mission")
+if _MISSION not in sys.path:
+    sys.path.insert(0, _MISSION)
+from mission_parse import chunk_span  # noqa: E402,F401  (the one FDAT 2N+1 chunk walker)
 
 GEOM_CHUNK = 0     # chunk-0 = local geometry blocks
 PLACE_CHUNK = 7    # chunk-7 = section placement table
@@ -69,31 +73,6 @@ PLACE_REC_LEN = 52
 # and the 2500-unit cell translations only tile without overlap at this scale.
 # Spawn X,Y,Z (chunk 12) are in the same 4x space.
 SCALE = 0.25
-
-
-# =====================================================================================
-# Chunk stream walk (identical mechanism to mission_parse.walk_chunks / assemble_levels)
-# =====================================================================================
-def walk_chunks(buf, limit=64):
-    """Yield (idx, payload_off, length) for each [u32 len][payload] chunk (stops at
-    the 0-length terminator or an out-of-range length)."""
-    off = idx = 0
-    n = len(buf)
-    while off + 4 <= n and idx < limit:
-        ln = struct.unpack_from("<I", buf, off)[0]
-        if ln == 0 or off + 4 + ln > n:
-            return
-        yield (idx, off + 4, ln)
-        off += 4 + ln
-        idx += 1
-
-
-def chunk_span(buf, want):
-    """Return (payload_off, length) for chunk `want`, or None."""
-    for idx, poff, ln in walk_chunks(buf):
-        if idx == want:
-            return (poff, ln)
-    return None
 
 
 # =====================================================================================
