@@ -2,6 +2,7 @@
 """sweep.py - zero-agent sweep: m2c drafts straight into the oracle, no LLM in the loop.
 
     sweep.py --queue FILE [--queue FILE ...] [--max-size 160] [--limit 100] [-j 20]
+             [--variants ctx,ctx-regvars,ctx-knr] [--try-all]
              [--work DIR] [--report FILE] [--dry-run] [--no-replay] [--no-ledger]
 
 For each open body in the queue files (make_queues.py --bodies rows, or any
@@ -9,8 +10,11 @@ queue with unit/vaddr/size columns), in file order, skipping rows that are no
 longer open in the ledger, that already have re/match/<unit>/func_<ADDR>.c, or
 that are --max-size bytes or larger:
 
-  1. drafts: tools/match/ctx.py decompile() (symbolised asm + the shared-type
-     context) with m2c --valid-syntax, then the same with --no-andor; a draft
+  1. drafts, in --variants order until one matches: tools/match/ctx.py
+     decompile() (symbolised asm + the shared-type context) with m2c
+     --valid-syntax (`ctx`), then with --reg-vars saved (`ctx-regvars`), then
+     `ctx` with m2c's guessed extern prototypes made unprototyped (`ctx-knr`);
+     also known: ctx-no-andor, ctx-void, raw (no context); a draft
      gets `#include "ac1/ac1.h"` and `#include "m2c_compat.h"` (the M2C_* names);
   2. each draft goes through tools/match/match_fn.py with the unit's flags,
      --expect-size, --rodata from jt_addrs, the two --syms tables, and every
@@ -48,8 +52,27 @@ import ledger  # noqa: E402
 import units   # noqa: E402
 import ctx     # noqa: E402
 
-VARIANTS = [("ctx", ["--valid-syntax"]),
-            ("ctx-no-andor", ["--valid-syntax", "--no-andor"])]
+EXTERN_PROTO = re.compile(r"^([^\n;()]*?\b\w+)\([^\n;]*\);(\s*/\* extern \*/)$", re.M)
+
+
+def knr_externs(text):
+    """m2c guesses an `/* extern */` callee's parameter list from the registers set
+    before the first call (`s32 SquareRoot0(s32, s32);` when a1 happened to be live),
+    so a later call with fewer arguments is a cc1 error.  Declare those callees
+    unprototyped instead (`s32 SquareRoot0();`): any call compiles, int-sized
+    arguments are passed exactly as before."""
+    return EXTERN_PROTO.sub(r"\1();\2", text)
+
+
+# name -> (raw, m2c args, text fix-up or None); raw = ctx.decompile(raw=True): no
+# context, no symbol rewrite.  Measured on the misses of the full sweep (README).
+VARIANTS = {"ctx": (False, ["--valid-syntax"], None),
+            "ctx-no-andor": (False, ["--valid-syntax", "--no-andor"], None),
+            "ctx-knr": (False, ["--valid-syntax"], knr_externs),
+            "ctx-regvars": (False, ["--valid-syntax", "--reg-vars", "saved"], None),
+            "ctx-void": (False, ["--valid-syntax", "--void"], None),
+            "raw": (True, ["--valid-syntax"], None)}
+DEFAULT_VARIANTS = "ctx,ctx-regvars,ctx-knr"
 PRELUDE = '#include "ac1/ac1.h"\n#include "m2c_compat.h"\n'
 
 
@@ -78,10 +101,13 @@ def fill_params(text, name):
 
 def draft(row, variant):
     """C text of one draft, or raises ctx.CtxError."""
-    _name, args = variant
-    out = ctx.decompile(int(row["vaddr"], 16), int(row["size"]), row["unit"], m2c_args=args)
+    raw, args, fixup = VARIANTS[variant]
+    out = ctx.decompile(int(row["vaddr"], 16), int(row["size"]), row["unit"], raw=raw,
+                        m2c_args=args)
     if not out.strip():
         raise ctx.CtxError("m2c printed nothing")
+    if fixup:
+        out = fixup(out)
     return PRELUDE + "\n" + fill_params(out, drive.fn_name(row["vaddr"]))
 
 
@@ -113,8 +139,9 @@ def oracle(u, vaddr, cpath, size, rodata):
     return clean, defsyms, summ
 
 
-def work(row, workdir):
-    """Try every variant on one body -> dict(result..., c_text, defsyms, variant)."""
+def work(row, workdir, variants, try_all=False):
+    """Try the variants in order on one body -> dict(result..., c_text, defsyms, variant).
+    try_all: keep trying after the first clean one (to measure variants; the first wins)."""
     unit, vaddr = row["unit"], int(row["vaddr"], 16)
     size = int(row["size"])
     u = units.resolve(unit)
@@ -122,20 +149,21 @@ def work(row, workdir):
     if int(row.get("jump_tables") or 0) and row.get("jt_addrs"):
         rodata = row["jt_addrs"].split(",")[0].strip()
     res = {"row": row, "tries": [], "match": None}
-    for variant in VARIANTS:
+    for variant in variants:
         try:
             text = draft(row, variant)
         except ctx.CtxError as e:
             lines = str(e).strip().splitlines() or [""]
-            res["tries"].append((variant[0], "M2C_FAIL:" + " ".join(lines[-1].split())[:80]))
+            res["tries"].append((variant, "M2C_FAIL:" + " ".join(lines[-1].split())[:80]))
             continue
-        cpath = os.path.join(workdir, "%s_%08X_%s.c" % (unit, vaddr, variant[0]))
+        cpath = os.path.join(workdir, "%s_%08X_%s.c" % (unit, vaddr, variant))
         with open(cpath, "w", encoding="utf-8", newline="\n") as fh:
             fh.write(text)
         clean, defsyms, summ = oracle(u, vaddr, cpath, size, rodata)
-        res["tries"].append((variant[0], summ))
-        if clean:
-            res["match"] = {"variant": variant[0], "text": text, "defsyms": defsyms, "rodata": rodata}
+        res["tries"].append((variant, summ))
+        if clean and not res["match"]:
+            res["match"] = {"variant": variant, "text": text, "defsyms": defsyms, "rodata": rodata}
+        if clean and not try_all:
             break
     return res
 
@@ -207,11 +235,20 @@ def main(argv=None):
     ap.add_argument("-j", "--jobs", type=int, default=max(1, (os.cpu_count() or 4) - 4))
     ap.add_argument("--work", help="scratch dir for drafts (default a new temp dir)")
     ap.add_argument("--report", help="per-body report TSV (default <work>/sweep_report.tsv)")
+    ap.add_argument("--variants", default=DEFAULT_VARIANTS,
+                    help="comma-separated drafts to try in order, of: %s (default %%(default)s)"
+                    % ", ".join(VARIANTS))
+    ap.add_argument("--try-all", action="store_true",
+                    help="try every variant even after a match (measures them; the first match wins)")
     ap.add_argument("--dry-run", action="store_true", help="list the bodies, run nothing")
     ap.add_argument("--no-replay", action="store_true", help="do not run twins.py replay afterwards")
     ap.add_argument("--no-ledger", action="store_true")
     args = ap.parse_args(argv)
 
+    variants = [v.strip() for v in args.variants.split(",") if v.strip()]
+    bad = [v for v in variants if v not in VARIANTS]
+    if bad:
+        ap.error("unknown variant(s) %s; known: %s" % (", ".join(bad), ", ".join(VARIANTS)))
     rows, skipped = load_queue_rows(args.queue, args.max_size, args.limit)
     print("%d bod(ies) to sweep (skipped: %d >= %d B, %d not open, %d with a C file)"
           % (len(rows), skipped["size"], args.max_size, skipped["closed"], skipped["c_file"]))
@@ -225,7 +262,7 @@ def main(argv=None):
     t0 = time.time()
     results = []
     with cf.ThreadPoolExecutor(max_workers=args.jobs) as ex:
-        futs = {ex.submit(work, r, workdir): r for r in rows}
+        futs = {ex.submit(work, r, workdir, variants, args.try_all): r for r in rows}
         for i, f in enumerate(cf.as_completed(futs), 1):
             r = futs[f]
             try:
