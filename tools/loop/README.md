@@ -69,7 +69,7 @@ session matched twelve of them by hand with the match-function loop, one at a
 time. Wall time runs from the first disassembly to the oracle's MATCH and
 includes reading the asm, writing headers and every oracle run. A sweep is one
 parallel batch of source variants through `match_fn.py`, using a small
-replace-and-compile helper.
+replace-and-compile helper (now shared as `tools/match/variants.py`).
 
 | # | unit vaddr | bytes | members | wall | oracle runs | sweeps (variants) | what blocked it |
 |---|---|---:|---:|---:|---:|---|---|

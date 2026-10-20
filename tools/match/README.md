@@ -209,6 +209,30 @@ skip (never pass vacuously) when the toolchain or the carved overlay is missing.
 `test_maspsx_patch.py` runs maspsx + `as` on tiny `.ent`-framed sequences and checks
 the load-delay `nop` before `l* $r,%lo(sym)($base)` (needs only the toolchain).
 
+`test_variants.py` covers `variants.py` (below): edit parsing, and a batch on the perturbed
+source whose swap variant must come back as a clean MATCH.
+
+## Variant sweeps (`variants.py`)
+
+One parallel batch of small rewrites of a near miss, instead of one edit per oracle run:
+
+```
+python tools/match/variants.py 0x<VADDR> re/match/ovl202/func_<VADDR>.c --edits try.txt --levers swap,commute --pairs
+```
+
+`try.txt` holds `## label` blocks of `-old` / `+new` lines (several replacements per
+variant allowed; the old text must occur once, whitespace-tolerant); `--replace OLD NEW`
+adds one more from the command line and `--levers` adds `tools/loop/levers.py` rewrites.
+Every variant is compiled with the oracle's pipeline in process (`tools/loop/permute.py`;
+about 60 compiles/s at `-j 24` on a 368-byte body) and ranked by differing words (+2 per
+word of size difference) and by retail words difflib cannot pair.  `--pairs` then tries
+every two edit variants that each improved on the input together.  Score-0 variants are
+re-run through `match_fn.py` and only a clean MATCH there gives exit 0.  The unit comes
+from `--ovl`/`--unit`, the file's directory or the exe range; the size from
+`--expect-size` or `tools/loop/functions.tsv`.  The input is untouched unless `--apply`;
+`--out F` writes the best variant, `--keep DIR` every variant plus `variants.tsv`.
+Run `variants.py -h` for the full format.
+
 ## Codegen probes
 
 `probes/pNN_*.c` are A/B pairs of tiny functions, one per row of the "GCC 2.7.2
@@ -245,6 +269,7 @@ include the delay slot after the final `jr ra`.
 - `include/ac1/ac1.h` — forwarder so a source can `#include "ac1/ac1.h"` and get the shared
   struct layouts and named globals in `<repo>/include/ac1` (see `include/ac1/README.md`);
   such rows add `--syms include/ac1/symbols.tsv --syms ac1_markup.tsv`
+- `variants.py` — parallel batch of small C rewrites through the oracle's compile (Variant sweeps)
 - `ctx.py` — keeps `include/ac1/symbols.h` in step with `symbols.tsv`, writes the m2c
   context, and decompiles one function with it (`ctx.py m2c VADDR --unit 201`)
 - `tests/` — pytest suite, shell runner, the two sources

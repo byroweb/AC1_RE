@@ -123,6 +123,14 @@ the field-level evidence: `include/ac1/README.md`):
    | `nop` in a loop-branch delay slot where a store could go | a store to a bare global is a two-word `lui $at` macro and never fills a slot; `volatile` makes no difference here (p26) |
    | `nop` before `l* $r,%lo(sym)($base)` right after a load of `$base` | ASPSX keeps the load-delay `nop` for this form; our patched maspsx emits it (`tools/match/patches/`, `tests/test_maspsx_patch.py`). If ours lacks it, rerun `tools/match/setup.sh` |
 
+   When the diff suggests several candidate fixes (statement order, a type, operand
+   order), try them in one batch instead of one oracle run each:
+   `python tools/match/variants.py 0x<VADDR> <file.c> --ovl N --edits try.txt [--levers swap,commute] [--pairs]`
+   (`try.txt`: `## label` then `-old` / `+new` lines). It ranks every variant by
+   differing words with the oracle's own compile and re-checks score-0 ones through
+   `match_fn.py`; it never edits the file unless `--apply`. The `matched` commit's
+   `<attempts>` counts your own `match_fn.py` runs, not the batch's variants.
+
    Re-check every family row in one go with
    `python tools/match/probes/run_probes.py` (`-v` prints both disassemblies of each
    pair; `pytest tools/match/tests/test_probes.py` runs it too). Before you add a row,
