@@ -21,6 +21,8 @@ twins.py      -> twins.tsv, twins_programs.tsv, re/match/twin_replay.tsv
 progress.py   -> stdout          matched / total per component, Wyrelade-README table shape (--compare)
 sweep.py      -> re/match/<unit>/func_<ADDR>.c
                                  zero-agent sweep: m2c drafts straight into the oracle, no LLM
+permute.py    -> re/match/<unit>/func_<ADDR>.c
+                                 permuter tier: levers.py rewrites + decomp-permuter on near misses, no LLM
 m2cfix.py     (library)          sweep.py's draft fix-ups: stack locals, frame union, casts, cc1-driven repair
 ```
 
@@ -879,6 +881,100 @@ sit in clusters of open bodies with pairwise similarity >= 0.8 (e.g. ovl202
 0x80064DC8).  Match one member of a cluster by hand, then re-run the line above: the
 others get its C file remapped as their draft (a match when only constants differ,
 otherwise a port: the 9 open bodies at 0.9+ today were 1 to 46 words off).
+
+## permute.py (permuter tier)
+
+```
+permute.py pick (--report sweep_report.tsv ... | --cfile [UNIT:]FILE.c ...) [--max-words N] [--max-ratio R]
+                [--max-size N] [--limit N] [--drafts DIR ...]
+permute.py run  (same picking options) [-j 24] [--budget 300] [--levers index,bytes,...]
+                [--lever-evals 150] [--beam 4] [--no-permuter] [--work DIR] [--no-ledger] [--no-replay]
+permute.py setup <unit> <vaddr> <draft.c> <dir>     # one decomp-permuter dir, for a manual run
+permute.py cc    <dir> <in.c> -o <out.o>            # its compile.sh backend
+```
+
+No LLM in the loop: the near misses the sweep (or a matcher) left behind are ground
+against the oracle overnight.  **Inputs**: `sweep_report.tsv` files (the best
+`MISMATCH` try of every body still open in the ledger and without a `re/match` C file;
+the draft is read from the report's own directory, a `--drafts` dir, or regenerated
+with `sweep.draft()`) and `--cfile` near-miss / give-up C files (`re/match/<unit>/func_<ADDR>.c`,
+a sweep draft `<unit>_<ADDR>_<variant>.c`, or `UNIT:PATH` for anything with `func_<ADDR>`
+in its name; a give-up's own file is allowed in).  They are ordered by differing words
+relative to size, `words / (size/4)`.  Each function then gets two stages inside
+`--budget` seconds, both scored with exactly the oracle's compile (cpp, cc1 2.7.2, rodata
+align fix, maspsx 2.56, as, and match_fn's relocation resolution with the `--syms` tables
+and `func_`/`D_<ADDR>` names):
+
+1. **Levers** (`levers.py`): deterministic rewrites of the draft along the divergence
+   rows of the match-function skill, beam search (`--beam` best texts per depth,
+   `--lever-evals` compiles), scored by differing words + 2 x the size difference in
+   words; a rewrite whose compiled bytes were already seen is dropped.
+
+   | lever | rewrite | retail symptom it fixes |
+   |---|---|---|
+   | `index` | `M2C_FIELD((E + 0x801F0000), T *, 0x37D4)` -> `D_801F37D4[i]` / `*(T *)(D_801F37D4 + (E))` with `extern T D_801F37D4[];` | `addu at,at,v0` vs ours `addu at,v0,at` (indexed global, p12) |
+   | `bytes` | `p += 8` / `p + 4` / `E + &D_x` on a typed pointer -> byte arithmetic keeping the pointee type, or the element count | `addiu s1,s1,8` vs ours `,16`; `sll 2` vs `sll 4` (m2c offsets are in bytes) |
+   | `ptype` | pointee type of a pointer local/extern among u8/s8/u16/s16/u32/s32/void | `li v0,255` vs `-1`, `lh`/`lhu`, scaled `+=` |
+   | `etype` | `extern M2C_UNK D_x;` -> u8/s8/... (m2c's `M2C_UNK` is `s32` here) | `&D_x + 8` scaled x4 |
+   | `const` | a literal in its other-signedness spelling (`-1` <-> `0xFF`/`0xFFFF`) | `li` immediates |
+   | `swap` | two adjacent statements | register colouring by first use (p01/p02) |
+   | `commute` | operands of a top-level `+ \| & ^ *` | commutative operand order (p20) |
+
+2. **decomp-permuter** ([simonlindholm/decomp-permuter](https://github.com/simonlindholm/decomp-permuter),
+   `$PERMUTER_DIR`, default `~/dev/decomp-permuter` with a `.venv` holding `toml` and
+   `Levenshtein`) on the best lever text for the rest of the budget, `--stop-on-zero
+   --stack-diffs`.  Its `-j N` needs `fork()` and is broken on Windows (its own comment
+   in `src/main.py`), so each function gets one single-threaded permuter process and
+   `run -j` keeps that many functions going.  `permuter_main.py` runs it with the compile
+   step in-process: stock `compile.sh` costs a bash start-up (~0.28 s), a python start-up
+   and maspsx's own (~0.25 s) on top of cc1 (~0.19 s) per candidate on this PC, 1.8
+   candidates/s; in-process it is ~11/s for one process alone.  The permuter's target.o is
+   the retail words under the function's symbol, and each candidate .o has the oracle's
+   relocations applied and `.rel.text` dropped, so score 0 means the same words.
+
+A score-0 text (the lever text, or the permuter's function spliced back into it) goes
+through `match_fn.py` like `drive.py try` (unresolved `func_`/`D_` names as `--defsym`,
+rerun once); only a clean MATCH is written to `re/match/<unit>/func_<ADDR>.c` (header
+names the levers or the permuter), verified again from there, and gets its manifest row
+and a ledger row (`match`, attempts 0, reason `permuter (...)`).  Misses are only
+reported (`<work>/permute_report.tsv`: base/lever scores, lever compiles, permuter base
+and best score, iterations, seconds).  At the end `twins.py replay --scope programs`
+credits the twins.  `tools/match/tests/test_permute.py` checks that the in-process
+maspsx is the subprocess, that a candidate .o holds the oracle's own words, the splice,
+the report parsing and each lever.  Do not edit `permute.py` while a run is going: every
+new permuter process imports it.
+
+**Pilot (2026-10-20)**: the 48 open bodies whose `ctx` draft was within 2 differing words
+in the full sweep's pass 1 (36-572 B), `-j 24`, 300 s per function.
+
+| pass | stages | bodies matched | notes |
+|---|---|---:|---|
+| 1 | decomp-permuter only | 7 / 29 that ran | 19 jobs lost to an edit of `permute.py` mid-run; 20 654 compiles in 379 s = 54 compiles/s |
+| 2 | `index,ptype,etype,const,swap,commute` + permuter | 21 / 41 | 19 by levers alone (most in 2 compiles), 2 by the permuter after levers; 105 compiles/s |
+| 3 | + `bytes` | 7 / 20 | 6 by levers alone, 1 by the permuter; 128 compiles/s |
+| **total** | | **35 / 48 (73%)** | 25 by levers alone, 10 by the permuter; plus twins (below) |
+
+**Larger near misses**: the open bodies of all three full-sweep passes at `--max-ratio 0.06`
+(29 sweep bodies, 12 of them 300-760 B) plus the three saved give-ups (`exe 0x80012A78`
+996 B, `ovl201 0x80064C18` 664 B, `ovl201 0x8006E148` 840 B), 600 s and 250 lever compiles
+each.  Pass 1 (without `bytes`): **5 / 29** matched, `ovl202 0x80057360` (376 B, 3 words),
+`ovl204 0x80056434` (596 B, 7), `ovl201 0x800A9740` (760 B, 3) by one `etype` rewrite each,
+`ovl202 0x80053020` (368 B, 5) by the permuter after an `etype` rewrite, `ovl201 0x8008C1F8`
+(336 B, 5) by the permuter alone; 125 compiles/s.  Pass 2 (with `bytes`, the 22 left
+including the give-ups): 0; 168 compiles/s.  The give-ups stay give-ups (the levers took
+`0x80012A78` from 15 to 9 differing words; global-alloc ties are not something the permuter
+found in 600 s at ~0.6 candidates/s for a 1 KB function).
+
+All runs together: **40 bodies + 28 twins = 68 functions** credited, every one through
+`match_fn.py` exit 0; `drive.py verify -j 24` all MATCH afterwards.
+
+Throughput at `-j 24`: 105-128 oracle compiles/s across the box (24 permuter processes at
+2.5-4.5 candidates/s each; the lever stage runs ~5 compiles/s per function under the same
+load).  What is left (the 13 pilot misses): register-only diffs the permuter does not
+reach in 300 s (`a0`/`a1` for a call m2c gave one argument too few, e.g. `VectorNormalSS(v)`
+for a two-argument call), an argument m2c dropped (`li a0,24` in a delay slot), and drafts
+whose word count hid a size difference (`ovl201 0x800B6D4C`: ours 8 bytes for 56; the
+sweep's diff words only count the common length).  Those are agent work packages.
 
 ## check_all.sh
 
