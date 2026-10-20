@@ -7,7 +7,7 @@
                     [--commit] [--keep] [--re-dir DIR]
     drive.py giveup <unit> <vaddr> <reason...>
     drive.py status [--queue FILE]
-    drive.py verify [--manifest FILE]
+    drive.py verify [--manifest FILE] [-j N] [-q]
 
 next    prints a work package for the next open function (exit 3 when nothing is
         left): the functions.tsv row and score, the retail disassembly, the GAS
@@ -32,7 +32,8 @@ giveup  records a give-up in the ledger (attempts = sidecar lines) and prepends
         /* NOT MATCHED: ... */ to the C file.
 status  ledger state, attempts and last result per function (queue or ledger).
 verify  re-runs the oracle on every manifest row (Python check_all.sh); exit 0
-        only if every row is MATCH.
+        only if every row is MATCH.  -j N runs N oracles at once (default: CPU
+        count; output stays in manifest order), -q prints only FAIL rows.
 
 Environment: AC1_LEDGER (ledger file, see ledger.py), M2C_DIR (m2c checkout,
 default ~/dev/m2c or ~/Applications/m2c), MIPS_PREFIX, AC1_BIN / AC1_DISC_MAP
@@ -775,36 +776,44 @@ def cmd_status(args):
     return 0
 
 
+def verify_row(r, base):
+    """-> (ok?, final line) for one manifest row."""
+    try:
+        u = units.resolve(r["unit"] or "exe")
+    except (units.UnitError, ValueError) as e:
+        return False, "ERROR: %s" % e
+    extra = shlex.split(r["extra"]) if r["extra"] else []
+    if "--base" in u.oracle_flags and "--base" in extra:
+        i = extra.index("--base")
+        del extra[i:i + 2]
+    argv = [r["vaddr"], os.path.join(base, r["src"])] + list(u.oracle_flags)
+    if r["size"]:
+        argv += ["--expect-size", r["size"]]
+    argv += extra + ["-q"]
+    res = subprocess.run([sys.executable, MATCH_FN] + argv, cwd=REPO,
+                         capture_output=True, text=True, errors="replace")
+    lines = [ln for ln in res.stdout.splitlines() if ln.strip()]
+    line = lines[-1] if lines else ("(no output) " + res.stderr.strip()[-200:])
+    return res.returncode == 0 and line.startswith("MATCH"), line
+
+
 def cmd_verify(args):
+    import concurrent.futures as cf
     path = os.path.abspath(args.manifest)
     _header, rows, _crlf = read_manifest(path)
     base = os.path.dirname(path)
     n = fail = 0
-    for r in rows:
-        n += 1
-        try:
-            u = units.resolve(r["unit"] or "exe")
-        except (units.UnitError, ValueError) as e:
-            print("FAIL  %s  ERROR: %s" % (r["vaddr"], e))
-            fail += 1
-            continue
-        extra = shlex.split(r["extra"]) if r["extra"] else []
-        if "--base" in u.oracle_flags and "--base" in extra:
-            i = extra.index("--base")
-            del extra[i:i + 2]
-        argv = [r["vaddr"], os.path.join(base, r["src"])] + list(u.oracle_flags)
-        if r["size"]:
-            argv += ["--expect-size", r["size"]]
-        argv += extra + ["-q"]
-        res = subprocess.run([sys.executable, MATCH_FN] + argv, cwd=REPO,
-                             capture_output=True, text=True, errors="replace")
-        lines = [ln for ln in res.stdout.splitlines() if ln.strip()]
-        line = lines[-1] if lines else ("(no output) " + res.stderr.strip()[-200:])
-        if res.returncode == 0 and line.startswith("MATCH"):
-            print("ok    %s  %s" % (r["vaddr"], line))
-        else:
-            print("FAIL  %s  %s" % (r["vaddr"], line))
-            fail += 1
+    # the oracle is one short process per row: threads only wait on it, so -j scales with cores;
+    # results are printed in manifest order
+    with cf.ThreadPoolExecutor(max_workers=max(1, args.jobs)) as ex:
+        for r, (ok, line) in zip(rows, ex.map(lambda r: verify_row(r, base), rows)):
+            n += 1
+            if ok:
+                if not args.quiet:
+                    print("ok    %s  %s" % (r["vaddr"], line))
+            else:
+                print("FAIL  %s  %s  (%s %s)" % (r["vaddr"], line, r["unit"], r["src"]))
+                fail += 1
     print("%d/%d matched" % (n - fail, n))
     return 0 if fail == 0 and n > 0 else 1
 
@@ -854,6 +863,9 @@ def main(argv=None):
 
     p = sub.add_parser("verify", help="re-run the oracle on every manifest row")
     p.add_argument("--manifest", default=MANIFEST)
+    p.add_argument("-j", "--jobs", type=int, default=os.cpu_count() or 4,
+                   help="parallel oracle runs (default: CPU count)")
+    p.add_argument("-q", "--quiet", action="store_true", help="print only FAIL rows and the total")
     p.set_defaults(func=cmd_verify)
 
     args = ap.parse_args(argv)

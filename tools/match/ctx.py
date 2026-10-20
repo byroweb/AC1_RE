@@ -419,7 +419,8 @@ def unit_image(unit):
     return u.image_path, u.base
 
 
-def decompile(vaddr, length, unit, protos=(), raw=False, ctx_path=None):
+def decompile(vaddr, length, unit, protos=(), raw=False, ctx_path=None, m2c_args=()):
+    """m2c's C for one function; m2c_args are passed through (e.g. --valid-syntax)."""
     image, base = unit_image(unit)
     with open(image, "rb") as fh:
         fh.seek(vaddr - base)
@@ -446,7 +447,7 @@ def decompile(vaddr, length, unit, protos=(), raw=False, ctx_path=None):
             raise CtxError("objdump2m2c failed:\n" + asm.stderr)
         sys.stderr.write(asm.stderr)
         text = asm.stdout
-        cmd = m2c_cmd() + ["-t", "mips-gcc-c"]
+        cmd = m2c_cmd() + ["-t", "mips-gcc-c"] + list(m2c_args)
         if not raw:
             text = symbolise(text, SymbolMap(unit_key(unit)))
             ctx = ctx_path or os.path.join(tmp, "ctx.c")
