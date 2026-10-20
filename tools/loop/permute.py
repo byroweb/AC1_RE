@@ -412,6 +412,9 @@ def cfile_candidate(spec):
     m = re.match(r"^(exe|ovl20[1-4]|fdat\d{3}):(.+)$", spec)
     if m:
         unit, spec = m.group(1), m.group(2)
+    msys = re.match(r"^/([A-Za-z])/(.*)$", spec)     # Git Bash leaves UNIT:/c/... unconverted
+    if msys and os.name == "nt":
+        spec = "%s:/%s" % (msys.group(1).upper(), msys.group(2))
     path = os.path.abspath(spec)
     base = os.path.basename(path)
     sm = SWEEP_C.match(base)

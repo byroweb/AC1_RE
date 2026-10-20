@@ -147,3 +147,24 @@ def test_lever_swap_and_commute():
     got = dict(levers.variants(t, "func_X", "swap,commute"))
     assert any(v == "void func_X(void) {\n    d = 1;\n    a = b | c;\n    return;\n}\n" for v in got.values())
     assert any("a = c | b;" in v for v in got.values())
+
+
+def test_lever_bytes():
+    t = ("extern M2C_UNK D_80049E74;\nvoid func_X(s32 *arg0) {\n    s16 *var_s1;\n\n    var_s1 += 8;\n"
+         "    *D_1 = arg0 + 4;\n    *(i + &D_80049E74) = 0;\n}\n")
+    got = dict(levers.lever_bytes(t, "func_X"))
+    assert "    var_s1 += 4;\n" in got["bytes var_s1 += 4"]
+    assert "var_s1 = (s16 *)((u8 *)var_s1 + 8);" in got["bytes var_s1 += 8"]
+    assert "*D_1 = (arg0 + 1);" in got["bytes arg0 + 1"]
+    assert "*(((M2C_UNK *)((u8 *)&D_80049E74 + i))) = 0;" in got["bytes E + &D_80049E74"]
+
+
+def test_cfile_candidate_specs(tmp_path):
+    c = permute.cfile_candidate("ovl201:/c/x/func_80064C18.near-miss.c")
+    assert (c["unit"], c["vaddr"], c["variant"]) == ("ovl201", "0x80064C18", "file")
+    if os.name == "nt":
+        assert c["cfile"].replace("\\", "/").startswith("C:/x/")
+    c = permute.cfile_candidate(os.path.join("w", "exe_80012A78_ctx-knr.c"))
+    assert (c["unit"], c["vaddr"], c["variant"]) == ("exe", "0x80012A78", "ctx-knr")
+    c = permute.cfile_candidate(os.path.join("re", "match", "ovl202", "func_8004EADC.c"))
+    assert (c["unit"], c["vaddr"]) == ("ovl202", "0x8004EADC")

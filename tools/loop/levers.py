@@ -285,9 +285,96 @@ def lever_commute(text, fn):
     return out
 
 
-LEVERS = {"index": lever_index, "ptype": lever_ptype, "etype": lever_etype, "const": lever_const,
-          "swap": lever_swap, "commute": lever_commute}
-DEFAULT_LEVERS = "index,ptype,etype,const,swap,commute"
+PTR_DECL = re.compile(r"(?:^|[(,{;])\s*((?:const\s+)?(?:unsigned\s+|signed\s+)?[A-Za-z_]\w*)\s*\*\s*(\w+)\s*(?=[;,)=])",
+                      re.M)
+EXT_DECL = re.compile(r"^extern ((?:unsigned\s+)?[A-Za-z_]\w*) (D_\w+);", re.M)
+NUM = r"(0x[0-9A-Fa-f]+|\d+)"
+
+
+def operand_before(s, j):
+    """Start of the operand ending at s[j-1]: an identifier/number or a balanced (...) group."""
+    k = j
+    while k > 0 and s[k - 1] == " ":
+        k -= 1
+    if k > 0 and s[k - 1] == ")":
+        depth = 0
+        for i in range(k - 1, -1, -1):
+            depth += {")": 1, "(": -1}.get(s[i], 0)
+            if depth == 0:
+                return i
+        return None
+    i = k
+    while i > 0 and (s[i - 1].isalnum() or s[i - 1] == "_"):
+        i -= 1
+    return i if i < k else None
+
+
+def operand_after(s, j):
+    """End of the operand starting at s[j]: an identifier/number or a balanced (...) group."""
+    if j < len(s) and s[j] == "(":
+        e = close_paren(s, j)
+        return e if e > 0 else None
+    i = j
+    while i < len(s) and (s[i].isalnum() or s[i] == "_"):
+        i += 1
+    return i if i > j else None
+
+
+def lever_bytes(text, fn):
+    """m2c's pointer arithmetic is in bytes: `p += 8` on an `s16 *` was meant as 8 bytes
+    (retail `addiu s1,s1,8`, ours 16).  Rewrite one site as byte arithmetic keeping the
+    pointee type, or as the scaled element count when it divides."""
+    sp = fn_span(text, fn)
+    if not sp:
+        return []
+    sig = text.rfind("\n", 0, text.rfind(fn, 0, sp[0])) + 1
+    head = text[sig:sp[1]]                         # signature + body: params and locals
+    ptrs = {}
+    for m in PTR_DECL.finditer(head):
+        ptrs.setdefault(m.group(2), m.group(1))
+    exts = {m.group(2): m.group(1) for m in EXT_DECL.finditer(text)}
+    body = text[sp[0]:sp[1]]
+    out = []
+
+    def emit(label, a, b, new):
+        out.append(("bytes " + label, text[:sp[0]] + body[:a] + new + body[b:] + text[sp[1]:]))
+
+    for name, t in ptrs.items():
+        k = SIZEOF.get(t)
+        if t in ("u8", "s8", "M2C_UNK8", "void", "char"):
+            continue
+        for m in re.finditer(r"\b%s (\+|-)= %s;" % (re.escape(name), NUM), body):
+            n = int(m.group(2), 0)
+            emit("%s %s= %s" % (name, m.group(1), m.group(2)), m.start(), m.end(),
+                 "%s = (%s *)((u8 *)%s %s %s);" % (name, t, name, m.group(1), m.group(2)))
+            if k and n % k == 0:
+                emit("%s %s= %d" % (name, m.group(1), n // k), m.start(), m.end(),
+                     "%s %s= %d;" % (name, m.group(1), n // k))
+        for m in re.finditer(r"(?<![\w*.>])%s \+ %s\b(?! \*)" % (re.escape(name), NUM), body):
+            n = int(m.group(1), 0)
+            emit("%s + %s" % (name, m.group(1)), m.start(), m.end(),
+                 "((%s *)((u8 *)%s + %s))" % (t, name, m.group(1)))
+            if k and n % k == 0:
+                emit("%s + %d" % (name, n // k), m.start(), m.end(), "(%s + %d)" % (name, n // k))
+    for name, t in exts.items():
+        if t in ("u8", "s8", "M2C_UNK8", "char"):
+            continue
+        for m in re.finditer(r"&%s\b" % re.escape(name), body):
+            a, b = m.start(), m.end()
+            if body[b:b + 3] == " + ":                 # &D + E
+                e = operand_after(body, b + 3)
+                if e:
+                    emit("&%s + E" % name, a, e, "((%s *)((u8 *)&%s + %s))" % (t, name, body[b + 3:e]))
+            if body[max(0, a - 3):a] == " + ":         # E + &D
+                s = operand_before(body, a - 3)
+                if s is not None:
+                    emit("E + &%s" % name, s, b, "((%s *)((u8 *)&%s + %s))" % (t, name, body[s:a - 3]))
+    return out
+
+
+LEVERS = {"index": lever_index, "bytes": lever_bytes, "ptype": lever_ptype, "etype": lever_etype,
+          "const": lever_const, "swap": lever_swap, "commute": lever_commute}
+DEFAULT_LEVERS = "index,bytes,ptype,etype,const,swap,commute"
 
 
 def variants(text, fn, names=DEFAULT_LEVERS):
