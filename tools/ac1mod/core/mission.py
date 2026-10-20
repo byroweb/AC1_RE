@@ -2,14 +2,15 @@
 core/mission.py — assemble a mission's populated 3D scene for AC1mod.
 
 Reads mission N's spawn table (FDAT entry 2N+1, chunk 12: 256×40-byte records),
-and builds a Scene of placed objects. Until block-index→geometry resolution lands
-(agent task), each spawn is a typed 3D MARKER at its world position; metadata
-(type, position, rotation, block, params) feeds the info dropdown. Designed so the
-marker mesh can later be swapped for the real PA geometry block per spawn.
+and builds a Scene of placed objects. Each spawn is a 3D MARKER at its world
+position, coloured by its resource/class id; metadata (dispatch type, class id,
+position, rotation, params) feeds the info dropdown. The marker mesh could later be
+swapped for the spawn's geometry block (hw3 → block record, docs/MISSION_STAGES.md).
 
 The spawn records are decoded by tools/mission/mission_parse.py (spawns: hw0-2 =
-X,Y,Z; hw3 = geometry block index (-1 = none); hw5 = rotation (0/1024/2048/3072 =
-0/90/180/270°); hw7 = type id; hw8..hw19 = params). This module builds the Scene.
+X,Y,Z in world units; hw3 = geometry block index AND dispatch type (-1 = none);
+hw5 = rotation (4096 = 360°); hw7 = resource/class id; hw8..hw19 = params, hw8 =
+defense argument, hw11 = HP; docs/OBJECT_STATS.md). This module builds the Scene.
 """
 from __future__ import annotations
 import math, colorsys
@@ -19,15 +20,15 @@ from core.scene import Scene, SceneObject
 from core.fdat import mission_entry
 import mission_parse
 
-# Filled in as object/MT stat tables are reverse-engineered (agent task). Maps a
-# spawn type id -> a human label; empty -> shown as "type N".
+# Maps a spawn resource/class id (hw7) -> a human label; empty -> shown as
+# "class N". Filled in as the class ids are named.
 TYPE_LABELS: dict = {}
 
-# Per-instance spawn params hw8..hw19 (index 0..11). RE found NO global per-type
-# stat table — these in-record values carry per-instance numbers. Labels are
-# best-guess pending a DuckStation HP/damage confirm; hw11 (index 3) is the
-# leading HP candidate.
-PARAM_LABELS = {3: "HP? (hw11)", 4: "hw12 (range/area?)", 0: "hw8 (AI?)"}
+# Per-instance spawn params hw8..hw19 (index 0..11). There is no global per-type
+# stat table; these in-record values carry the per-instance numbers
+# (docs/OBJECT_STATS.md §1). hw11 = HP is CONFIRMED live; hw8 is the defense
+# argument passed to the damage apply (its value curve is still open).
+PARAM_LABELS = {3: "HP (hw11)", 4: "hw12 (range/area?)", 0: "defense (hw8)"}
 
 MIS_SECTORS = (101920, 103449)   # MIS.T (mission text corpus)
 
@@ -91,13 +92,11 @@ def mission_scene(bin_path, n, index_path=None, marker_size=None,
                                meta={"sections": len(lm.groups),
                                      "ceilings": ceilings}))
     sp = spawns(bin_path, n, index_path)
-    # Spawn X,Y,Z live in the same 4x "native" space as the block geometry (the engine
-    # scales both by the GTE matrix); the level mesh is already down-scaled by SCALE,
-    # so scale marker positions to match. (meta['pos'] keeps the raw data values.)
-    from core.level import SCALE
+    # Spawn X,Y,Z are already WORLD units, the same space as the placed level mesh
+    # (only chunk-0 block geometry is authored at 4x; see mission_geom.SCALE).
     if marker_size is None and sp:
         xs = [s["x"] for s in sp]; zs = [s["z"] for s in sp]
-        extent = max(max(xs) - min(xs), max(zs) - min(zs), 1000) * SCALE
+        extent = max(max(xs) - min(xs), max(zs) - min(zs), 1000)
         marker_size = max(extent * 0.018, 120)     # ~2% of world span
     for s in sp:
         meta = {
@@ -107,10 +106,10 @@ def mission_scene(bin_path, n, index_path=None, marker_size=None,
             "params": s["params"],
         }
         sc.add(SceneObject(
-            name=f"#{s['i']} type{s['typ']}",
+            name=f"#{s['i']} class{s['typ']}",
             mesh=_marker_mesh(marker_size),
             rot_y=s["rot"] * 2 * math.pi / 4096,
-            trans=(s["x"] * SCALE, s["y"] * SCALE, s["z"] * SCALE),
+            trans=(s["x"], s["y"], s["z"]),
             color=type_color(s["typ"]),
             meta=meta,
         ))

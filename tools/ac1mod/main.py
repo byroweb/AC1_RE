@@ -1015,11 +1015,11 @@ class ModelView3D(QWidget):
         self._blocks = pa_parser.parse_pa_blocks(bin_path, sec0, sec1)
         self._combo.blockSignals(True)
         self._combo.clear()
-        self._combo.addItem("★ SCENE (assembled stage)")
         self._combo.addItem(f"◇ contact sheet ({len(self._blocks)} objects)")
+        self._combo.addItem("all blocks at local origin (not a stage)")
         for ei, m in self._blocks:
             self._combo.addItem(f"entry {ei}  ({m.stats()['faces']} faces)")
-        self._combo.setCurrentIndex(0)        # default to the assembled stage
+        self._combo.setCurrentIndex(0)        # default to the contact sheet
         self._combo.blockSignals(False)
         self._loading = True
         self.notes.setPlainText(note)
@@ -1029,11 +1029,11 @@ class ModelView3D(QWidget):
     def _render_index(self, i):
         from core import pa_parser
         if i == 0:
-            mesh = pa_parser.scene_mesh(self._bin, *self._sec)
-            label = "assembled stage (world coords)"
-        elif i == 1:
             mesh = pa_parser.contact_sheet(self._bin, *self._sec)
             label = f"contact sheet — {len(self._blocks)} objects"
+        elif i == 1:
+            mesh = pa_parser.scene_mesh(self._bin, *self._sec)
+            label = "all blocks at local origin"
         else:
             _, mesh = self._blocks[i - 2]
             label = self._combo.currentText().strip()
@@ -2065,7 +2065,7 @@ class MissionView(QWidget):
         has_level = any(o.name == "level" for o in self._scene.objects)
         lvl = "" if not self._level_cb.isChecked() else \
             (" · level ✓" if has_level else " · no level table (shared scene)")
-        self._info.setText(f"{len(self._spawns)} objects · {kinds} types{lvl}")
+        self._info.setText(f"{len(self._spawns)} objects · {kinds} classes{lvl}")
 
     def _on_pick(self, oid, pos):
         if oid < 0 or not self._scene or oid >= len(self._scene.objects):
@@ -2076,15 +2076,15 @@ class MissionView(QWidget):
                 f"<b>walkable level</b><br>{m.get('sections', '?')} placed sections"
                 f"<br>ceilings: {'on' if m.get('ceilings') else 'off'}", pos)
             return
-        tlabel = self._tlabels.get(m["type"], f"type {m['type']}")
+        tlabel = self._tlabels.get(m["type"], f"class {m['type']}")
         rows = [f"<b>{tlabel}</b>",
-                f"type id: {m['type']}",
+                f"dispatch type / geometry block (hw3): {m['block']}",
+                f"resource/class id (hw7): {m['type']}",
                 f"position: {m['pos']}",
-                f"facing: {m['rot_deg']}°",
-                f"geometry block: {m['block']}"]
-        # Per-instance params hw8..hw19 (RE: no global per-type stat table; these
-        # spawn-record values carry the per-instance numbers — labels are best-guess
-        # pending a DuckStation confirm; hw11 is the leading HP candidate).
+                f"facing: {m['rot_deg']}°"]
+        # Per-instance params hw8..hw19 (no global per-type stat table; these
+        # spawn-record values carry the per-instance numbers, docs/OBJECT_STATS.md:
+        # hw11 = HP confirmed live, hw8 = defense argument).
         from core.mission import PARAM_LABELS
         p = m["params"]
         shown = [(PARAM_LABELS.get(i, f"hw{i+8}"), v) for i, v in enumerate(p) if v]

@@ -16,11 +16,18 @@ save is the live colour-picker state.
   - `+0x00` 32 B palette = 16 × u16 BGR555 (a copy of the in-game colour picker
     rainbow ramp; in practice all 7 copies are the standard ramp)
   - `+0x20` 2048 B pixels = **64×64, 4bpp, low-nibble first, row-major**
-- First record at **file offset `0x206`** (file = the save's blocks joined in
-  link order). Emblem `i` record = `0x206 + i*0x820`; pixels = record `+0x20`.
+- First record at **file offset `0x204`** (file = the save's blocks joined in
+  link order). Emblem `i` record = `0x204 + i*0x820`; palette index 0 (`0x0000`,
+  transparent background) is at the record start, index 1 at `+0x02`; pixels =
+  record `+0x20`. The 7 records end at `0x3AE4`, followed by `0xFF` padding.
+- **Checksum:** a u32 LE at file offset **`0x200`**, just before record 0, holds the
+  plain byte-sum (mod 2^32) of all 7 records, bytes `0x204..0x3AE3`. The game checks
+  it on load and shows "DATA READ FAILED" on a mismatch, so any edit must recompute
+  it (`write_emblem` / `patch_mcs_emblem` do; in a `.mcs` both offsets shift by the
+  128-B header).
 - A single emblem's 2048-B pixel run **can straddle the 8192-B block boundary**
-  (e.g. emblem 3 spans 0x1A86..0x2286), so edits must go through the joined file
-  bytes, not one block. Default-blank pixels are `0xFF`.
+  (e.g. emblem 3's pixels span 0x1A84..0x2284), so edits must go through the joined
+  file bytes, not one block. Default-blank pixels are `0xFF`.
 - Ground truth: this card's 7 slots decode to hand-drawn `X,2,3,4,5,6,7` (each a
   different palette index) — upright and legible, confirming row + nibble order.
 - This matches the user's earlier Project Phantasma (SLUS-00670) decoder exactly
@@ -58,10 +65,11 @@ No draw/byte-diff was needed: a card already had a fully-drawn emblem file. Expo
 both files (`export_memory_card_save`), join the emblem file's 2 blocks, and
 scan for the colour-picker ramp signature (`1F 00 FF 01 FF 03`). It hits **7
 times at stride `0x820`** starting `0x206` → 7 records, palette-then-pixels,
-exactly. Decoding each record's 2048 B as 64×64 4bpp gives upright legible
+exactly. The signature is palette index 1 onward (red `0x001F`); index 0 is the
+`0x0000` transparent entry two bytes earlier, so each record starts at `0x204`. Decoding each record's 2048 B as 64×64 4bpp gives upright legible
 glyphs. Done. (The former "main save @0x0E80" plan was a wrong file entirely.)
 
-Former open questions, now answered: pixel offset = `0x206 + i*0x820 + 0x20`;
+Former open questions, now answered: pixel offset = `0x204 + i*0x820 + 0x20`;
 count = 7; they live in the `...Z` file, not the main save / not VRAM splits.
 
 ## Tooling (done, round-trip verified)
@@ -69,11 +77,16 @@ Implemented in AC1mod (`tools/ac1mod/`):
 - `core/memcard.py`: `read_card`, save list + AC1/emblem-file detect, `icon_rgba`,
   `file_bytes`/`write_file_bytes` (join/split the emblem file's 2 blocks),
   `emblem_file()`, and per-index `emblem_palette` / `decode_emblem` /
-  `is_emblem_blank` / `encode_emblem` (GIF/PNG → nearest-colour in that emblem's
-  palette → 64×64 4bpp) / `write_emblem`. `save()` recomputes the directory XOR
-  checksum. Indices `0..6`; offsets via `emblem_record_off` / `emblem_pix_off`.
+  `is_emblem_blank` / `build_emblem` (GIF/PNG → its own 16-colour palette, index 0
+  transparent, ≤15 opaque colours kept exactly or median-cut → 64×64 4bpp) /
+  `write_emblem` (writes that emblem's palette + pixels and recomputes the `0x200`
+  checksum). `save()` recomputes the directory XOR checksum. Indices `0..6`;
+  offsets via `emblem_record_off` / `emblem_pix_off`.
 - a `memcard {list,icon,emblem-export,emblem-import}` CLI — `--card`,
   `--index N` (0..6; export -1 = 7-up sheet), `--image`, `-o`. Verified on a real
   card: list shows 7/7 drawn; export renders X,2,3,4,5,6,7; importing into the
   boundary-crossing slot 3 changes **only** that emblem's pixels, preserves all 7
   palettes + every other byte, and keeps directory checksums valid.
+- an `emblem-write-mcs --mcs FILE --index N --image IMG [-o OUT]` CLI
+  (`patch_mcs_emblem`): the same write into an exported single-save `.mcs`, for
+  pushing back onto a live DuckStation card with `import_memory_card_save`.

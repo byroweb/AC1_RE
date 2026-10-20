@@ -270,7 +270,15 @@ edge cases) are dropped so output is always a valid mesh.
 4. Port walker `0x800574D8` + emitter `0x8005A57C` into the AC1mod viewer (`tools/ac1mod/`).
 
 
-## Scene assembly (world-coordinate finding, 2026-06-08)
+## Scene assembly (world-coordinate finding, 2026-06-08) — RETRACTED
+> **RETRACTED (2026-10-19):** PA##.T files are not the stages and their blocks are not
+> authored in world coordinates. Each block sits at its own local origin; a mission's
+> level comes from FDAT entry 2N+1 (chunk-0 blocks placed by the chunk-7 translation
+> table), see [LEVEL_LOADING.md](LEVEL_LOADING.md) §5 items 1-2. AC1mod's
+> `scene_mesh()` / CLI `--scene` ignores PA entries 0/1 and only piles the blocks at
+> their local origins; it is now labelled "all blocks at local origin", and the
+> contact sheet is the viewer default. The text below is kept as history.
+>
 > **CAVEAT (2026-06-11):** this section calls the merged result "the stage," but per the
 > top-of-file correction that identity is unproven — PA00 is a common/asset bundle, and
 > the real walkable stage loads elsewhere. The PA40 "facility floor plan" below is
