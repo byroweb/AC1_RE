@@ -16,21 +16,32 @@ KEY STRUCTURE (RE'd from relocation walker FUN_800574D8 @0x800574D8, overlay ent
 
       off  size  field
       +0   u32   VERTEX-POOL offset   (relocation base = block+block[+8]+12)
-      +4   u32   VERTEX COUNT
+      +4   u16   VERTEX COUNT, base LOD
+      +6   u16   VERTEX COUNT, detail LOD addend (0 on most sub-objects)
       +8   u32   2nd-pool offset (colour/normal pool, ×16 stride) — relocated
       +0x0e u16  FLAGS:  0x8000 = terminate/skip this sub-object
-                         0x4000 = skip (no relocation) ;  low 9 bits = count addend
+                         0x4000 = skip (no relocation) ;  low 9 bits = detail
+                         LOD prim-count addend
       +0x10 u32  PRIMITIVE-STREAM offset (relocated) — this is the walk start `t0`
-      +0x14 u16  PRIM count base
+      +0x14 u16  PRIM count, base LOD
       +0x18 u32  4th pool offset (relocated)
 
-  Number of primitive records walked = (u16@+0x14) + (FLAGS & 0x1ff) - 1.
+  Two LODs share one pool and one stream (sub-object setup @0x80058104): the base
+  LOD transforms u16@+4 verts and draws the first u16@+0x14 records; the detail LOD
+  transforms u16@+4 + u16@+6 verts and draws (FLAGS & 0x1ff) more records. The
+  pool always holds both sets (pool2 - pool == (u16@+4 + u16@+6) * 8 on all 72 PA
+  files). The unlit high-bit types (0xa0/0xa4/0xac) occur only in the detail range.
+
+  Number of primitive records walked = (u16@+0x14) + (FLAGS & 0x1ff). The walker
+  pre-decrements and stops at -1, so it visits all of them (no -1). On all 72 PA
+  files the walk ends exactly where the next section starts.
   All in-file offsets are RELATIVE TO  block+block[+8]+12  (== block + block[+8] + 12).
   Vertex indices in each primitive record are POOL-RELATIVE to that sub-object's
-  vertex pool (so each sub-object is exported as its own OBJ group `o sub<N>`).
+  full (base + detail) vertex pool, so each sub-object is exported as its own OBJ
+  group `o sub<N>`.
 
 Verified on PA00 entry 2 (3 sub-objects: 122/14/44 verts; prim walks land exactly on
-section boundaries 0x1218 / 0x1a38 / 0x1f34; every index < pool size).
+the vertex pools 0x1230 / 0x1a4c / 0x1f54; every index < pool size).
 
 Usage:
   python3 tools/pa/pa_obj.py GG/P0/PA00.T --entry 2
@@ -53,30 +64,39 @@ def disc_bin(fm):
     return p
 
 # Per primitive type (byte[3] & 0xBC): (first vertex-index byte offset, #verts, stride)
-# RE'd LIVE from the relocation-walker (FUN_800574D8) per-type handlers (jump table
-# 0x8004B184), disassembled from the running game (training mission, 2026-06-11) and
-# calibrated against the confirmed textured-tri 0x24. In each handler `a1 = record+4`;
-# halfwords shifted `<<4` (×16) are VERTEX-position indices (transformed pool, stride
-# 16); `<<3` (×8) are normal/colour-pool indices (stride 8). The `<<4` positions give
-# the vertex offsets below.
+# Read off the relocation-walker (FUN_800574D8) per-type handlers (jump table
+# 0x8004B184, all 16 non-default entries; overlay 202 disassembled 2026-10-19). In
+# each handler `a1 = record+4`; halfwords shifted `<<4` (×16) are VERTEX-position
+# indices (into the transformed pool, stride 16), and `<<3` (×8) are normal-pool
+# indices (stride 8). The `<<4` positions give the vertex offsets below.
 #   - flat/textured types pack vertex indices CONTIGUOUSLY (stride 2).
-#   - GOURAUD 0x34/0x3c interleave [normal_idx, vertex_idx] pairs → vertex stride 4.
-# CONFIRMED (0 out-of-range on PA00 e2 + PA20 e3): 0x20,0x28,0x24,0x2c.
-# RESOLVED 2026-06-11 (was the 5-30% OOR bug — see disc_map/trace/gouraud_slot_resolved.md):
-# gouraud verts are stride-4 interleaved, not contiguous; old (0x14, n) read normal
-# indices as vertices → out of range.
+#   - normal-lit gouraud types (0x30/0x34/0x38/0x3c) interleave
+#     [normal_idx, vertex_idx] pairs, so the vertex stride is 4.
+#   - the high-bit 0x80 types have no normal slot (unlit, colour from the record).
+# Emitter FUN_8005A57C reads the same slots for 0x24/0x2c/0x34/0x3c/0xa4/0xac.
+# "on disc" = record count over all 72 PA files; every index is < the sub-object's
+# full vertex pool (u16@+4 + u16@+6). Types with 0 records come from their handler only.
 PRIM_VERTS = {
-    0x20: (0x0a, 3, 2),   # flat tri    (skip per-poly counter hw) CONFIRMED
-    0x28: (0x0a, 4, 2),   # flat quad   (skip per-poly counter hw) CONFIRMED
-    0x24: (0x12, 3, 2),   # textured tri (flat normal)   len 24    CONFIRMED
-    0x2c: (0x16, 4, 2),   # textured quad (flat normal)            CONFIRMED
-    0x34: (0x12, 3, 4),   # gouraud tri  (per-vtx normal interleaved)  CONFIRMED live
-    0x3c: (0x16, 4, 4),   # gouraud quad (per-vtx normal interleaved)  CONFIRMED live
-    0xa0: (0x0a, 3, 2), 0xa8: (0x0a, 4, 2),
-    0xa4: (0x12, 3, 2), 0xac: (0x16, 4, 2),
-    0xb4: (0x12, 3, 2), 0xbc: (0x12, 4, 2),  # high-bit textured variants (stride unverified)
+    0x20: (0x0a, 3, 2),   # flat tri               len 16  on disc
+    0x28: (0x0a, 4, 2),   # flat quad              len 20  on disc
+    0x24: (0x12, 3, 2),   # textured tri           len 24  on disc
+    0x2c: (0x16, 4, 2),   # textured quad          len 32  on disc
+    0x30: (0x0a, 3, 4),   # gouraud tri, untextured len 20 on disc
+    0x38: (0x0a, 4, 4),   # gouraud quad, untextured       handler only
+    0x34: (0x12, 3, 4),   # gouraud textured tri   len 28  on disc
+    0x3c: (0x16, 4, 4),   # gouraud textured quad  len 36  on disc
+    0xa0: (0x08, 3, 2),   # unlit flat tri         len 16  on disc
+    0xa8: (0x08, 4, 2),   # unlit flat quad                handler only
+    0xa4: (0x14, 3, 2),   # unlit textured tri     len 28  on disc
+    0xac: (0x18, 4, 2),   # unlit textured quad    len 32  on disc
+    0xb0: (0x10, 3, 2),   # unlit tri                      handler only
+    0xb8: (0x14, 4, 2),   # unlit quad                     handler only
+    0xb4: (0x1c, 3, 2),   # unlit textured tri             handler only
+    0xbc: (0x24, 4, 2),   # unlit textured quad            handler only
 }
-TEXTURED = lambda t: bool(t & 0x80) or t in (0x24, 0x2c, 0x34, 0x3c)
+# Bit 0x04 is the texture bit: 0x24/0x2c/0x34/0x3c/0xa4/0xac/0xb4/0xbc carry
+# CLUT/TPAGE words; 0x20/0x28/0x30/0x38/0xa0/... carry an RGB word at +4.
+TEXTURED = lambda t: bool(t & 0x04)
 
 
 def load_container(path):
@@ -112,11 +132,12 @@ def parse_subobjects(block):
         o = tbl + i * 28
         if o + 28 > len(block):
             break
-        # +0x00 u32 vtx_off; +0x04 u16 vtx_cnt; +0x06 u16 param (nonzero on the
-        # "articulated" block variant — reading +0x04 as u32 over-reads vtx_cnt,
-        # cross-checked byte-exact vs tools/pa/pa_encode.py).
+        # +0x00 u32 vtx_off; +0x04 u16 base-LOD vertex count; +0x06 u16 detail-LOD
+        # vertex addend. The pool holds both and detail-LOD prims (0xa4/0xac/...)
+        # index the addend range, so vtx_cnt is the full pool.
         f0 = struct.unpack_from("<I", block, o)[0]
-        vcnt = struct.unpack_from("<H", block, o + 0x04)[0]
+        vbase = struct.unpack_from("<H", block, o + 0x04)[0]
+        vdetail = struct.unpack_from("<H", block, o + 0x06)[0]
         f8 = struct.unpack_from("<I", block, o + 0x08)[0]
         flags = struct.unpack_from("<H", block, o + 0x0e)[0]
         prim_off = struct.unpack_from("<I", block, o + 0x10)[0]
@@ -125,11 +146,11 @@ def parse_subobjects(block):
             continue                                     # terminated sub-object
         subs.append(dict(
             index=i,
-            vtx_off=f0 + reloc, vtx_cnt=vcnt,
+            vtx_off=f0 + reloc, vtx_cnt=vbase + vdetail, vtx_base_cnt=vbase,
             pool2_off=f8 + reloc,
             flags=flags,
             prim_off=prim_off + reloc,
-            prim_cnt=prim_cnt_base + (flags & 0x1ff) - 1,
+            prim_cnt=prim_cnt_base + (flags & 0x1ff), prim_base_cnt=prim_cnt_base,
         ))
     return reloc, subs
 

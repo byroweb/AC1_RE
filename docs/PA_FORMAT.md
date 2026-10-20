@@ -53,23 +53,41 @@ secbase[+12] = SUB-OBJECT TABLE  (stride 28)                  CONFIRMED
 | off | size | field |
 | --- | --- | --- |
 | +0x00 | u32 | **VERTEX-POOL offset** (relocated; ×nothing — int16 xyzw stride 8) |
-| +0x04 | u16 | **VERTEX COUNT** (CORRECTION 2026-06-15: this is **u16**, not u32 — see +0x06) |
-| +0x06 | u16 | param (nonzero on the "articulated" block variant; e.g. PA00 e60). Reading +0x04 as u32 swallows this and massively over-reads the vertex count. Byte-exact cross-checked vs `tools/pa/pa_encode.py` (7602/7602). `pa_obj.py` fixed accordingly. |
+| +0x04 | u16 | **VERTEX COUNT, base LOD** (CORRECTION 2026-06-15: this is **u16**, not u32 — see +0x06) |
+| +0x06 | u16 | **VERTEX COUNT, detail-LOD addend** (0 on most sub-objects; nonzero e.g. PA00 e60). The pool holds `u16[+4] + u16[+6]` vertices (see "Two LODs" below). Reading +0x04 as u32 swallows this and massively over-reads the vertex count. |
 | +0x08 | u32 | 2nd-pool offset (colour/normal pool, relocated) |
-| +0x0e | u16 | **FLAGS**: `0x8000`=terminate/skip sub-object; `0x4000`=skip reloc; low 9 bits = prim-count addend |
+| +0x0e | u16 | **FLAGS**: `0x8000`=terminate/skip sub-object; `0x4000`=skip reloc; low 9 bits = **detail-LOD prim-count addend** |
 | +0x10 | u32 | **PRIMITIVE-STREAM offset** (relocated) — the walk start `t0` |
-| +0x14 | u16 | **PRIM count base** |
+| +0x14 | u16 | **PRIM count, base LOD** |
 | +0x18 | u32 | 4th pool offset (relocated) |
 
-**Primitive-record count walked** = `u16[+0x14] + (FLAGS & 0x1ff) − 1`.
+**Two LODs share one pool and one stream (CONFIRMED 2026-10-19).** The sub-object
+setup at `0x80058104` (overlay 202) reads the descriptor and, when its detail flag
+(`a3`) is clear, transforms `u16[+4]` vertices and draws the first `u16[+0x14]`
+records. When the flag is set it transforms `u16[+4] + u16[+6]` vertices and draws
+`u16[+0x14] + (FLAGS & 0x1ff)` records. On all 72 PA files (49,662 live sub-objects)
+`pool2 − pool == (u16[+4] + u16[+6]) × 8`, so the detail vertices sit right after
+the base ones. Records in the detail range index the whole pool. The unlit types
+`0xa0/0xa4/0xac` occur **only** in the detail range, and every one of their indices is
+`< u16[+4] + u16[+6]`. Indices are sub-object-local. They only *looked* block-global
+because a sub-object's detail range runs past its base count.
+
+**Primitive-record count walked** = `u16[+0x14] + (FLAGS & 0x1ff)`.
+(CORRECTED 2026-10-19: this was `… − 1`, which dropped the last record of every
+sub-object, and every record of a one-record sub-object. The walker at `0x80057570`
+loads the sum, then pre-decrements and exits at −1, so it visits `sum` records. The
+emitter's count at `0x8005A6A4` works the same way.)
 
 - **Vertices** = the +0 pool, `int16 x,y,z,flag` stride 8 (4th int16 = flag/normal).
-- The walks land EXACTLY on section boundaries. PA00 entry 2 (3 sub-objects):
-  - sub0: vtx@**0x1230** ×122, prim@**0x6c** ×163 → ends at 0x1218 (just before next pool)
-  - sub1: vtx@0x1a4c ×14,  prim@0x1950 ×12  → ends 0x1a38
-  - sub2: vtx@0x1f54 ×44,  prim@0x1b24 ×35  → ends 0x1f34
-  Every decoded index is `< pool size` (max == count−1). **Note:** the earlier doc's
-  "vertices @0x1218" was off by the +0x18 relocation; the true pool base is 0x1230.
+- The walks land EXACTLY on section boundaries: on all 72 PA files (49,662 live
+  sub-objects) a walk of `sum` records ends at the next section start, and `sum − 1`
+  never does. PA00 entry 2 (3 sub-objects):
+  - sub0: vtx@**0x1230** ×122, prim@**0x6c** ×164 → ends at 0x1230 (the vertex pool)
+  - sub1: vtx@0x1a4c ×14,  prim@0x1950 ×13  → ends 0x1a4c
+  - sub2: vtx@0x1f54 ×44,  prim@0x1b24 ×36  → ends 0x1f54
+  Every decoded index is `< pool size` (max == count−1). **Note:** the old `− 1` walk
+  ended at 0x1218 / 0x1a38 / 0x1f34, one record short of each pool. That gap was
+  once misread as a "+0x18 relocation" offset.
 - Decode the table + export with **`tools/pa/pa_obj.py … --entry N`** (prints the table,
   walks each sub-object, validates index ranges). Per-sub-object pools confirm that
   vertex indices are POOL-RELATIVE (each sub-object is a separate OBJ group `o subN`).
@@ -81,7 +99,8 @@ Variable-length, 32-bit aligned. Walked by reading `byte[1]` (length in **words*
 byte[0] = small length/format tag (= verts*2 + 3..5)
 byte[1] = record length in 32-bit words           CONFIRMED (drives the walker)
 byte[2] = 0
-byte[3] = PRIMITIVE TYPE  (renderer masks it 0xBC; bit 0x80 = TEXTURED)
+byte[3] = PRIMITIVE TYPE  (walker masks it 0xBC, emitter 0xFD; bit 0x04 = TEXTURED,
+          0x08 = quad, 0x10 = per-vertex normals, 0x80 = unlit / no normal slot)
 +0x04…  = per-vertex SHADING block:
             FLAT  (0x20 tri / 0x28 quad): one word "RR GG BB code" (e.g. c8 c8 c8 = grey)
             TEX   (0x24 tri / 0x2c quad / 0x34 / 0x3c): UV0+clut, UV1+tpage, UV2[,UV3]
@@ -89,16 +108,44 @@ byte[3] = PRIMITIVE TYPE  (renderer masks it 0xBC; bit 0x80 = TEXTURED)
 +vidx   = N × uint16 VERTEX INDICES into this sub-object's vertex pool
 +tail   = optional per-face flag word (often 0)
 ```
-Vertex-index offset & count per type (record-relative; validated PA00+PA20):
+Vertex-index offset & count per type (record-relative). Read off the 16 relocation
+handlers behind jump table `0x8004B184` (overlay 202, disassembled 2026-10-19). A
+`<<4` halfword is a vertex index and a `<<3` halfword a normal index. "On disc" types
+were checked on all 72 PA files: every index is `<` the sub-object's full pool
+(`u16[+4] + u16[+6]`). The rest have a handler but no records on disc.
 
-| type | shading | verts | reclen | first index @ |
-| --- | --- | --- | --- | --- |
-| 0x20 | flat | 3 | 16 | **+0x0a** |
-| 0x28 | flat | 4 | 20 | **+0x0a** |
-| 0x24 | textured | 3 | 24 | +0x12 (stride 2) |
-| 0x2c | textured | 4 | 32 | **+0x16** (stride 2) |
-| 0x34 | gouraud tri | 3 | 28 | **+0x12, stride 4** (RESOLVED) |
-| 0x3c | gouraud quad | 4 | 36 | **+0x16, stride 4** (RESOLVED) |
+| type | shading | verts | reclen | first index @ | stride | normal idx @ | handler | on disc |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 0x20 | flat | 3 | 16 | **+0x0a** | 2 | +0x08 | `0x800575c0` | yes |
+| 0x28 | flat | 4 | 20 | **+0x0a** | 2 | +0x08 | `0x800576c0` | yes |
+| 0x24 | textured | 3 | 24 | +0x12 | 2 | +0x10 | `0x80057640` | yes |
+| 0x2c | textured | 4 | 32 | **+0x16** | 2 | +0x14 | `0x80057764` | yes |
+| 0x30 | gouraud, untextured tri | 3 | 20 | **+0x0a** | **4** | +0x08/0c/10 | `0x800575f4` | yes |
+| 0x38 | gouraud, untextured quad | 4 | — | +0x0a | 4 | +0x08/0c/10/14 | `0x80057700` | no |
+| 0x34 | gouraud textured tri | 3 | 28 | **+0x12** | **4** | +0x10/14/18 | `0x80057674` | yes |
+| 0x3c | gouraud textured quad | 4 | 36 | **+0x16** | **4** | +0x14/18/1c/20 | `0x800577a4` | yes |
+| 0xa0 | unlit flat tri | 3 | 16 | **+0x08** | 2 | — | `0x80057808` | yes |
+| 0xa8 | unlit flat quad | 4 | — | +0x08 | 2 | — | `0x800578a8` | no |
+| 0xa4 | unlit textured tri | 3 | 28 | **+0x14** | 2 | — | `0x80057858` | yes |
+| 0xac | unlit textured quad | 4 | 32 | **+0x18** | 2 | — | `0x80057910` | yes |
+| 0xb0 | unlit tri | 3 | — | +0x10 | 2 | — | `0x80057830` | no |
+| 0xb8 | unlit quad | 4 | — | +0x14 | 2 | — | `0x800578dc` | no |
+| 0xb4 | unlit textured tri | 3 | — | +0x1c | 2 | — | `0x80057880` | no |
+| 0xbc | unlit textured quad | 4 | — | +0x24 | 2 | — | `0x80057944` | no |
+
+Every other `type & 0xBC` value goes to the no-op default `0x80057574`. The
+"per-poly running counter" halfword that the 2026-06-08 correction below skips is the
+**face-normal index** (`<<3` in the handler). Normals are stored one per face, so it
+counts 0,1,2,… On the 0xa4/0xac emitter path (`0x8005AD40` / `0x8005AE14`) the indices
+are read from exactly these slots, and the colour word is copied from rec+0x10 / +0x14.
+On disc every 0xa4/0xac record is stored as `byte[3]` = `0xa6` / `0xae`. Bit 0x02 is
+masked off by both the walker (`& 0xBC`) and the emitter (`& 0xFD`).
+
+**Open:** 48 records (6 × `byte[3]=0x27` length 28, 6 × `0x2f` length 32, in entry
+78 of PA01/PA02/PA03/PA59) mask to 0x24/0x2c but are laid out like 0xa4/0xac: three
+UV words, an `80 80 80` colour word, then indices at +0x14 / +0x18. A normal 0x27 is
+24 bytes long. Read at the 0x24/0x2c slots they go out of range, so they are left
+undecoded until a handler path for them is found.
 
 ### Textured-primitive MATERIAL words (CONFIRMED 2026-06-15, emitter `FUN_8005A57C`)
 
@@ -199,8 +246,12 @@ in the vertex-index slots — the vidx offsets in the table above already point 
 it at the *real* pool-relative indices (proven: at those offsets every index is
 `< vtx_cnt` and `max == vtx_cnt−1`, with 0 out-of-range across PA00 e2 + PA20 e3 for
 flat/textured types). The relocation handlers (jump table `0x8004B184`) confirm which
-halfwords are geometry: in each handler `a1 = record+4`; halfwords shifted **`<<3`
-(×8)** are XYZ-pool vertex indices, **`<<4` (×16)** are colour/normal-pool indices.
+halfwords are geometry: in each handler `a1 = record+4`; halfwords shifted **`<<4`
+(×16)** are vertex indices (into the stride-16 transformed-vertex pool), **`<<3`
+(×8)** are normal-pool indices. (CORRECTED 2026-10-19: this sentence had the two
+swapped; the flat-tri handler `0x800575c0` shifts the three vertex slots +0x0a/0c/0e
+`<<4` and the face-normal slot +0x08 `<<3`. The "running counter" is that
+face-normal index.)
 For the **gouraud** types `0x34`/`0x3c` the handlers interleave `[normal, vertex]`
 index pairs: vertex slots (shifted `<<4`) are at **record+0x12/0x16/0x1a** (tri) and
 **record+0x16/0x1a/0x1e/0x22** (quad) — i.e. first vertex at +0x12 (tri) / +0x16
@@ -213,7 +264,7 @@ faces drop from ~8% to **0 across all 72 PA files** (175,232 records). Validatio
 ### Geometry walker / renderer (CONFIRMED — entry-202 overlay)
 | Function | Addr | Role |
 | --- | --- | --- |
-| relocation walker | **`0x800574D8`** | one-time pass: per stride-28 sub-header, dispatch each record through jump table **`0x8004B184`** (idx = `((byte3 & 0xBC) − 0x20)`, 157 entries) to convert raw vertex indices → byte offsets (×8 into the stride-8 transformed-vertex pool, ×16 into the colour/normal pool). 16 distinct handlers @ `0x800575C0`…`0x80057944`. |
+| relocation walker | **`0x800574D8`** | one-time pass: per stride-28 sub-header, dispatch each record through jump table **`0x8004B184`** (idx = `((byte3 & 0xBC) − 0x20)`, 157 entries) to convert raw indices → byte offsets (×16 into the stride-16 transformed-vertex pool, ×8 into the normal pool). 16 distinct handlers @ `0x800575C0`…`0x80057944`. |
 | sub-object cull/transform | `0x80057C44` | per 124-byte sub-object: loads matrix (ctc2 $0–$7), RTPS-transforms 8 bbox corners, NCLIP visibility. |
 | **primitive emitter** | **`0x8005A57C`** | per-frame GPU walker. Iterates each record; dispatches on `(byte3 & 0xFD)`: 0x24→tri, 0x2c→quad, 0x34→gouraud tri, 0x3c→gouraud quad, 0xA4/0xAC→textured. Fetches transformed screen XY from pool (`s6 + idx`, entry +0=XY, +4=Z/flag, +6=clip), does NCLIP backface, builds POLY packets (code byte 5/9 = F4/FT4), depth-sorts (`srav` avg-Z) and links into the OT. A second emitter `0x80058B04` handles a matrix-driven variant (called from 0x5D618/0x5E1C8). |
 
@@ -306,13 +357,13 @@ the pieces of a stage). Each 28-byte sub-object descriptor (table at
 | off | type | field |
 | --- | --- | --- |
 | +0x00 | u32 | vertex-pool offset |
-| +0x04 | u16 | vertex count (u16; +0x06 = u16 param — see correction above) |
-| +0x06 | u16 | param (articulated-variant; nonzero e.g. PA00 e60) |
+| +0x04 | u16 | vertex count, base LOD |
+| +0x06 | u16 | vertex count, detail-LOD addend (nonzero e.g. PA00 e60; pool = +0x04 + +0x06) |
 | +0x08 | u32 | **normal-pool** offset (pool2) |
 | +0x0c | u16 | **normal count** |
-| +0x0e | u16 | flags (0x8000 = skip/terminate) |
+| +0x0e | u16 | flags (0x8000 = skip/terminate; low 9 bits = detail-LOD prim addend) |
 | +0x10 | u32 | primitive-stream offset |
-| +0x14 | u16 | primitive count (base; + (flags&0x1ff) − 1) |
+| +0x14 | u16 | primitive count, base LOD (walk = this + (flags&0x1ff)) |
 | +0x16 | u16 | pool4 count/param |
 | +0x18 | u32 | pool4 offset (small, ~8 B/sub-object; purpose TBD) |
 

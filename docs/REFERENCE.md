@@ -434,14 +434,14 @@ with `tools/extract/extract_t.py` (FDAT entry 202) → load at vma `0x8004ADA0`.
   count `a0[+8]`. Per descriptor it relocates the in-table offsets (`field += a0+12`)
   and dispatches each primitive record through jump table **`0x8004B184`** (157
   entries, index = `((firstword>>24 & 0xBC) − 0x20)`, 16 distinct handlers @
-  `0x800575C0`…`0x80057944`); converts raw vertex indices → byte offsets (`<<3` ×8
-  into stride-8 XYZ vertex pool, `<<4` ×16 into colour/normal pool). One-time, in
-  place. **Sub-object descriptor (28 B):** `+0`=vtx-pool off, `+4`=vtx count,
-  `+8`=colour/normal pool off, `+0x0e`=flags (`0x8000`=skip, low9=count addend),
+  `0x800575C0`…`0x80057944`); converts raw indices → byte offsets (`<<4` ×16
+  into the stride-16 transformed-vertex pool, `<<3` ×8 into the normal pool). One-time, in
+  place. **Sub-object descriptor (28 B):** `+0`=vtx-pool off, `+4`=vtx count (base LOD), `+6`=detail-LOD vtx addend,
+  `+8`=colour/normal pool off, `+0x0e`=flags (`0x8000`=skip, low9=detail-LOD prim addend),
   `+0x10`=prim-stream off, `+0x14`=prim count base, `+0x18`=4th pool off.
-  Prim records walked = `u16[+0x14] + (flags&0x1ff) − 1`. (Decoder/OBJ exporter:
-  `tools/pa/pa_obj.py`. NB: relocation adds +0x18 file-relative — the true PA00 e2
-  vertex pool base is **0x1230**, not the previously-noted 0x1218.)
+  Prim records walked = `u16[+0x14] + (flags&0x1ff)` (no −1; see PA_FORMAT.md).
+  (Decoder/OBJ exporter: `tools/pa/pa_obj.py`. The true PA00 e2 vertex pool base is
+  **0x1230**. The old −1 walk ended one record short, at 0x1218.)
 - **`FUN_80057C44`** — per-sub-object (124-byte stride) bbox transform + NCLIP cull.
 - **`FUN_8005A57C`** — per-frame **primitive emitter** (the GPU walker). Dispatches
   on `(type & 0xFD)` → tri/quad/gouraud/textured branches, fetches transformed
