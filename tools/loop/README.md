@@ -57,6 +57,72 @@ The carved overlays (`disc_map/overlays/*.bin`, from
 looks for them in this checkout, then in the main checkout when run from a git
 worktree, then in `$AC1_DISC_MAP`.
 
+### Calibration: program bodies of 1 KB and up (2026-10-20)
+
+After the zero-agent sweep, 186 open program bodies of 1024 B or more remain in
+queue-S1..S6 (409 KB, 257 functions with twins; median 1.6 KB, 14 calls,
+32 branches; 41 use the GTE, 34 have jump tables, 60 are over 2 KB). One
+session matched twelve of them by hand with the match-function loop, one at a
+time. Wall time runs from the first disassembly to the oracle's MATCH and
+includes reading the asm, writing headers and every oracle run. A sweep is one
+parallel batch of source variants through `match_fn.py`, using a small
+replace-and-compile helper.
+
+| # | unit vaddr | bytes | members | wall | oracle runs | sweeps (variants) | what blocked it |
+|---|---|---:|---:|---:|---:|---|---|
+| 1 | ovl202 0x8006AAC8 | 1524 | 6 | 4 min | 1 | – | nothing: GTE subdivider (POLY_GT3); time went into `render.h`/`gte.h` |
+| 2 | ovl202 0x8006B384 | 2220 | 6 | 1 min | 1 | – | quad sibling of #1 |
+| 3 | ovl202 0x80069A5C | 1192 | 3 | 1 min | 2 | – | statement order (`setlen` after the colour copy) |
+| 4 | ovl202 0x8006A13C | 1712 | 3 | <1 min | 1 | – | sibling of #2/#3 |
+| 5 | ovl202 0x800705D8 | 1064 | 3 | 4.5 min | 3 | – | loop-invariant scratchpad base needs a local pointer, not a constant macro; one-expression sum (register); `if (p) {...; return &x;} return 0;` (block layout) |
+| 6 | ovl202 0x80070168 | 1136 | 3 | 5 min | 4 | 2 (12) | by-value 2D points must be a 4-aligned 16:16 bitfield struct (DVECTOR goes to the stack); one shared `dd` for three range checks (global-alloc register) |
+| 7 | ovl202 0x80060B54 | 1360 | 3 | 2 min | 3 | 1 (8) | globals 0x801A5F24/28 are one struct (in-struct aliasing forces the reloads); statement and operand order |
+| 8 | ovl202 0x80070A58 | 1240 | 3 | 4 min | 4 | 2 (14) | spill-slot layout follows declaration order; sign/abs as `s = d > 0 ? (a = d, 1) : (a = -d, -1)`; clip code shared through a `goto`, not cross-jumping |
+| 9 | ovl201 0x8008B094 | 1236 | 1 | 9 min | 6 | 7 (~63) | cursor global is a struct member (base register when used twice, no load hoisting); `if (vy <= 0) {...} else vy -= 24;` so the stores cross-jump; local types change the frame; loop-counter init; compare operand order |
+| 10 | ovl202 0x8005156C | 1092 | 1 | 2.7 min | 4 | 2 (96) | near-copy cluster n019, from scratch: scalar global is a struct member (base register); `-a + 512`; one variable for the count and the loop index; statement order |
+| 10a | ovl203 0x80052238 | 1092 | 1 | 50 s | 2 | – | **port of #10**: view globals become a pointer chain through `D_80039D18`; one assignment order |
+| 10b | ovl204 0x80051878 | 1108 | 1 | 20 s | 1 | – | **port of #10a**: new addresses, frame counter read through `D_80039D18` |
+
+Totals: 15.7 KB of bodies, 34 functions credited with twins (12 + 22), about
+45 minutes, 32 oracle runs and about 200 sweep variants. No function needed
+more than 6 single runs.
+
+- **Porting near-copies.** The open near-copy clusters (masked-word similarity
+  0.8 or more; `open_near_twin_clusters_512B.tsv` from openclusters.py) pay off.
+  For cluster n019 (#10 → #10a/#10b, three overlays), the first member took
+  2.7 min (2.4 min/KB) from scratch. Each port took 20-50 s (0.3-0.75 min/KB)
+  and 1-2 oracle runs, 4-8 times faster: copy the C, rename the globals and
+  callees, adjust what the asm diff shows. Same-overlay siblings behave the
+  same way (clusters n000/n001 are #1→#3 and #2→#4).
+
+- **Hours per KB.** Measured: 0.05 h/KB overall (3 min/KB). A body whose
+  family is already done runs at about 0.5 min/KB (#2-#4); a first-of-family
+  body at 3-7 min/KB (#1, #5-#9). #9 is the only body shaped like the median
+  of the 186 (ovl201, about 11 calls and 27 branches) and took 7 min/KB.
+- **Sample bias.** The picks favoured the highest `n_members` without jump
+  tables, so 8 of 9 are regular ovl202 render/collision library code. None
+  used a jump table, none was over 2.2 KB, and only one came from ovl201,
+  which holds 79 of the 186. For the whole set, plan on 5-10 min/KB
+  (about 35-70 session-hours for 409 KB, or about 4-12 h of wall time across 6-8
+  parallel sessions). The 60 bodies over 2 KB (up to 25 KB) and the 34
+  jump-table bodies will likely cost more per KB; m2c still cannot build
+  their switches (see the sweep notes).
+- **Blockers, in order of cost.** (1) Types and global layout: which
+  globals are struct members, by-value structs held in registers (#6, #7, #9).
+  (2) Register allocation set by variable identity: shared variables,
+  declaration order and spill slots, narrow local types (#6, #8, #9).
+  (3) Block layout and cross-jumping: if/else polarity, `goto`-shared code,
+  return placement (#5, #8, #9). (4) Statement and operand order under the
+  scheduler (#3, #7, #9). (5) Loop shape: invariant base, counter init (#5, #9).
+  The GTE was never a blocker: the PsyQ `inline_c.h` shapes in
+  `include/ac1/gte.h` matched on the first try.
+- **What made it fast.** Typed headers written before the first oracle run
+  (`include/ac1/render.h`, `collide.h`, `gte.h`, DVECTOR/RECT), siblings done
+  right after their family's first member, and parallel variant sweeps
+  instead of one edit per oracle run.
+- `drive.py try` counts only its own runs, so the ledger's `attempts` for #3
+  and #5 says 1. The `matched ...` commit messages give the real counts (2, 3).
+
 ## Units
 
 | unit | image | load address | `match_fn.py` flag |
@@ -624,6 +690,7 @@ the percentages too.  2026-10-19 after this round:
 ```
 sweep.py --queue FILE [--queue FILE ...] [--max-size 160] [--limit N] [-j N]
          [--variants ctx,ctx-no-andor] [--try-all]
+         [--neighbour-min 0.5] [--neighbour-tries 1]
          [--work DIR] [--report F] [--dry-run] [--no-replay] [--no-ledger]
 ```
 
@@ -683,6 +750,76 @@ from the headers whose value m2c uses, ~60 `*`/arithmetic on `void *`/non-pointe
 and 70 m2c failures, all an unlabelled jump table (`jr` with no `jtbl` read).  `ctx-knr`
 turned ~60 of the "too few arguments" cc1 errors into compilable drafts but only 2
 matched; `ctx-no-andor` and `ctx-void` never added a match and are no longer default.
+
+### The `neighbour` variant (near-copies)
+
+Exact twins are replayed already (`twins.py`), but ovl202/203/204 also carry many
+*near*-copies: the same source with a constant, a field or a statement changed.  The
+`neighbour` variant (last in the default list) turns a matched near-copy into the
+draft:
+
+1. **find**: every original manifest row (its own `func_<ADDR>.c`) is read from its
+   image and masked with `twins.mask_function` (relocated fields zeroed), one per
+   distinct masked body (545 today).  For an open body, the 5 rows of size 0.7x..1.43x
+   with the highest masked-trigram Jaccard are scored with difflib's ratio over the
+   masked words; the best is its neighbour.  The whole index is rebuilt from the
+   manifest at every run in about a second, so it always sees the latest matches.
+2. **remap**: the neighbour's C file is copied with its function renamed to the open
+   body's.  The two masked bodies are aligned with difflib (equal blocks, and
+   same-length replace blocks position by position), which pairs their relocation
+   slots.  Every `func_`/`D_<ADDR>` name then moves by the delta of the paired slot that
+   targets it (`twins.map_addr`, the same rule as the twin replay: the nearest slot at
+   ADDR+off, off < 0x1000).  Table names whose slot moved, and the neighbour's other
+   `--defsym`s, are passed as `--defsym` at the moved address (`twins.table_moves`).
+   Its `--rodata` (when the body has no `jt_addrs`) and other flags carry over.  Two
+   names that would land on one address (a misaligned slot) keep their old addresses,
+   so the draft still compiles.
+3. **oracle**: like the m2c drafts.  When the only differing words are immediates
+   (same mnemonic and registers, no branch/jal/lui), `neighbour+imm` replaces the C
+   literal of our value with retail's (also the `v-1` form of a `<=`/`>` compare and
+   the negated form of a subtraction) and runs the oracle once more.
+
+It runs for bodies of every size (`--max-size` limits only the m2c drafts), and only
+when the similarity is at least `--neighbour-min` (default 0.5).  `--neighbour-tries N`
+also tries the 2nd..Nth best.  The report has a `neighbour` column (`SIM UNIT VADDR
+SOURCE` of the best neighbour) for every body, tried or not, so a matcher can start
+from that C file.  `--dry-run` prints the same column, without the oracle, in about
+4 s.  `--work DIR` keeps the remapped drafts (`<unit>_<ADDR>_neighbour.c`).
+
+After every batch of matches, re-run just this variant over the open queues (~1 min
+for all 1239 bodies, of which ~20 s is the oracle and the rest is the twin replay):
+
+```
+python tools/loop/sweep.py --variants neighbour -j 24 \
+    --queue tools/loop/queue-S1.tsv ... --queue tools/loop/queue-S6.tsv
+```
+
+**Measured (2026-10-20)**, all 1239 open bodies of `queue-S1..S6` against the 2622-row
+manifest.  Best neighbour similarity by size:
+
+| size | bodies | >= 0.9 | >= 0.8 | >= 0.7 | >= 0.5 |
+|---|---:|---:|---:|---:|---:|
+| < 160 B | 324 | 4 | 10 | 32 | 77 |
+| 160-511 B | 465 | 5 | 18 | 28 | 64 |
+| 512-1023 B | 264 | 0 | 4 | 7 | 10 |
+| 1 KB and up | 186 | 0 | 2 | 4 | 4 |
+
+155 bodies tried, **1 match** (ovl201 0x800B4370 from ovl201 0x80066F68 at 0.900, a
+checksum loop whose bound differs: `neighbour+imm`).  The 154 misses compile (no cc1
+errors once colliding names are kept) and their best draft is 4 words off for 4
+bodies, 6-10 words for 12, 11-20 for 54 and more for 84.  The remap itself checks
+out: the differing words in the close misses are real code differences (a clamp
+`>= 0x41` vs `< -0x40`, an extra `lbu`/`sll`/`sw` chain), not names.  `--neighbour-tries 3`
+added nothing, and no body below 0.9 matched outright.
+
+So today the variant is mostly a starting point.  It pays off as the hard bodies get
+matched: the matched corpus has few near-copies of the open bodies, but the open
+bodies are near-copies of *each other*.  170 of the 450 open bodies of 512 B or more
+sit in clusters of open bodies with pairwise similarity >= 0.8 (e.g. ovl202
+0x80069A5C / 0x8006AAC8; ovl202 0x8005804C, ovl203 0x80057A3C / 0x80064268, ovl202
+0x80064DC8).  Match one member of a cluster by hand, then re-run the line above: the
+others get its C file remapped as their draft (a match when only constants differ,
+otherwise a port: the 9 open bodies at 0.9+ today were 1 to 46 words off).
 
 ## permute.py (permuter tier)
 
@@ -777,7 +914,6 @@ reach in 300 s (`a0`/`a1` for a call m2c gave one argument too few, e.g. `Vector
 for a two-argument call), an argument m2c dropped (`li a0,24` in a delay slot), and drafts
 whose word count hid a size difference (`ovl201 0x800B6D4C`: ours 8 bytes for 56; the
 sweep's diff words only count the common length).  Those are agent work packages.
-
 ## check_all.sh
 
 `re/match/check_all.sh` re-verifies every manifest row with the oracle and
@@ -818,9 +954,10 @@ size <= 1000 B, tier 2 (GTE or larger) follows.  The ranked list is dealt snake-
 (1..N, N..1, ...) into N disjoint queues, so no body is in two queues and every
 queue gets the same credit profile.  Rows carry `group n_members payoff tier` before
 the usual columns; `drive.py next --queue` and `sweep.py` read them.  The committed
-`queue-S1..S6.tsv` were written after the full sweep (2026-10-20): 1239 open bodies
-(941 tier 1, 298 tier 2), 206-207 per queue, 2115 functions credited if all were
-matched.  Every body in them has had the machine drafts tried and missed.
+`queue-S1..S6.tsv` were written after the full sweep and the first neighbour sweep
+(2026-10-20): 1238 open bodies (940 tier 1, 298 tier 2), 206-207 per queue, 2114
+functions credited if all were matched.  Every body in them has had the machine
+drafts (m2c, and the neighbour variant where one is >= 0.5) tried and missed.
 
 `merge_manifest.py [MANIFEST] [--check]` reads `re/match/manifest.tsv` even
 with git conflict markers or duplicate rows, keeps the union, dedupes on
