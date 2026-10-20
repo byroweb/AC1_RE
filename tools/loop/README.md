@@ -23,6 +23,7 @@ sweep.py      -> re/match/<unit>/func_<ADDR>.c
                                  zero-agent sweep: m2c drafts straight into the oracle, no LLM
 permute.py    -> re/match/<unit>/func_<ADDR>.c
                                  permuter tier: levers.py rewrites + decomp-permuter on near misses, no LLM
+m2cfix.py     (library)          sweep.py's draft fix-ups: stack locals, frame union, casts, cc1-driven repair
 ```
 
 ### Program sprint in four commands (2026-10-19)
@@ -36,7 +37,9 @@ python tools/loop/progress.py --compare                 # where we stand vs. Wyr
 ```
 
 Then matchers take `drive.py next --queue tools/loop/queue-Sk.tsv` (rows the sweep
-closed are skipped) and `twins.py replay --scope programs` after each match.
+closed are skipped) and `twins.py replay --scope programs` after each match.  The
+bodies of 1 KB and up are in `queue-L1.tsv`, closest draft first (`make_queues.py
+--bodies --closeness tools/loop/closeness.tsv --min-size 1024 -N 1 --prefix queue-L`).
 
 `drive.py` is the only one that compiles anything, and it does so by calling
 `tools/match/match_fn.py`; the LLM (or human) writes the C, the scripts do the
@@ -691,18 +694,20 @@ the percentages too.  2026-10-19 after this round:
 sweep.py --queue FILE [--queue FILE ...] [--max-size 160] [--limit N] [-j N]
          [--variants ctx,ctx-no-andor] [--try-all]
          [--neighbour-min 0.5] [--neighbour-tries 1]
-         [--work DIR] [--report F] [--dry-run] [--no-replay] [--no-ledger]
+         [--work DIR] [--report F] [--best-dir DIR] [--dry-run] [--no-replay] [--no-ledger]
 ```
 
 No LLM in the loop: for each open body of the queue(s), in order, smaller than
 `--max-size`, not closed in the ledger and without a C file in `re/match`, draft C
 with `tools/match/ctx.py`'s `decompile()` (symbolised asm + the shared-type context)
 and m2c `--valid-syntax`, then the `--variants` after it in order until one
-matches (default `ctx,ctx-regvars,ctx-knr`: `--reg-vars saved`, then `ctx` with
-m2c's guessed `/* extern */` prototypes rewritten unprototyped, `T f();`, since
-m2c guesses arity from live registers and a later shorter call is a cc1 error;
+matches (default `ctx,ctx-regvars,ctx-knr,ctx-spframe,ctx-fix-frame,ctx-fix,neighbour`:
+`--reg-vars saved`, then `ctx` with m2c's guessed `/* extern */` prototypes
+rewritten unprototyped, `T f();`, since m2c guesses arity from live registers and
+a later shorter call is a cc1 error, then the `m2cfix.py` fix-ups below, then `neighbour` (below; it also runs on bodies over `--max-size`);
 `ctx-no-andor`, `ctx-void` and `raw` (no context, no symbol rewrite) are also
-there; `--try-all` keeps going after a match, to measure them).  A draft is
+there; `--try-all` keeps going after a match, to measure them).  m2c runs once per
+distinct argument list per body; the variants share its output.  A draft is
 `#include "ac1/ac1.h"` + `#include "m2c_compat.h"` (our definitions of the `M2C_*`
 names and `NULL`, in `tools/match/include/`) + m2c's text, with unused leading
 parameters m2c leaves out put back as `s32 argK`.  Each draft goes through the oracle
@@ -714,6 +719,62 @@ row (`match`, attempts 0, reason `zero-agent sweep (m2c ctx)`).  Misses are only
 reported (`<work>/sweep_report.tsv`), never recorded as give-ups.  At the end
 `twins.py replay --scope programs` credits the twins.  Jobs run in a thread pool
 whose work is m2c/cc1 subprocesses; the main thread does all manifest/ledger writes.
+Each oracle run keeps its work dir under `<work>` and removes it afterwards
+(match_fn.py otherwise leaves a `match_fn_*` temp dir behind on every miss).
+
+The report has, per body, the closest compiling draft: `closeness` = the oracle's
+`aligned_words` (retail words difflib pairs, in order, with an equal word of ours)
+/ retail words, `positional` = words equal at the same offset (near 0 for most big
+bodies: one extra instruction early shifts everything), and `best_variant`.  The
+run ends with a per-variant table (tried, drafted, compiled, matched, mean
+closeness, closest-for; neighbour drafts count too).  `--best-dir DIR` writes each missed body's closest draft
+to `DIR/<unit>_<ADDR>.c` with the variant and closeness in a header comment: the
+starting draft for an agent.
+
+### m2cfix.py fix-ups
+
+| variant | m2c args | fix-up |
+|---|---|---|
+| `ctx-spdecl` | `--stack-structs` | declare every m2c name the body uses but m2c never declared (`sp1A` beside an address-taken `sp18`, `saved_reg_s2`, `unksp3E`), typed from m2c's stack template, else `M2C_UNK` |
+| `ctx-spframe` | `--stack-structs` | spdecl, then every `spNN` below the register save area becomes a field of one local `union { s8 b[N]; s32 w; } sp_frame` at `NN - lowest offset` (N from the prologue's lowest `sw $s/$ra`), so cc1 lays the frame out exactly as the retail code |
+| `ctx-voidcast` | | a used value of a callee the headers declare `void` goes through `((M2C_UNK (*)())f)(...)`; `*(void *)K` -> `*(M2C_UNK *)K` |
+| `ctx-fix` | `--stack-structs` | knr + spdecl + voidcast, then up to 6 rounds of `repair()`: cc1's messages are mapped from `fn.i` back to draft lines (cpp -P drops blank/comment lines; the draft is fn.i's tail) and one rule per message is applied to that line only: undeclared -> declare; `unary *` / void value / void expression -> `*(M2C_UNK *)` on derefs whose operand is not a typed pointer; invalid operands / array subscript -> `(s32)` on pointer locals, `&x`, `D_`/`g_` globals, `*pp`; too few/many arguments -> unprototyped callee cast |
+| `ctx-fix-frame` | `--stack-structs` | as ctx-fix with spframe instead of spdecl |
+| `ctx-fix-regvars` | `--stack-structs --reg-vars saved` | as ctx-fix on the `--reg-vars saved` output |
+
+`tools/match/include/m2c_compat.h` also gained `u64`/`s64` (m2c names soft-float
+double values that way).  Tests: `tools/match/tests/test_m2cfix.py` (text only).
+
+**Fix-up sweep (2026-10-20)**: the 1236 open bodies of `queue-S1..S6.tsv` (all
+sizes; 3 of the 1239 had matched in an aborted first run, all `ctx-spframe`),
+`--try-all` over eight variants, `-j 22`, 1104 s.  "Compiled" = cc1/as produced an
+object (MATCH or MISMATCH); "vs ctx" = mean closeness change on the bodies where
+both compiled; "closest" = bodies where it gave the best draft (ties go to the
+earlier variant).
+
+| variant | drafted | compiled | matched | mean closeness | vs ctx (n) | closest |
+|---|---:|---:|---:|---:|---:|---:|
+| `ctx` | 1166 | 835 | 0 | 0.603 | - | 667 |
+| `ctx-knr` | 1166 | 895 | 0 | 0.595 | +0.000 (835) | 35 |
+| `ctx-voidcast` | 1166 | 846 | 0 | 0.602 | +0.000 (835) | 7 |
+| `ctx-spdecl` | 1166 | 924 | 0 | 0.583 | +0.000 (832) | 14 |
+| `ctx-spframe` | 1166 | 924 | **13** | 0.618 | **+0.022** (832) | 170 |
+| `ctx-fix` | 1166 | **1141** | 1 | 0.554 | +0.000 (832) | 68 |
+| `ctx-fix-frame` | 1166 | **1142** | **14** | 0.592 | **+0.022** (832) | 70 |
+| `ctx-fix-regvars` | 1166 | 1130 | 1 | 0.547 | -0.011 (823) | 116 |
+
+(70 bodies are m2c failures, the unlabelled jump tables PR #48 addresses.)  New
+matches: 14 here + 3 in the aborted run = **17 bodies** (16 first by `ctx-spframe`,
+1 by `ctx-fix`; one is ovl201 0x800AAF20, 1636 B, the first body of 1 KB or more the
+sweep has matched), replayed onto **17 twins**: **34 functions**.  The frame union is
+the one fix-up that changes code: m2c's separate stack locals let cc1 pick its own
+slot order, the union pins every slot.  The other fix-ups add compile rate (ctx 835
+-> ctx-fix 1141 of 1166) without matches: their drafts start agents from compiling
+C instead of cc1 errors.  Mean closeness of the best draft per size: 0.625 under
+160 B (320/322 compile), 0.645 at 160-511 B (446/464), 0.533 at 512-1023 B
+(235/264), 0.524 at 1 KB and up (146/186, against 51 for `ctx` alone).  At 1 KB and
+up the closeness spread is wide (0.1: 11, 0.2: 18, 0.3: 23, 0.4: 16, 0.5: 24, 0.6:
+19, 0.7: 16, 0.8: 14, 0.9: 5 bodies), which is what `queue-L1.tsv` sorts on.
 
 **Pilot (2026-10-19)**: the first 100 open program bodies under 160 B in credit
 order (`make_queues.py --bodies -N 1`), `-j 20`, ~25 s per pass.
@@ -955,10 +1016,22 @@ size <= 1000 B, tier 2 (GTE or larger) follows.  The ranked list is dealt snake-
 (1..N, N..1, ...) into N disjoint queues, so no body is in two queues and every
 queue gets the same credit profile.  Rows carry `group n_members payoff tier` before
 the usual columns; `drive.py next --queue` and `sweep.py` read them.  The committed
-`queue-S1..S6.tsv` were written after the full sweep and the first neighbour sweep
-(2026-10-20): 1238 open bodies (940 tier 1, 298 tier 2), 206-207 per queue, 2114
-functions credited if all were matched.  Every body in them has had the machine
-drafts (m2c, and the neighbour variant where one is >= 0.5) tried and missed.
+`queue-S1..S6.tsv` were written after the fix-up sweep and the neighbour sweeps
+(2026-10-20): 1209 open bodies (924 tier 1, 285 tier 2), 201-202 per queue, 2046 functions
+credited if all were matched.  Every body in them has had the machine drafts (m2c,
+the m2cfix fix-ups, and the neighbour variant where one is >= 0.5) tried and missed.
+
+`make_queues.py --bodies --closeness FILE [--min-size N]` orders the open bodies by
+**closeness x n_members** instead (then payoff), dropping those under `--min-size`
+bytes; FILE is a sweep report or `tools/loop/closeness.tsv` (the fix-up sweep's
+report without the `tries` column), and rows get `closeness best_variant` appended
+(empty when no variant compiled; those sort last).  The committed `queue-L1.tsv` is
+`--closeness tools/loop/closeness.tsv --min-size 1024 -N 1 --prefix queue-L`: 173
+bodies of 1 KB and up still open after the 1 KB calibration, 222 functions, 134 with a
+compiling draft (mean closeness 0.517).  The same bodies are also in `queue-S*` (tier 2); take a body from one
+queue only.  To get the best drafts back: `sweep.py --queue tools/loop/queue-L1.tsv
+--max-size 100000 --best-dir DIR` (default variants; `--limit K` for the first K
+bodies, or a one-row queue file and `--variants <best_variant>` for one body).
 
 `merge_manifest.py [MANIFEST] [--check]` reads `re/match/manifest.tsv` even
 with git conflict markers or duplicate rows, keeps the union, dedupes on

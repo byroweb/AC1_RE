@@ -35,6 +35,14 @@ function, because one matched C file is replayed onto every member
   - dealt snake-wise (1..N, N..1, ...) into N disjoint queues, so every queue gets
     the same credit profile and no body is ever in two queues;
   - --limit K keeps the first K rows per queue.
+
+Closeness mode (--bodies --closeness FILE [--min-size 1024]): the bodies the machine
+drafts missed, for agents, ordered by how close the best draft already is.  FILE is a
+sweep.py report (or tools/loop/closeness.tsv, the same columns without `tries`); bodies
+under --min-size bytes are dropped, the rest sorted by closeness x n_members (a body
+without a compiling draft counts as closeness 0) and dealt into -N queues.  Rows get
+`closeness best_variant` after the usual columns; a body's best draft comes back with
+`sweep.py --queue Q --variants <best_variant> --best-dir DIR`.
 Rows carry `group n_members payoff tier` in front of the usual columns, so
 `drive.py next --queue` and tools/loop/sweep.py read them as they are.
 """
@@ -65,6 +73,38 @@ def body_candidates(rows, done, twins_path, max_size=1000, min_instructions=rank
     return cands
 
 
+CLOSE_COLS = BODY_COLS + ["closeness", "best_variant"]
+
+
+def load_closeness(path):
+    """{(unit, vaddr lower-case): (closeness or None, best_variant)} from a sweep report."""
+    out, hdr = {}, None
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            if line.startswith("#") or not line.strip():
+                continue
+            if hdr is None:
+                hdr = line.rstrip("\r\n").split("\t")
+                continue
+            r = dict(zip(hdr, line.rstrip("\r\n").split("\t")))
+            c = r.get("closeness", "")
+            out[(r["unit"], r["vaddr"].lower())] = (float(c) if c else None, r.get("best_variant", ""))
+    return out
+
+
+def by_closeness(cands, close, min_size):
+    """Bodies of at least min_size bytes, by closeness x n_members, then payoff."""
+    out = []
+    for c in cands:
+        if c["size"] < min_size:
+            continue
+        cl, bv = close.get((c["unit"], str(c["vaddr"]).lower()), (None, ""))
+        out.append(dict(c, closeness=cl, best_variant=bv))
+    out.sort(key=lambda c: (-(c["closeness"] or 0.0) * c["n_members"], -c["payoff"], c["unit"],
+                            str(c["vaddr"])))
+    return out
+
+
 def deal(cands, n):
     """Snake-deal the ranked bodies into n disjoint queues."""
     qs = [[] for _ in range(n)]
@@ -74,11 +114,11 @@ def deal(cands, n):
     return qs
 
 
-def render_bodies(rows):
-    out = ["\t".join(BODY_COLS)]
+def render_bodies(rows, cols=BODY_COLS):
+    out = ["\t".join(cols)]
     for r in rows:
-        out.append("\t".join(("%.3f" % r[k]) if k in ("score", "payoff") else str(r.get(k, ""))
-                             for k in BODY_COLS))
+        out.append("\t".join(("%.3f" % r[k]) if k in ("score", "payoff", "closeness") and r.get(k) is not None
+                             else ("" if r.get(k) is None else str(r[k])) for k in cols))
     return "\n".join(out) + "\n"
 
 
@@ -87,6 +127,14 @@ def main_bodies(args):
     done = ledger.load(args.ledger)
     cands = body_candidates(rows, done, args.twins, args.max_size, args.min_instructions,
                             not args.no_tier2)
+    cols = BODY_COLS
+    if args.closeness:
+        cands = by_closeness(cands, load_closeness(args.closeness), args.min_size)
+        cols = CLOSE_COLS
+        have = [c for c in cands if c["closeness"] is not None]
+        print("closeness: %d bod(ies) >= %d B, %d with a compiling draft (mean %.3f)"
+              % (len(cands), args.min_size, len(have),
+                 sum(c["closeness"] for c in have) / len(have) if have else 0.0))
     qs = deal(cands, args.n)
     if args.limit:
         qs = [q[:args.limit] for q in qs]
@@ -108,7 +156,7 @@ def main_bodies(args):
         if os.path.normpath(out_dir) == os.path.normpath(HERE) and os.path.exists(p) and not args.force:
             sys.exit("make_queues.py: refusing to overwrite %s (use --force)" % p)
         with open(p, "w", encoding="utf-8", newline="\n") as fh:
-            fh.write(render_bodies(q))
+            fh.write(render_bodies(q, cols))
         print("wrote %s (%d rows)" % (p, len(q)))
     return 0
 
@@ -162,6 +210,8 @@ def main():
     g.add_argument("--limit", type=int, default=0, help="rows per queue (default all)")
     g.add_argument("--min-instructions", type=int, default=rank.MIN_INSTRUCTIONS)
     g.add_argument("--prefix", default="queue-S", help="file name prefix (default queue-S -> queue-S1.tsv ...)")
+    g.add_argument("--closeness", help="sweep.py report or closeness.tsv: order by closeness x n_members")
+    g.add_argument("--min-size", type=int, default=0, help="with --closeness: only bodies of at least this many bytes")
     args = ap.parse_args()
     if args.bodies:
         if args.n < 1:

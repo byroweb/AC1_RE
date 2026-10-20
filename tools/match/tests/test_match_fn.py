@@ -71,7 +71,7 @@ def test_json_facts(tmp_path):
     assert facts["fn"] == "func_8004F7E8"
     assert facts["bytes"] == 40
     assert facts["first_diff_offset"] is None
-    assert facts["masked_words"] == 0
+    assert facts["masked_words"] == 0 and facts["aligned_words"] == 10
     assert facts["bin_label"].startswith("overlay 201")
     assert "-O2" in facts["cc1_flags"] and facts["aspsx_version"] == "2.56"
 
@@ -79,6 +79,7 @@ def test_json_facts(tmp_path):
     assert rc == 1
     facts = json_part(out)
     assert facts["result"] == "MISMATCH" and facts["first_diff_offset"] == 4 and facts["diff_words"] == 6
+    assert 4 <= facts["aligned_words"] < 10
 
 
 def test_expect_size_guard():

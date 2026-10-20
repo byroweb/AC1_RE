@@ -119,7 +119,10 @@ size from the disassembly (next function start − `<vaddr>`) when that matters.
 
 `result`, `fn`, `vaddr`, `src`, `src_sha1`, `bytes`, `first_diff_offset`,
 `diff_words`, `masked_words`, `unresolved_symbols`, `resolved_symbols`, `bin`,
-`bin_label`, `bin_offset`, `cc1`, `cc1_flags`, `aspsx_version`, `as_flags`, `error`.
+`bin_label`, `bin_offset`, `cc1`, `cc1_flags`, `aspsx_version`, `as_flags`, `error`,
+`aligned_words` (retail words, `--expect-size` long, that difflib pairs in order with an
+equal word of ours: a closeness that survives an inserted instruction; masked words are
+compared unmasked; all words on a MATCH).
 
 ## Install
 

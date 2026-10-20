@@ -18,6 +18,7 @@ Exit status: 0 MATCH, 1 MISMATCH, 2 toolchain/compile/assemble error, 3 usage.
 Only exit status 0 means the function is matched.
 """
 import argparse
+import difflib
 import hashlib
 import json
 import os
@@ -513,6 +514,14 @@ def compare(ours, retail, masks):
     return first, diffs
 
 
+def aligned_words(ours, retail):
+    """Words of `retail` that difflib pairs with an equal word of `ours`, in order: a
+    closeness that, unlike diff_words, survives an inserted or missing instruction."""
+    a = list(struct.unpack_from("<%dI" % (len(ours) // 4), ours))
+    b = list(struct.unpack_from("<%dI" % (len(retail) // 4), retail))
+    return sum(m.size for m in difflib.SequenceMatcher(None, a, b, autojunk=False).get_matching_blocks())
+
+
 def side_by_side(ours, retail, vaddr, diffs, masks, objdump, work, context):
     ld = disasm(objdump, retail, vaddr, work, "retail")
     rd = disasm(objdump, ours, vaddr, work, "ours")
@@ -569,7 +578,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     facts = {"result": None, "fn": None, "vaddr": "0x%08x" % args.vaddr, "src": args.src,
-             "bytes": None, "first_diff_offset": None, "diff_words": 0,
+             "bytes": None, "first_diff_offset": None, "diff_words": 0, "aligned_words": None,
              "masked_words": 0, "unresolved_symbols": [], "resolved_symbols": [],
              "bin": None, "bin_label": None, "bin_offset": None, "cc1": None,
              "aspsx_version": args.aspsx_version, "cc1_flags": CC1_FLAGS, "as_flags": AS_FLAGS,
@@ -621,6 +630,12 @@ def main(argv=None):
 
         first, diffs = compare(ours, retail, masks)
         facts["diff_words"] = len(diffs)
+        if diffs or (args.expect_size is not None and args.expect_size != fn_size):
+            with open(bin_path, "rb") as fh:
+                fh.seek(off)
+                facts["aligned_words"] = aligned_words(ours, fh.read(args.expect_size or fn_size))
+        else:
+            facts["aligned_words"] = fn_size // 4
         size_bad = args.expect_size is not None and args.expect_size != fn_size
         if not args.quiet:
             print("fn %s: %d bytes from %s, compared with %s @ 0x%08x (file offset 0x%x)"
