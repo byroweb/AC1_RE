@@ -3,7 +3,7 @@
 Status (2026-06-13): **FULLY CONFIRMED** by reading a real DuckStation card that
 contains drawn emblems. Offset + count + layout all resolved (see "Emblem format
 — confirmed" below). Tooling round-trips, including a boundary-crossing slot
-(handled in the companion AC1mod project — separate repo). The original
+(handled in AC1mod — `tools/ac1mod/`). The original
 2026-06-09 guesses (one emblem in the MAIN save at 0x0E80, palette 0x0C3A) were
 WRONG — the emblems are in a separate card file; that 0x0C3A ramp in the main
 save is the live colour-picker state.
@@ -65,7 +65,7 @@ Former open questions, now answered: pixel offset = `0x206 + i*0x820 + 0x20`;
 count = 7; they live in the `...Z` file, not the main save / not VRAM splits.
 
 ## Tooling (done, round-trip verified)
-Implemented in the companion AC1mod project (separate repo):
+Implemented in AC1mod (`tools/ac1mod/`):
 - `core/memcard.py`: `read_card`, save list + AC1/emblem-file detect, `icon_rgba`,
   `file_bytes`/`write_file_bytes` (join/split the emblem file's 2 blocks),
   `emblem_file()`, and per-index `emblem_palette` / `decode_emblem` /

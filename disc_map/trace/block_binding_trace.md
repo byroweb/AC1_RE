@@ -45,6 +45,6 @@ The block-record count fields (`+4/+6 = count<<2`) are **runtime-computed and do
 appear in the raw PA file headers** (scan for matching +4/+6 in PA00 → no hit). So a
 viewer cannot map block index → PA entry by header match. The mapping is built at load
 time: blk[0] from PA entry-1; blk[1..N] from the mission **chunk-11** stream
-(FUN_800739AC). To wire the companion AC1mod viewer (separate repo): walk the mission chunk stream
+(FUN_800739AC). To wire the AC1mod viewer (`tools/ac1mod/`): walk the mission chunk stream
 (`tools/mission/mission_parse.py`) to recover, per block index, which PA entry / sub-object set
 the geometry came from, then place spawns (instance pos + block→geometry) in the scene.

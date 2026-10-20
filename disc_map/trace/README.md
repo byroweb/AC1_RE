@@ -23,7 +23,7 @@ turns); the conclusions live in `docs/`. Read the status column before trusting 
 | --- | --- | --- |
 | `assemble_levels.py` | **current** | Build every walkable level (56) as world-coordinate OBJ + top-down PNG + index, from `fdat_extracted.T`. The level pipeline. |
 | `extract_level.py` | current | Single-level extraction at raw (world) coords; used by `assemble_levels.py`. |
-| `render_obj.py` | current | Quick top-down + ¾ PNG of an OBJ (PIL only). Not a viewer — the interactive viewer is the separate AC1mod repo. |
+| `render_obj.py` | current | Quick top-down + ¾ PNG of an OBJ (PIL only). Not a viewer — the interactive viewer is AC1mod (`tools/ac1mod/`). |
 | `classify_pa.py` | current | Classify every PA file's blocks: part-scale / effect / level-candidate. |
 | `scan_geometry.py` | current | Find PA-format geometry blocks inside any `.T` container (how the levels were found). |
 | `gouraud_validate.py` | current | Validate the stride-4 gouraud decode against all PA files (0 out-of-range). |

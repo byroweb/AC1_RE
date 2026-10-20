@@ -1,7 +1,8 @@
-# AC1mod — companion project pointer
+# AC1mod — vision and gaps
 
-AC1mod is a **separate companion viewer/toolkit project** (its own repo) that
-consumes this repository's reverse-engineering and tooling. The goal of that
+AC1mod ([`tools/ac1mod/`](../tools/ac1mod/README.md), imported 2026-10-19 from the
+former separate repo) is the viewer and toolkit built on this repository's
+reverse-engineering and tooling. The goal of that
 project is to read/edit AC1 missions and maps, view models, and re-pack the disc.
 
 This repo provides the format-RE foundation it builds on:
@@ -17,8 +18,8 @@ This repo provides the format-RE foundation it builds on:
   `pa_slots.py`); the companion viewer vendors/imports this decode rather than
   forking it.
 
-Keep the authoritative format decoders here in `tools/`; the companion AC1mod
-project reuses them.
+Keep the authoritative format decoders in `tools/`; AC1mod (`tools/ac1mod/`)
+reuses them.
 
 ## Gaps to close for "rip & author missions"
 1. **`.T` writer / repacker** — ✅ **DONE: `tools/extract/t_repack.py`** (see

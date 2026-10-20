@@ -27,7 +27,7 @@ big-mesh slots they fill (e.g. phase 0 → slots 10,13,16,19,22):
 | 1 | 11,14,17,20,23 | 12 | PA05, PA09, PA21 |
 | 2 | 12,15,18,21,24 | 24 | PA04, PA08, PA16 |
 
-## Slot map (by region, with visual ID from the companion AC1mod viewer)
+## Slot map (by region, with visual ID from the AC1mod viewer, `tools/ac1mod/`)
 | Slots | present in | subs | faces | class | looks like |
 | --- | --- | --- | --- | --- | --- |
 | **e2-e4** | 24 files | 3 | ~210-296 | FIXED | chunky blocky structures (buildings / terrain pieces) |

@@ -1,14 +1,16 @@
-# AC1mod — companion project pointer
+# AC1mod — integration with `tools/`
 
-AC1mod is a **separate companion viewer project** (its own repo): a PyQt disc
-browser + PS1 stage/model viewer that consumes this repository's PA##.T geometry
-work. The files it references (`main.py`, `core/pa_parser.py`, `core/jpsxdec.py`,
-its 3D view widget, etc.) live in that companion repo, not here.
+AC1mod, the PyQt disc browser and PS1 stage/model/mission viewer, now lives in this
+repo at [`tools/ac1mod/`](../tools/ac1mod/README.md). It was imported 2026-10-19
+from the former separate repo ([byroweb/AC1mod](https://github.com/byroweb/AC1mod)
+at `616bcd2`), and that repo keeps its history. Paths below such as `main.py` and
+`core/pa_parser.py` are relative to `tools/ac1mod/`.
 
-The integration point with this repo: the companion viewer's geometry decoder is a
-port of this repo's authoritative PA decode in `tools/pa/pa_obj.py` /
-`tools/pa/pa_parse.py` — keep a single source of truth here and vendor/import it
-there, do not fork the logic. See:
+Its geometry decoder (`core/pa_parser.py`) is a port of the authoritative PA decode
+in `tools/pa/pa_obj.py` and `tools/pa/pa_parse.py`. Both now sit in the same repo,
+so the next step is for AC1mod to import the `tools/` decoders instead of keeping
+its own copies. Until then, make format fixes in `tools/` first and port them to
+AC1mod. See:
 
 - [PA_FORMAT.md](PA_FORMAT.md) — the PA##.T container + primitive format (the decode being ported).
 - [PA_HEADER.md](PA_HEADER.md) / [PA_SLOTS.md](PA_SLOTS.md) — header and slot structure.
@@ -35,7 +37,9 @@ producing garbage meshes on every variant block (PA00 e60: 1742 bogus verts → 
 
 - Fixed here in `tools/pa/pa_obj.py` (descriptor parse) and documented in
   [PA_FORMAT.md](PA_FORMAT.md) (both descriptor tables now say u16 vtx-count + u16 param).
-- **AC1mod's `core/pa_parser.py` has the same latent bug** — re-vendor the fixed read.
+- **AC1mod's `core/pa_parser.py` had the same latent bug.** It is fixed: the import
+  reads `vcnt` as `u16 @+0x04`, and `info GG/P0/PA00.T` reports e2 = 180 verts
+  (checked 2026-10-19).
 - Regression check after vendoring: PA00 e2 (simple) = 180 verts, PA00 e60 (variant)
   = 64 verts / 100 tris. Authoritative encoder cross-check: `tools/pa/pa_encode.py
   --selftest` = 7602/7602 byte-exact across all 72 PA files.

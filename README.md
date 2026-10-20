@@ -43,7 +43,7 @@ part of the reference itself:
 
 | Project | Where | What |
 | --- | --- | --- |
-| **AC1mod** | [separate repo](https://github.com/byroweb/AC1mod) | PyQt disc browser + stage/model viewer, heading toward a mission/map editor. Vendors the decoders from `tools/`. See [`docs/AC1MOD_VISION.md`](docs/AC1MOD_VISION.md). |
+| **AC1mod** | [`tools/ac1mod/`](tools/ac1mod/README.md) | PyQt disc browser + stage/model/mission viewer and CLI, heading toward a mission/map editor. Imported from the former [AC1mod repo](https://github.com/byroweb/AC1mod); builds on the decoders in `tools/`. See [`docs/AC1MOD_VISION.md`](docs/AC1MOD_VISION.md). |
 | **Farsi localization** | [`mods/farsi/`](mods/farsi/README.md) | Persian (Farsi) localization patch set — renderer patch, glyph atlas, RTL name entry + runtime shaper, hub title word-art. Incubated here for now; it will move to its own repo once the translation corpus and release pipeline exist. |
 
 ## How it works (safe distribution model)

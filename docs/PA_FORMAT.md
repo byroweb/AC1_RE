@@ -260,14 +260,14 @@ edge cases) are dropped so output is always a valid mesh.
    handlers `0x80057674`/`0x800577a4`: gouraud verts are stride-4 (interleaved with
    per-vertex normal indices), first vertex at record+0x12 (tri) / +0x16 (quad). 0
    out-of-range across all 72 PA files. Fixed in `tools/pa/pa_obj.py` (and ported into
-   the companion AC1mod viewer's `core/pa_parser.py`, separate repo).
+   AC1mod's `tools/ac1mod/core/pa_parser.py`).
 2. ~~**Textures/UVs:** decode the UV+clut/tpage shading words~~ **DONE 2026-06-15**
    (see "Textured-primitive MATERIAL words" above): offsets, decode formulas, and the
    RTIM bank are confirmed. Only the per-stage texture bank that fills pages (704/768,256)
    is open (one live `LoadImage` trace).
 3. **Stage assembly:** entry 0 / entry 1 directory → how blocks place into a full map
    (the per-block bboxes are part-scale; the map header must position them).
-4. Port walker `0x800574D8` + emitter `0x8005A57C` into the companion AC1mod viewer (separate repo).
+4. Port walker `0x800574D8` + emitter `0x8005A57C` into the AC1mod viewer (`tools/ac1mod/`).
 
 
 ## Scene assembly (world-coordinate finding, 2026-06-08)
