@@ -688,6 +688,7 @@ the percentages too.  2026-10-19 after this round:
 ```
 sweep.py --queue FILE [--queue FILE ...] [--max-size 160] [--limit N] [-j N]
          [--variants ctx,ctx-no-andor] [--try-all]
+         [--neighbour-min 0.5] [--neighbour-tries 1]
          [--work DIR] [--report F] [--dry-run] [--no-replay] [--no-ledger]
 ```
 
@@ -748,6 +749,76 @@ and 70 m2c failures, all an unlabelled jump table (`jr` with no `jtbl` read).  `
 turned ~60 of the "too few arguments" cc1 errors into compilable drafts but only 2
 matched; `ctx-no-andor` and `ctx-void` never added a match and are no longer default.
 
+### The `neighbour` variant (near-copies)
+
+Exact twins are replayed already (`twins.py`), but ovl202/203/204 also carry many
+*near*-copies: the same source with a constant, a field or a statement changed.  The
+`neighbour` variant (last in the default list) turns a matched near-copy into the
+draft:
+
+1. **find**: every original manifest row (its own `func_<ADDR>.c`) is read from its
+   image and masked with `twins.mask_function` (relocated fields zeroed), one per
+   distinct masked body (545 today).  For an open body, the 5 rows of size 0.7x..1.43x
+   with the highest masked-trigram Jaccard are scored with difflib's ratio over the
+   masked words; the best is its neighbour.  The whole index is rebuilt from the
+   manifest at every run in about a second, so it always sees the latest matches.
+2. **remap**: the neighbour's C file is copied with its function renamed to the open
+   body's.  The two masked bodies are aligned with difflib (equal blocks, and
+   same-length replace blocks position by position), which pairs their relocation
+   slots.  Every `func_`/`D_<ADDR>` name then moves by the delta of the paired slot that
+   targets it (`twins.map_addr`, the same rule as the twin replay: the nearest slot at
+   ADDR+off, off < 0x1000).  Table names whose slot moved, and the neighbour's other
+   `--defsym`s, are passed as `--defsym` at the moved address (`twins.table_moves`).
+   Its `--rodata` (when the body has no `jt_addrs`) and other flags carry over.  Two
+   names that would land on one address (a misaligned slot) keep their old addresses,
+   so the draft still compiles.
+3. **oracle**: like the m2c drafts.  When the only differing words are immediates
+   (same mnemonic and registers, no branch/jal/lui), `neighbour+imm` replaces the C
+   literal of our value with retail's (also the `v-1` form of a `<=`/`>` compare and
+   the negated form of a subtraction) and runs the oracle once more.
+
+It runs for bodies of every size (`--max-size` limits only the m2c drafts), and only
+when the similarity is at least `--neighbour-min` (default 0.5).  `--neighbour-tries N`
+also tries the 2nd..Nth best.  The report has a `neighbour` column (`SIM UNIT VADDR
+SOURCE` of the best neighbour) for every body, tried or not, so a matcher can start
+from that C file.  `--dry-run` prints the same column, without the oracle, in about
+4 s.  `--work DIR` keeps the remapped drafts (`<unit>_<ADDR>_neighbour.c`).
+
+After every batch of matches, re-run just this variant over the open queues (~1 min
+for all 1239 bodies, of which ~20 s is the oracle and the rest is the twin replay):
+
+```
+python tools/loop/sweep.py --variants neighbour -j 24 \
+    --queue tools/loop/queue-S1.tsv ... --queue tools/loop/queue-S6.tsv
+```
+
+**Measured (2026-10-20)**, all 1239 open bodies of `queue-S1..S6` against the 2622-row
+manifest.  Best neighbour similarity by size:
+
+| size | bodies | >= 0.9 | >= 0.8 | >= 0.7 | >= 0.5 |
+|---|---:|---:|---:|---:|---:|
+| < 160 B | 324 | 4 | 10 | 32 | 77 |
+| 160-511 B | 465 | 5 | 18 | 28 | 64 |
+| 512-1023 B | 264 | 0 | 4 | 7 | 10 |
+| 1 KB and up | 186 | 0 | 2 | 4 | 4 |
+
+155 bodies tried, **1 match** (ovl201 0x800B4370 from ovl201 0x80066F68 at 0.900, a
+checksum loop whose bound differs: `neighbour+imm`).  The 154 misses compile (no cc1
+errors once colliding names are kept) and their best draft is 4 words off for 4
+bodies, 6-10 words for 12, 11-20 for 54 and more for 84.  The remap itself checks
+out: the differing words in the close misses are real code differences (a clamp
+`>= 0x41` vs `< -0x40`, an extra `lbu`/`sll`/`sw` chain), not names.  `--neighbour-tries 3`
+added nothing, and no body below 0.9 matched outright.
+
+So today the variant is mostly a starting point.  It pays off as the hard bodies get
+matched: the matched corpus has few near-copies of the open bodies, but the open
+bodies are near-copies of *each other*.  170 of the 450 open bodies of 512 B or more
+sit in clusters of open bodies with pairwise similarity >= 0.8 (e.g. ovl202
+0x80069A5C / 0x8006AAC8; ovl202 0x8005804C, ovl203 0x80057A3C / 0x80064268, ovl202
+0x80064DC8).  Match one member of a cluster by hand, then re-run the line above: the
+others get its C file remapped as their draft (a match when only constants differ,
+otherwise a port: the 9 open bodies at 0.9+ today were 1 to 46 words off).
+
 ## check_all.sh
 
 `re/match/check_all.sh` re-verifies every manifest row with the oracle and
@@ -788,9 +859,10 @@ size <= 1000 B, tier 2 (GTE or larger) follows.  The ranked list is dealt snake-
 (1..N, N..1, ...) into N disjoint queues, so no body is in two queues and every
 queue gets the same credit profile.  Rows carry `group n_members payoff tier` before
 the usual columns; `drive.py next --queue` and `sweep.py` read them.  The committed
-`queue-S1..S6.tsv` were written after the full sweep (2026-10-20): 1239 open bodies
-(941 tier 1, 298 tier 2), 206-207 per queue, 2115 functions credited if all were
-matched.  Every body in them has had the machine drafts tried and missed.
+`queue-S1..S6.tsv` were written after the full sweep and the first neighbour sweep
+(2026-10-20): 1238 open bodies (940 tier 1, 298 tier 2), 206-207 per queue, 2114
+functions credited if all were matched.  Every body in them has had the machine
+drafts (m2c, and the neighbour variant where one is >= 0.5) tried and missed.
 
 `merge_manifest.py [MANIFEST] [--check]` reads `re/match/manifest.tsv` even
 with git conflict markers or duplicate rows, keeps the union, dedupes on
