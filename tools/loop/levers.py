@@ -19,6 +19,8 @@ permute.py) showed decomp-permuter's random passes almost never reach:
   swap    two adjacent statements of the function body (register colouring follows
           first use: p01/p02; statement order is source order: perturbed test)
   commute operands of a top-level `+ | & ^ *` in one statement (p20)
+  args    a call's argument passed through in the caller's own register, which m2c
+          drops (retail `li a1,18` with a0 = the caller's arg0, ours `li a0,18`)
 
 Levers only touch the function's own definition and the declarations above it.
 """
@@ -372,9 +374,88 @@ def lever_bytes(text, fn):
     return out
 
 
+CALL = re.compile(r"\b([A-Za-z_]\w*)\s*\(")
+NOT_CALLEES = {"if", "while", "for", "switch", "return", "sizeof"}
+
+
+def params(text, fn, sp):
+    """[(type, name)] of fn's own parameters (`void` / unnamed -> [])."""
+    head = text[:sp[0]]
+    m = None
+    for m in re.finditer(r"\b%s\s*\(" % re.escape(fn), head):
+        pass
+    if not m:
+        return []
+    e = close_paren(head, m.end() - 1)
+    out = []
+    for a in split_args(head[m.end():e - 1]):
+        nm = re.search(r"(\w+)\s*$", a)
+        if a.strip() in ("", "void") or not nm or nm.group(1) == a.strip():
+            continue
+        out.append((a[:nm.start()].strip(), nm.group(1)))
+    return out
+
+
+def lever_args(text, fn):
+    """m2c guesses a callee's arity from the argument registers set before the `jal`, so
+    an argument passed straight through in the caller's own register (retail `li a1,18`
+    with a0 still the caller's arg0, ours `li a0,18`) is dropped.  At one call site, put
+    the caller's leading parameter(s) in front (`f(x)` -> `f(arg0, x)`), or its next
+    parameter(s) after (`f(arg0)` -> `f(arg0, arg1)`), with the callee's prototype in
+    this file widened to match, or made unprototyped; a callee declared elsewhere (the
+    shared headers) is called through an unprototyped cast."""
+    sp = fn_span(text, fn)
+    if not sp:
+        return []
+    ps = params(text, fn, sp)
+    if not ps:
+        return []
+    body = text[sp[0]:sp[1]]
+    head = text[:sp[0]]
+    out = []
+    for m in CALL.finditer(body):
+        callee = m.group(1)
+        if callee in NOT_CALLEES or callee == fn or callee.startswith("M2C_"):
+            continue
+        e = close_paren(body, m.end() - 1)
+        if e < 0:
+            continue
+        inner = body[m.end():e - 1]
+        args = [a for a in split_args(inner) if a] if inner.strip() else []
+        proto = None
+        for pm in re.finditer(r"^([^\n;{}()#]*?)\b%s\(([^()\n]*)\);" % re.escape(callee), head, re.M):
+            proto = pm
+        if proto is None and not re.match(r"func_[0-9A-Fa-f]{8}$", callee):
+            continue                                   # macros, PsyQ calls the headers type
+        ptypes = [] if proto is None else [t for t in split_args(proto.group(2)) if t and t != "void"]
+        n = len(args)
+        tries = []
+        for k in (1, 2):
+            if k <= len(ps) and n + k <= 6:
+                tries.append(("+%s" % ",".join(nm for _t, nm in ps[:k]), [nm for _t, nm in ps[:k]] + args,
+                              [t or "s32" for t, _nm in ps[:k]] + ptypes))
+            if n + k <= len(ps):
+                tries.append(("%s+" % ",".join(nm for _t, nm in ps[n:n + k]), args + [nm for _t, nm in ps[n:n + k]],
+                              ptypes + [t or "s32" for t, _nm in ps[n:n + k]]))
+        for tag, new_args, new_types in tries:
+            if proto is None:
+                call = "((M2C_UNK (*)())%s)(%s)" % (callee, ", ".join(new_args))
+                forms = [("cast", None)]
+            else:
+                ret = proto.group(1)
+                forms = [("proto", "%s%s(%s);" % (ret, callee, ", ".join(new_types))),
+                         ("noproto", "%s%s();" % (ret, callee))]
+                call = "%s(%s)" % (callee, ", ".join(new_args))
+            nb = body[:m.start()] + call + body[e:]
+            for how, decl in forms:
+                nh = head if decl is None else head[:proto.start()] + decl + head[proto.end():]
+                out.append(("args %s %s %s" % (callee, tag, how), nh + nb + text[sp[1]:]))
+    return out
+
+
 LEVERS = {"index": lever_index, "bytes": lever_bytes, "ptype": lever_ptype, "etype": lever_etype,
-          "const": lever_const, "swap": lever_swap, "commute": lever_commute}
-DEFAULT_LEVERS = "index,bytes,ptype,etype,const,swap,commute"
+          "const": lever_const, "swap": lever_swap, "commute": lever_commute, "args": lever_args}
+DEFAULT_LEVERS = "index,bytes,args,ptype,etype,const,swap,commute"
 
 
 def variants(text, fn, names=DEFAULT_LEVERS):

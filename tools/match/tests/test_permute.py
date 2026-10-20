@@ -159,6 +159,23 @@ def test_lever_bytes():
     assert "*(((M2C_UNK *)((u8 *)&D_80049E74 + i))) = 0;" in got["bytes E + &D_80049E74"]
 
 
+def test_lever_args():
+    t = ("M2C_UNK func_80076548(M2C_UNK);                     /* extern */\n"
+         "void func_X(void *arg0, s32 arg1) {\n    func_80076548(0x12);\n    rcos(arg1);\n"
+         "    if (arg1) { func_80001000(); }\n}\n")
+    got = dict(levers.lever_args(t, "func_X"))
+    v = got["args func_80076548 +arg0 proto"]
+    assert v.startswith("M2C_UNK func_80076548(void *, M2C_UNK);                     /* extern */\n")
+    assert "    func_80076548(arg0, 0x12);\n" in v
+    assert got["args func_80076548 +arg0 noproto"].startswith("M2C_UNK func_80076548();")
+    assert "func_80076548(0x12, arg1);" in got["args func_80076548 arg1+ proto"]
+    assert "func_80076548(arg0, arg1, 0x12);" in got["args func_80076548 +arg0,arg1 proto"]
+    # no local prototype: a func_<ADDR> callee goes through an unprototyped cast; rcos (headers) is left alone
+    assert "((M2C_UNK (*)())func_80001000)(arg0)" in got["args func_80001000 arg0+ cast"]
+    assert not any(" rcos " in k for k in got)
+    assert levers.lever_args("void func_X(void) { func_80001000(1); }\n", "func_X") == []
+
+
 def test_cfile_candidate_specs(tmp_path):
     c = permute.cfile_candidate("ovl201:/c/x/func_80064C18.near-miss.c")
     assert (c["unit"], c["vaddr"], c["variant"]) == ("ovl201", "0x80064C18", "file")
