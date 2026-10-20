@@ -602,7 +602,8 @@ def oracle(c, cpath, meta):
     """match_fn.py on cpath like drive.py try (auto --defsym rerun).  -> (clean, defsyms, summary)."""
     import sweep
     import units
-    return sweep.oracle(units.resolve(c["unit"]), int(c["vaddr"], 16), cpath, meta["size"], meta["rodata"])
+    out = sweep.oracle(units.resolve(c["unit"]), int(c["vaddr"], 16), cpath, meta["size"], meta["rodata"])
+    return tuple(out[:3])          # sweep.oracle may return more (facts, ...) after these three
 
 
 def commit(c, meta, text, defsyms, how, args):

@@ -168,3 +168,18 @@ def test_cfile_candidate_specs(tmp_path):
     assert (c["unit"], c["vaddr"], c["variant"]) == ("exe", "0x80012A78", "ctx-knr")
     c = permute.cfile_candidate(os.path.join("re", "match", "ovl202", "func_8004EADC.c"))
     assert (c["unit"], c["vaddr"]) == ("ovl202", "0x8004EADC")
+
+
+def test_oracle_on_a_matched_file(tools):
+    """permute.oracle() through sweep.oracle on a manifest row: clean MATCH, 3-tuple."""
+    cpath = os.path.join(REPO, "re", "match", "ovl201", "func_80086FD4.c")
+    if not os.path.isfile(cpath):
+        pytest.skip("re/match/ovl201/func_80086FD4.c not in this checkout")
+    try:
+        import units
+        units.resolve("ovl201")
+    except Exception as e:      # noqa: BLE001 - no carved overlay here
+        pytest.skip(str(e))
+    c = {"unit": "ovl201", "vaddr": "0x80086FD4"}
+    out = permute.oracle(c, cpath, {"size": 40, "rodata": None})
+    assert len(out) == 3 and out[0] is True, out
