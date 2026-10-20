@@ -7,10 +7,13 @@
 # may arrive with CRLF endings (core.autocrlf), so every field is stripped of \r.
 # `python tools/loop/drive.py verify` is the same check in Python.
 #
-# Twin rows (tools/loop/twins.py replay): a fdatNNN row whose source lives in
-# another unit's directory is a clone compiled from that shared C file with
-# its own --base/--defsym; it is verified like any other row and counted
-# separately.  Every MATCH in twin_replay.tsv must still have its manifest row.
+# Twin rows (tools/loop/twins.py replay): a row whose source lives in another
+# unit's directory (fdatNNN, or exe / 201..204 for program twins) is a clone
+# compiled from that shared C file with its own --base/--defsym; it is verified
+# like any other row and counted separately.  Every MATCH in twin_replay.tsv
+# must still have its manifest row.  This loop is serial (~12 min for ~2000
+# rows); `python tools/loop/drive.py verify -j 24 -q` runs the same oracle
+# calls in parallel (~80 s).
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
@@ -21,7 +24,10 @@ while IFS=$'\t' read -r vaddr unit src size extra; do
   vaddr=${vaddr%$'\r'}; unit=${unit%$'\r'}; src=${src%$'\r'}; size=${size%$'\r'}; extra=${extra%$'\r'}
   case "$vaddr" in ''|'#'*) continue ;; esac
   n=$((n+1))
-  case "$unit" in fdat*) [ "${src%%/*}" != "$unit" ] && twins=$((twins+1)) ;; esac
+  case "$unit" in
+    fdat*|exe) [ "${src%%/*}" != "$unit" ] && twins=$((twins+1)) ;;
+    [0-9]*)    [ "${src%%/*}" != "ovl$unit" ] && twins=$((twins+1)) ;;
+  esac
   flags=()
   case "$unit" in
     ''|exe) ;;                                   # exe addresses are unambiguous

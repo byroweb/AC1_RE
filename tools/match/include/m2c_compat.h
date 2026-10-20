@@ -16,4 +16,8 @@ typedef long long M2C_UNK64;
 #define M2C_FIELD(expr, type_ptr, offset) (*(type_ptr)((s8 *)(expr) + (offset)))
 #define M2C_BITWISE(type, expr) ((type)(expr))
 
+#ifndef NULL
+#define NULL ((void *)0)
+#endif
+
 #endif

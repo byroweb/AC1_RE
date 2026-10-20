@@ -34,6 +34,7 @@ import argparse
 import concurrent.futures as cf
 import datetime
 import os
+import re
 import sys
 import tempfile
 import time
@@ -52,13 +53,36 @@ VARIANTS = [("ctx", ["--valid-syntax"]),
 PRELUDE = '#include "ac1/ac1.h"\n#include "m2c_compat.h"\n'
 
 
+PARAM = re.compile(r"^\s*(.*?)\barg(\d+)\s*$")
+
+
+def fill_params(text, name):
+    """m2c leaves unused leading parameters out of the definition (`f(s32 arg2)` for a
+    function that reads only a2), which moves the used ones into the wrong registers.
+    Put `s32 argK` back for every missing K below the highest one."""
+    m = re.search(r"^(\S[^\n;]*?\b%s)\(([^()]*)\)(\s*\{)" % re.escape(name), text, re.M)
+    if not m or m.group(2).strip() in ("", "void"):
+        return text
+    params = {}
+    for p in m.group(2).split(","):
+        pm = PARAM.match(p)
+        if not pm:
+            return text                      # not plain `TYPE argN` params: leave alone
+        params[int(pm.group(2))] = p.strip()
+    top = max(params)
+    if len(params) == top + 1:
+        return text
+    sig = ", ".join(params.get(k, "s32 arg%d" % k) for k in range(top + 1))
+    return text[:m.start(2)] + sig + text[m.end(2):]
+
+
 def draft(row, variant):
     """C text of one draft, or raises ctx.CtxError."""
     _name, args = variant
     out = ctx.decompile(int(row["vaddr"], 16), int(row["size"]), row["unit"], m2c_args=args)
     if not out.strip():
         raise ctx.CtxError("m2c printed nothing")
-    return PRELUDE + "\n" + out
+    return PRELUDE + "\n" + fill_params(out, drive.fn_name(row["vaddr"]))
 
 
 def oracle(u, vaddr, cpath, size, rodata):
@@ -85,7 +109,7 @@ def oracle(u, vaddr, cpath, size, rodata):
         summ += "@0x%x/%s" % (first, facts.get("diff_words"))
     if result == "ERROR":
         msg = (facts or {}).get("error") or err.strip().splitlines()[-1:] or [""]
-        summ += ":" + (msg if isinstance(msg, str) else msg[0])[:80].replace("\t", " ")
+        summ += ":" + " ".join((msg if isinstance(msg, str) else msg[0]).split())[:80]
     return clean, defsyms, summ
 
 
@@ -102,7 +126,8 @@ def work(row, workdir):
         try:
             text = draft(row, variant)
         except ctx.CtxError as e:
-            res["tries"].append((variant[0], "M2C_FAIL:" + str(e).strip().splitlines()[-1][:80]))
+            lines = str(e).strip().splitlines() or [""]
+            res["tries"].append((variant[0], "M2C_FAIL:" + " ".join(lines[-1].split())[:80]))
             continue
         cpath = os.path.join(workdir, "%s_%08X_%s.c" % (unit, vaddr, variant[0]))
         with open(cpath, "w", encoding="utf-8", newline="\n") as fh:
