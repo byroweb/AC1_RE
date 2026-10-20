@@ -16,6 +16,27 @@ Without --out-dir nothing is written: the two queues are printed (dry run).
 With --out-dir the files are written there; refuse to overwrite the committed
 tools/loop/queue-*.tsv unless --force.  Reproduces the committed queues of
 2026-10-18 byte for byte (given the same functions.tsv and ledger).
+
+Credit-per-effort mode (--bodies): the unit of work is a masked *body*, i.e. a
+twins file group (default tools/loop/twins_programs.tsv: exe + ovl201..204), not a
+function, because one matched C file is replayed onto every member
+(twins.py replay).
+
+    make_queues.py --bodies [-N 6] [--twins F] [--max-size 1000] [--no-tier2]
+                   [--limit K] [--prefix queue-S] [--out-dir DIR] [--ledger FILE]
+
+  - open bodies only: no member has a ledger row (match or giveup), via
+    rank.mission_candidates(); one row per body, its representative member
+    (lowest unit, vaddr), at least --min-instructions long;
+  - credit = members per unit of expected effort, payoff = n_members / (1 + score)
+    with score = rank.py's difficulty score;
+  - tier 1 = gte_ops == 0 and size <= --max-size (1000), sorted by payoff; tier 2
+    (GTE or large) follows, also by payoff (--no-tier2 drops it);
+  - dealt snake-wise (1..N, N..1, ...) into N disjoint queues, so every queue gets
+    the same credit profile and no body is ever in two queues;
+  - --limit K keeps the first K rows per queue.
+Rows carry `group n_members payoff tier` in front of the usual columns, so
+`drive.py next --queue` and tools/loop/sweep.py read them as they are.
 """
 import argparse
 import os
@@ -28,6 +49,68 @@ import rank    # noqa: E402
 
 COLS = ["unit", "vaddr", "name", "size", "instructions", "branches", "calls",
         "jump_tables", "gte_ops", "stack_size", "jt_addrs", "score"]
+BODY_COLS = ["group", "n_members", "payoff", "tier"] + COLS
+TWINS_PROGRAMS = os.path.join(HERE, "twins_programs.tsv")
+
+
+def body_candidates(rows, done, twins_path, max_size=1000, min_instructions=rank.MIN_INSTRUCTIONS,
+                    tier2=True):
+    """Open bodies, tier 1 then tier 2, each by payoff (members / (1 + score)) descending."""
+    groups = rank.load_twins(twins_path)
+    cands, _n_done = rank.mission_candidates(rows, done, groups, None, min_instructions)
+    for c in cands:
+        c["tier"] = 1 if c["gte_ops"] == 0 and c["size"] <= max_size else 2
+    cands = [c for c in cands if tier2 or c["tier"] == 1]
+    cands.sort(key=lambda c: (c["tier"], -c["payoff"], c["score"], c["unit"], c["vaddr"]))
+    return cands
+
+
+def deal(cands, n):
+    """Snake-deal the ranked bodies into n disjoint queues."""
+    qs = [[] for _ in range(n)]
+    for i, c in enumerate(cands):
+        r, k = divmod(i, n)
+        qs[k if r % 2 == 0 else n - 1 - k].append(c)
+    return qs
+
+
+def render_bodies(rows):
+    out = ["\t".join(BODY_COLS)]
+    for r in rows:
+        out.append("\t".join(("%.3f" % r[k]) if k in ("score", "payoff") else str(r.get(k, ""))
+                             for k in BODY_COLS))
+    return "\n".join(out) + "\n"
+
+
+def main_bodies(args):
+    rows = rank.load_functions(args.functions)
+    done = ledger.load(args.ledger)
+    cands = body_candidates(rows, done, args.twins, args.max_size, args.min_instructions,
+                            not args.no_tier2)
+    qs = deal(cands, args.n)
+    if args.limit:
+        qs = [q[:args.limit] for q in qs]
+    names = ["%s%d.tsv" % (args.prefix, i + 1) for i in range(args.n)]
+    t1 = sum(1 for c in cands if c["tier"] == 1)
+    print("%d open bod(ies) in %s: tier 1 %d, tier 2 %d; %d function(s) credited on a match"
+          % (len(cands), os.path.basename(args.twins), t1, len(cands) - t1,
+             sum(c["n_members"] for c in cands)))
+    for name, q in zip(names, qs):
+        print("  %-14s %4d bodies  %5d credited  payoff sum %.1f"
+              % (name, len(q), sum(c["n_members"] for c in q), sum(c["payoff"] for c in q)))
+    if not args.out_dir:
+        print("# dry run: pass --out-dir DIR to write", file=sys.stderr)
+        return 0
+    out_dir = os.path.abspath(args.out_dir)
+    os.makedirs(out_dir, exist_ok=True)
+    for name, q in zip(names, qs):
+        p = os.path.join(out_dir, name)
+        if os.path.normpath(out_dir) == os.path.normpath(HERE) and os.path.exists(p) and not args.force:
+            sys.exit("make_queues.py: refusing to overwrite %s (use --force)" % p)
+        with open(p, "w", encoding="utf-8", newline="\n") as fh:
+            fh.write(render_bodies(q))
+        print("wrote %s (%d rows)" % (p, len(q)))
+    return 0
 
 
 def spaced(n, k):
@@ -70,7 +153,20 @@ def main():
     ap.add_argument("--ledger", default=None, help="ledger to exclude matched/given-up rows (default tools/loop/ledger.tsv)")
     ap.add_argument("--functions", default=rank.FUNCTIONS)
     ap.add_argument("--force", action="store_true", help="allow overwriting tools/loop/queue-*.tsv")
+    g = ap.add_argument_group("credit-per-effort body queues (--bodies)")
+    g.add_argument("--bodies", action="store_true", help="rank open twin groups by members / (1 + score)")
+    g.add_argument("-N", dest="n", type=int, default=6, help="number of disjoint queues (default 6)")
+    g.add_argument("--twins", default=TWINS_PROGRAMS, help="twins file (default tools/loop/twins_programs.tsv)")
+    g.add_argument("--max-size", type=int, default=1000, help="tier 1 size limit in bytes (default 1000)")
+    g.add_argument("--no-tier2", action="store_true", help="leave out GTE / large bodies")
+    g.add_argument("--limit", type=int, default=0, help="rows per queue (default all)")
+    g.add_argument("--min-instructions", type=int, default=rank.MIN_INSTRUCTIONS)
+    g.add_argument("--prefix", default="queue-S", help="file name prefix (default queue-S -> queue-S1.tsv ...)")
     args = ap.parse_args()
+    if args.bodies:
+        if args.n < 1:
+            sys.exit("make_queues.py: -N wants at least 1")
+        return main_bodies(args)
 
     bands = [float(x) for x in args.bands.split(",")]
     picks = [int(x) for x in args.picks.split(",")]

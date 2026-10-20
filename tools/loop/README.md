@@ -12,11 +12,29 @@ ledger.py     -> ledger.tsv      append-only outcomes: match / give-up per funct
 units.py      -> stdout          unit name -> image file, load address, match_fn.py flags
 drive.py      -> stdout, re/match/<unit>/func_<ADDR>.c
                                  the driver: next work package / try the oracle / give up / status / verify
-make_queues.py                   rebuilds queue-A.tsv / queue-B.tsv from rank.py
+make_queues.py                   rebuilds queue-A.tsv / queue-B.tsv from rank.py;
+                                 --bodies: credit-per-effort queue-S1..S6.tsv over twin groups
 merge_manifest.py                dedupes + sorts re/match/manifest.tsv after a merge
-twins.py      -> twins.tsv, re/match/twin_replay.tsv
-                                 mission-overlay clones: group by masked body, replay a matched C file on its twins
+twins.py      -> twins.tsv, twins_programs.tsv, re/match/twin_replay.tsv
+                                 clones (mission overlays; exe + ovl201..204): group by masked body,
+                                 replay a matched C file on its twins
+progress.py   -> stdout          matched / total per component, Wyrelade-README table shape (--compare)
+sweep.py      -> re/match/<unit>/func_<ADDR>.c
+                                 zero-agent sweep: m2c drafts straight into the oracle, no LLM
 ```
+
+### Program sprint in four commands (2026-10-19)
+
+```bash
+python tools/loop/twins.py group                        # twins.tsv + twins_programs.tsv (~2 s)
+python tools/loop/make_queues.py --bodies --out-dir DIR # 6 disjoint body queues, best credit first
+python tools/loop/sweep.py --queue DIR/queue-S1.tsv ... # machine drafts first; replays twins at the end
+python tools/loop/drive.py verify -j 24 -q              # every manifest row, ~80 s instead of ~12 min
+python tools/loop/progress.py --compare                 # where we stand vs. Wyrelade's README
+```
+
+Then matchers take `drive.py next --queue tools/loop/queue-Sk.tsv` (rows the sweep
+closed are skipped) and `twins.py replay --scope programs` after each match.
 
 `drive.py` is the only one that compiles anything, and it does so by calling
 `tools/match/match_fn.py`; the LLM (or human) writes the C, the scripts do the
@@ -330,7 +348,7 @@ drive.py next   [--unit U] [--queue FILE] [--shard k/n] [--max-score S] [--no-m2
 drive.py try    <unit> <vaddr> [--defsym NAME=ADDR]... [--rodata VA] [--no-auto-defsym] [--commit] [--keep] [--re-dir DIR]
 drive.py giveup <unit> <vaddr> <reason...>
 drive.py status [--queue FILE]
-drive.py verify [--manifest FILE]
+drive.py verify [--manifest FILE] [-j N] [-q]
 ```
 
 A matcher's turn is `next` -> edit the C -> `try` until exit 0 -> (`--commit`) ->
@@ -418,13 +436,17 @@ Environment: `AC1_LEDGER`, `M2C_DIR` (default `~/dev/m2c`, then
 `inventory.py` and `match_fn.py` read (`AC1_BIN`, `AC1_DISC_MAP`,
 `MIPS_PREFIX`, `AC1_CC1`, `AC1_MASPSX`, ...).
 
-## twins.py (mission-overlay clones)
+## twins.py (clones: mission overlays, and exe + program overlays)
 
 ```
-twins.py group  [--functions F] [--out tools/loop/twins.tsv]
-twins.py replay [--manifest re/match/manifest.tsv] [--twins F] [--report F] [--dry-run] [--no-ledger] [-j 4]
+twins.py group  [--scope missions|programs|all] [--functions F] [--out F]
+twins.py replay [--scope missions|programs|all] [--manifest re/match/manifest.tsv] [--twins F]
+                [--twins-programs F] [--report F] [--dry-run] [--no-ledger] [-j N]
 drive.py --replay-twins [replay options]          # forwards to twins.py replay
 ```
+
+Both commands default to `--scope all`.  The mission scope is described first;
+the program scope (`twins_programs.tsv`) follows under *Program scope* below.
 
 The 58 mission overlays link one object library at per-entry addresses, so
 most mission functions occur in many entries with only absolute addresses
@@ -528,6 +550,113 @@ The five largest open groups (g0001 66, g0002 62, g0004 39, g0006 33, g0007 32
 members) are small installers and wrappers (60..92 B); all matched in one or two runs
 (227 more twins).
 
+### Program scope (exe + ovl201..204)
+
+`group --scope programs` reads the exe's game code (`is_psyq` 0) and the four
+program overlays with the same mask and writes `tools/loop/twins_programs.tsv`
+(groups `pNNNN`, same columns).  The overlays share the load address 0x8004ADA0,
+so members are keyed by (unit, vaddr) as everywhere else; ovl202/203/204 (mission,
+mode 1, mode 2) carry most of the same code at shifted addresses.  Run of
+2026-10-19: **3002 functions -> 1732 bodies**, 1140 singletons, 1565 functions with
+a twin in another unit; 369 groups of 3, 354 of them one function in each of
+202/203/204; the largest (41 members) is the 8-byte `jr ra; nop` stub.
+
+Replay differs from the mission scope in two places:
+
+- a twin is compiled with its own unit's oracle flags (none for `exe`, `--ovl 20N`),
+  no `--bin`/`--base`; its manifest row has the derived `--rodata`/`--defsym` only;
+- names that the row resolves through a symbol table (its `--syms` files, else
+  match_fn.py's implicit `ac1_markup.tsv`) are not in the extra column, so they
+  cannot be moved like `--defsym`s.  Every table name at or up to 0xFFF below a
+  relocation target is tied to the nearest such slot; when that slot's target moved
+  in the member, the name is passed as an explicit `--defsym NAME=<moved address>`
+  (an explicit `--defsym` wins over the tables).  A wrong guess can only make the
+  oracle say MISMATCH.
+
+A group can hold several originals (clones matched independently before twins
+existed); each other member is replayed once, from the first original in manifest
+order, and a member that is itself an original (its own `func_<ADDR>.c` in its own
+unit) is not replayed over at all: its manifest row names its own file, which
+check_all.sh compares with the report's source.  `--scope programs` rewrites only the program rows of `twin_replay.tsv` and
+keeps the mission rows as they are; the report's `unit` column is the manifest's
+(`202`, `exe`, `fdat016`), so check_all.sh's twin check covers both scopes.
+
+Results: the 72 exe/ovl originals of 2026-10-19 replay onto 89 twins, **89 MATCH**
+(77 new manifest rows: 49 in 201, 24 in 203/204, 1 in 202, 3 in the exe).
+After the sweep pilot (below), the 118 program originals replay onto 229 twins (all
+MATCH); `--scope all` replays 182 originals onto 1954 twins, 1954 MATCH.
+
+The committed `twins.tsv` (mission scope) predates the current `functions.tsv` (the
+code reproduces it byte for byte from that input; today's input gives 394 groups
+instead of 393), so it was not regenerated here: doing so renumbers the groups that
+`twin_replay.tsv` cites.
+
+## progress.py
+
+```
+progress.py [--manifest F] [--functions F] [--stubs-matched] [--compare]
+```
+
+Matched / total per component as a markdown table in the shape of the progress
+table in Wyrelade/Armored-Core-Decomp's README (exe game code; program overlays with
+`FDAT_201`..`FDAT_204` under them; mission overlays; total).  Totals are the
+`is_psyq` 0 rows of `functions.tsv`; matched are distinct manifest (unit, vaddr)
+rows that are a `functions.tsv` start, originals and replayed twins alike (rows that
+are not are listed separately).  `--stubs-matched` counts the open 8-byte
+`jr ra; nop` functions as matched, as his README says his counts do.  `--compare`
+reads his README through `gh api repos/Wyrelade/Armored-Core-Decomp/readme`
+(numbers only) and prints his badge and both columns with the delta.  The splits
+differ (his exe game code is 147 functions, ours 131; missions 2768 vs 2769), so read
+the percentages too.  2026-10-19 after this round:
+
+```
+| Component | ours | Wyrelade | Δ matched | ours % | Wyrelade % |
+| Main executable (game code)  |   10/131  |   88/147  |  -78 |  7.63% | 59.86% |
+| Program overlays (FDAT.T)    |  337/2871 | 1156/2871 | -819 | 11.74% | 40.26% |
+| Mission overlays             | 1789/2769 | 1239/2768 | +550 | 64.61% | 44.76% |
+| Total                        | 2136/5771 | 2483/5786 | -347 | 37.01% | 42.91% |
+```
+
+## sweep.py (zero-agent sweep)
+
+```
+sweep.py --queue FILE [--queue FILE ...] [--max-size 160] [--limit N] [-j N]
+         [--work DIR] [--report F] [--dry-run] [--no-replay] [--no-ledger]
+```
+
+No LLM in the loop: for each open body of the queue(s), in order, smaller than
+`--max-size`, not closed in the ledger and without a C file in `re/match`, draft C
+with `tools/match/ctx.py`'s `decompile()` (symbolised asm + the shared-type context)
+and m2c `--valid-syntax`, then again with `--no-andor`.  A draft is
+`#include "ac1/ac1.h"` + `#include "m2c_compat.h"` (our definitions of the `M2C_*`
+names and `NULL`, in `tools/match/include/`) + m2c's text, with unused leading
+parameters m2c leaves out put back as `s32 argK`.  Each draft goes through the oracle
+like `drive.py try` (unit flags, `--expect-size`, `--rodata` from `jt_addrs`, both
+`--syms` tables, unresolved `func_`/`D_` names as `--defsym`, rerun once).  A clean
+MATCH is written to `re/match/<unit>/func_<ADDR>.c` with a header comment, re-run
+through the oracle from there, and only on exit 0 gets its manifest row and a ledger
+row (`match`, attempts 0, reason `zero-agent sweep (m2c ctx)`).  Misses are only
+reported (`<work>/sweep_report.tsv`), never recorded as give-ups.  At the end
+`twins.py replay --scope programs` credits the twins.  Jobs run in a thread pool
+whose work is m2c/cc1 subprocesses; the main thread does all manifest/ledger writes.
+
+**Pilot (2026-10-19)**: the first 100 open program bodies under 160 B in credit
+order (`make_queues.py --bodies -N 1`), `-j 20`, ~25 s per pass.
+
+| pass | bodies matched | notes |
+|---|---|---|
+| 1 | 40/100 | 15 misses were cc1 errors, 11 of them m2c's `NULL` |
+| 2 (`NULL` in m2c_compat.h) | +6 of the 60 misses | |
+| 3 (unused leading params filled) | +0 of the 54 left | those drafts also drop a 5th (stack) argument |
+| **total** | **46/100 (46%)** | 20/43 under 64 B, 20/41 at 64-111 B, 6/16 at 112-159 B |
+
+The 46 matches replayed onto **152 twins** (all MATCH), so the pilot credited
+**198 functions** in under two minutes of wall time.  What the 54 misses look like:
+50 MISMATCH (45 with 3+ differing words: m2c's types/signedness, stack arguments
+to unknown callees, unused parameters, expression order) and 4 cc1 errors (a
+`void` callee whose value is used, arithmetic on `void *`, `*` on a non-pointer).
+Every one is an ordinary `drive.py next` work package with the draft as a start.
+
 ## check_all.sh
 
 `re/match/check_all.sh` re-verifies every manifest row with the oracle and
@@ -538,8 +667,11 @@ fail with *unrecognized arguments*), passes `--ovl` only when the unit column
 is numeric, nothing for `exe`, and for `fdatNNN` rows adds
 `--bin "$(python tools/loop/units.py image $unit)"` (plus `--base` from
 `units.py` when the extra column has none).  `drive.py verify` is the same
-check without bash.  Replayed twin rows (an `fdatNNN` row whose source is in
-another unit's directory) are verified like every other row and counted on a
+check without bash, and `drive.py verify -j N` (default: CPU count) runs the
+oracles in parallel with the output in manifest order (`-q`: FAIL rows and the
+total only): 1938 rows in 81 s at `-j 24` against ~12 min serial.  Replayed twin
+rows (a row whose source is in another unit's directory: `fdatNNN`, or a program
+twin under `exe`/`201`..`204`) are verified like every other row and counted on a
 separate line; in addition every `MATCH` row of `re/match/twin_replay.tsv`
 must still have its manifest row (same vaddr, unit and source), else that is a
 `FAIL`.
@@ -554,6 +686,19 @@ pool and dealt alternately to A and B.  The default is a dry run that prints
 both queues; `--out-dir` writes them, and the committed `tools/loop/queue-*.tsv`
 are only overwritten with `--force`.  It reproduces the committed queues byte
 for byte.
+
+`make_queues.py --bodies [-N 6] [--twins F] [--max-size 1000] [--no-tier2] [--limit K]
+[--prefix queue-S] [--out-dir DIR]` is the sprint mode: the unit of work is a masked
+body (a group of `twins_programs.tsv` by default), because one matched C file is
+replayed onto all its members.  Open bodies (no member in the ledger) come from
+`rank.mission_candidates()`, one row per body (its representative), ranked by
+**credit per effort = n_members / (1 + score)**; tier 1 is `gte_ops == 0` and
+size <= 1000 B, tier 2 (GTE or larger) follows.  The ranked list is dealt snake-wise
+(1..N, N..1, ...) into N disjoint queues, so no body is in two queues and every
+queue gets the same credit profile.  Rows carry `group n_members payoff tier` before
+the usual columns; `drive.py next --queue` and `sweep.py` read them.  The committed
+`queue-S1..S6.tsv` were written after the sweep pilot: 1614 open bodies (1316 tier 1,
+298 tier 2), 269 per queue, 2603 functions credited if all were matched.
 
 `merge_manifest.py [MANIFEST] [--check]` reads `re/match/manifest.tsv` even
 with git conflict markers or duplicate rows, keeps the union, dedupes on

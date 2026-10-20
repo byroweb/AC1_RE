@@ -1,16 +1,30 @@
 #!/usr/bin/env python3
-"""twins.py - one matched mission-overlay function counts for every clone of it.
+"""twins.py - one matched function counts for every clone of it.
 
-    twins.py group  [--functions F] [--out tools/loop/twins.tsv]
-    twins.py replay [--manifest re/match/manifest.tsv] [--twins F] [--report FILE]
-                    [--dry-run] [-j N]
+    twins.py group  [--scope missions|programs|all] [--functions F] [--out FILE]
+    twins.py replay [--scope missions|programs|all] [--manifest re/match/manifest.tsv]
+                    [--twins F] [--twins-programs F] [--report FILE] [--dry-run] [-j N]
     drive.py --replay-twins [same options as replay]   (forwards here)
 
-The 58 mission overlays (FDAT_T entries, units fdatNNN) link a common object
-library at per-entry addresses, so most functions occur in many entries with
-the same instructions and only their absolute addresses changed.
+Two scopes, grouped separately (a body is never credited across them):
 
-group:  every fdat row of functions.tsv (inventory.py --missions) is read from
+missions  the 58 mission overlays (FDAT_T entries, units fdatNNN) link a common
+          object library at per-entry addresses, so most functions occur in
+          many entries with the same instructions and only their absolute
+          addresses changed.  -> tools/loop/twins.tsv, groups gNNNN.
+programs  the exe's game code (is_psyq 0) and the program overlays ovl201..204,
+          which share the load address 0x8004ADA0; ovl202/203/204 (mission,
+          mode 1, mode 2) carry much of the same code at shifted addresses.
+          Keyed by (unit, vaddr) like everything else.
+          -> tools/loop/twins_programs.tsv, groups pNNNN.  A program twin is
+          compiled with its own unit's oracle flags (none for exe, --ovl 20N),
+          and every name of the row's symbol tables (its --syms files, else the
+          implicit ac1_markup.tsv) that sits at or up to 0xFFF below a
+          relocation target whose address moved is passed as an explicit
+          --defsym (which wins over the tables in match_fn.py) at the moved
+          address.  A wrong guess can only cost a MISMATCH, never a MATCH.
+
+group:  every row of the scope in functions.tsv (inventory.py --missions) is read from
         its image and *masked*: the 26-bit target of `jal`/`j`, the immediate of
         a `lui` that loads a RAM high half (0x8000..0x8020), and the low half
         (`addiu`/`ori` or a load/store offset) of every instruction whose base
@@ -22,8 +36,9 @@ group:  every fdat row of functions.tsv (inventory.py --missions) is read from
         relocation targets that differ from the representative's
         (`REP>MEMBER(+delta)`), the count that are equal, and a slot list.
 
-replay: for every manifest row whose unit is fdatNNN, every other member of
-        its group that is not yet in the manifest is compiled from the *same*
+replay: for every original manifest row of the scope (its source is in its
+        own unit's directory and named after its address), every other member
+        of its group is compiled from the *same*
         C file through tools/match/match_fn.py with the member's image/base,
         size, and --defsym / --rodata values derived from the member's own
         retail bytes: each `--defsym NAME=A` of the matched row is moved by
@@ -39,8 +54,11 @@ replay: for every manifest row whose unit is fdatNNN, every other member of
         refit.py skips, so clones do not flatten the calibration sample) and
         reason `twin of <unit> <vaddr> (<source>)`, so rank.py and
         `drive.py next` stop offering it; --no-ledger skips that.
+        --scope (default all) limits the run to one scope; report rows of the
+        other scope are kept as they are.
 """
 import argparse
+import bisect
 import concurrent.futures as cf
 import os
 import re
@@ -58,6 +76,11 @@ import merge_manifest  # noqa: E402
 
 FUNCTIONS = os.path.join(HERE, "functions.tsv")
 TWINS = os.path.join(HERE, "twins.tsv")
+TWINS_PROGRAMS = os.path.join(HERE, "twins_programs.tsv")
+SCOPES = ("missions", "programs")
+GROUP_PREFIX = {"missions": "g", "programs": "p"}
+DEFAULT_SYMS = ["ac1_markup.tsv"]      # match_fn.py's implicit table when a row passes no --syms
+SYM_WINDOW = 0x1000                    # a table name may be up to this far below a slot target
 MANIFEST = os.path.join(REPO, "re", "match", "manifest.tsv")
 REPORT = os.path.join(REPO, "re", "match", "twin_replay.tsv")
 MATCH_FN = os.path.join(REPO, "tools", "match", "match_fn.py")
@@ -147,14 +170,20 @@ def mask_function(words, va0):
 # ---------------------------------------------------------------------------
 # reading the inventory and images
 # ---------------------------------------------------------------------------
-def read_functions(path):
+def scope_of(unit):
+    """missions (fdatNNN) | programs (exe, ovl201..204) for a normalized unit name."""
+    return "missions" if unit.startswith("fdat") else "programs"
+
+
+def read_functions(path, scope="missions"):
+    """functions.tsv rows of one scope; PsyQ library code (is_psyq 1) is left out."""
     rows = []
     with open(path, encoding="utf-8") as fh:
         header = fh.readline().rstrip("\r\n").split("\t")
         for line in fh:
             p = line.rstrip("\r\n").split("\t")
             r = dict(zip(header, p))
-            if r["unit"].startswith("fdat"):
+            if scope_of(r["unit"]) == scope and r.get("is_psyq", "0") != "1":
                 rows.append(r)
     return rows
 
@@ -179,13 +208,16 @@ def func_words(unit, vaddr, size):
 
 
 def entry_no(unit):
-    return int(unit[4:])
+    """Sort key of a unit: exe first, then ovl201..204 / fdatNNN by number."""
+    if unit == "exe":
+        return -1
+    return int(re.sub(r"\D", "", unit))
 
 
-def analyse(functions_path):
-    """[(unit, vaddr, size, masked, slots)] for every fdat row."""
+def analyse(functions_path, scope="missions"):
+    """[(unit, vaddr, size, masked, slots)] for every row of the scope."""
     out = []
-    for r in read_functions(functions_path):
+    for r in read_functions(functions_path, scope):
         unit, va, size = r["unit"], int(r["vaddr"], 16), int(r["size"])
         words = func_words(unit, va, size)
         masked, slots = mask_function(words, va)
@@ -226,8 +258,18 @@ def fmt_delta(a, b):
 
 
 def cmd_group(args):
-    funcs = analyse(args.functions)
+    scopes = SCOPES if args.scope == "all" else (args.scope,)
+    if args.out and len(scopes) > 1:
+        sys.exit("twins.py group: --out needs a single --scope")
+    for sc in scopes:
+        group_scope(args.functions, sc, args.out or (TWINS if sc == "missions" else TWINS_PROGRAMS))
+    return 0
+
+
+def group_scope(functions_path, scope, out):
+    funcs = analyse(functions_path, scope)
     groups = build_groups(funcs)
+    prefix = GROUP_PREFIX[scope]
     lines = ["# group\trep_unit\trep_vaddr\tunit\tvaddr\tsize\tn_members\tsame_slots\tdiff_slots\tdeltas"
              " (REP>MEMBER(+delta), relocation targets that differ from the representative)"]
     for gi, g in enumerate(groups, 1):
@@ -235,19 +277,19 @@ def cmd_group(args):
         for m in g:
             diff, same = slot_deltas(rep[4], m[4])
             lines.append("\t".join([
-                "g%04d" % gi, rep[0], "0x%08X" % rep[1], m[0], "0x%08X" % m[1], str(m[2]),
+                "%s%04d" % (prefix, gi), rep[0], "0x%08X" % rep[1], m[0], "0x%08X" % m[1], str(m[2]),
                 str(len(g)), str(same), str(len(diff)), ",".join(fmt_delta(a, b) for a, b in diff)]))
-    with open(args.out, "w", encoding="utf-8", newline="\n") as fh:
+    with open(out, "w", encoding="utf-8", newline="\n") as fh:
         fh.write("\n".join(lines) + "\n")
     sizes = Counter(len(g) for g in groups)
-    print("%d mission functions in %d units -> %d groups (masked bodies)"
-          % (len(funcs), len({f[0] for f in funcs}), len(groups)))
-    print("functions with a twin in another entry: %d"
+    print("%s: %d functions in %d units -> %d groups (masked bodies)"
+          % (scope, len(funcs), len({f[0] for f in funcs}), len(groups)))
+    print("functions with a twin in another unit: %d"
           % sum(len(g) for g in groups if len({m[0] for m in g}) > 1))
     print("group size distribution (members: groups):")
     for k in sorted(sizes):
         print("  %3d: %d" % (k, sizes[k]))
-    print("wrote %s" % os.path.relpath(args.out, os.getcwd()))
+    print("wrote %s" % os.path.relpath(out, os.getcwd()))
     return 0
 
 
@@ -319,31 +361,123 @@ def run_oracle(argv):
     return res.returncode, line
 
 
+def table_syms(files):
+    """[(addr, name)] sorted, from symbol TSVs parsed the way match_fn.load_symbols does."""
+    import drive                                   # lazy: drive imports twins lazily too
+    return sorted((a, n) for n, a in drive.table_syms(files).items())
+
+
+def row_tables(other):
+    """The symbol tables match_fn.py reads for a row: its --syms, else the implicit markup."""
+    files, i = [], 0
+    while i < len(other):
+        if other[i] == "--syms" and i + 1 < len(other):
+            files.append(other[i + 1])
+            i += 2
+            continue
+        if other[i].startswith("--syms="):
+            files.append(other[i].split("=", 1)[1])
+        i += 1
+    if not files and "--no-markup" not in other:
+        files = list(DEFAULT_SYMS)
+    return tuple(files)
+
+
+def table_moves(tsyms, rep_slots, mem_slots, skip):
+    """[(name, member address)] for table names whose relocation slot moved.
+
+    A table name at A is tied to the slot with the smallest offset (target - A)
+    in [0, SYM_WINDOW); it is emitted only when that slot's target differs in
+    the member.  `skip` = names the row already passes as --defsym."""
+    addrs = [a for a, _n in tsyms]
+    best = {}                                      # name -> (off, A, delta)
+    for (_i, k, a), (_j, _k, b) in zip(rep_slots, mem_slots):
+        if k == "HI":
+            continue
+        lo = bisect.bisect_left(addrs, a - SYM_WINDOW + 1)
+        hi = bisect.bisect_right(addrs, a)
+        for idx in range(lo, hi):
+            A, n = tsyms[idx]
+            if n in skip:
+                continue
+            cur = best.get(n)
+            if cur is None or a - A < cur[0]:
+                best[n] = (a - A, A, b - a)
+    return sorted((n, (A + d) & 0xFFFFFFFF) for n, (_off, A, d) in best.items() if d)
+
+
+def is_original(r):
+    """A manifest row whose source is its own unit's func_<ADDR>.c (not a replayed twin)."""
+    try:
+        unit = units.norm(r[1] or "exe")
+        va = int(r[0], 16)
+    except (ValueError, units.UnitError):
+        return False
+    return (r[2].split("/")[0] == unit
+            and os.path.basename(r[2]).lower() == "func_%08x.c" % va)
+
+
+def report_key(fields):
+    """Sort key of a report row: (source, unit order, vaddr)."""
+    try:
+        return (fields[1], entry_no(units.norm(fields[3])), int(fields[4], 16))
+    except (ValueError, IndexError, units.UnitError):
+        return (fields[1] if len(fields) > 1 else "", 0, 0)
+
+
 def cmd_replay(args):
-    key2g, g2m = read_twins(args.twins)
+    scopes = SCOPES if args.scope == "all" else (args.scope,)
+    key2g, g2m = {}, defaultdict(list)
+    for sc in scopes:
+        path = args.twins if sc == "missions" else args.twins_programs
+        if not os.path.isfile(path):
+            print("note: %s not found (run twins.py group --scope %s)" % (path, sc))
+            continue
+        k2g, gm = read_twins(path)
+        key2g.update(k2g)
+        for g, mem in gm.items():
+            g2m[g].extend(mem)
     header, rows = merge_manifest.parse(open(args.manifest, encoding="utf-8").read())
-    have = {(units.norm(r[1] or "exe"), int(r[0], 16)) for r in rows if r[0].startswith("0x")}
-    # originals: fdat rows whose source lives in that unit's own directory and is named
-    # after that row's address (a group can have several members in one unit, e.g.
-    # fdat004 func_801C6734.c also matches 0x801C6A28 and 0x801C6D80: those are twins)
-    origs = [r for r in rows if (r[1] or "").startswith("fdat")
-             and r[2].split("/")[0] == units.norm(r[1])
-             and os.path.basename(r[2]).lower() == "func_%08x.c" % int(r[0], 16)]
+    have = set()
+    for r in rows:
+        if r[0].startswith("0x"):
+            try:
+                have.add((units.norm(r[1] or "exe"), int(r[0], 16)))
+            except units.UnitError:
+                pass
+    # originals: rows whose source lives in that unit's own directory and is named after
+    # that row's address (a group can have several members in one unit, e.g. fdat004
+    # func_801C6734.c also matches 0x801C6A28 and 0x801C6D80: those are twins)
+    origs = [r for r in rows if is_original(r) and scope_of(units.norm(r[1] or "exe")) in scopes]
+    tables = {}
     jobs = []
+    # members matched from their own C file are not replayed over (their manifest row
+    # names that file, which check_all.sh compares with the report's source)
+    targeted = {(units.norm(r[1] or "exe"), int(r[0], 16)) for r in rows if is_original(r)}
     for r in origs:
-        unit, va, src, size, extra = units.norm(r[1]), int(r[0], 16), r[2], int(r[3]), r[4]
+        unit, va, src, size, extra = units.norm(r[1] or "exe"), int(r[0], 16), r[2], int(r[3]), r[4]
+        sc = scope_of(unit)
         g = key2g.get((unit, va))
         if g is None:
-            print("note: %s 0x%08X is not in %s (re-run twins.py group)" % (unit, va, args.twins))
+            print("note: %s 0x%08X is not in the %s twins file (re-run twins.py group)" % (unit, va, sc))
             continue
         rep_words = func_words(unit, va, size)
         _m, rep_slots = mask_function(rep_words, va)
         defs, rodata, other = parse_extra(extra)
+        tsyms = []
+        if sc == "programs":
+            tf = row_tables(other)
+            if tf not in tables:
+                tables[tf] = table_syms(tf)
+            tsyms = tables[tf]
         for (munit, mva, msize) in g2m[g]:
-            if (munit, mva) == (unit, va):
+            # one job per member: a group with several matched originals (clones matched
+            # independently) replays only the first original onto each other member
+            if (munit, mva) == (unit, va) or (munit, mva) in targeted:
                 continue
+            targeted.add((munit, mva))
             job = {"group": g, "src": src, "from": "%s 0x%08X" % (unit, va),
-                   "unit": munit, "vaddr": mva, "size": msize, "extra": "", "err": None,
+                   "unit": munit, "col": munit, "vaddr": mva, "size": msize, "extra": "", "err": None,
                    "already": (munit, mva) in have}
             try:
                 mu = units.resolve(munit)
@@ -351,6 +485,7 @@ def cmd_replay(args):
                 job["err"] = "ERROR: %s" % e
                 jobs.append(job)
                 continue
+            job["col"] = mu.manifest_unit
             _m2, mem_slots = mask_function(func_words(munit, mva, msize), mva)
             mdefs, errs = [], []
             for n, a in defs:
@@ -359,26 +494,30 @@ def cmd_replay(args):
                     errs.append("%s: %s" % (n, err))
                 else:
                     mdefs.append((n, b))
+            if tsyms:
+                mdefs += table_moves(tsyms, rep_slots, mem_slots, {n for n, _a in defs})
             mrod = None
             if rodata is not None:
                 mrod, err = map_addr(rodata, rep_slots, mem_slots, unit)
                 if err:
                     errs.append("--rodata: " + err)
-            ex = ["--base", "0x%08X" % mu.base]
+            ex = ["--base", "0x%08X" % mu.base] if sc == "missions" else []
             if mrod is not None:
                 ex += ["--rodata", "0x%08X" % mrod]
             for n, b in mdefs:
                 ex += ["--defsym", "%s=0x%08X" % (n, b)]
             ex += other
             job["extra"] = " ".join(ex)
-            job["argv"] = (["0x%08X" % mva, os.path.join(os.path.dirname(args.manifest), src),
-                            "--bin", mu.image_path] + ex + ["--expect-size", str(msize), "-q"])
+            sel = ["--bin", mu.image_path] if sc == "missions" else list(mu.oracle_flags)
+            job["argv"] = (["0x%08X" % mva, os.path.join(os.path.dirname(args.manifest), src)]
+                           + sel + ex + ["--expect-size", str(msize), "-q"])
             if errs:
                 job["err"] = "ERROR: " + "; ".join(errs)
             jobs.append(job)
 
     todo = [j for j in jobs if not j["err"]]
-    print("%d matched mission row(s), %d twin(s) to replay" % (len(origs), len(jobs)))
+    print("%d matched original row(s) in scope %s, %d twin(s) to replay"
+          % (len(origs), "+".join(scopes), len(jobs)))
     if args.dry_run:
         for j in jobs:
             print("%s  %s 0x%08X  <- %s  %s" % (j["group"], j["unit"], j["vaddr"], j["src"], j["err"] or j["extra"]))
@@ -396,29 +535,44 @@ def cmd_replay(args):
     new_rows = list(rows)
     for j in jobs:
         if j["result"] == "MATCH" and not j["already"]:
-            new_rows.append(["0x%08X" % j["vaddr"], j["unit"], j["src"], str(j["size"]), j["extra"]])
+            new_rows.append(["0x%08X" % j["vaddr"], j["col"], j["src"], str(j["size"]), j["extra"]])
             added += 1
     recorded = 0
     if not args.no_ledger:
         lrows = ledger.load()
         for j in jobs:
             if j["result"] == "MATCH" and ledger.state(j["unit"], "0x%08X" % j["vaddr"], lrows) != "match":
-                ledger.record("match", j["unit"], "0x%08X" % j["vaddr"], 0,
-                              "twin of %s (%s)" % (j["from"], j["src"]))
+                r = ledger.record("match", j["unit"], "0x%08X" % j["vaddr"], 0,
+                                  "twin of %s (%s)" % (j["from"], j["src"]))
+                lrows[(r["unit"], r["vaddr"])] = r
                 recorded += 1
     merged = merge_manifest.merge(new_rows)
     with open(args.manifest, "wb") as fh:
         fh.write(((header or merge_manifest.HEADER) + "\n" +
                   "".join("\t".join(r) + "\n" for r in merged)).encode("utf-8"))
 
-    jobs.sort(key=lambda j: (j["src"], entry_no(j["unit"]), j["vaddr"]))
+    # report: this run's rows plus the other scope's rows as they were
+    keep = []
+    if len(scopes) < len(SCOPES) and os.path.isfile(args.report):
+        with open(args.report, encoding="utf-8") as fh:
+            for line in fh:
+                p = line.rstrip("\r\n").split("\t")
+                if line.startswith("#") or len(p) < 5:
+                    continue
+                try:
+                    if scope_of(units.norm(p[3])) not in scopes:
+                        keep.append(p)
+                except units.UnitError:
+                    keep.append(p)
+    out = keep + [[j["group"], j["src"], j["from"], j["col"], "0x%08X" % j["vaddr"],
+                   str(j["size"]), j["result"], j["line"], j["extra"]] for j in jobs]
+    out.sort(key=report_key)
     with open(args.report, "w", encoding="utf-8", newline="\n") as fh:
-        fh.write("# twin replay (tools/loop/twins.py replay): every clone of a matched mission function,"
+        fh.write("# twin replay (tools/loop/twins.py replay): every clone of a matched function,"
                  " compiled from the shared C file\n")
         fh.write("# group\tsource\tmatched_as\tunit\tvaddr\tsize\tresult\toracle_final_line\textra\n")
-        for j in jobs:
-            fh.write("\t".join([j["group"], j["src"], j["from"], j["unit"], "0x%08X" % j["vaddr"],
-                                str(j["size"]), j["result"], j["line"], j["extra"]]) + "\n")
+        for p in out:
+            fh.write("\t".join(p) + "\n")
     c = Counter(j["result"] for j in jobs)
     print("replayed %d twin(s): %s" % (len(jobs), ", ".join("%s %d" % kv for kv in sorted(c.items()))))
     print("manifest: %d row(s) added (%d already present)" % (added, sum(1 for j in jobs if j["already"])))
@@ -435,17 +589,20 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0],
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd")
-    p = sub.add_parser("group", help="group mission functions by masked body -> twins.tsv")
+    p = sub.add_parser("group", help="group functions by masked body -> twins.tsv / twins_programs.tsv")
+    p.add_argument("--scope", choices=SCOPES + ("all",), default="all")
     p.add_argument("--functions", default=FUNCTIONS)
-    p.add_argument("--out", default=TWINS)
+    p.add_argument("--out", default=None, help="output file (one --scope only)")
     p.set_defaults(func=cmd_group)
-    p = sub.add_parser("replay", help="replay matched mission C files against their twins")
+    p = sub.add_parser("replay", help="replay matched C files against their twins")
+    p.add_argument("--scope", choices=SCOPES + ("all",), default="all")
     p.add_argument("--manifest", default=MANIFEST)
     p.add_argument("--twins", default=TWINS)
+    p.add_argument("--twins-programs", default=TWINS_PROGRAMS)
     p.add_argument("--report", default=REPORT)
     p.add_argument("--dry-run", action="store_true", help="print the derived oracle flags only")
     p.add_argument("--no-ledger", action="store_true", help="do not record the twins in the ledger")
-    p.add_argument("-j", "--jobs", type=int, default=4)
+    p.add_argument("-j", "--jobs", type=int, default=max(1, (os.cpu_count() or 4) - 2))
     p.set_defaults(func=cmd_replay)
     args = ap.parse_args(argv)
     if not args.cmd:
