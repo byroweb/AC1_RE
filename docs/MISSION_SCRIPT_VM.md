@@ -29,6 +29,11 @@ AC1 has **two** mission VMs:
 - Dispatch is a hand-written binary search (not a jump table). The opcode u16 is
   consumed (`PC += 2`) before the handler; **unknown opcodes are silent 0-operand
   no-ops in v1.1** (verified: all 106 threads on the disc walk cleanly to `0xFFFF`).
+  **Caveat (2026-10-19):** every opcode `< 0x20` also sets bit `1<<op` in the thread's
+  "opcode-seen" mask (`0x8008B444..B454`) before dispatch. Bits `0x10000`–`0x80000`
+  (ops `0x0010`–`0x0013`) drive real tail callees once the thread enters `set_loop`. So
+  those four aren't inert, and only opcodes `>= 0x20` outside the table are true no-ops.
+  See the tail map below.
 
 ## On-disc blob format (CONFIRMED, byte-verified)
 
@@ -64,7 +69,7 @@ Loader `vm_load_threads(set_idx)` @ `0x8008C178`; tick globals live in the world
 | `0x000A` | init_unit | 12 | (skip),5×hw | init bound unit block (`unit+0x65/74/76/78/7A/7C/15C`); **field meanings HYP** |
 | `0x000B` | subcall_b320 | 0 | — | `FUN_8008B320` re-run/restart actor sub |
 | `0x000E` | mark_lerp | 14 | 7×hw | inline pose/track block consumed by lerp tail; **field layout HYP** |
-| `0x000F` | op_f | 2+cnt*4 | u16 cnt, cnt×(2 hw) | count-prefixed list (lerp tail spawns cnt markers/projectiles) |
+| `0x000F` | op_f | 2+cnt*4 | u16 cnt, cnt×(2 hw) | count-prefixed list of **model-node index pairs** on the bound unit. Each tail frame spawns smoke/shrapnel **FX sprites** at those nodes (`0x80078250`/`0x8007832C` → `0x80086C9C`/`0x80086854`). **Non-damaging**: the FX thinks `0x8008523C`/`0x800853D4` never raycast or reach the router. See `MISSION_DAMAGE_EVENTS.md` §1 |
 | `0x1000` | sel_actor | 2 | idx | bind subsequent ops to thread-record/unit `idx` (`0x801D0B60+idx*24`) |
 | `0x1001` | set_xyz | 6 | x,y,z OR (0x8000,refidx,_) | literal XYZ into `s3`, or copy pose from actor-table[refidx] (`0x801A8B08+refidx*100`) |
 | `0x1002` | set_xyz2 | 6 | x,y,z OR ref | second XYZ/ref form |
@@ -80,12 +85,30 @@ Loader `vm_load_threads(set_idx)` @ `0x8008C178`; tick globals live in the world
 | `0x100C` | despawn_group | 2 | N | mirror of spawn_group: `FUN_80078D78` despawn entity for template N |
 | `0xFFF0` | set_loop | 2 | n | **blocking**: run the action/lerp tail for n frames (state=1) |
 | `0xFFFF` | END | 0 | — | terminator (arms final lerp if pending) |
-| other | (noop) | 0 | — | any non-table u16 (`0x000C/0x000D/0x0010/…`) = reserved 0-operand no-op in v1.1 |
+| `0x0010`–`0x0013` | (tail verbs) | 0 | — | no dispatch handler, but sets tail bits `0x10000`/`0x20000`/`0x40000`/`0x80000` (see tail map) |
+| other | (noop) | 0 | — | any other non-table u16 = reserved 0-operand no-op in v1.1 (`0x000C/0x000D` set unused tail bits `0x1000/0x2000`, a free hook for new tail verbs) |
 
 The **action/interpolation tail** (thread state≠0) runs scheduled actions keyed by an
 "opcode-seen" bitmask, computing a fixed-point lerp parameter `(elapsed<<12)/total`;
 bit→callee map is read out at `0x8008BC04–0x8008C078` (e.g. `0x1`=position interp via
 `FUN_800276F4`, `0x80000`=`0x8019F524|=0x400`+`FUN_800796F4`). Per-bit timing units HYP.
+
+Tail bit map (CONFIRMED static, 2026-10-19). The mask is cleared when the dispatch
+loop is entered, then the tail runs every frame while state ≠ 0:
+
+| bit | set by op | tail action |
+|---|---|---|
+| `0x1` | `0x0000` | position interp, `FUN_800276F4` |
+| `0x4` | `0x0002` | second-track interp, `FUN_800276F4` |
+| `0x100` / `0x200` / `0x400` | `0x0008` / `0x0009` / `0x000A` | `0x8004EC4C` / `0x8004ECA8` / `0x8004ED5C` |
+| `0x800` | `0x000B` | `0x8004F024` integrator; if it returns 0, `0x8008B320` |
+| `0x4000` | `0x000E` | `mark_lerp` record (via scratch `+0x24`) → `0x8004C98C` effect spawn (periodic) |
+| `0x8000` | `0x000F` | node FX emitter (above), record via scratch `+0x26` |
+| `0x10000` | `0x0010` | `jal 0x8008792C` |
+| `0x20000` | `0x0011` | `jal 0x800736AC` (method `+0x14→+0` on all 512 × 52-B records at `0x80198B08`) |
+| `0x40000` | `0x0012` | `jal 0x80073104` |
+| `0x80000` | `0x0013` | `0x8019F524 \|= 0x400`; `0x800796F4` |
+| `0x2,0x8,0x10–0x80,0x1000,0x2000,0x100000+` | — | **untested**, free for new verbs |
 
 ## Authoring (assembler spec)
 
