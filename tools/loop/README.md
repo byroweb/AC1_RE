@@ -60,7 +60,7 @@ worktree, then in `$AC1_DISC_MAP`.
 After the zero-agent sweep, 186 open program bodies of 1024 B or more remain in
 queue-S1..S6 (409 KB, 257 functions with twins; median 1.6 KB, 14 calls,
 32 branches; 41 use the GTE, 34 have jump tables, 60 are over 2 KB). One
-session matched nine of them by hand with the match-function loop, one at a
+session matched twelve of them by hand with the match-function loop, one at a
 time. Wall time runs from the first disassembly to the oracle's MATCH and
 includes reading the asm, writing headers and every oracle run. A sweep is one
 parallel batch of source variants through `match_fn.py`, using a small
@@ -77,10 +77,21 @@ replace-and-compile helper.
 | 7 | ovl202 0x80060B54 | 1360 | 3 | 2 min | 3 | 1 (8) | globals 0x801A5F24/28 are one struct (in-struct aliasing forces the reloads); statement and operand order |
 | 8 | ovl202 0x80070A58 | 1240 | 3 | 4 min | 4 | 2 (14) | spill-slot layout follows declaration order; sign/abs as `s = d > 0 ? (a = d, 1) : (a = -d, -1)`; clip code shared through a `goto`, not cross-jumping |
 | 9 | ovl201 0x8008B094 | 1236 | 1 | 9 min | 6 | 7 (~63) | cursor global is a struct member (base register when used twice, no load hoisting); `if (vy <= 0) {...} else vy -= 24;` so the stores cross-jump; local types change the frame; loop-counter init; compare operand order |
+| 10 | ovl202 0x8005156C | 1092 | 1 | 2.7 min | 4 | 2 (96) | near-copy cluster n019, from scratch: scalar global is a struct member (base register); `-a + 512`; one variable for the count and the loop index; statement order |
+| 10a | ovl203 0x80052238 | 1092 | 1 | 50 s | 2 | – | **port of #10**: view globals become a pointer chain through `D_80039D18`; one assignment order |
+| 10b | ovl204 0x80051878 | 1108 | 1 | 20 s | 1 | – | **port of #10a**: new addresses, frame counter read through `D_80039D18` |
 
-Totals: 12.4 KB of bodies, 31 functions credited with twins (9 + 22), about
-40 minutes, 25 oracle runs and about 100 sweep variants. No function needed
+Totals: 15.7 KB of bodies, 34 functions credited with twins (12 + 22), about
+45 minutes, 32 oracle runs and about 200 sweep variants. No function needed
 more than 6 single runs.
+
+- **Porting near-copies.** The open near-copy clusters (masked-word similarity
+  0.8 or more; `open_near_twin_clusters_512B.tsv` from openclusters.py) pay off.
+  For cluster n019 (#10 → #10a/#10b, three overlays), the first member took
+  2.7 min (2.4 min/KB) from scratch. Each port took 20-50 s (0.3-0.75 min/KB)
+  and 1-2 oracle runs, 4-8 times faster: copy the C, rename the globals and
+  callees, adjust what the asm diff shows. Same-overlay siblings behave the
+  same way (clusters n000/n001 are #1→#3 and #2→#4).
 
 - **Hours per KB.** Measured: 0.05 h/KB overall (3 min/KB). A body whose
   family is already done runs at about 0.5 min/KB (#2-#4); a first-of-family
