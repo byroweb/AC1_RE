@@ -40,9 +40,11 @@ AC1_ASSERT_SIZE(MissionCtl, 0x28);
  * Doors, generators and fuel tanks (DESTRUCTIBLE_OBJECTS.md,
  * INTERACTIONS.md, LEVEL_LOADING.md). */
 typedef struct WorldStruct {
-    u8 unk00[0x18];             /* +0x00/+0x08/+0x10 read by the visibility walk */
+    u8 unk00[0x10];             /* +0x00/+0x08 read by the visibility walk */
+    s16 org[3];                 /* +0x10 origin the collision mesh is relative to (func_800705D8) */
+    s16 unk16;                  /* +0x16 passed to func_8006FA30 with the hit point */
     s16 bbox_min[3];            /* +0x18 */
-    s16 unk1e;
+    s16 mesh;                   /* +0x1E index into the collision-mesh table (CollMesh at 0x80091228) */
     s16 bbox_max[3];            /* +0x20 */
     s16 unk26;
     u8 unk28[4];
