@@ -931,6 +931,15 @@ and `func_`/`D_<ADDR>` names):
    | `const` | a literal in its other-signedness spelling (`-1` <-> `0xFF`/`0xFFFF`) | `li` immediates |
    | `swap` | two adjacent statements | register colouring by first use (p01/p02) |
    | `commute` | operands of a top-level `+ \| & ^ *` | commutative operand order (p20) |
+   | `args` | at one call site, the caller's leading parameter(s) put in front (`f(x)` -> `f(arg0, x)`) or its next one(s) after; the callee's prototype in the file widened or made `T f();`, else an unprototyped cast | retail `li a1,18` vs ours `li a0,18` before a `jal`: m2c guesses arity from the argument registers set before the call, so an argument passed through in the caller's own register is dropped |
+
+   **`args` batch (2026-10-20)**: every open body of `closeness.tsv` at closeness >= 0.85 and
+   <= 600 B (145 bodies, drafted again from their `best_variant`), one `tools/match/variants.py`
+   batch with the other levers and one with `args` alone: `args` matched **8** bodies (+6
+   twins), none of which the other levers matched (`func_80076548(arg0, 0x12)` three times,
+   `func_8004FB8C(arg0, arg1)` twice, `VectorNormalSS(arg0, arg2)`); the other levers matched
+   12 (+6 twins) that the pilot never reached.  With `func_8007A218` (+2) from the first
+   variants.py run: 21 bodies, 35 functions credited in all.
 
 2. **decomp-permuter** ([simonlindholm/decomp-permuter](https://github.com/simonlindholm/decomp-permuter),
    `$PERMUTER_DIR`, default `~/dev/decomp-permuter` with a `.venv` holding `toml` and

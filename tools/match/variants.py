@@ -43,7 +43,7 @@ Where the variants come from (any mix, all applied to the input text):
                  as written, else with runs of whitespace matching any whitespace.  No `+`
                  lines deletes the old text.
   --replace OLD NEW   one more variant with one replacement (`\\n`, `\\t` unescaped).
-  --levers LIST  tools/loop/levers.py rewrites of the function (index, bytes, ptype,
+  --levers LIST  tools/loop/levers.py rewrites of the function (index, bytes, args, ptype,
                  etype, const, swap, commute; `all`), one variant per site.
   --pairs        then every pair of the --edits/--replace variants that improved on the
                  input (best --pair-top of them), both applied.
