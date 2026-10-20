@@ -10,7 +10,7 @@
 extern void func_8006E0C0(void *arg0, CollScratch *scr);
 extern s32 func_8006FB6C(void *bits, ...);
 extern void func_8006FD6C(CollScratch *scr, void *arg0);
-extern u32 func_80070A58(CollHdr *hdr, s32 *p, s32 *arg2);
+extern u32 func_80070A58(CollHdr *hdr, s32 *p, CollBox *box);
 extern s32 func_80070168(void *verts, CollPoly *poly, s32 *p, SVECTOR *hit);
 extern void func_8006FA30(SVECTOR *from, SVECTOR *to, s32 arg2);
 extern u32 D_801E8B70;
@@ -41,7 +41,7 @@ CollHit *func_800705D8(void *arg0, SVECTOR *out, s32 flags)
             scr->end = scr->group_end = scr->cur + scr->hdr->n;
             goto test;
         }
-        scr->mask = func_80070A58(scr->hdr, scr->p, scr->unk44);
+        scr->mask = func_80070A58(scr->hdr, scr->p, &scr->box);
         if (scr->mask == 0) {
             continue;
         }

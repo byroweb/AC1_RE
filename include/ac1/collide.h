@@ -2,7 +2,8 @@
  * records and the scratchpad work block of the nearest-hit search.
  *
  * Evidence: func_800705D8 (the search, two clones in 203/204) and the shapes
- * of its callees func_80070168 (one polygon), func_80070A58 (bucket mask),
+ * of its callees func_80070168 (one polygon), func_80070A58 (bucket mask:
+ * the segment walked through the box's 8 x 8 x 8 grid),
  * func_8006FB6C (bitset iterator), func_8006FA30 (hit point fix-up).
  */
 #ifndef AC1_COLLIDE_H
@@ -52,9 +53,15 @@ typedef struct CollHit {        /* 0x801E8B74: result of the last successful pro
 } CollHit;
 AC1_ASSERT_SIZE(CollHit, 8);
 
+typedef struct CollBox {        /* 0x10: mesh bounding box, split 8 x 8 x 8 into buckets */
+    SVECTOR min;
+    SVECTOR max;
+} CollBox;
+AC1_ASSERT_SIZE(CollBox, 0x10);
+
 typedef struct CollScratch {    /* 0x1F800000, scratchpad, during a probe */
     u32 bits[17];               /* +0x00 candidate world structs (bitset, func_8006E0C0) */
-    s32 unk44[4];               /* +0x44 handed to func_80070A58 */
+    CollBox box;                /* +0x44 bounding box of the current mesh (func_8006FD6C) */
     s32 p[3];                   /* +0x54 probe start */
     s32 d[3];                   /* +0x60 probe end, then end - start */
     SVECTOR hit;                /* +0x6C hit point of the last polygon test */
