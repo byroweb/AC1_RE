@@ -32,14 +32,16 @@ KEY STRUCTURE (RE'd from relocation walker FUN_800574D8 @0x800574D8, overlay ent
   pool always holds both sets (pool2 - pool == (u16@+4 + u16@+6) * 8 on all 72 PA
   files). The unlit high-bit types (0xa0/0xa4/0xac) occur only in the detail range.
 
-  Number of primitive records walked = (u16@+0x14) + (FLAGS & 0x1ff) - 1.
+  Number of primitive records walked = (u16@+0x14) + (FLAGS & 0x1ff). The walker
+  pre-decrements and stops at -1, so it visits all of them (no -1). On all 72 PA
+  files the walk ends exactly where the next section starts.
   All in-file offsets are RELATIVE TO  block+block[+8]+12  (== block + block[+8] + 12).
   Vertex indices in each primitive record are POOL-RELATIVE to that sub-object's
   full (base + detail) vertex pool, so each sub-object is exported as its own OBJ
   group `o sub<N>`.
 
 Verified on PA00 entry 2 (3 sub-objects: 122/14/44 verts; prim walks land exactly on
-section boundaries 0x1218 / 0x1a38 / 0x1f34; every index < pool size).
+the vertex pools 0x1230 / 0x1a4c / 0x1f54; every index < pool size).
 
 Usage:
   python3 tools/pa/pa_obj.py GG/P0/PA00.T --entry 2
@@ -148,7 +150,7 @@ def parse_subobjects(block):
             pool2_off=f8 + reloc,
             flags=flags,
             prim_off=prim_off + reloc,
-            prim_cnt=prim_cnt_base + (flags & 0x1ff) - 1, prim_base_cnt=prim_cnt_base,
+            prim_cnt=prim_cnt_base + (flags & 0x1ff), prim_base_cnt=prim_cnt_base,
         ))
     return reloc, subs
 

@@ -175,7 +175,7 @@ class SubObject:
         self.pool4_param = struct.unpack_from("<H", desc_raw, 0x16)[0]
         self.pool4_off = struct.unpack_from("<I", desc_raw, 0x18)[0]
         self.terminated = bool(self.flags & 0x8000)
-        self.prim_cnt = self.prim_cnt_base + (self.flags & 0x1ff) - 1
+        self.prim_cnt = self.prim_cnt_base + (self.flags & 0x1ff)
         # pools (filled by parser); raw + decoded views
         self.vtx_raw = b""
         self.norm_raw = b""

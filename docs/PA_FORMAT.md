@@ -72,15 +72,22 @@ the base ones. Records in the detail range index the whole pool. The unlit types
 `< u16[+4] + u16[+6]`. Indices are sub-object-local. They only *looked* block-global
 because a sub-object's detail range runs past its base count.
 
-**Primitive-record count walked** = `u16[+0x14] + (FLAGS & 0x1ff) − 1`.
+**Primitive-record count walked** = `u16[+0x14] + (FLAGS & 0x1ff)`.
+(CORRECTED 2026-10-19: this was `… − 1`, which dropped the last record of every
+sub-object, and every record of a one-record sub-object. The walker at `0x80057570`
+loads the sum, then pre-decrements and exits at −1, so it visits `sum` records. The
+emitter's count at `0x8005A6A4` works the same way.)
 
 - **Vertices** = the +0 pool, `int16 x,y,z,flag` stride 8 (4th int16 = flag/normal).
-- The walks land EXACTLY on section boundaries. PA00 entry 2 (3 sub-objects):
-  - sub0: vtx@**0x1230** ×122, prim@**0x6c** ×163 → ends at 0x1218 (just before next pool)
-  - sub1: vtx@0x1a4c ×14,  prim@0x1950 ×12  → ends 0x1a38
-  - sub2: vtx@0x1f54 ×44,  prim@0x1b24 ×35  → ends 0x1f34
-  Every decoded index is `< pool size` (max == count−1). **Note:** the earlier doc's
-  "vertices @0x1218" was off by the +0x18 relocation; the true pool base is 0x1230.
+- The walks land EXACTLY on section boundaries: on all 72 PA files (49,662 live
+  sub-objects) a walk of `sum` records ends at the next section start, and `sum − 1`
+  never does. PA00 entry 2 (3 sub-objects):
+  - sub0: vtx@**0x1230** ×122, prim@**0x6c** ×164 → ends at 0x1230 (the vertex pool)
+  - sub1: vtx@0x1a4c ×14,  prim@0x1950 ×13  → ends 0x1a4c
+  - sub2: vtx@0x1f54 ×44,  prim@0x1b24 ×36  → ends 0x1f54
+  Every decoded index is `< pool size` (max == count−1). **Note:** the old `− 1` walk
+  ended at 0x1218 / 0x1a38 / 0x1f34, one record short of each pool. That gap was
+  once misread as a "+0x18 relocation" offset.
 - Decode the table + export with **`tools/pa/pa_obj.py … --entry N`** (prints the table,
   walks each sub-object, validates index ranges). Per-sub-object pools confirm that
   vertex indices are POOL-RELATIVE (each sub-object is a separate OBJ group `o subN`).
@@ -342,13 +349,13 @@ the pieces of a stage). Each 28-byte sub-object descriptor (table at
 | off | type | field |
 | --- | --- | --- |
 | +0x00 | u32 | vertex-pool offset |
-| +0x04 | u16 | vertex count (u16; +0x06 = u16 param — see correction above) |
-| +0x06 | u16 | param (articulated-variant; nonzero e.g. PA00 e60) |
+| +0x04 | u16 | vertex count, base LOD |
+| +0x06 | u16 | vertex count, detail-LOD addend (nonzero e.g. PA00 e60; pool = +0x04 + +0x06) |
 | +0x08 | u32 | **normal-pool** offset (pool2) |
 | +0x0c | u16 | **normal count** |
-| +0x0e | u16 | flags (0x8000 = skip/terminate) |
+| +0x0e | u16 | flags (0x8000 = skip/terminate; low 9 bits = detail-LOD prim addend) |
 | +0x10 | u32 | primitive-stream offset |
-| +0x14 | u16 | primitive count (base; + (flags&0x1ff) − 1) |
+| +0x14 | u16 | primitive count, base LOD (walk = this + (flags&0x1ff)) |
 | +0x16 | u16 | pool4 count/param |
 | +0x18 | u32 | pool4 offset (small, ~8 B/sub-object; purpose TBD) |
 
