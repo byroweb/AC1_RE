@@ -28,10 +28,22 @@ def json_part(out):
     return json.loads(out[out.index("{"): out.rindex("}") + 1])
 
 
-def run(*args):
-    p = subprocess.run([sys.executable, MATCH_FN, *args], capture_output=True, text=True)
+def run(*args, env=None):
+    p = subprocess.run([sys.executable, MATCH_FN, *args], capture_output=True, text=True, env=env)
     lines = p.stdout.rstrip("\n").split("\n")
     return p.returncode, p.stdout, lines[-1]
+
+
+def temp_env(tmp, **extra):
+    """Environment whose tempfile.gettempdir() is `tmp` (TMPDIR wins on every OS)."""
+    env = dict(os.environ, TMPDIR=str(tmp), TEMP=str(tmp), TMP=str(tmp))
+    env.pop("AC1_MATCH_KEEP_ON_FAIL", None)
+    env.update(extra)
+    return env
+
+
+def work_dirs(tmp):
+    return sorted(p.name for p in tmp.iterdir() if p.name.startswith("match_fn_"))
 
 
 def have_toolchain():
@@ -113,3 +125,32 @@ def test_external_symbol_masking_and_defsym(tmp_path):
 
     rc, out, last = run("0x80090C38", str(src), "--no-markup", "--defsym", "D_801A2574=0x801A2570")
     assert rc == 1 and last == "MISMATCH func_80090C38 0x8", out
+
+
+def test_no_work_dir_left_on_match_mismatch_or_error(tmp_path):
+    """The auto-created match_fn_* temp dir is removed on every outcome (it used to
+    survive every MISMATCH/ERROR: ~22,000 of them piled up under the sweeps)."""
+    tmp = tmp_path / "tmp"
+    tmp.mkdir()
+    env = temp_env(tmp)
+    rc, out, last = run(VADDR, GOOD, "-q", env=env)
+    assert rc == 0, out
+    rc, out, last = run(VADDR, BAD, env=env)
+    assert rc == 1 and last.startswith("MISMATCH"), out
+    assert "work dir:" not in out, out
+    broken = tmp_path / "func_8004F7E8.c"
+    broken.write_text("void func_8004F7E8(int *p) { return p-> ; }\n")   # cc1 rejects it after mkdtemp
+    rc, out, last = run(VADDR, str(broken), "-q", env=env)
+    assert rc == 2 and "ERROR:" in out and "parse error" in out, out
+    assert work_dirs(tmp) == [], work_dirs(tmp)
+
+
+def test_keep_on_fail_keeps_only_misses(tmp_path):
+    tmp = tmp_path / "tmp"
+    tmp.mkdir()
+    rc, out, last = run(VADDR, GOOD, "-q", "--keep-on-fail", env=temp_env(tmp))
+    assert rc == 0 and work_dirs(tmp) == [], out
+    rc, out, last = run(VADDR, BAD, "-q", env=temp_env(tmp, AC1_MATCH_KEEP_ON_FAIL="1"))
+    assert rc == 1, out
+    kept = work_dirs(tmp)
+    assert len(kept) == 1 and os.path.isfile(os.path.join(tmp, kept[0], "fn.i")), kept

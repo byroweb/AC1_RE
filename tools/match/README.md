@@ -105,11 +105,13 @@ masked ones), e.g.
   8004f7e8  lhu v0,64(a0)                      | lhu v0,64(a0)
 ! 8004f7ec  lhu v1,68(a0)                      | lhu v1,66(a0)
   ...
-6 differing word(s); work dir: /tmp/match_fn_xxxx
+6 differing word(s)
 MISMATCH func_8004F7E8 0x4
 ```
 
-The work dir is kept on MISMATCH/ERROR (deleted on MATCH unless `--keep`).
+The temp work dir (`fn.i`, `fn.s`, `fn.maspsx.s`, `fn.o`) is always deleted.  Use
+`--keep DIR` to keep it in DIR, or `--keep-on-fail` (or env `AC1_MATCH_KEEP_ON_FAIL=1`)
+to keep the temp dir only on MISMATCH/ERROR; its path is printed on stderr.
 
 A MATCH says the first `n` bytes at `<vaddr>` equal your function.  It does not
 by itself prove the retail function is not longer; pass `--expect-size` with the
