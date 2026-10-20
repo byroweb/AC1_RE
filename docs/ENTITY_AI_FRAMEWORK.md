@@ -47,7 +47,7 @@ the train is the *full* case — mover + HP, on the entity route.
 ### This mission's slot map  CONFIRMED
 | slot | addr | actor | think handler (`+0x58`) |
 |---|---|---|---|
-| 0 | `0x801A26B8` | player | base-exe control funcs |
+| 0 | `0x801A26B8` | player | overlay-202 player handlers (`0x80080D00` → `0x8007DF98`; installed by `player_init 0x8007EAE8`, see `PLAYER_CONTROL.md`) |
 | 1 | `0x801A2828` | aircraft (type A) | `0x801C66DC` |
 | 2 | `0x801A2998` | **red enemy AC** | `0x801C5B7C` |
 | 3–6 | `0x801A2B08…0x801A2F58` | aircraft (type B) | `0x801C68E4` |
@@ -88,7 +88,7 @@ entity->worldpos = stack_pos;// 0x80078A04..A10 swl/swr to +0x20/+0x24 (UNCONDIT
 The position write is **unconditional** — the handler's job is to leave the new
 position in the caller's stack frame. This matters for the freeze tool below.
 
-Per-entity think handlers: player = base-exe; aircraft = `0x801C66DC` /
+Per-entity think handlers: player = overlay 202 (`0x80080D00`/`0x800826FC`, not the base exe — corrected 2026-10-19, `PLAYER_CONTROL.md`); aircraft = `0x801C66DC` /
 `0x801C68E4`; red AC = `0x801C5B7C`; train = `0x801CBD44` (a path-follower that
 reads the mission timer `0x8019F52C` and advances at constant velocity = on
 rails).
@@ -129,21 +129,28 @@ of `+0x58`**, so frozen entities still take hits (§4) — ideal sitting targets
 ## 3. Target selection / arbitration  CONFIRMED
 
 The enemy's target (`entity+0x48`) is **not fixed** — it is recomputed by a
-nearest-enemy scan at **`0x80073774`–`0x800738C0`** that writes the winner with
-`sw s7, 0x48(redAC)`:
+nearest-enemy scan, the shared function **`acquire(self, range)` @ `0x80073714`** (loop
+`0x80073774`–`0x800738C0`), which writes the winner with `sw s7, 0x48(self)`. Corrected
+2026-10-19 from full disasm (see `PERCEPTION_MODEL.md` §1a):
 
 ```c
-best = none; bestScore = 0x1FFFFFFF;
-for (cand in entities) {
+best = 0; bestScore = 0x7FFFFFFF;
+for (slot = 0; slot < 16; slot++) {                // 16 iterations (resolves D3 for this loop)
+    cand = 0x801A26B8 + slot*0x170;
     if (*cand == 0) continue;                      // invalid/dead
-    if ((cand->+0x36 & 7) == self->faction) continue;   // same faction -> skip
-    if (cand == player && (*0x8019F524 & 0x400)) continue; // player-exclusion flag
-    if (cand == self) continue;
-    score = (dx>>1)^2 + (dy>>1)^2 (+dz via 0x80027324);  // squared distance, +0x08/+0x0C
+    if ((cand->+0x36 & 7) == self->faction) continue;   // same faction (also skips self)
+    if (slot == 0 && (*0x8019F524 & 0x400)) continue;   // player-exclusion flag (slot 0 by address)
+    d = SquareRoot0((dx>>1)^2 + (dz>>1)^2);        // XZ only (+0x08/+0x0C), jal 0x80027324
+    if (!(d < (range >> 2))) continue;             // the only spatial gate
+    score = (allies >= 2) ? d * (1 + #allies already targeting cand) / allies : d; // spread targets
     if (score < bestScore) { bestScore = score; best = cand; }
 }
-redAC->+0x48 = best;
+self->+0x48 = best;   // returns dist*4, or -1 if none
 ```
+
+77 of 88 call sites (all in the per-mission units, none in the overlay) pass
+`range = 0x7FFFFFFF`, and 11 pass `self->+0xFC`. So acquisition doesn't check LOS, and in
+practice doesn't check range either.
 
 So an enemy locks onto the **closest non-allied entity**, freely switching
 between player / train / aircraft. **Two designer levers:** the **`+0x36`
@@ -188,8 +195,8 @@ Think handler `0x801C5B7C` per frame:
 ```
 state = entity->+0x40                         // 0xFF = special branch
 sense/aim sub-AI 0x801C59F8:                   // reads target +0x48
-    LOS/aim check 0x80073C2C(target)
-    sensor/range  0x800745D0
+    node/eye pos  0x800745D0(self, …)          // model-node world position via +0x60
+    cone check    0x80073C2C(target, eye, …)   // range 10000, yaw ±1024, pitch -128..1024; NO wall test
 RNG 0x8002A4A0 gates the decision (e.g. if rand < 2622 commit)
 on commit: FIRE 0x80077B78(weapon_id a1=23, params from *(entity) def)
            arm cooldown +0x148 = 15, timing +0x14A/B/C = 180/160/140
@@ -200,8 +207,10 @@ bookkeeps sub-state +0x3E/+0x3F and flag bits +0x15C
 | addr | service |
 |---|---|
 | `0x80077B78` | fire weapon (id in `a1`) |
-| `0x80073C2C` | aim / line-of-sight to target |
-| `0x800745D0` | sensor / range check |
+| `0x80073714` | `acquire(self, range)` — nearest non-ally → `+0x48` (§3) |
+| `0x80073C2C` | aim **cone** test: active-set bit, `+0x38` jam dropout, range box/sphere, yaw/pitch window → `out+0x16 \|= 2`. **Not LOS** (relabelled 2026-10-19) |
+| `0x800745D0` | model-node world position (eye/muzzle) via `+0x60`; **not** a sensor/range check |
+| `0x800781E8` | `has_los(self)` → `self+0x48` via `los_ray 0x8007816C` → world segment ray `0x800705D8`; used by 37/47 missions for *some* fire branches |
 | `0x8002A4A0` | RNG |
 
 Aircraft (`0x801C66DC` / `0x801C68E4`) are the same shape with a thinner

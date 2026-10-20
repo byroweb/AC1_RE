@@ -162,6 +162,16 @@ writing the new velocity. So:
 > per-type turn table. Lock is mandatory because the steer routine needs the
 > target-AC pointer.
 
+> **Caution (static, 2026-10-19 — `MISSION_DAMAGE_EVENTS.md` §1):** `0x8008523C` is also
+> installed at `+0x14` (class `+0x10 = 2`) by the **impact/explosion FX spawner
+> `0x80086854`**. The projectile-hit code calls that spawner right after the damage router
+> (`0x800838C4` → `0x800838D4`), and so does the chunk-4 `op_f` emitter. Its body
+> (`0x8008523C..0x80085320`) only calls `0x80056B54`: there's no raycast `0x8006D534` and no
+> router `0x800835E8`. So `0x8008523C` is at least a shared sprite/animation stepper.
+> HYPOTHESIS: the "turn phase/table" reading above is sprite-frame animation, and missile
+> flight is the top-level think `0x80083A10` (which does collide) with this as a sub-step.
+> Re-check the missile row against a live pool snapshot before relying on it.
+
 Projectile struct (0xE0): `+0x10`=class/active (1=ballistic round, 2=missile,
 3=other), `+0x14`=think fn, `+0x18/19/1a/1b`=type / step / phase counters,
 `+0x06`=free marker (`-1`=free), `+0xB8..`=fine position / def copy.

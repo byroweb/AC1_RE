@@ -75,6 +75,12 @@ facts from open questions:
 - [ENTITY_AI_FRAMEWORK.md](ENTITY_AI_FRAMEWORK.md) — the shared entity/NPC array
   (player/AC/aircraft/train as one struct): +0x58 think-handler clean-freeze tool,
   faction/target fields, nearest-enemy target selection, and the entity damage route.
+- [PERCEPTION_MODEL.md](PERCEPTION_MODEL.md) — stealth-mod keystone: what acquisition
+  gates on (range only), the stock LOS helper `0x800781E8`, and the LOS-gate insertion point.
+- [MISSION_DAMAGE_EVENTS.md](MISSION_DAMAGE_EVENTS.md) — scripted area damage (airstrike /
+  breach): `op_f` is FX-only, segment hitscan `0x8007A334`, the 4-byte damage descriptor.
+- [PLAYER_CONTROL.md](PLAYER_CONTROL.md) — what makes slot 0 "the player", the global
+  pad, the player vtable installers, and the in-place dismount plan.
 
 ### UI / save data
 - [AC1_TEXT_SYSTEM.md](AC1_TEXT_SYSTEM.md) — the stock text & menu rendering system
