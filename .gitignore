@@ -83,3 +83,14 @@ scratch/
 
 # Byte-match toolchain (downloaded/built by tools/match/setup.sh, never vendored)
 tools/match/vendor/
+
+# AC1mod (tools/ac1mod) runtime output: per-BIN workspaces (extracted files, jPSXdec
+# index, .ac1mod project), recent-file pointers, logs, venv and the host-compiled
+# raster/XA hot-loop libraries
+tools/ac1mod/*/
+!tools/ac1mod/core/
+tools/ac1mod/*.ac1mod
+tools/ac1mod/recent_*.txt
+tools/ac1mod/*.log
+tools/ac1mod/core/libraster.*
+tools/ac1mod/core/libxa.*

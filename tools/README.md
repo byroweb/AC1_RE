@@ -237,6 +237,20 @@ java -jar "$JPSXDEC_JAR" -x ac1.idx -i "GG/STR/ACED1.STR[0.0]" -af wav -dir out 
 ```
 `tools/extract/build_filemap.py` turns such an index into `disc_files.json`.
 
+## `ac1mod/` — disc browser + model/mission viewer (`tools/ac1mod/`)
+PyQt6 GUI and headless CLI for browsing the disc index (TIM/text/hex/XA previews and
+replacement import) and viewing PA##.T geometry, assembled mission levels with
+spawns, MIS.T preview TIMs and memory-card emblems. Imported from the former AC1mod
+repo; see [`ac1mod/README.md`](ac1mod/README.md).
+```
+tools/ac1mod/setup.sh          # venv at tools/ac1mod/.venv (PyQt6, Pillow, numpy, pygame)
+tools/ac1mod/run_ac1mod.sh     # GUI
+tools/ac1mod/.venv/Scripts/python.exe tools/ac1mod/ac1mod_cli.py --project P.ac1mod level 1 -o m01.png
+```
+It finds jPSXdec and Java the same way as the audio scripts (section above). Its
+`core/pa_parser.py` / `core/fdat.py` / `core/xa.py` are copies of `tools/pa`,
+`tools/extract` and `tools/audio` logic; fix formats in those directories first.
+
 ## `audio/` — spoken voice lines → manifest → dub (`tools/audio/`)
 Extracts the TALK XA channels and STR audio tracks with jPSXdec, splits them into
 clips, transcribes them with faster-whisper (CPU, language detected per clip —
