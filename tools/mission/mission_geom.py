@@ -262,7 +262,7 @@ def dump(path):
     print("  " + mg.summary())
     for bi, b in enumerate(mg.blocks):
         live = [s for s in b.subs if not s.terminated]
-        verts = sum(s.vtx_cnt for s in live)
+        verts = sum(s.pool_cnt for s in live)
         prims = sum(len(s.prims) for s in live)
         print(f"    block{bi:2d}: len={b.length:6d}  {b.sub_count} sub-objs "
               f"({len(live)} live)  {verts} verts  {prims} prims")

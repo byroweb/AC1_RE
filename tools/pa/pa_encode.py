@@ -59,18 +59,12 @@ def disc_bin(fm):
     return p
 
 # --- Primitive type -> (first vertex-index byte offset, #verts, index stride) -----
-# Identical to tools/pa/pa_obj.py PRIM_VERTS (RE'd from relocation walker
-# FUN_800574D8). Used ONLY by the editable decode/re-encode of vertex indices; the
+# Shared with tools/pa/pa_obj.py (RE'd from the relocation walker FUN_800574D8
+# handlers). Used ONLY by the editable decode/re-encode of vertex indices; the
 # byte-exact round-trip does not depend on it (records are kept as raw bytes unless
 # edited). See docs/PA_FORMAT.md.
-PRIM_VERTS = {
-    0x20: (0x0a, 3, 2), 0x28: (0x0a, 4, 2),
-    0x24: (0x12, 3, 2), 0x2c: (0x16, 4, 2),
-    0x34: (0x12, 3, 4), 0x3c: (0x16, 4, 4),
-    0xa0: (0x0a, 3, 2), 0xa8: (0x0a, 4, 2),
-    0xa4: (0x12, 3, 2), 0xac: (0x16, 4, 2),
-    0xb4: (0x12, 3, 2), 0xbc: (0x12, 4, 2),
-}
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from pa_obj import PRIM_VERTS  # noqa: E402
 
 
 # =====================================================================================
@@ -165,14 +159,14 @@ class SubObject:
         self.index = index
         self.desc = bytearray(desc_raw)          # 28-byte descriptor, byte-exact
         # decoded descriptor fields (relative to reloc base).
-        # NOTE: vertex/normal counts are u16 (NOT u32): +0x04 = vtx_cnt(u16),
-        # +0x06 = a u16 param (0 in the "simple" variant; nonzero in the multi-LOD /
-        # articulated variant, e.g. PA00 e60). Reading +0x04 as u32 (as pa_obj.py
-        # did) folds +0x06 into the count and overshoots the pool — that was the
-        # original ~30% round-trip failure. See scratch/re/pa_encode_notes.md.
+        # NOTE: vertex/normal counts are u16 (NOT u32): +0x04 = vtx_cnt (base-LOD
+        # vertex count), +0x06 = vtx_param (detail-LOD vertex addend; 0 on most
+        # sub-objects, nonzero e.g. PA00 e60). The pool holds pool_cnt = both, and
+        # the detail-LOD prims index the addend range (docs/PA_FORMAT.md).
         self.vtx_off = struct.unpack_from("<I", desc_raw, 0)[0]
         self.vtx_cnt = struct.unpack_from("<H", desc_raw, 0x04)[0]
         self.vtx_param = struct.unpack_from("<H", desc_raw, 0x06)[0]
+        self.pool_cnt = self.vtx_cnt + self.vtx_param
         self.pool2_off = struct.unpack_from("<I", desc_raw, 0x08)[0]
         self.norm_cnt = struct.unpack_from("<H", desc_raw, 0x0c)[0]
         self.flags = struct.unpack_from("<H", desc_raw, 0x0e)[0]
@@ -229,11 +223,11 @@ class GeomBlock:
         for s in self.subs:
             if s.terminated:
                 continue
-            # vertex pool
+            # vertex pool (base + detail LOD)
             s.vtx_abs = s.vtx_off + self.reloc
-            s.vtx_raw = block[s.vtx_abs: s.vtx_abs + s.vtx_cnt * 8]
+            s.vtx_raw = block[s.vtx_abs: s.vtx_abs + s.pool_cnt * 8]
             s.verts = [Vertex(*struct.unpack_from("<4h", s.vtx_raw, i * 8))
-                       for i in range(s.vtx_cnt)]
+                       for i in range(s.pool_cnt)]
             # normal pool
             s.norm_abs = s.pool2_off + self.reloc
             s.norm_raw = block[s.norm_abs: s.norm_abs + s.norm_cnt * 8]
@@ -414,7 +408,7 @@ def roundtrip_one(path, entry, translate=None):
         if s.terminated:
             print(f"    sub{s.index:2d}: TERMINATED (flags=0x{s.flags:04x})")
             continue
-        print(f"    sub{s.index:2d}: verts={s.vtx_cnt} norms={s.norm_cnt} "
+        print(f"    sub{s.index:2d}: verts={s.vtx_cnt}+{s.vtx_param} norms={s.norm_cnt} "
               f"prims={len(s.prims)} pool4={len(s.pool4_raw)}B "
               f"flags=0x{s.flags:04x}")
     rt = encode(m)
