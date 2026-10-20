@@ -451,7 +451,9 @@ def cmd_replay(args):
     origs = [r for r in rows if is_original(r) and scope_of(units.norm(r[1] or "exe")) in scopes]
     tables = {}
     jobs = []
-    targeted = set()
+    # members matched from their own C file are not replayed over (their manifest row
+    # names that file, which check_all.sh compares with the report's source)
+    targeted = {(units.norm(r[1] or "exe"), int(r[0], 16)) for r in rows if is_original(r)}
     for r in origs:
         unit, va, src, size, extra = units.norm(r[1] or "exe"), int(r[0], 16), r[2], int(r[3]), r[4]
         sc = scope_of(unit)

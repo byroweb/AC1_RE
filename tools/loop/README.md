@@ -575,13 +575,16 @@ Replay differs from the mission scope in two places:
 
 A group can hold several originals (clones matched independently before twins
 existed); each other member is replayed once, from the first original in manifest
-order.  `--scope programs` rewrites only the program rows of `twin_replay.tsv` and
+order, and a member that is itself an original (its own `func_<ADDR>.c` in its own
+unit) is not replayed over at all: its manifest row names its own file, which
+check_all.sh compares with the report's source.  `--scope programs` rewrites only the program rows of `twin_replay.tsv` and
 keeps the mission rows as they are; the report's `unit` column is the manifest's
 (`202`, `exe`, `fdat016`), so check_all.sh's twin check covers both scopes.
 
 Results: the 72 exe/ovl originals of 2026-10-19 replay onto 89 twins, **89 MATCH**
 (77 new manifest rows: 49 in 201, 24 in 203/204, 1 in 202, 3 in the exe).
-After the sweep pilot (below), 118 originals replay onto 241 twins, 241 MATCH.
+After the sweep pilot (below), the 118 program originals replay onto 229 twins (all
+MATCH); `--scope all` replays 182 originals onto 1954 twins, 1954 MATCH.
 
 The committed `twins.tsv` (mission scope) predates the current `functions.tsv` (the
 code reproduces it byte for byte from that input; today's input gives 394 groups
