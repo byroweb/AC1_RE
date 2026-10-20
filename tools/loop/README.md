@@ -914,6 +914,7 @@ reach in 300 s (`a0`/`a1` for a call m2c gave one argument too few, e.g. `Vector
 for a two-argument call), an argument m2c dropped (`li a0,24` in a delay slot), and drafts
 whose word count hid a size difference (`ovl201 0x800B6D4C`: ours 8 bytes for 56; the
 sweep's diff words only count the common length).  Those are agent work packages.
+
 ## check_all.sh
 
 `re/match/check_all.sh` re-verifies every manifest row with the oracle and
