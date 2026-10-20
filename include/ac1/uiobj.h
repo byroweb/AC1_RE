@@ -93,4 +93,18 @@ typedef struct UiObj {
 } UiObj;
 AC1_ASSERT_SIZE(UiObj, 0xD0);
 
+typedef struct UiNameList {     /* *0x801F5094: a scrolling name list (func_8008B094) */
+    s8 count;                   /* +0x000 entries */
+    s8 rows;                    /* +0x001 rows on screen */
+    u8 unk002[0x21B];
+    char name[1][34];           /* +0x21D row texts, shifted one place per scroll step */
+} UiNameList;
+
+typedef struct UiListState {    /* 0x801F37C8 */
+    u8 unk0;
+    s8 cursor;                  /* +0x01 selected entry */
+    u8 scroll;                  /* +0x02 scroll position, +/-1 per shifted row */
+} UiListState;
+AC1_ASSERT_SIZE(UiListState, 3);
+
 #endif
