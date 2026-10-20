@@ -15,6 +15,7 @@
 0x800140C4	exe	exe/func_800140C4.c	472	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x8001429C	exe	exe/func_8001429C.c	156	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80014338	exe	exe/func_80014338.c	128	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x8001462C	exe	exe/func_8001462C.c	80	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_800145E4=0x800145E4
 0x8001467C	exe	exe/func_8001467C.c	172	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80014728	exe	exe/func_80014728.c	76	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x8001484C	exe	exe/func_8001484C.c	76	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
