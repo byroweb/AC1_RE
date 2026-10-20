@@ -682,6 +682,18 @@ and 70 m2c failures, all an unlabelled jump table (`jr` with no `jtbl` read).  `
 turned ~60 of the "too few arguments" cc1 errors into compilable drafts but only 2
 matched; `ctx-no-andor` and `ctx-void` never added a match and are no longer default.
 
+**Jump tables (2026-10-20)**: `ctx.py` now names a switch's table load
+`jtbl_<ADDR>` (the `lui; addu idx; lw; jr` pattern, an address in `jt_addrs`, or,
+in a function with a register `jr`, an address whose retail word points into the
+function: that catches ovl202 0x80053190, whose hoisted table the inventory
+missed), labels the case targets and appends the table as `.rodata` read from the
+retail image.  All 70 former m2c failures now draft (0 left); re-sweeping S1..S6
+matched 1 (ovl201 0x8004EEEC, 252 B).  Of the other 69: 19 MISMATCH (closest
+ovl201 0x8007AA04 at 10 words, ovl202 0x80081318 at 17) and 50 cc1 errors that
+are m2c output problems, not the tables: 13 `saved_reg_sN`, 9 a `default:` m2c
+places outside the switch body, 6 cc1 "invalid t(ype ...)", 5 too few arguments, the
+rest undeclared names and struct misuse.
+
 ## check_all.sh
 
 `re/match/check_all.sh` re-verifies every manifest row with the oracle and

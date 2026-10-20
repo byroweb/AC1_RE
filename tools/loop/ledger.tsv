@@ -2627,3 +2627,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-20T12:56:59Z	ovl204	0x80055024	match	0	twin of ovl202 0x80055FD8 (ovl202/func_80055FD8.c)
 2026-10-20T12:56:59Z	ovl203	0x800558B4	match	0	twin of ovl202 0x80055EB8 (ovl202/func_80055EB8.c)
 2026-10-20T12:56:59Z	ovl204	0x80054F04	match	0	twin of ovl202 0x80055EB8 (ovl202/func_80055EB8.c)
+2026-10-20T13:30:43Z	ovl201	0x8004EEEC	match	0	zero-agent sweep (m2c ctx)
