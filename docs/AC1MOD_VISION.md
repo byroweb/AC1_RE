@@ -15,7 +15,7 @@ This repo provides the format-RE foundation it builds on:
 - `tools/extract/` — disc file map (`build_filemap.py` → `disc_map/disc_files.json`),
   the `.T` container reader (`extract_t.py`), and text tooling.
 - `tools/pa/` — the authoritative PA geometry decoders (`pa_obj.py`, `pa_parse.py`,
-  `pa_slots.py`); the companion viewer vendors/imports this decode rather than
+  `pa_slots.py`); the companion viewer imports this decode rather than
   forking it.
 
 Keep the authoritative format decoders in `tools/`; AC1mod (`tools/ac1mod/`)

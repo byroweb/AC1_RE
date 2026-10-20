@@ -14,6 +14,7 @@ reinject_test.py - unit tests for the XA re-injection path (synthetic data, no d
 """
 import os
 import sys
+import tempfile
 import unittest
 
 import numpy as np
@@ -175,6 +176,34 @@ class Codec(unittest.TestCase):
         z, _, _, _ = X.encode_stream(np.zeros(4032, np.int16))
         self.assertTrue(np.array_equal(X.decode_sectors_float(z)[0], np.zeros(4032, np.int16)))
 
+    def test_stereo_decode_splits_even_odd_units(self):
+        # even units carry L, odd units R, each with its own history
+        t = np.arange(2016 * 2) / 37800
+        left = (9000 * np.sin(2 * np.pi * 300 * t)).astype(np.int16)
+        right = (6000 * np.sin(2 * np.pi * 1700 * t)).astype(np.int16)
+        datas, h = [], [0, 0, 0, 0]
+        for sec in range(2):
+            groups = []
+            for g in range(X.GROUPS_PER_SECTOR):
+                units = []
+                for u in range(4):
+                    k = sec * 2016 + (g * 4 + u) * 28
+                    pl, nl, h[0], h[1], _ = X.encode_unit(left[k:k + 28], h[0], h[1])
+                    pr, nr, h[2], h[3], _ = X.encode_unit(right[k:k + 28], h[2], h[3])
+                    units += [(pl, nl), (pr, nr)]
+                groups.append(X.pack_group(units))
+            datas.append(b"".join(groups))
+        y = X.decode_stream_float(datas, stereo=True)
+        self.assertEqual(len(y), 2 * len(left))
+        self.assertGreater(X.snr_db(left, y[0::2]), 40.0)
+        self.assertGreater(X.snr_db(right, y[1::2]), 40.0)
+        # history runs on across sectors
+        y0, hist = X.decode_sector_data_stereo_float(datas[0])
+        y1, _ = X.decode_sector_data_stereo_float(datas[1], hist)
+        self.assertTrue(np.array_equal(y, np.concatenate([y0, y1])))
+        # mono path of decode_stream_float == decode_sectors_float
+        self.assertTrue(np.array_equal(X.decode_stream_float(datas), X.decode_sectors_float(datas)[0]))
+
     def test_full_scale_does_not_crash(self):
         x = np.array([32767, -32768] * 2016, np.int16)
         d, _, _, _ = X.encode_stream(x)
@@ -217,6 +246,24 @@ class Form2Sector(unittest.TestCase):
         broken[20] = 9  # subheader copy differs
         with self.assertRaises(ValueError):
             X.build_form2_sector(bytes(broken), b"\0" * 2304)
+
+    def test_stream_sound_areas_picks_channel_audio(self):
+        # one channel's Form 2 audio sectors, in disc order; other channels and
+        # data sectors interleaved in the range are skipped
+        secs = [raw_sector(bytes([1, 1, 0x64, 0]), bytes([1]) * 2304),
+                raw_sector(bytes([1, 2, 0x64, 0]), bytes([2]) * 2304),
+                raw_sector(bytes([1, 1, 0x08, 0]), bytes([3]) * 2304),    # data
+                raw_sector(bytes([1, 1, 0x64, 0]), bytes([4]) * 2304)]
+        fd, path = tempfile.mkstemp(suffix=".bin")
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(bytes(2352) * 5 + b"".join(secs))
+            self.assertEqual(X.stream_sound_areas(path, 5, 8, 1),
+                             [bytes([1]) * 2304, bytes([4]) * 2304])
+            self.assertEqual(X.stream_sound_areas(path, 6, 8, 2), [bytes([2]) * 2304])
+            self.assertEqual(X.stream_sound_areas(path, 5, 5, 1), [bytes([1]) * 2304])
+        finally:
+            os.remove(path)
 
     def test_encode_decode_through_sector(self):
         x = (7000 * np.sin(2 * np.pi * 1000 * np.arange(4032) / 37800)).astype(np.int16)

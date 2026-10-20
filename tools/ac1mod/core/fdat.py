@@ -2,7 +2,8 @@
 core/fdat.py — read FDAT.T entries (for mission data) from the disc image.
 
 FDAT.T (file id 2) is a count-first .T container; mission N is described by entries
-2N (objective code) and 2N+1 (chunk stream). We only need raw entry bytes here.
+2N (objective code) and 2N+1 (chunk stream). We only need raw entry bytes here; the
+container is split by tools/extract/t_repack.py (via core.pa_parser.read_container).
 """
 from __future__ import annotations
 import struct, re

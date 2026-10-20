@@ -259,8 +259,8 @@ edge cases) are dropped so output is always a valid mesh.
 1. ~~**Gouraud vidx (0x34/0x3c):**~~ **DONE 2026-06-11** — RE'd live from the relocation
    handlers `0x80057674`/`0x800577a4`: gouraud verts are stride-4 (interleaved with
    per-vertex normal indices), first vertex at record+0x12 (tri) / +0x16 (quad). 0
-   out-of-range across all 72 PA files. Fixed in `tools/pa/pa_obj.py` (and ported into
-   AC1mod's `tools/ac1mod/core/pa_parser.py`).
+   out-of-range across all 72 PA files. Fixed in `tools/pa/pa_obj.py` (which AC1mod's
+   `tools/ac1mod/core/pa_parser.py` imports).
 2. ~~**Textures/UVs:** decode the UV+clut/tpage shading words~~ **DONE 2026-06-15**
    (see "Textured-primitive MATERIAL words" above): offsets, decode formulas, and the
    RTIM bank are confirmed. Only the per-stage texture bank that fills pages (704/768,256)

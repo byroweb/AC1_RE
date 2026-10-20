@@ -247,9 +247,10 @@ tools/ac1mod/setup.sh          # venv at tools/ac1mod/.venv (PyQt6, Pillow, nump
 tools/ac1mod/run_ac1mod.sh     # GUI
 tools/ac1mod/.venv/Scripts/python.exe tools/ac1mod/ac1mod_cli.py --project P.ac1mod level 1 -o m01.png
 ```
-It finds jPSXdec and Java the same way as the audio scripts (section above). Its
-`core/pa_parser.py` / `core/fdat.py` / `core/xa.py` are copies of `tools/pa`,
-`tools/extract` and `tools/audio` logic; fix formats in those directories first.
+It finds jPSXdec and Java the same way as the audio scripts (section above). It
+decodes PA geometry, `.T` containers and XA audio with `tools/pa/pa_obj.py`,
+`tools/extract/{extract_t,t_repack}.py` and `tools/audio/xa_adpcm.py`; its
+`core/` modules are adapters over those, so format fixes go in those directories.
 
 ## `audio/` — spoken voice lines → manifest → dub (`tools/audio/`)
 Extracts the TALK XA channels and STR audio tracks with jPSXdec, splits them into
