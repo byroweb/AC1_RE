@@ -1,12 +1,13 @@
 /* include/ac1/render.h - GPU primitives, the scratchpad render block and the
- * triangle subdivider's work stack (overlays 202/203/204).
+ * mesh subdividers' work stacks (overlays 202/203/204).
  *
  * POLY_GT3 / P_TAG are the public PsyQ libgpu layouts.  RenderScratch is the
  * block at the start of the 1 KB scratchpad (0x1F800000) that the mesh
  * emitters read; only the fields the matched code touches are named.
- * SubVtx / SubWork are the recursive subdivider's frames (func_8006AAC8 and
- * its five clones): each level keeps its three edge midpoints and the three
- * corner pointers, and the next level's frame follows at +0x58.
+ * SubVtx / SubWork / SubWork4 are the recursive subdividers' frames
+ * (func_8006AAC8 triangles, func_8006B384 quads, five clones each): each
+ * level keeps its midpoints and corner pointers, and the next level's frame
+ * follows it directly.
  */
 #ifndef AC1_RENDER_H
 #define AC1_RENDER_H
@@ -36,6 +37,27 @@ typedef struct POLY_GT3 {       /* 0x28: gouraud textured triangle */
 } POLY_GT3;
 AC1_ASSERT_SIZE(POLY_GT3, 0x28);
 
+typedef struct POLY_GT4 {       /* 0x34: gouraud textured quad */
+    u32 tag;
+    u8 r0, g0, b0, code;
+    s16 x0, y0;
+    u8 u0, v0;
+    u16 clut;
+    u8 r1, g1, b1, p1;
+    s16 x1, y1;
+    u8 u1, v1;
+    u16 tpage;
+    u8 r2, g2, b2, p2;
+    s16 x2, y2;
+    u8 u2, v2;
+    u16 pad2;
+    u8 r3, g3, b3, p3;
+    s16 x3, y3;
+    u8 u3, v3;
+    u16 pad3;
+} POLY_GT4;
+AC1_ASSERT_SIZE(POLY_GT4, 0x34);
+
 #define setlen(p, _len)   (((P_TAG *)(p))->len = (u8)(_len))
 #define setcode(p, _code) (((P_TAG *)(p))->code = (u8)(_code))
 #define getaddr(p)        (u32)(((P_TAG *)(p))->addr)
@@ -54,7 +76,8 @@ typedef struct RenderScratch {  /* 0x1F800000, scratchpad */
     u32 *ot;                    /* +0x370 ordering table */
     u8 unk374[4];
     s32 otshift;                /* +0x378 z >> otshift = ordering-table slot */
-    u8 unk37C[0x400 - 0x37C];
+    s32 otshift4;               /* +0x37C the same for a sum of four z values */
+    u8 unk380[0x400 - 0x380];
 } RenderScratch;
 AC1_ASSERT_SIZE(RenderScratch, 0x400);
 
@@ -76,5 +99,12 @@ typedef struct SubWork {        /* 0x58: one recursion level */
     s32 pad54;
 } SubWork;
 AC1_ASSERT_SIZE(SubWork, 0x58);
+
+typedef struct SubWork4 {       /* 0x8C: one quad recursion level (func_8006B384) */
+    SubVtx mid[5];              /* +0x00 midpoints of v0-v1, v0-v2, v3-v1, v3-v2, centre */
+    SubVtx *v[4];               /* +0x78 the quad's corners (PsyQ order: 0 1 / 2 3) */
+    s32 pad88;
+} SubWork4;
+AC1_ASSERT_SIZE(SubWork4, 0x8C);
 
 #endif
