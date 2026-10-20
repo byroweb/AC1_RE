@@ -9,6 +9,7 @@
 0x80013390	exe	exe/func_80013390.c	104	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x800138F0	exe	exe/func_800138F0.c	180	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80013A88	exe	exe/func_80013A88.c	116	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x80013B74	exe	exe/func_80013B74.c	116	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80013BE8	exe	exe/func_80013BE8.c	108	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_80013A88=0x80013A88 --defsym func_80013AFC=0x80013AFC --defsym func_80013B74=0x80013B74
 0x80013C54	exe	exe/func_80013C54.c	108	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_80013A88=0x80013A88 --defsym func_80013AFC=0x80013AFC --defsym func_80013B74=0x80013B74
 0x800140C4	exe	exe/func_800140C4.c	472	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
