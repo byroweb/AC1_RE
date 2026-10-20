@@ -249,7 +249,8 @@ tools/ac1mod/.venv/Scripts/python.exe tools/ac1mod/ac1mod_cli.py --project P.ac1
 ```
 It finds jPSXdec and Java the same way as the audio scripts (section above). It
 decodes PA geometry, `.T` containers and XA audio with `tools/pa/pa_obj.py`,
-`tools/extract/{extract_t,t_repack}.py` and `tools/audio/xa_adpcm.py`; its
+`tools/extract/{extract_t,t_repack}.py` and `tools/audio/xa_adpcm.py`, and reads
+mission levels and spawns with `tools/mission/{mission_geom,mission_parse}.py`; its
 `core/` modules are adapters over those, so format fixes go in those directories.
 
 ## `audio/` — spoken voice lines → manifest → dub (`tools/audio/`)

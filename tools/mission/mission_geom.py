@@ -34,6 +34,12 @@ WHAT WAS DETERMINED (evidence in scratch/re/mission_geom_notes.md)
    and only CHARACTERIZED (count + first sublens) for the dump. The authored
    geometry-edit path is chunk 0.
 
+READ-SIDE HELPERS (no PA decode; what tools/ac1mod/core/level.py reads):
+  geom_blocks(stream)        -> chunk-0 blocks as raw bytes
+  placement_records(stream)  -> chunk-7 section table (52-byte records)
+  placements(stream, nblk)   -> [(block, translation, light)]; world =
+                                block_local * SCALE + translation
+
 CLI (mirrors tools/mission/mission_parse.py / pa_encode.py):
   tools/mission/mission_geom.py --fdat disc_map/extracted/FDAT_T/entries --mission 0
   tools/mission/mission_geom.py --fdat .../entries --mission 0 --translate 0 0 100 0 0
@@ -41,16 +47,29 @@ CLI (mirrors tools/mission/mission_parse.py / pa_encode.py):
   tools/mission/mission_geom.py --selftest        # gate: every mission stream
 """
 import argparse
+import collections
 import os
 import struct
 import sys
 
 HERE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(HERE, "tools", "pa"))
+_PA = os.path.join(HERE, "tools", "pa")
+if _PA not in sys.path:            # an importer (e.g. AC1mod) may already have it
+    sys.path.insert(0, _PA)
 import pa_encode  # noqa: E402  (byte-exact PA geometry block encoder)
 
 GEOM_CHUNK = 0     # chunk-0 = local geometry blocks
+PLACE_CHUNK = 7    # chunk-7 = section placement table
 RECS_CHUNK = 11    # chunk-11 = per-mission geometry records (nested sub-stream)
+PLACE_REC_LEN = 52
+
+# Chunk-0 blocks are authored at 4x the placement scale (the engine renders them
+# through a down-scaling GTE matrix): world = block_local * SCALE + translation.
+# Missions 0-49: placed at 0.25, 4673 of 6602 sections lie inside their chunk-7 world
+# bbox (+-4; the rest overhang by <= 625), against 138 at 1.0. Spawn X,Y,Z (chunk 12)
+# are already WORLD units, not 4x: unscaled, 571 of 1192 spawns stand within 100 of
+# a floor face below them, against 122 when scaled by 0.25.
+SCALE = 0.25
 
 
 # =====================================================================================
@@ -79,6 +98,79 @@ def chunk_span(buf, want):
 
 
 # =====================================================================================
+# Chunk-0 block run (raw, no decode)
+# =====================================================================================
+def _block_spans(pay):
+    """[(start, end)] of the size-prefixed PA blocks in a chunk-0 payload, walked
+    from payload+4 until a size < 12 (the 0x00000004 tail stubs) or an overrun."""
+    spans, off = [], 4
+    while off + 4 <= len(pay):
+        sz = struct.unpack_from("<I", pay, off)[0]
+        if sz < 12 or off + sz > len(pay):
+            break                                 # tail (0x04 stubs) -> stop
+        spans.append((off, off + sz))
+        off += sz
+    return spans
+
+
+def geom_blocks(stream):
+    """The chunk-0 geometry blocks of a mission stream as raw bytes (each a whole
+    size-prefixed PA block, decodable by tools/pa/pa_obj.py); [] if no chunk 0."""
+    span = chunk_span(stream, GEOM_CHUNK)
+    if span is None:
+        return []
+    off, ln = span
+    pay = stream[off:off + ln]
+    return [pay[a:b] for a, b in _block_spans(pay)]
+
+
+# =====================================================================================
+# Chunk-7 section placement table
+# =====================================================================================
+# 52-byte records, terminated by s16 -1 at +0x06 (solved live 2026-06-12; field map
+# in disc_map/trace/assemble_levels.py):
+#   +0x00 s16[3] world bbox min   +0x06 s16 index (PVS/cell; -1 ends the table)
+#   +0x08 s16[3] world bbox max   +0x10 s16[3] placement translation
+#   +0x18 s16[3] copy of bbox min +0x1e s16 chunk-0 block index (blocks are reused)
+#   +0x26 s16 zone/portal index   +0x28 u8 lighting-record index   +0x2a u16 flags
+# No per-section rotation: chunk-0 blocks are pre-rotated on disc.
+Placement = collections.namedtuple(
+    "Placement", "slot bbox_min index bbox_max trans block zone light flags")
+
+
+def placement_records(stream):
+    """Every chunk-7 record up to the -1 terminator, as Placement tuples (the block
+    index is not range-checked).  [] if the stream has no chunk 7 (missions that
+    load a shared scene instead)."""
+    span = chunk_span(stream, PLACE_CHUNK)
+    if span is None:
+        return []
+    toff, tlen = span
+    out = []
+    for i in range(tlen // PLACE_REC_LEN):
+        o = toff + i * PLACE_REC_LEN
+        index = struct.unpack_from("<h", stream, o + 6)[0]
+        if index == -1:
+            break
+        out.append(Placement(
+            i, struct.unpack_from("<3h", stream, o), index,
+            struct.unpack_from("<3h", stream, o + 0x08),
+            struct.unpack_from("<3h", stream, o + 0x10),
+            struct.unpack_from("<h", stream, o + 0x1e)[0],
+            struct.unpack_from("<h", stream, o + 0x26)[0],
+            stream[o + 0x28],
+            struct.unpack_from("<H", stream, o + 0x2a)[0]))
+    return out
+
+
+def placements(stream, nblocks):
+    """[(block, (tx, ty, tz), light)] for each placed section whose block index is
+    in 0..nblocks-1 (world = block_local * SCALE + (tx, ty, tz))."""
+    return [(p.block, p.trans, p.light) for p in placement_records(stream)
+            if 0 <= p.block < nblocks]
+
+
+# =====================================================================================
 # Chunk-0 geometry model
 # =====================================================================================
 class MissionGeom:
@@ -97,20 +189,11 @@ class MissionGeom:
         self.c0_off, self.c0_len = span          # payload offset/len within stream
         pay = self.stream[self.c0_off: self.c0_off + self.c0_len]
         self.header = pay[0:4]                    # constant 0x80 word
-        # walk size-prefixed blocks starting at payload+4
-        self.blocks = []                          # [pa_encode.GeomBlock]
-        self.block_spans = []                     # [(start,end)] within payload
-        off = 4
-        while off < len(pay):
-            if off + 4 > len(pay):
-                break
-            sz = struct.unpack_from("<I", pay, off)[0]
-            if sz < 12 or off + sz > len(pay):
-                break                             # tail (0x04 stubs) -> stop
-            raw = pay[off:off + sz]
-            self.blocks.append(pa_encode.parse(raw))
-            self.block_spans.append((off, off + sz))
-            off += sz
+        # [(start,end)] of the size-prefixed blocks, within payload
+        self.block_spans = _block_spans(pay)
+        self.blocks = [pa_encode.parse(pay[a:b])  # [pa_encode.GeomBlock]
+                       for a, b in self.block_spans]
+        off = self.block_spans[-1][1] if self.block_spans else 4
         self.tail_off = off                       # within payload
         self.tail = pay[off:]                      # raw run of 0x00000004 stubs
 

@@ -61,6 +61,40 @@ def walk_chunks(buf, limit=64):
         idx += 1
 
 
+def chunk_span(buf, want):
+    """(payload_off, length) of chunk `want`, or None if the stream stops first."""
+    for idx, off, ln, stop in walk_chunks(buf):
+        if stop:
+            return None
+        if idx == want:
+            return (off + 4, ln)
+    return None
+
+
+def spawn_records(buf):
+    """[(slot, hw[20])] for every 40-byte record of the chunk-12 table (empty
+    slots included), or None if the stream has no chunk 12."""
+    span = chunk_span(buf, SPAWN_CHUNK)
+    if span is None:
+        return None
+    off, ln = span
+    return [(i, struct.unpack_from("<20h", buf, off + i * SPAWN_REC_LEN))
+            for i in range(ln // SPAWN_REC_LEN)]
+
+
+def spawns(buf):
+    """Occupied chunk-12 slots as dicts: i (slot), x, y, z, blk, rot, typ and
+    params = hw8..hw19.  A slot is occupied when its type id hw7 > 0 (type 0 is
+    the empty/sentinel slot).  [] if the stream has no chunk 12."""
+    out = []
+    for i, hw in spawn_records(buf) or ():
+        if hw[7] <= 0:
+            continue
+        out.append(dict(i=i, x=hw[0], y=hw[1], z=hw[2], blk=hw[3], rot=hw[5],
+                        typ=hw[7], params=list(hw[8:])))
+    return out
+
+
 def dump_chunks(buf):
     print(f"chunk stream: {len(buf)} bytes")
     for idx, off, ln, stop in walk_chunks(buf):
@@ -75,19 +109,14 @@ def dump_chunks(buf):
 
 
 def dump_spawns(buf, show_empty=False):
-    spawn = next((c for c in walk_chunks(buf)
-                  if c[0] == SPAWN_CHUNK and not c[3]), None)
-    if spawn is None:
+    recs = spawn_records(buf)
+    if recs is None:
         print("no spawn chunk (index 12) found", file=sys.stderr)
         return
-    _, off, ln, _ = spawn
-    pay = buf[off + 4: off + 4 + ln]
-    n = ln // SPAWN_REC_LEN
-    print(f"spawn/instance table: {n} records of {SPAWN_REC_LEN} bytes")
+    print(f"spawn/instance table: {len(recs)} records of {SPAWN_REC_LEN} bytes")
     print(" idx  type  blk        X       Y       Z     rot   hw8  hw9  hw11  hw12  hw15")
     active = 0
-    for i in range(n):
-        hw = struct.unpack_from("<20h", pay, i * SPAWN_REC_LEN)
+    for i, hw in recs:
         empty = (hw[3] == -1 and hw[0] == 0 and hw[1] == 0
                  and hw[2] == 0 and hw[7] == 0)
         if empty and not show_empty:
