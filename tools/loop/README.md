@@ -719,8 +719,8 @@ row (`match`, attempts 0, reason `zero-agent sweep (m2c ctx)`).  Misses are only
 reported (`<work>/sweep_report.tsv`), never recorded as give-ups.  At the end
 `twins.py replay --scope programs` credits the twins.  Jobs run in a thread pool
 whose work is m2c/cc1 subprocesses; the main thread does all manifest/ledger writes.
-Each oracle run keeps its work dir under `<work>` and removes it afterwards
-(match_fn.py otherwise leaves a `match_fn_*` temp dir behind on every miss).
+Each oracle run keeps its work dir under `<work>` (the m2c repair pass reads its
+`fn.i`) and removes it afterwards.
 
 The report has, per body, the closest compiling draft: `closeness` = the oracle's
 `aligned_words` (retail words difflib pairs, in order, with an equal word of ours)

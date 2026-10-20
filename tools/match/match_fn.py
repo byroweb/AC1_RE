@@ -3,7 +3,8 @@
 
     match_fn.py <vaddr> <src.c> [--bin PATH --base VADDR | --ovl N] [--fn NAME]
                 [--defsym NAME=ADDR ...] [--syms FILE.tsv] [--rodata VADDR]
-                [--expect-size N] [--json [PATH]] [--keep DIR] [-I DIR] [-D MACRO]
+                [--expect-size N] [--json [PATH]] [--keep DIR | --keep-on-fail]
+                [-I DIR] [-D MACRO]
 
 Pipeline (what the retail build did, see tools/match/README.md):
     host cpp -E -P  ->  cc1 (GCC 2.7.2 psx build, pinned flags)  ->  maspsx
@@ -565,6 +566,8 @@ def main(argv=None):
     ap.add_argument("--expect-size", type=parse_int, help="retail function size in bytes; any other size is a MISMATCH")
     ap.add_argument("--json", nargs="?", const="-", metavar="PATH", help="also emit the facts as JSON (to PATH, or stdout)")
     ap.add_argument("--keep", metavar="DIR", help="keep the work dir (fn.i, fn.s, fn.maspsx.s, fn.o) here")
+    ap.add_argument("--keep-on-fail", action="store_true",
+                    help="keep the temp work dir on MISMATCH/ERROR (path printed); also env AC1_MATCH_KEEP_ON_FAIL=1")
     ap.add_argument("-I", dest="include", action="append", help="extra include dir for cpp")
     ap.add_argument("-D", dest="define", action="append", help="extra macro for cpp")
     ap.add_argument("--context", type=int, default=None, help="diff context lines (default: whole function)")
@@ -587,6 +590,7 @@ def main(argv=None):
     fn_name = None
     status = 2
     work = None
+    keep_on_fail = args.keep_on_fail or os.environ.get("AC1_MATCH_KEEP_ON_FAIL", "") not in ("", "0")
     try:
         if not os.path.isfile(args.src):
             raise ToolError("source file not found: %s" % args.src)
@@ -648,7 +652,8 @@ def main(argv=None):
             if first is not None or size_bad:
                 print("\n".join(side_by_side(ours, retail, args.vaddr, set(diffs), masks,
                                              tools["objdump"], work, args.context)))
-                print("%d differing word(s); work dir: %s" % (len(diffs), work))
+                print("%d differing word(s)%s" % (len(diffs), "; work dir: " + work
+                                                  if args.keep or keep_on_fail else ""))
             if size_bad:
                 print("size: ours %d bytes, expected %d" % (fn_size, args.expect_size))
         if first is None and not size_bad:
@@ -663,8 +668,13 @@ def main(argv=None):
         facts["error"] = str(e)
         status = 2
     finally:
-        if work and not args.keep and os.path.isdir(work) and status == 0:
-            shutil.rmtree(work, ignore_errors=True)
+        # The auto-created temp dir always goes, also on MISMATCH/ERROR or an unexpected
+        # exception; only --keep DIR or --keep-on-fail (on a miss) leaves it behind.
+        if work and not args.keep and os.path.isdir(work):
+            if status != 0 and keep_on_fail:
+                print("kept work dir: " + work, file=sys.stderr)
+            else:
+                shutil.rmtree(work, ignore_errors=True)
 
     if not args.quiet and log and status != 0:
         print("--- toolchain log ---")
