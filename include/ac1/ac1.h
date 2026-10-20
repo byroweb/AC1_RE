@@ -11,6 +11,8 @@
 #include "entity.h"
 #include "projectile.h"
 #include "mission.h"
+#include "render.h"
+#include "collide.h"
 #include "symbols.h"
 
 #endif
