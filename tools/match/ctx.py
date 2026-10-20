@@ -18,8 +18,13 @@ names and C types.  This tool keeps the two in step and feeds them to m2c.
                                   pairs that land in symbols.tsv (or the exe names
                                   in ac1_markup.tsv) are rewritten to symbols, so
                                   m2c prints g_ui_pool_k2[i].light instead of
-                                  *(s16 *)0x801A370E.  --raw skips the context and
-                                  the rewrite (the old overlay2c.sh output).
+                                  *(s16 *)0x801A370E.  A switch's table load (lui;
+                                  addu idx; lw; jr) becomes jtbl_<ADDR>, the case
+                                  targets get labels and the table is appended as
+                                  .rodata from the retail image, so m2c prints the
+                                  switch instead of failing.  --raw skips the
+                                  context and the rewrite (the old overlay2c.sh
+                                  output).
 
 --proto gives the function itself a signature, e.g.
     ctx.py m2c 0x800AD868 --unit 201 --proto "void func_800AD868(UiObj *o);"
@@ -304,13 +309,41 @@ NO_DEST = {"sb", "sh", "sw", "swl", "swr", "swc2", "mult", "multu", "div", "divu
 INSN_RE = re.compile(r"^(\s+)(\S+)\s*(.*)$")
 
 
-def symbolise(asm, smap):
-    """Rewrite jal func_xxxxxxxx and lui/%lo pairs that hit a known symbol."""
+def jr_loads(parsed, lines):
+    """Line indices of `lw rD, ...` whose rD reaches a `jr rD` (not $ra) in the same
+    straight-line run: the load of a switch's jump-table entry."""
+    out = set()
+    for i, p in enumerate(parsed):
+        if not p or p[0] != "lw" or len(p[1]) != 2:
+            continue
+        reg = p[1][0]
+        for j in range(i + 1, min(i + 8, len(parsed))):
+            q = parsed[j]
+            if q is None:
+                if lines[j].rstrip().endswith(":"):
+                    break
+                continue
+            if q[0] == "jr":
+                if q[1] and q[1][0] == reg and reg != "$ra":
+                    out.add(i)
+                break
+            if q[1] and q[1][0] == reg and q[0] not in NO_DEST:
+                break
+    return out
+
+
+def symbolise(asm, smap, jtbls=()):
+    """Rewrite jal func_xxxxxxxx and lui/%lo pairs that hit a known symbol.
+
+    A switch's table load (`lui at, hi; addu at, at, idx; lw rD, lo(at); jr rD`, or
+    the pair landing on an address in `jtbls`) is named jtbl_<ADDR>, the name m2c
+    looks for before a `jr`; decompile() supplies the table itself."""
     lines = asm.splitlines()
     parsed = []
     for l in lines:
         m = INSN_RE.match(l)
         parsed.append((m.group(2), [o.strip() for o in m.group(3).split(",")] if m and m.group(3) else []) if m else None)
+    jt_lines = jr_loads(parsed, lines)
 
     # 1. calls
     for i, p in enumerate(parsed):
@@ -363,6 +396,16 @@ def symbolise(asm, smap):
         elif mnem == "addiu" and len(ops) == 3:
             use(ops[1], i, int(ops[2], 0))
             kill(ops[0])
+        elif (mnem == "addu" and len(ops) == 3 and ops[0] in live and ops[0] in ops[1:]
+              and ops[1] != ops[2]):
+            # lui at, hi; addu at, at, idx: a table indexed off the symbol.  Kept
+            # only if every use turns out to be a jump-table load (checked below).
+            live[ops[0]]["indexed"] = True
+            other = ops[2] if ops[1] == ops[0] else ops[1]
+            if other in stale:
+                stale[other]["ok"] = False
+            if other in live:
+                live[other]["ok"] = False
         else:
             for o in ops[1:]:
                 if o in stale:
@@ -385,8 +428,11 @@ def symbolise(asm, smap):
             continue
         names = []
         for li, addr in uses:
-            names.append(smap.lookup(addr))
+            jt = (li in jt_lines and g.get("indexed")) or addr in jtbls
+            names.append("jtbl_%08X" % addr if jt else smap.lookup(addr))
         if any(n is None for n in names):
+            continue
+        if g.get("indexed") and not all(n.startswith("jtbl_") for n in names):
             continue
         bases = {n.split("+")[0] for n in names}
         if len(bases) != 1:
@@ -401,14 +447,98 @@ def symbolise(asm, smap):
     return "\n".join(lines) + "\n"
 
 
-def function_size(vaddr, unit):
+JTBL_RE = re.compile(r"%lo\(jtbl_([0-9A-F]{8})\)")
+JR_REG_RE = re.compile(r"^\s+jr\s+\$(?!ra\b)\w+\s*$", re.M)
+
+
+class JumpTables:
+    """The `jtbls` symbolise() takes for one function: its jt_addrs from
+    functions.tsv, plus (when the function has a `jr` through a register) any
+    address whose retail word points strictly inside the function.  The second
+    catches a table the inventory missed whose base GCC hoisted out of a loop
+    (lui/addiu s0 before the loop, addu idx, s0; lw; jr inside it)."""
+
+    def __init__(self, known, asm, vaddr, length, read_word):
+        self.known = set(known)
+        self.scan = bool(JR_REG_RE.search(asm))
+        self.vaddr, self.length, self.read_word = vaddr, length, read_word
+
+    def __contains__(self, addr):
+        if addr in self.known:
+            return True
+        if not self.scan:
+            return False
+        w = self.read_word(addr)
+        return w is not None and not w & 3 and self.vaddr < w < self.vaddr + self.length
+
+
+def add_jump_tables(asm, vaddr, length, read_word, known=()):
+    """Give m2c the jump tables symbolise() named: label every case target in the
+    function (.L<addr>, as objdump2m2c names branch targets) and append
+
+        .section .rodata
+        jtbl_<ADDR>:
+        .word .L<case>  ...
+
+    read_word(addr) -> the retail word or None.  A table runs until a word that is
+    not an instruction address of this function, or the next table (any jtbl_ the
+    asm reads, or an address in `known`, e.g. the function's jt_addrs)."""
+    addrs = sorted({int(a, 16) for a in JTBL_RE.findall(asm)})
+    if not addrs:
+        return asm
+    stops = set(addrs) | set(known)
+    tables = []
+    for a in addrs:
+        words, p = [], a
+        while len(words) < 1024:
+            w = read_word(p)
+            if w is None or w & 3 or not vaddr <= w < vaddr + length:
+                break
+            words.append(w)
+            p += 4
+            if p in stops:
+                break
+        if words:
+            tables.append((a, words))
+    targets = {w for _, ws in tables for w in ws}
+    have = {int(h, 16) for h in re.findall(r"^\.L([0-9a-f]+):", asm, re.M)}
+    out, k = [], 0
+    for l in asm.splitlines():
+        if INSN_RE.match(l):
+            addr = vaddr + 4 * k
+            if k < length // 4 and addr in targets and addr not in have:
+                out.append(".L%x:" % addr)
+                have.add(addr)
+            k += 1
+        out.append(l)
+    if tables:
+        out += ["", ".section .rodata"]
+        for a, ws in tables:
+            out.append("jtbl_%08X:" % a)
+            out += [".word .L%x" % w for w in ws]
+    return "\n".join(out) + "\n"
+
+
+def function_row(vaddr, unit):
+    """(size, [jt addrs]) of a function in tools/loop/functions.tsv, or None."""
     fu = "ovl" + unit if unit.isdigit() else unit
     if os.path.isfile(FUNCTIONS):
         with open(FUNCTIONS, encoding="utf-8") as fh:
+            head = fh.readline().rstrip("\r\n").split("\t")
+            jt = head.index("jt_addrs") if "jt_addrs" in head else None
             for line in fh:
-                p = line.split("\t")
+                p = line.rstrip("\r\n").split("\t")
                 if len(p) > 2 and p[0] == fu and p[1].startswith("0x") and int(p[1], 16) == vaddr:
-                    return int(p[2])
+                    jts = p[jt] if jt is not None and jt < len(p) else ""
+                    return int(p[2]), [int(x, 16) for x in jts.split(",") if x.strip()]
+    return None
+
+
+def function_size(vaddr, unit):
+    row = function_row(vaddr, unit)
+    if row:
+        return row[0]
+    fu = "ovl" + unit if unit.isdigit() else unit
     raise CtxError("0x%08X (%s) is not in tools/loop/functions.tsv; pass LEN" % (vaddr, fu))
 
 
@@ -449,7 +579,19 @@ def decompile(vaddr, length, unit, protos=(), raw=False, ctx_path=None, m2c_args
         text = asm.stdout
         cmd = m2c_cmd() + ["-t", "mips-gcc-c"] + list(m2c_args)
         if not raw:
-            text = symbolise(text, SymbolMap(unit_key(unit)))
+            row = function_row(vaddr, unit_key(unit))
+            jts = row[1] if row else []
+
+            def read_word(a):
+                if a < base:
+                    return None
+                fh.seek(a - base)
+                b = fh.read(4)
+                return int.from_bytes(b, "little") if len(b) == 4 else None
+            with open(image, "rb") as fh:
+                text = symbolise(text, SymbolMap(unit_key(unit)),
+                                 JumpTables(jts, text, vaddr, length, read_word))
+                text = add_jump_tables(text, vaddr, length, read_word, jts)
             ctx = ctx_path or os.path.join(tmp, "ctx.c")
             write_context(ctx, protos)
             cmd += ["--context", ctx, "--no-cache"]
