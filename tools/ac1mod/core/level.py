@@ -11,7 +11,7 @@ load a SHARED scene (FDAT e200-style) instead and have no chunk-7 table — thos
 return an empty mesh here (documented open item).
 
 Faces are classified floor / ceiling / wall by world-space normal (PSX Y is DOWN:
-a walkable floor's winding normal points -Y). Ceilings can be dropped for the
+a walkable floor's winding normal cross(b-a, c-a) points +Y, see _face_class). Ceilings can be dropped for the
 "see into the level from above" view (the AC1MOD_VISION ceiling toggle).
 """
 from __future__ import annotations

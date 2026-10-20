@@ -6,7 +6,7 @@ records, flat RGB / textured (tpage, clut) shading, Z/N quad split) is
 tools/pa/pa_obj.py, and .T container splitting is tools/extract/t_repack.py —
 see docs/PA_FORMAT.md. This module only turns their output into AC1mod's Mesh /
 Face objects, colours textured faces with material_color, and lays blocks out
-for viewing (contact sheet, world-space stage).
+for viewing (contact sheet, or all blocks at their local origin).
 """
 from __future__ import annotations
 import math
@@ -149,13 +149,13 @@ def contact_sheet(bin_path, sector_start, sector_end, cell=100.0, gap=1.5) -> Me
 
 def scene_mesh(bin_path, sector_start, sector_end, coord_limit=12000) -> Mesh:
     """
-    Assemble a STAGE: merge all geometry blocks at their RAW (world) coordinates.
-
-    AC1 authors a stage's environment geometry directly in world space, so merging
-    the blocks unmodified reconstructs the actual level layout. Blocks whose bbox
-    exceeds `coord_limit` are skipped — those are the object/effect slots (e125+,
-    not-yet-cleanly-decoded sprites/MT models that share a local origin and would
-    pile up at the centre); they're placed per-instance by mission data, not here.
+    All geometry blocks merged at their RAW coordinates, i.e. each at its own
+    LOCAL origin. This is NOT an assembled stage: PA blocks are local, PA entries
+    0/1 (master header, placement directory) are ignored here, and a mission's
+    level comes from FDAT chunk-0 blocks placed by the chunk-7 table (core/level.py;
+    docs/LEVEL_LOADING.md §5, docs/PA_FORMAT.md "Scene assembly" RETRACTED). Blocks
+    whose bbox exceeds `coord_limit` are skipped. Use contact_sheet() to see what a
+    PA file contains.
     """
     out = Mesh()
     for ei, m in parse_pa_blocks(bin_path, sector_start, sector_end):

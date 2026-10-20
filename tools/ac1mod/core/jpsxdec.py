@@ -351,6 +351,7 @@ class TimInfo:
     image_width: int       # actual pixel width (accounts for bpp packing)
     image_height: int
     file_size: int
+    clut_words: tuple = ()  # the CLUT's u16 entries, all rows (encode_to_tim keeps their STP bits)
 
 
 def decode_tim_to_rgba(tim_path: Path, palette_index: int = 0) -> Optional[tuple[int, int, bytes]]:
@@ -611,6 +612,7 @@ def parse_tim(tim_path: Path) -> Optional[TimInfo]:
 
     offset = 8
     clut_x = clut_y = clut_w = clut_h = 0
+    clut_words = ()
 
     if has_clut:
         if len(data) < offset + 12:
@@ -621,6 +623,8 @@ def parse_tim(tim_path: Path) -> Optional[TimInfo]:
         clut_w = struct.unpack_from("<H", data, offset + 8)[0]
         clut_h = struct.unpack_from("<H", data, offset + 10)[0]
         clut_block_len = struct.unpack_from("<I", data, offset)[0]
+        n_words = min(clut_w * clut_h, max(0, (len(data) - offset - 12) // 2))
+        clut_words = struct.unpack_from(f"<{n_words}H", data, offset + 12)
         offset += clut_block_len
 
     if len(data) < offset + 12:
@@ -654,6 +658,7 @@ def parse_tim(tim_path: Path) -> Optional[TimInfo]:
         image_width=img_w,
         image_height=pix_h,
         file_size=len(data),
+        clut_words=tuple(clut_words),
     )
 
 
@@ -1147,7 +1152,10 @@ def encode_to_tim(input_path: Path, ref: TimInfo, out_path: Path) -> tuple[bool,
     All positional/structural fields are taken from ref:
       pixel_x, pixel_y, pixel_width, pixel_height, bpp, has_clut,
       clut_x, clut_y, clut_width, clut_height.
-    Only CLUT color data and pixel data come from input_path.
+    Only CLUT color data and pixel data come from input_path. Every CLUT row of a
+    multi-palette TIM gets the same quantized palette. A CLUT word keeps the STP
+    bit of ref's word at the same position (0x8000 when ref.clut_words is empty);
+    opaque black is always 0x8000, since 0x0000 is the transparent sentinel.
     """
     suffix = input_path.suffix.lower()
     if suffix == ".tim":
@@ -1186,19 +1194,18 @@ def encode_to_tim(input_path: Path, ref: TimInfo, out_path: Path) -> tuple[bool,
             total = ref.clut_width * ref.clut_height
             words = []
             for i in range(total):
-                if i < len(palette):
-                    r8, g8, b8 = palette[i]
-                    if i == 0 and has_transparency:
-                        w = 0x0000  # transparent sentinel
-                    else:
-                        r5 = r8 >> 3
-                        g5 = g8 >> 3
-                        b5 = b8 >> 3
-                        w = r5 | (g5 << 5) | (b5 << 10)
-                        if w:
-                            w |= 0x8000  # STP bit prevents accidental black→transparent
+                k = i % n_colors            # entry k of palette row i // n_colors
+                r8, g8, b8 = palette[k]
+                if k == 0 and has_transparency:
+                    w = 0x0000  # transparent sentinel
                 else:
-                    w = 0
+                    w = (r8 >> 3) | ((g8 >> 3) << 5) | ((b8 >> 3) << 10)
+                    if not w:
+                        w = 0x8000  # opaque black: 0x0000 would be transparent
+                    elif i < len(ref.clut_words):
+                        w |= ref.clut_words[i] & 0x8000  # keep the original STP bit
+                    else:
+                        w |= 0x8000
                 words.append(w)
             clut_data = struct.pack(f"<{len(words)}H", *words)
             buf += struct.pack("<I", 12 + len(clut_data))

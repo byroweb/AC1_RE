@@ -15,11 +15,15 @@ Examples:
   python3 ac1mod_cli.py note set GG/P0/PA00.T "PA00 = light MT enemy, X-symmetric"
   python3 ac1mod_cli.py note get GG/P0/PA00.T
   python3 ac1mod_cli.py notes
-  python3 ac1mod_cli.py obj GG/P0/PA00.T --entry 2 -o /tmp/pa00_e2.obj
-  python3 ac1mod_cli.py render GG/P0/PA00.T -o /tmp/pa00.png        # whole-file contact sheet
-  python3 ac1mod_cli.py render GG/P0/PA00.T --entry 2 --yaw 40 --pitch 25 -o /tmp/pa00_e2.png
+  python3 ac1mod_cli.py obj GG/P0/PA00.T --entry 2 -o pa00_e2.obj
+  python3 ac1mod_cli.py render GG/P0/PA00.T --all -o pa00.png       # whole-file contact sheet
+  python3 ac1mod_cli.py render GG/P0/PA00.T --entry 2 --yaw 40 --pitch 25 -o pa00_e2.png
+  python3 ac1mod_cli.py memcard list --card "Armored Core (USA)_1.mcd"
+
+Outputs default to the system temp directory (tempfile.gettempdir()) when -o /
+--out-dir is not given.
 """
-import os, sys, re, argparse
+import os, sys, re, argparse, tempfile
 from pathlib import Path
 
 APP_DIR = Path(__file__).resolve().parent
@@ -28,6 +32,11 @@ from core.project import Project          # noqa: E402
 from core import pa_parser                 # noqa: E402
 
 PA_RE = re.compile(r"/P[0-3]/PA\d{2}\.T$")
+
+
+def tmp_path(name):
+    """Default output path: `name` in the system temp directory."""
+    return os.path.join(tempfile.gettempdir(), name)
 
 
 # ----------------------------------------------------------------- project ----
@@ -128,8 +137,8 @@ def cmd_notes(proj, idx, args):
 
 
 def _pick_mesh(proj, fid, a, b, entry, want_all, want_scene=False):
-    """entry N -> that block; --scene -> assembled stage; --all -> contact sheet;
-    default -> largest block."""
+    """entry N -> that block; --scene -> all blocks at local origin; --all ->
+    contact sheet; default -> largest block."""
     if entry is not None:
         ents = pa_parser.read_container(proj.bin_path, a, b)
         return pa_parser.parse_block(ents[entry])
@@ -145,7 +154,7 @@ def _pick_mesh(proj, fid, a, b, entry, want_all, want_scene=False):
 def cmd_obj(proj, idx, args):
     fid, a, b = find_pa(idx, args.file)
     mesh = _pick_mesh(proj, fid, a, b, args.entry, getattr(args,"all",False), getattr(args,"scene",False))
-    out = args.out or f"/tmp/{os.path.basename(fid).replace('.', '_')}.obj"
+    out = args.out or tmp_path(f"{os.path.basename(fid).replace('.', '_')}.obj")
     lines = ["# AC1mod OBJ export", f"# {fid}"]
     for v in mesh.vertices:
         lines.append(f"v {v[0]} {v[1]} {v[2]}")
@@ -161,7 +170,7 @@ def cmd_render(proj, idx, args):
     import math
     fid, a, b = find_pa(idx, args.file)
     mesh = _pick_mesh(proj, fid, a, b, args.entry, getattr(args,"all",False), getattr(args,"scene",False))
-    out = args.out or f"/tmp/{os.path.basename(fid).replace('.', '_')}.png"
+    out = args.out or tmp_path(f"{os.path.basename(fid).replace('.', '_')}.png")
     img = render_mesh(mesh, args.w, args.h,
                       yaw=math.radians(args.yaw), pitch=math.radians(args.pitch),
                       zoom=args.zoom, wire=args.wire)
@@ -200,7 +209,7 @@ def cmd_level(proj, idx, args):
         img = render_mesh(mesh, args.w, args.h, yaw=math.radians(args.yaw),
                           pitch=math.radians(args.pitch), zoom=args.zoom,
                           wire=args.wire)
-    out = args.out or f"/tmp/ac1_level_{n:02d}.png"
+    out = args.out or tmp_path(f"ac1_level_{n:02d}.png")
     img.save(out)
     print(f"wrote {out}  (mission {n}, {len(mesh.groups)} sections, "
           f"{len(mesh.faces)} faces, ceilings={'on' if ceilings else 'OFF'})")
@@ -214,7 +223,7 @@ def cmd_missions(proj, idx, args):
     QApplication.instance() or QApplication([])
     from core.mission import mission_scene, mission_names
     from core import raster
-    out_dir = args.out_dir or "/tmp/ac1_missions"
+    out_dir = args.out_dir or tmp_path("ac1_missions")
     os.makedirs(out_dir, exist_ok=True)
     names = mission_names(proj.bin_path, str(idx))
     done = 0
@@ -242,7 +251,7 @@ def cmd_missions(proj, idx, args):
 def cmd_mistim(proj, idx, args):
     """Extract every embedded MIS.T mission-preview TIM (all ~194), optionally to PNG."""
     from core import mis
-    out_dir = args.out_dir or "/tmp/ac1_mis_tims"
+    out_dir = args.out_dir or tmp_path("ac1_mis_tims")
     paths = mis.extract_tims(proj.bin_path, out_dir)
     print(f"extracted {len(paths)} MIS.T TIMs -> {out_dir}")
     if args.png:
@@ -258,10 +267,6 @@ def cmd_mistim(proj, idx, args):
         print(f"decoded {n} previews to PNG in {out_dir}")
 
 
-DEFAULT_CARD = ("/home/byron/.local/share/duckstation/memcards/"
-                "Armored Core (USA) (Reprint)_1.mcd")
-
-
 def cmd_memcard(proj, idx, args):
     """Browse a PS1 memory card; view/export/import AC1 emblems.
 
@@ -269,9 +274,9 @@ def cmd_memcard(proj, idx, args):
     --index 0..6 selects which. --index -1 (export) does the whole 7-up set."""
     from core import memcard as M
     from PIL import Image
-    card = M.read_card(args.card or DEFAULT_CARD)
+    card = M.read_card(args.card)
     if args.action == "list":
-        print(f"{Path(args.card or DEFAULT_CARD).name}: {len(card.saves)} save(s)")
+        print(f"{Path(args.card).name}: {len(card.saves)} save(s)")
         for s in card.saves:
             tag = "EMB" if s.is_emblem else ("AC1" if s.is_ac1 else "   ")
             note = ""
@@ -287,7 +292,7 @@ def cmd_memcard(proj, idx, args):
         if not sv:
             sys.exit("no AC1 save found on card")
         w, h, rgba = card.icon_rgba(sv)
-        out = args.out or "/tmp/ac1_save_icon.png"
+        out = args.out or tmp_path("ac1_save_icon.png")
         Image.frombytes("RGBA", (w, h), rgba).resize((128, 128), Image.NEAREST).save(out)
         print("wrote", out)
         return
@@ -298,7 +303,7 @@ def cmd_memcard(proj, idx, args):
     fb = card.file_bytes(sv)
     if args.action == "emblem-export":
         if args.index < 0:                       # whole 7-up set
-            out = args.out or "/tmp/ac1_emblems.png"
+            out = args.out or tmp_path("ac1_emblems.png")
             sheet = Image.new("RGB", (M.EMBLEM_W * M.EMBLEM_COUNT, M.EMBLEM_H))
             for i in range(M.EMBLEM_COUNT):
                 w, h, rgba = M.decode_emblem(fb, i)
@@ -308,7 +313,7 @@ def cmd_memcard(proj, idx, args):
             print(f"wrote {out}  (7 emblems)")
         else:
             w, h, rgba = M.decode_emblem(fb, args.index)
-            out = args.out or f"/tmp/ac1_emblem{args.index}.png"
+            out = args.out or tmp_path(f"ac1_emblem{args.index}.png")
             Image.frombytes("RGBA", (w, h), rgba).resize((256, 256), Image.NEAREST).save(out)
             print(f"wrote {out}  (emblem {args.index}, blank={M.is_emblem_blank(fb, args.index)})")
     elif args.action == "emblem-import":
@@ -344,7 +349,8 @@ def main():
                    help="also decode each preview to PNG")
     p = sub.add_parser("memcard", help="browse PS1 card; view/import/export AC1 emblem")
     p.add_argument("action", choices=["list", "icon", "emblem-export", "emblem-import"])
-    p.add_argument("--card", help="path to .mcd/.mcr card (default: DuckStation AC1 card)")
+    p.add_argument("--card", required=True,
+                   help="path to a raw 128K .mcd/.mcr card (e.g. DuckStation's memcards folder)")
     p.add_argument("--slot", type=int, help="directory slot (default: first AC1 save)")
     p.add_argument("--image", help="GIF/PNG to import (emblem-import)")
     p.add_argument("--index", type=int, default=-1,
@@ -387,13 +393,17 @@ def main():
     p.add_argument("file")
     p.add_argument("--entry", type=int); p.add_argument("--all", action="store_true",
                    help="whole-file contact sheet instead of the largest object")
-    p.add_argument("--scene", action="store_true", help="assembled stage (world coords)")
+    p.add_argument("--scene", action="store_true",
+                   help="all blocks merged at their local origin (not a stage; PA "
+                        "entries 0/1 are ignored, levels come from `level N`)")
     p.add_argument("-o", "--out")
     p = sub.add_parser("render", help="render a PNG (default: largest object)")
     p.add_argument("file")
     p.add_argument("--entry", type=int); p.add_argument("--all", action="store_true",
                    help="whole-file contact-sheet grid instead of the largest object")
-    p.add_argument("--scene", action="store_true", help="assembled stage (world coords)")
+    p.add_argument("--scene", action="store_true",
+                   help="all blocks merged at their local origin (not a stage; PA "
+                        "entries 0/1 are ignored, levels come from `level N`)")
     p.add_argument("--yaw", type=float, default=35); p.add_argument("--pitch", type=float, default=25)
     p.add_argument("--zoom", type=float, default=1.0)
     p.add_argument("--w", type=int, default=640); p.add_argument("--h", type=int, default=460)

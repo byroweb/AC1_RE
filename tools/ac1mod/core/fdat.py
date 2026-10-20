@@ -42,20 +42,40 @@ def mission_entry(bin_path, n, odd=True, index_path=None):
     return ents[idx] if idx < len(ents) else b""
 
 
+# Entries past the mission pairs (docs/REFERENCE.md "FDAT.T entry indices",
+# docs/LEVEL_LOADING.md §4).
+FIXED_ROLES = {
+    200: "shared scene stream",
+    201: "front-end / text overlay (ovl201)",
+    202: "mission (mode 0) overlay (ovl202)",
+    203: "mode-1 overlay (ovl203)",
+    204: "mode-2 overlay (ovl204)",
+}
+
+# Arena/versus stage pairs loaded by the mode overlays, not by the mission overlay:
+# stage S -> entries 2S, 2S+1 above the base (docs/MISSION_OVERLAY_CODE.md §c).
+MODE_STAGE_BASES = ((160, 170, "mode-2 overlay"), (180, 190, "mode-1 overlay"))
+
+
 def fdat_child_info(bin_path, index_path=None):
     """List FDAT.T's entries for tree expansion: [(index, size_bytes, role)].
 
-    Mission N occupies entries 2N (objective code) and 2N+1 (chunk stream); a
-    zero-length slice is an unused slot.
+    Mission N occupies entries 2N (objective code) and 2N+1 (chunk stream);
+    160-169 and 180-189 are the same pair layout for the mode-2 and mode-1
+    overlays' stages; 200-204 are the shared scene stream and the four code
+    overlays. A zero-length slice is an unused slot.
     """
     out = []
     for i, ent in enumerate(fdat_entries(bin_path, index_path)):
-        m = i // 2
+        kind = "objective" if i % 2 == 0 else "chunk-stream"
+        mode = next(((a, lbl) for a, b, lbl in MODE_STAGE_BASES if a <= i < b), None)
         if not ent:
             role = "empty"
-        elif i % 2 == 0:
-            role = f"mission {m} objective"
+        elif i in FIXED_ROLES:
+            role = FIXED_ROLES[i]
+        elif mode:
+            role = f"{mode[1]} stage {(i - mode[0]) // 2} {kind}"
         else:
-            role = f"mission {m} chunk-stream"
+            role = f"mission {i // 2} {kind}"
         out.append((i, len(ent), role))
     return out
