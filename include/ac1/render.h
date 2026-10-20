@@ -120,6 +120,27 @@ AC1_ASSERT_SIZE(RenderScratch, 0x400);
 
 #define RSCR ((RenderScratch *)0x1F800000)
 
+typedef struct PrimBuf {        /* primitive buffer (DrawCtx.buf) */
+    u8 *base;                   /* +0x00 */
+    u8 *end;                    /* +0x04 last usable byte */
+    u8 *cur;                    /* +0x08 next free primitive */
+} PrimBuf;
+AC1_ASSERT_SIZE(PrimBuf, 0x0C);
+
+typedef struct DrawCtx {        /* overlay 202 0x801A5F24: where 2D primitives go */
+    PrimBuf *buf;
+    u32 *ot;                    /* +0x04 ordering table */
+} DrawCtx;
+AC1_ASSERT_SIZE(DrawCtx, 8);
+
+typedef struct SprInfo {        /* 8: texture page area of a 2D sprite */
+    u16 clut;
+    u16 tpage;
+    u8 u, v;                    /* +0x04 top-left texel */
+    u8 w, h;                    /* +0x06 size */
+} SprInfo;
+AC1_ASSERT_SIZE(SprInfo, 8);
+
 typedef struct SubVtx {         /* 0x18: one subdivider vertex */
     SVECTOR pos;                /* +0x00 model position */
     u8 u, v;                    /* +0x08 texture coordinate (read as one u16 when emitted) */

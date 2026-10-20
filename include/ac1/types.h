@@ -2,8 +2,8 @@
  *
  * GCC 2.7.2 safe (no // comments, no C99).  The primitive typedefs use the
  * same guard as tools/match/include/ac1_types.h, so a file may include both
- * in either order.  SVECTOR / VECTOR / MATRIX are the public PsyQ libgte
- * layouts (16 / 16 / 32 bytes).
+ * in either order.  SVECTOR / VECTOR / DVECTOR / MATRIX are the public
+ * PsyQ libgte layouts (8 / 16 / 4 / 32 bytes).
  */
 #ifndef AC1_TYPES_H
 #define AC1_TYPES_H
@@ -31,6 +31,11 @@ typedef struct VECTOR {         /* 16 bytes */
     s32 vz;
     s32 pad;
 } VECTOR;
+
+typedef struct DVECTOR {        /* 4 bytes: 2D point (screen) */
+    s16 vx;
+    s16 vy;
+} DVECTOR;
 
 typedef struct MATRIX {         /* 32 bytes: 3x3 rotation (4.12) + translation */
     s16 m[3][3];
