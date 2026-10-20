@@ -145,8 +145,27 @@ def read_verts(block, off, cnt):
     return pts
 
 
-def read_prims(block, off, cnt):
-    """Walk `cnt` variable-length records; return list of (type, [vertex indices])."""
+def prim_shading(block, o, typ):
+    """Shading words of the record at `o`: (rgb, material).
+
+    FLAT types carry an "RR GG BB cc" colour word right after the 4-byte header
+    -> rgb=(r,g,b), material=None. TEXTURED types carry CLUT @rec+0x06 and TPAGE
+    @rec+0x0a (PSX FT/GT packing; docs/PA_FORMAT.md "Textured-primitive MATERIAL
+    words") -> rgb=None, material=(tpage, clut). (None, None) if the record is
+    too short."""
+    if not TEXTURED(typ):
+        if o + 7 <= len(block):
+            return (block[o + 4], block[o + 5], block[o + 6]), None
+    elif o + 0x0c <= len(block):
+        clut = struct.unpack_from("<H", block, o + 0x06)[0]
+        tpage = struct.unpack_from("<H", block, o + 0x0a)[0]
+        return None, (tpage, clut)
+    return None, None
+
+
+def read_prims_shaded(block, off, cnt):
+    """read_prims, plus each record's shading: list of (type, [vertex indices],
+    rgb, material) — see prim_shading."""
     o = off
     out = []
     types = collections.Counter()
@@ -162,11 +181,46 @@ def read_prims(block, off, cnt):
             voff, nv, stride = info
             idx = [struct.unpack_from("<H", block, o + voff + stride * k)[0]
                    for k in range(nv) if o + voff + stride * k + 2 <= len(block)]
-            out.append((typ, idx))
+            out.append((typ, idx) + prim_shading(block, o, typ))
             types[typ] += 1
         o += reclen
         n += 1
     return out, types, o
+
+
+def read_prims(block, off, cnt):
+    """Walk `cnt` variable-length records; return list of (type, [vertex indices])."""
+    out, types, o = read_prims_shaded(block, off, cnt)
+    return [(typ, idx) for (typ, idx, _rgb, _mat) in out], types, o
+
+
+def subobject_tris(block, s):
+    """Decode sub-object `s` (from parse_subobjects) into triangles.
+
+    Returns (verts, tris, stats): verts = [(x,y,z,w)] of its pool; tris =
+    [((i0,i1,i2), type, rgb, material)] with POOL-RELATIVE indices, quads split
+    in PSX Z/N order; stats = {"types", "degenerate", "out_of_range"}."""
+    verts = read_verts(block, s["vtx_off"], s["vtx_cnt"])
+    prims, types, _ = read_prims_shaded(block, s["prim_off"], s["prim_cnt"])
+    nv = len(verts)
+    tris = []
+    deg = oor = 0
+    for (typ, idx, rgb, mat) in prims:
+        idx = [i for i in idx if i < nv]
+        if len(idx) < 3:
+            oor += 1
+            continue
+        if len(set(idx)) < 3:
+            deg += 1
+            continue
+        if len(idx) == 3:
+            tris.append((tuple(idx), typ, rgb, mat))
+        elif len(idx) == 4:
+            # PSX 4-pt polys use Z/N order (diagonal = v1-v2): (0,1,2)+(1,3,2),
+            # NOT a (0,1,2)+(0,2,3) fan.
+            tris.append(((idx[0], idx[1], idx[2]), typ, rgb, mat))
+            tris.append(((idx[1], idx[3], idx[2]), typ, rgb, mat))
+    return verts, tris, dict(types=types, degenerate=deg, out_of_range=oor)
 
 
 def export(block, subs_filter, out_path):
@@ -181,33 +235,20 @@ def export(block, subs_filter, out_path):
     deg = oor = 0
     lines.append("# AC1 PA geometry export (tools/pa/pa_obj.py)")
     for s in subs:
-        verts = read_verts(block, s["vtx_off"], s["vtx_cnt"])
-        prims, tc, end = read_prims(block, s["prim_off"], s["prim_cnt"])
-        type_counts += tc
+        verts, tris, st = subobject_tris(block, s)
+        type_counts += st["types"]
+        deg += st["degenerate"]
+        oor += st["out_of_range"]
         lines.append(f"o sub{s['index']}")
         for (x, y, z, w) in verts:
             lines.append(f"v {x} {y} {z}")
             for k, val in ((0, x), (1, y), (2, z)):
                 bbox[k] = val if bbox[k] is None else min(bbox[k], val)
                 bbox[k + 3] = val if bbox[k + 3] is None else max(bbox[k + 3], val)
+        for (t, _typ, _rgb, _mat) in tris:
+            lines.append(f"f {vbase + t[0] + 1} {vbase + t[1] + 1} {vbase + t[2] + 1}")
+        total_f += len(tris)
         nv = len(verts)
-        for (typ, idx) in prims:
-            idx = [i for i in idx if i < nv]
-            if len(idx) < 3:
-                oor += 1
-                continue
-            if len(set(idx)) < 3:
-                deg += 1
-                continue
-            g = [vbase + i + 1 for i in idx]
-            if len(g) == 3:
-                lines.append(f"f {g[0]} {g[1]} {g[2]}")
-                total_f += 1
-            elif len(g) == 4:
-                # PSX 4-pt polys use Z/N order (diagonal = v1-v2): (0,1,2)+(1,3,2)
-                lines.append(f"f {g[0]} {g[1]} {g[2]}")
-                lines.append(f"f {g[1]} {g[3]} {g[2]}")
-                total_f += 2
         vbase += nv
         total_v += nv
     with open(out_path, "w") as f:

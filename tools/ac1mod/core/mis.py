@@ -18,7 +18,8 @@ Total length = 8 + (clut block) + (image block).
 from __future__ import annotations
 import struct
 from pathlib import Path
-from core import pa_parser as PP
+from core import _tools  # noqa: F401
+import extract_t
 
 MIS_SECTORS = (101920, 103449)
 TIM_MAGIC = b"\x10\x00\x00\x00"
@@ -54,24 +55,13 @@ def _tim_length(buf: bytes, off: int) -> int | None:
 
 def mis_blob(bin_path) -> bytes:
     """The whole MIS.T container as one contiguous byte blob (user data only)."""
-    return PP._read_sectors(bin_path, *MIS_SECTORS) if hasattr(PP, "_read_sectors") \
-        else _read_sectors(bin_path)
-
-
-def _read_sectors(bin_path) -> bytes:
-    RAW, OFF, DATA = 2352, 24, 2048
     s0, s1 = MIS_SECTORS
-    out = bytearray()
-    with open(bin_path, "rb") as f:
-        for s in range(s0, s1 + 1):
-            f.seek(s * RAW + OFF)
-            out += f.read(DATA)
-    return bytes(out)
+    return extract_t.read_sectors(bin_path, s0, s1 - s0 + 1)
 
 
 def find_tims(bin_path) -> list[tuple[int, int, bytes]]:
     """Scan MIS.T for TIMs. Returns [(index, blob_offset, tim_bytes)]."""
-    buf = _read_sectors(bin_path)
+    buf = mis_blob(bin_path)
     out = []
     off = 0
     idx = 0

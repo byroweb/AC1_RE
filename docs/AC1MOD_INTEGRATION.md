@@ -6,11 +6,19 @@ from the former separate repo ([byroweb/AC1mod](https://github.com/byroweb/AC1mo
 at `616bcd2`), and that repo keeps its history. Paths below such as `main.py` and
 `core/pa_parser.py` are relative to `tools/ac1mod/`.
 
-Its geometry decoder (`core/pa_parser.py`) is a port of the authoritative PA decode
-in `tools/pa/pa_obj.py` and `tools/pa/pa_parse.py`. Both now sit in the same repo,
-so the next step is for AC1mod to import the `tools/` decoders instead of keeping
-its own copies. Until then, make format fixes in `tools/` first and port them to
-AC1mod. See:
+AC1mod has no format decoders of its own. It imports the authoritative ones from
+`tools/` (`core/_tools.py` puts their directories on `sys.path`) and keeps only
+adapters that reshape their output for the viewer:
+
+| AC1mod module | decodes with | what AC1mod adds |
+|---|---|---|
+| `core/pa_parser.py` | `tools/pa/pa_obj.py` (`parse_subobjects`, `subobject_tris`: vertex pools, primitive records, flat RGB / textured `(tpage, clut)`, Z/N quad split) | `Mesh`/`Face` objects, `material_color`, contact sheet, world-space stage |
+| `core/pa_parser.read_container` | `tools/extract/extract_t.read_sectors` + `tools/extract/t_repack.unpack` | the sector range comes from the jPSXdec index |
+| `core/fdat.py` | `read_container` above | FDAT.T sector lookup, mission N -> entries 2N / 2N+1, tree labels |
+| `core/mis.py` | `tools/extract/extract_t.read_sectors` | the MIS.T preview-TIM scan |
+| `core/xa.py` | `tools/audio/xa_adpcm.py` (`stream_sound_areas`, `decode_stream_float`, mono + stereo) | `core/xa.c`, a bit-identical C port of `decode_stream_float` for fast preview (checked on all 43.8M samples of the disc's TALK and ACED streams) |
+
+A format fix goes into `tools/` only; AC1mod picks it up on the next run. See:
 
 - [PA_FORMAT.md](PA_FORMAT.md) — the PA##.T container + primitive format (the decode being ported).
 - [PA_HEADER.md](PA_HEADER.md) / [PA_SLOTS.md](PA_SLOTS.md) — header and slot structure.
@@ -26,7 +34,7 @@ any OBJ viewer.
 What AC1mod needs to pull from this repo. See [AUTHORING.md](AUTHORING.md) for the
 overall pipeline and [project memory `project_ac1_authoring_pipeline`].
 
-### 1. CRITICAL — re-vendor the PA decoder (bug fix)
+### 1. CRITICAL — PA decoder vertex-count fix
 
 The sub-object descriptor's **vertex count is `u16` at `+0x04`, NOT `u32`**; `+0x06` is
 a separate `u16` param (nonzero on the "articulated" block variant, e.g. PA00 entry 60).
@@ -37,10 +45,9 @@ producing garbage meshes on every variant block (PA00 e60: 1742 bogus verts → 
 
 - Fixed here in `tools/pa/pa_obj.py` (descriptor parse) and documented in
   [PA_FORMAT.md](PA_FORMAT.md) (both descriptor tables now say u16 vtx-count + u16 param).
-- **AC1mod's `core/pa_parser.py` had the same latent bug.** It is fixed: the import
-  reads `vcnt` as `u16 @+0x04`, and `info GG/P0/PA00.T` reports e2 = 180 verts
-  (checked 2026-10-19).
-- Regression check after vendoring: PA00 e2 (simple) = 180 verts, PA00 e60 (variant)
+- AC1mod decodes through `tools/pa/pa_obj.py`, so it has the fix:
+  `ac1mod_cli.py info GG/P0/PA00.T` reports e2 = 180 verts / 323 faces.
+- Regression check: PA00 e2 (simple) = 180 verts, PA00 e60 (variant)
   = 64 verts / 100 tris. Authoritative encoder cross-check: `tools/pa/pa_encode.py
   --selftest` = 7602/7602 byte-exact across all 72 PA files.
 
@@ -57,13 +64,14 @@ just flat/wireframe. Per textured record (`family = type & 0xFD`):
 - Texture pixels: most stage pages come from a **per-stage bank** (RTIM.T covers
   UI/effect/AC pages only — confirmed); until that bank's upload is traced live, a
   viewer can read VRAM directly from an emulator savestate, or flat-shade by tpage.
-- `tools/pa/pa_obj.py` does not yet emit UV/material into the OBJ — that's a small
-  additive enhancement (emit `vt` + a `usemtl tpage_XX` per face) if AC1mod wants
-  textured OBJ export; ask and it can be added here as the single source of truth.
+- `tools/pa/pa_obj.py` decodes each face's `(tpage, clut)` (`prim_shading`,
+  `read_prims_shaded`, `subobject_tris`) but its OBJ export does not emit UVs or
+  materials yet. Textured OBJ export (`vt` + a `usemtl tpage_XX` per face) would be
+  a small addition there.
 
 **Material-map render (done in AC1mod 2026-06-15):** until real texels are available,
 AC1mod now colours each textured face by a stable hue derived from its decoded
-`(tpage, clut)` (`core/pa_parser.material_color`), exposed as `ac1mod_cli.py level N
+`(tpage, clut)` (`core/pa_parser.material_color`, over `pa_obj`'s decoded material), exposed as `ac1mod_cli.py level N
 --materials`. Distinct textures read as distinct flat colours — a faithful *texture-layout*
 view, not real texels. **CORRECTION (2026-10-12): the texels have NOT been located.** The
 "entry 0 = encoded texture bank, entry 1 = CLUT directory" claim was retracted — those
@@ -91,7 +99,7 @@ the current backups are all garage).
 
 ### 3. New write-side (if AC1mod grows an editor)
 
-Single source of truth lives here — vendor, don't fork:
+Single source of truth lives here — import, don't copy:
 `tools/pa/pa_encode.py` (geometry edit, byte-exact), `tools/mission/spawn_edit.py`
 (spawn fields), `tools/mission/mission_script.py` (`assemble()`), `tools/extract/t_repack.py`
 (repack + checksum), `tools/disc/reinject.py` (write back into a `.bin`). Pipeline +

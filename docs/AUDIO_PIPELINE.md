@@ -338,8 +338,12 @@ What it does, per row (all of it verified, see the round trip below):
   ((p1·K0 + p2·K1 + 32) >> 6)`, K0 = {0, 60, 115, 98}, K1 = {0, 0, −52, −55}
   (psx-spx). **jPSXdec v2.1 keeps the history as unrounded doubles** and rounds only
   the output; the two drift apart by up to ~14 LSB on loud speech (65 dB down).
-  `xa_adpcm.decode_sectors_float` reproduces jPSXdec within 1 LSB on ~0.01 % of
-  samples (bit-exact on short streams); `decode_sectors` is the integer rule.
+  `xa_adpcm.decode_sectors_float` reproduces jPSXdec within 1 LSB (3243 of the
+  43.8M samples of all 96 TALK channels + the 5 stereo ACED tracks, 0.007 %;
+  rounding half-to-even instead gives 3155, so neither is jPSXdec's exact rule);
+  `decode_sectors` is the integer rule. `stream_sound_areas` + `decode_stream_float`
+  decode a whole stream, mono or stereo, straight from the image (AC1mod's audio
+  preview uses them).
 - jPSXdec v2.1's command line has **no usable replace command** for us: the XA
   item help lists only `-af`/`-vol`, and `-replacexa`/`-xa` only answers
   "-replacexa option is missing -xa option" (the GUI may still offer it). The

@@ -33,8 +33,9 @@ imported here at `616bcd2`). Its history stays in that repo; new work happens he
   This is the same lookup as `tools/audio/` (see [tools/README.md](../README.md) § jPSXdec).
 - Optional: a host C compiler (`$CC`, `gcc` or `clang`). The rasterizer
   (`core/raster.c`) and XA decoder (`core/xa.c`) compile on first use into
-  `core/lib*.dll` (Windows) or `core/lib*.so`. Without a compiler the tool uses a
-  slower numpy / pure-Python fallback that gives the same output.
+  `core/lib*.dll` (Windows) or `core/lib*.so`. Without a compiler the tool uses
+  the slower numpy rasterizer and `tools/audio/xa_adpcm.py`'s Python decoder, with
+  the same output.
 
 ## Run
 From Git Bash on Windows, or a shell on Linux:
@@ -52,12 +53,15 @@ Without `--project`, the CLI uses `tools/ac1mod/recent_project.txt` (written by 
 GUI), or the single `*.ac1mod` file in `tools/ac1mod/` if there is exactly one.
 
 ## Relation to the rest of `tools/`
-The authoritative format decoders and encoders live in `tools/pa`, `tools/mission`
-and `tools/extract`. `core/pa_parser.py`, `core/fdat.py` and `core/xa.py` are
-copies of that logic made while AC1mod was a separate repo, and they include the
-u16 vertex-count fix. Now that both live in one repo, a format fix belongs in
-`tools/`. See [docs/AC1MOD_INTEGRATION.md](../../docs/AC1MOD_INTEGRATION.md) for
-what still has to be pulled across.
+AC1mod imports the repo's format decoders instead of carrying its own:
+PA geometry from `tools/pa/pa_obj.py`, `.T` containers from
+`tools/extract/{extract_t,t_repack}.py` and XA-ADPCM from
+`tools/audio/xa_adpcm.py` (`core/_tools.py` puts those directories on
+`sys.path`). `core/pa_parser.py`, `core/fdat.py`, `core/mis.py` and `core/xa.py`
+only adapt their output (Mesh objects, material colours, FDAT mission slots, the
+C fast path in `core/xa.c`, which is a bit-identical port of
+`xa_adpcm.decode_stream_float`). A format fix goes into `tools/`. See
+[docs/AC1MOD_INTEGRATION.md](../../docs/AC1MOD_INTEGRATION.md).
 
 Regression check for the PA decode: `info GG/P0/PA00.T` should report entry 2 =
 180 verts / 323 faces.

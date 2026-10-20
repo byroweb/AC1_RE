@@ -104,5 +104,5 @@ and only the edited entry changed.
   (`disc_files.json` `sector_first..sector_last`) needs the CD image rebuilt, not
   an in-place patch.
 - **PA block encoder:** OBJ/glTF → sub-object table + vertex/prim records, the
-  inverse of `pa_parser.py` / `pa_obj.py`, for authoring level geometry.
+  inverse of `pa_obj.py`, for authoring level geometry.
 - **MIS mission-parameter editing** (spawns/rewards/time-limit) beyond text.

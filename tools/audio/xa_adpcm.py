@@ -11,7 +11,8 @@ functions over bytes/numpy so they can be unit-tested without a disc
 XA-ADPCM, 4-bit (the only mode AC1 uses for speech; CONFIRMED on the disc):
   * a sector's 2304-byte sound area is 18 sound groups x 128 bytes;
   * a group holds 8 sound units of 28 samples. Mono: units 0..7 are consecutive
-    in time. Stereo: even units are L, odd are R (not needed for TALK).
+    in time. Stereo: even units are L, odd are R, each side with its own
+    history (TALK is mono; the STR movie soundtracks are stereo).
   * group layout:  0x00-0x03 sound parameters of units 0..3   0x04-0x07 copy
                    0x08-0x0B sound parameters of units 4..7   0x0C-0x0F copy
                    0x10-0x7F 112 data bytes: byte 0x10 + 4*i + j holds sample i
@@ -36,7 +37,15 @@ the output, which is what jPSXdec v2.1 does - CONFIRMED against its WAVs of
 four TALK channels: bit-exact on the short one, within 1 LSB on ~0.01% of the
 samples of the long ones (its exact rounding rule was not pinned down). The
 integer one differs from jPSXdec by up to ~14 LSB on loud speech, 65 dB down.
-Use the float one to predict jPSXdec's output.
+Use the float one to predict jPSXdec's output. Over the whole v1.1 disc (96 TALK
+channels + the 5 stereo ACED endings, 43.8M samples) it is off by 1 LSB on 3243
+samples (0.007%); rounding half-to-even instead of half-up gives 3155, so neither
+is jPSXdec's exact rule and half-up stays.
+
+stream_sound_areas() picks one XA channel's Form 2 audio sectors out of a sector
+range of a raw image (what one jPSXdec XA item decodes); decode_stream_float()
+decodes them, mono or stereo. tools/ac1mod/core/xa.py feeds the same sound areas
+to a C port of decode_stream_float for in-GUI preview.
 """
 import math
 
@@ -185,6 +194,43 @@ def decode_sectors_float(sector_datas, p1=0.0, p2=0.0):
     return (np.concatenate(parts) if parts else np.zeros(0, np.int16)), p1, p2
 
 
+def decode_sector_data_stereo_float(data, hist=(0.0, 0.0, 0.0, 0.0)):
+    """Decode the 2304-byte sound area of one STEREO 4-bit sector (jPSXdec-style
+    double history). Even units are L, odd units R; hist = (l1, l2, r1, r2).
+    Returns (np.int16[2 * 2016] interleaved L,R, hist)."""
+    assert len(data) >= ADPCM_BYTES
+    l1, l2, r1, r2 = hist
+    left, right = [], []
+    for g in range(GROUPS_PER_SECTOR):
+        units = group_units(data[g * GROUP_BYTES:(g + 1) * GROUP_BYTES])
+        for u in range(0, UNITS_PER_GROUP, 2):
+            s, l1, l2 = decode_unit_float(*units[u], l1, l2)
+            left += s
+            s, r1, r2 = decode_unit_float(*units[u + 1], r1, r2)
+            right += s
+    out = np.empty(2 * len(left), np.int16)
+    out[0::2] = left
+    out[1::2] = right
+    return out, (l1, l2, r1, r2)
+
+
+def decode_stream_float(sector_datas, stereo=False):
+    """Decode one stream's sound areas (e.g. from stream_sound_areas) with the
+    jPSXdec-model float decoder. Returns np.int16 PCM, interleaved L,R if stereo."""
+    parts = []
+    if stereo:
+        h = (0.0, 0.0, 0.0, 0.0)
+        for d in sector_datas:
+            s, h = decode_sector_data_stereo_float(d, h)
+            parts.append(s)
+    else:
+        p1 = p2 = 0.0
+        for d in sector_datas:
+            s, p1, p2 = decode_sector_data_float(d, p1, p2)
+            parts.append(s)
+    return np.concatenate(parts) if parts else np.zeros(0, np.int16)
+
+
 # ------------------------------------------------------------------ encoder
 # candidate lanes: every (filter, shift) pair, searched exhaustively per unit
 _FILT = np.repeat(np.arange(4), 13)                       # 52 lanes
@@ -313,6 +359,21 @@ def subheader(sector):
 
 def sector_sound_area(sector):
     return sector[DATA_OFF:DATA_OFF + ADPCM_BYTES]
+
+
+def stream_sound_areas(bin_path, sector_first, sector_last, channel):
+    """Sound areas (2304 B each, disc order) of XA `channel`'s Form 2 audio
+    sectors within sector_first..sector_last of a raw 2352-byte image: the
+    sectors one jPSXdec XA item decodes. Other channels' sectors and the video /
+    data sectors interleaved in the range are skipped."""
+    with open(bin_path, "rb") as f:
+        f.seek(sector_first * SECTOR_RAW)
+        raw = f.read((sector_last - sector_first + 1) * SECTOR_RAW)
+    n = len(raw) // SECTOR_RAW
+    sec = np.frombuffer(raw, np.uint8, count=n * SECTOR_RAW).reshape(n, SECTOR_RAW)
+    sm = sec[:, SUBHEADER_OFF + 2]
+    keep = (sec[:, SUBHEADER_OFF + 1] == channel) & ((sm & SM_AUDIO) != 0) & ((sm & SM_FORM2) != 0)
+    return [row.tobytes() for row in sec[keep, DATA_OFF:DATA_OFF + ADPCM_BYTES]]
 
 
 def snr_db(reference, test):

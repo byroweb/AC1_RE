@@ -1,51 +1,32 @@
 """
-core/pa_parser.py — AC1 PA##.T stage/object geometry decoder for AC1mod.
+core/pa_parser.py — AC1mod's mesh view of PA##.T stage/object geometry.
 
-Vendored from the reverse-engineering repo's validated decoder
-(AC_1_USA_RE/tools/pa_obj.py). KEEP IN SYNC with that file — it is the source of
-truth (see AC_1_USA_RE/docs/PA_FORMAT.md, REFERENCE.md §11).
-
-A PA##.T file is a count-first ".T" container; entries 2..N are size-prefixed
-geometry blocks. Each block holds a stride-28 sub-object table (RE'd from the
-relocation walker FUN_800574D8): per sub-object a vertex pool (int16 x,y,z) and a
-stream of variable-length primitive records (tri/quad, flat/textured) whose uint16
-indices are pool-relative. We decode that into a flat Mesh for rendering/export.
+A thin adapter: the PA decode itself (sub-object table, vertex pools, primitive
+records, flat RGB / textured (tpage, clut) shading, Z/N quad split) is
+tools/pa/pa_obj.py, and .T container splitting is tools/extract/t_repack.py —
+see docs/PA_FORMAT.md. This module only turns their output into AC1mod's Mesh /
+Face objects, colours textured faces with material_color, and lays blocks out
+for viewing (contact sheet, world-space stage).
 """
 from __future__ import annotations
-import struct, collections, math
+import math
+import struct
 from dataclasses import dataclass, field
 
-RAW, SECDATA_OFF, DATA = 2352, 24, 2048   # Mode-2/Form-1 sector geometry
+from core import _tools  # noqa: F401  (puts tools/pa, tools/extract on sys.path)
+import extract_t
+import pa_obj
+import t_repack
 
-# Per primitive type (byte[3] & 0xBC): (first vertex-index byte offset, #verts, stride).
-# RE'd LIVE from the relocation-walker per-type handlers (jump table 0x8004B184),
-# disassembled from the running game (2026-06-11). In each handler a1 = record+4;
-# halfwords shifted <<4 (×16) are VERTEX-position indices, <<3 (×8) are normal/colour
-# indices. Flat/textured types pack their vertex indices CONTIGUOUSLY (stride 2);
-# GOURAUD 0x34/0x3c interleave [normal_idx, vertex_idx] pairs → vertex stride 4.
-# CONFIRMED: 0x20,0x28,0x24,0x2c.  RESOLVED 2026-06-11: gouraud 0x34/0x3c (was the
-# 5-30% out-of-range bug — old contiguous-from-0x14 read normal indices as vertices;
-# new layout = 0 OOR across all 72 PA files. See AC_1_USA_RE/docs/PA_FORMAT.md).
-PRIM_VERTS = {
-    0x20: (0x0a, 3, 2), 0x28: (0x0a, 4, 2),   # flat tri / quad        CONFIRMED
-    0x24: (0x12, 3, 2), 0x2c: (0x16, 4, 2),   # textured tri / quad    CONFIRMED
-    0x34: (0x12, 3, 4), 0x3c: (0x16, 4, 4),   # gouraud tri / quad     RESOLVED live
-    0xa0: (0x0a, 3, 2), 0xa8: (0x0a, 4, 2),
-    0xa4: (0x12, 3, 2), 0xac: (0x16, 4, 2),
-    0xb4: (0x12, 3, 2), 0xbc: (0x12, 4, 2),   # high-bit textured variants (stride unverified)
-}
-
-
-def _textured(t: int) -> bool:
-    return bool(t & 0x80) or t in (0x24, 0x2c, 0x34, 0x3c)
+FLAT_GREY = (170, 170, 170)    # shading words missing (truncated record)
 
 
 def material_color(tpage: int, clut: int) -> tuple:
     """Stable, distinct RGB for a (tpage,clut) texture material.
 
-    Real texels live in a per-stage VRAM bank (PA entry 0/1 — embedded but not yet
-    decoded; see AC_1_USA_RE/scratch/re/pa_textures.md §4). Until that bank is cracked
-    or a live VRAM dump is supplied, colour each textured face by its decoded material
+    The stage texels have not been located yet (docs/PA_FORMAT.md, "Textured-
+    primitive MATERIAL words"; docs/AC1MOD_INTEGRATION.md §1b). Until they are, or
+    a live VRAM dump is supplied, colour each textured face by its decoded material
     id so distinct textures read as distinct flat colours (a "material map")."""
     import colorsys
     key = ((tpage & 0xffff) * 0x9E3779B1 ^ (clut & 0xffff) * 0x85EBCA77) & 0xffffffff
@@ -59,7 +40,7 @@ def material_color(tpage: int, clut: int) -> tuple:
 @dataclass
 class Face:
     verts: tuple              # global indices into Mesh.vertices
-    color: tuple = (170, 170, 170)
+    color: tuple = FLAT_GREY
     textured: bool = False
     mat: tuple = None         # (tpage, clut) for textured faces, else None
 
@@ -85,120 +66,31 @@ class Mesh:
 # ---------------------------------------------------------------- container ----
 
 def read_container(bin_path, sector_start, sector_end):
-    """Read a .T file's user-data sectors and split into entry payloads."""
-    blob = bytearray()
-    with open(bin_path, "rb") as f:
-        for s in range(sector_start, sector_end + 1):
-            f.seek(s * RAW + SECDATA_OFF)
-            blob += f.read(DATA)
-    blob = bytes(blob)
-    n = struct.unpack_from("<H", blob, 0)[0]
-    offs = list(struct.unpack_from(f"<{n+1}H", blob, 2))
-    return [blob[offs[i] * 2048: offs[i + 1] * 2048] for i in range(n)]
+    """A .T file's entry payloads, read from its sectors in the disc image."""
+    flat = extract_t.read_sectors(bin_path, sector_start, sector_end - sector_start + 1)
+    return t_repack.unpack(flat).entries
 
 
 def is_geometry_block(entry: bytes) -> bool:
+    """Entries 2..N of a PA file are size-prefixed geometry blocks."""
     return len(entry) >= 12 and struct.unpack_from("<I", entry, 0)[0] == len(entry)
 
 
 # ------------------------------------------------------------------ decode -----
 
-def _parse_subobjects(block):
-    a0 = struct.unpack_from("<I", block, 8)[0]
-    reloc = a0 + 12
-    if reloc + 8 > len(block):
-        return reloc, []
-    count = struct.unpack_from("<I", block, a0 + 8)[0]
-    tbl = a0 + 12
-    subs = []
-    for i in range(count):
-        o = tbl + i * 28
-        if o + 28 > len(block):
-            break
-        # descriptor: f0 = u32 @+0x00 (vtx pool offset), vcnt = u16 @+0x04,
-        # +0x06 = u16 param (nonzero on "articulated" variant blocks), f8 = u32 @+0x08.
-        # (Was wrongly read as <3I, which swallowed +0x06 and massively over-read vcnt.)
-        f0 = struct.unpack_from("<I", block, o)[0]
-        vcnt = struct.unpack_from("<H", block, o + 0x04)[0]
-        f8 = struct.unpack_from("<I", block, o + 0x08)[0]
-        flags = struct.unpack_from("<H", block, o + 0x0e)[0]
-        prim_off = struct.unpack_from("<I", block, o + 0x10)[0]
-        prim_cnt_base = struct.unpack_from("<H", block, o + 0x14)[0]
-        if flags & 0x8000:
-            continue
-        subs.append(dict(index=i, vtx_off=f0 + reloc, vtx_cnt=vcnt,
-                         prim_off=prim_off + reloc,
-                         prim_cnt=prim_cnt_base + (flags & 0x1ff) - 1))
-    return reloc, subs
-
-
-def _read_verts(block, off, cnt):
-    out = []
-    for i in range(cnt):
-        p = off + i * 8
-        if p + 8 > len(block):
-            break
-        x, y, z, _ = struct.unpack_from("<4h", block, p)
-        out.append((x, y, z))
-    return out
-
-
-def _read_prims(block, off, cnt):
-    o, n, out = off, 0, []
-    while n < cnt and o + 4 <= len(block):
-        b1 = block[o + 1]
-        typ = block[o + 3] & 0xbc
-        reclen = 4 + b1 * 4
-        if reclen < 4 or o + reclen > len(block):
-            break
-        info = PRIM_VERTS.get(typ)
-        if info:
-            voff, nv, stride = info
-            idx = [struct.unpack_from("<H", block, o + voff + stride * k)[0]
-                   for k in range(nv) if o + voff + stride * k + 2 <= len(block)]
-            # flat types carry an RGB colour word right after the 4-byte header;
-            # textured types carry CLUT @rec+0x06 and TPAGE @rec+0x0a (PSX FT/GT
-            # packing) — see AC_1_USA_RE pa_textures.md §1.
-            color = (170, 170, 170)
-            mat = None
-            if not _textured(typ):
-                if o + 7 <= len(block):
-                    color = (block[o + 4], block[o + 5], block[o + 6])
-            elif o + 0x0c <= len(block):
-                clut = struct.unpack_from("<H", block, o + 0x06)[0]
-                tpage = struct.unpack_from("<H", block, o + 0x0a)[0]
-                mat = (tpage, clut)
-                color = material_color(tpage, clut)
-            out.append((typ, idx, color, mat))
-        o += reclen
-        n += 1
-    return out, o
-
-
 def parse_block(block) -> Mesh:
     """Decode one geometry block into a Mesh (sub-objects concatenated)."""
     m = Mesh()
-    _, subs = _parse_subobjects(block)
+    _, subs = pa_obj.parse_subobjects(block)
     for s in subs:
-        verts = _read_verts(block, s["vtx_off"], s["vtx_cnt"])
-        prims, _ = _read_prims(block, s["prim_off"], s["prim_cnt"])
+        verts, tris, _ = pa_obj.subobject_tris(block, s)
         base = len(m.vertices)
         m.groups.append((f"sub{s['index']}", base, len(verts)))
-        m.vertices.extend(verts)
-        nv = len(verts)
-        for (typ, idx, color, mat) in prims:
-            idx = [i for i in idx if i < nv]
-            if len(set(idx)) < 3:
-                continue
-            tx = _textured(typ)
-            g = tuple(base + i for i in idx)
-            if len(g) == 3:
-                m.faces.append(Face(g, color, tx, mat))
-            elif len(g) == 4:
-                # PSX 4-pt polys use Z/N vertex order (diagonal = v1-v2), so the
-                # two tris are (0,1,2) and (1,3,2) — NOT a (0,1,2)+(0,2,3) fan.
-                m.faces.append(Face((g[0], g[1], g[2]), color, tx, mat))
-                m.faces.append(Face((g[1], g[3], g[2]), color, tx, mat))
+        m.vertices.extend((x, y, z) for (x, y, z, _w) in verts)
+        for (t, typ, rgb, mat) in tris:
+            color = material_color(*mat) if mat else (rgb or FLAT_GREY)
+            m.faces.append(Face(tuple(base + i for i in t), color,
+                                pa_obj.TEXTURED(typ), mat))
     return m
 
 
