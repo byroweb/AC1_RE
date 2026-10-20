@@ -621,13 +621,19 @@ the percentages too.  2026-10-19 after this round:
 
 ```
 sweep.py --queue FILE [--queue FILE ...] [--max-size 160] [--limit N] [-j N]
+         [--variants ctx,ctx-no-andor] [--try-all]
          [--work DIR] [--report F] [--dry-run] [--no-replay] [--no-ledger]
 ```
 
 No LLM in the loop: for each open body of the queue(s), in order, smaller than
 `--max-size`, not closed in the ledger and without a C file in `re/match`, draft C
 with `tools/match/ctx.py`'s `decompile()` (symbolised asm + the shared-type context)
-and m2c `--valid-syntax`, then again with `--no-andor`.  A draft is
+and m2c `--valid-syntax`, then the `--variants` after it in order until one
+matches (default `ctx,ctx-regvars,ctx-knr`: `--reg-vars saved`, then `ctx` with
+m2c's guessed `/* extern */` prototypes rewritten unprototyped, `T f();`, since
+m2c guesses arity from live registers and a later shorter call is a cc1 error;
+`ctx-no-andor`, `ctx-void` and `raw` (no context, no symbol rewrite) are also
+there; `--try-all` keeps going after a match, to measure them).  A draft is
 `#include "ac1/ac1.h"` + `#include "m2c_compat.h"` (our definitions of the `M2C_*`
 names and `NULL`, in `tools/match/include/`) + m2c's text, with unused leading
 parameters m2c leaves out put back as `s32 argK`.  Each draft goes through the oracle
@@ -656,6 +662,25 @@ The 46 matches replayed onto **152 twins** (all MATCH), so the pilot credited
 to unknown callees, unused parameters, expression order) and 4 cc1 errors (a
 `void` callee whose value is used, arithmetic on `void *`, `*` on a non-pointer).
 Every one is an ordinary `drive.py next` work package with the draft as a start.
+
+**Full sweep (2026-10-20)**: every open exe/ovl201..204 body (`make_queues.py
+--bodies -N 1 --prefix all`, 1614 bodies, no size cap), `-j 20`.
+
+| pass | bodies | matched | wall |
+|---|---:|---:|---:|
+| 1 `ctx,ctx-no-andor` | 1614 | 367 (all `ctx`; `ctx-no-andor` added 0) | 311 s |
+| 2 `raw,ctx-regvars,ctx-void --try-all`, misses < 1024 B | 1061 | 6 (`ctx-regvars` 5, `raw` 1, `ctx-void` 0) | 316 s |
+| 3 `ctx-knr` | 1241 | 2 | 131 s |
+| **total** | 1614 | **375 (23.2%)** + 111 twins = **486 functions** | ~13 min |
+
+Pass 1 by size: 45.5% under 64 B (66/145), 45.3% at 64-111 B, 44.9% at 112-159 B,
+25.4% at 160-255 B, 8.2% at 256-511 B, 0.8% at 512-1023 B, 0/186 at 1 KB and up.
+Of the 1239 left: ~900 MISMATCH (805 with 6+ differing words, 48 within 2 words),
+~270 cc1 errors (114 undeclared `spNN` stack-struct fields, ~40 a `void` callee
+from the headers whose value m2c uses, ~60 `*`/arithmetic on `void *`/non-pointers)
+and 70 m2c failures, all an unlabelled jump table (`jr` with no `jtbl` read).  `ctx-knr`
+turned ~60 of the "too few arguments" cc1 errors into compilable drafts but only 2
+matched; `ctx-no-andor` and `ctx-void` never added a match and are no longer default.
 
 ## check_all.sh
 
@@ -697,8 +722,9 @@ size <= 1000 B, tier 2 (GTE or larger) follows.  The ranked list is dealt snake-
 (1..N, N..1, ...) into N disjoint queues, so no body is in two queues and every
 queue gets the same credit profile.  Rows carry `group n_members payoff tier` before
 the usual columns; `drive.py next --queue` and `sweep.py` read them.  The committed
-`queue-S1..S6.tsv` were written after the sweep pilot: 1614 open bodies (1316 tier 1,
-298 tier 2), 269 per queue, 2603 functions credited if all were matched.
+`queue-S1..S6.tsv` were written after the full sweep (2026-10-20): 1239 open bodies
+(941 tier 1, 298 tier 2), 206-207 per queue, 2115 functions credited if all were
+matched.  Every body in them has had the machine drafts tried and missed.
 
 `merge_manifest.py [MANIFEST] [--check]` reads `re/match/manifest.tsv` even
 with git conflict markers or duplicate rows, keeps the union, dedupes on
