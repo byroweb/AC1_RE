@@ -12,11 +12,27 @@
 #include "mission.h"
 
 typedef struct CollPoly {       /* 0x14: one collision polygon */
-    u8 unk00[0x0E];
-    u16 flags;                  /* +0x0E low 3 bits: collision classes (masked by the caller) */
-    u8 unk10[4];
+    unsigned info0 : 2;
+    unsigned axis : 2;          /* +0x00 bits 2-3: dominant normal axis (0 x, 1 y, 2 z) */
+    unsigned info4 : 12;
+    s16 n[3];                   /* +0x02 plane normal (4.12) */
+    s32 d;                      /* +0x08 plane distance: n . v + d = 0 */
+    union {
+        u32 w;                  /* +0x0C corner 0 / 1 vertex byte offsets (& 0x7FF8) */
+        struct {
+            u16 lo;
+            u16 hi;             /* +0x0E low 3 bits: collision classes (masked by the probe) */
+        } h;
+    } v01;
+    u32 v23;                    /* +0x10 corners 2 / 3; corner 3 = 0x7FF8: triangle */
 } CollPoly;
 AC1_ASSERT_SIZE(CollPoly, 0x14);
+
+typedef struct CollPt {         /* 4: 2D point of the projected inside test, passed by value */
+    s32 x : 16;
+    s32 y : 16;
+} CollPt;
+AC1_ASSERT_SIZE(CollPt, 4);
 
 typedef struct CollHdr {        /* polygon set header; the CollPoly array starts at +0x64 */
     u16 n;                      /* +0x00 polygon count; 16+ = bucketed in groups of (n >> 5) + 1 */

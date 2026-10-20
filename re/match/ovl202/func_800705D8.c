@@ -59,7 +59,7 @@ CollHit *func_800705D8(void *arg0, SVECTOR *out, s32 flags)
                 }
             test:
                 do {
-                    if ((scr->cur->flags & 7 & flags) == 0
+                    if ((scr->cur->v01.h.hi & 7 & flags) == 0
                         && func_80070168(scr->mesh->verts, scr->cur, scr->p, &scr->hit)) {
                         dist = ((scr->p[0] < scr->hit.vx) ? scr->hit.vx - scr->p[0] : scr->p[0] - scr->hit.vx)
                              + ((scr->p[1] < scr->hit.vy) ? scr->hit.vy - scr->p[1] : scr->p[1] - scr->hit.vy)
