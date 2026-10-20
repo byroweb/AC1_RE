@@ -503,6 +503,7 @@ Results so far:
 | 31 files in `fdat000/` (the 31-member library groups) | 930 | 930 |
 | 22 files in `fdat000/ fdat002/ fdat004/ fdat008/ fdat016/` (15..29-member groups) | 398 | 398 |
 | 5 files in `fdat000/ fdat002/ fdat004/` (the 32..66-member groups g0001 g0002 g0004 g0006 g0007) | 227 | 227 |
+| `fdat002/func_801C6504.c` (g0005, 36 members) | 35 | 35 |
 
 The fdat060 three are relocation-free; `fdat016/func_801C6AE0.c` (48 bytes,
 group g0051: one `jal` and one function pointer, matched with
@@ -598,9 +599,11 @@ unmatched in the inventory.
   show only as an address gap); `drive.py try` counts a try even when the
   source is unchanged since the last one.
 - Give-ups worth a second look: ovl201 0x80064C18 (one delay-slot fill short).
-- Twin replay (`twins.py`, above) covers 62 mission matches (1662 twins); of the
-  groups with 15 or more members only g0005 (36 members, fdat002 801C6504, 600 B:
-  the event hook func_801C675C installs) is open (801C981C is on its own branch).
+- Twin replay (`twins.py`, above) covers 63 mission matches (1697 twins); every
+  group of 15 or more members is done (801C981C on its own branch), so
+  `rank.py --missions` moves on to the groups below 15 members.  A group can have
+  several members in one unit (g0001: fdat004 6734, 6A28 and 6D80); `twins.py`
+  only treats the row whose address names the C file as the original.
 - `ledger.tsv` keeps two rows for functions the inventory has since re-split
   (`ovl201 0x800A86B0` fragment, `ovl202 0x8004EADC` give-up at the old
   20-byte size); the ledger is append-only, `refit.py` skips keys that are not
