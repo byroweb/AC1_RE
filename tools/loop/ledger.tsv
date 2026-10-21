@@ -2840,3 +2840,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-20T20:34:22Z	ovl204	0x80076EC0	match	0	twin of ovl202 0x8007832C (ovl202/func_8007832C.c)
 2026-10-20T20:34:22Z	ovl203	0x80085500	match	0	twin of ovl202 0x80086854 (ovl202/func_80086854.c)
 2026-10-20T20:34:22Z	ovl204	0x800852B0	match	0	twin of ovl202 0x80086854 (ovl202/func_80086854.c)
+2026-10-21T00:42:04Z	ovl202	0x80073BC8	match	0	zero-agent sweep (neighbour+imm of ovl203 0x80072C34, similarity 0.920)
