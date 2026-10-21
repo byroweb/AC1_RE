@@ -3448,3 +3448,4 @@
 0x80052BF4	203	ovl203/func_80052BF4.c	236	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_80039D18=0x80039D18 --defsym D_80089748=0x80089748 --defsym D_8008ACEC=0x8008ACEC --defsym func_80060374=0x80060374
 0x80083958	201	ovl201/func_80083958.c	44	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80083A28	201	ovl201/func_80083A28.c	48	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x80083894	201	ovl201/func_80083894.c	196	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800B8550=0x800B8550 --defsym func_80083958=0x80083958
