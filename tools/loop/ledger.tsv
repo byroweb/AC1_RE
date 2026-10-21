@@ -4211,3 +4211,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T14:58:05Z	exe	0x80013AFC	match	3	
 2026-10-21T14:58:19Z	fdat028	0x801C5FC0	match	3	
 2026-10-21T14:58:44Z	fdat084	0x801C77F0	match	2	
+2026-10-21T14:59:44Z	fdat066	0x801C63F8	match	4	

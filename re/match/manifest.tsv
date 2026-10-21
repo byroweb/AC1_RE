@@ -4204,3 +4204,4 @@
 0x80013AFC	exe	exe/func_80013AFC.c	120	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x801C5FC0	fdat028	fdat028/func_801C5FC0.c	124	--base 0x801C4B40 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_8004E98C=0x8004E98C --defsym func_801C5DCC=0x801C5DCC --defsym func_801C5F3C=0x801C5F3C --defsym func_801C5F6C=0x801C5F6C
 0x801C77F0	fdat084	fdat084/func_801C77F0.c	124	--base 0x801C4B40 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_8019F51C=0x8019F51C --defsym D_8019FAB8=0x8019FAB8 --defsym func_801C57D4=0x801C57D4
+0x801C63F8	fdat066	fdat066/func_801C63F8.c	124	--base 0x801C4B40 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_80198800=0x80198800 --defsym D_80198B08=0x80198B08 --defsym D_801CC0BC=0x801CC0BC
