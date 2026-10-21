@@ -3300,3 +3300,6 @@
 0x801C5D80	fdat040	fdat040/func_801C5D80.c	100	--base 0x801C4B40 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_801C5CE0=0x801C5CE0
 0x801C53E0	fdat048	fdat040/func_801C5D80.c	100	--base 0x801C4B40 --defsym func_801C5CE0=0x801C5340 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x801C5A70	fdat096	fdat040/func_801C5D80.c	100	--base 0x801C4B40 --defsym func_801C5CE0=0x801C59D0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C784C	fdat042	fdat042/func_801C784C.c	100	--base 0x801C4B40 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_8019F51C=0x8019F51C --defsym D_8019FAB8=0x8019FAB8 --defsym D_801AC80C=0x801AC80C --defsym func_80078B14=0x80078B14
+0x801C7250	fdat052	fdat042/func_801C784C.c	100	--base 0x801C4B40 --defsym D_8019F51C=0x8019F51C --defsym D_8019FAB8=0x8019FAB8 --defsym D_801AC80C=0x801AC80C --defsym func_80078B14=0x80078B14 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C6998	fdat072	fdat042/func_801C784C.c	100	--base 0x801C4B40 --defsym D_8019F51C=0x8019F51C --defsym D_8019FAB8=0x8019FAB8 --defsym D_801AC80C=0x801AC80C --defsym func_80078B14=0x80078B14 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
