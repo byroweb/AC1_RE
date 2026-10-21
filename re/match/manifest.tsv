@@ -2901,3 +2901,6 @@
 0x80056958	202	ovl202/func_80056958.c	252	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800B1248=0x800B1248 --defsym D_801AC964=0x801AC964
 0x80056354	203	ovl202/func_80056958.c	252	--defsym D_800B1248=0x800AD1B0 --defsym D_801AC964=0x801A3EEC --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x800559A4	204	ovl202/func_80056958.c	252	--defsym D_800B1248=0x800AD3D8 --defsym D_801AC964=0x801B425C --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x80053950	202	ovl202/func_80053950.c	260	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x8005334C	203	ovl202/func_80053950.c	260	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x8005299C	204	ovl202/func_80053950.c	260	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
