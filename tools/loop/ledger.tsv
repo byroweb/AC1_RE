@@ -4215,3 +4215,6 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T14:59:45Z	exe	0x80012670	match	2	
 2026-10-21T15:00:10Z	fdat096	0x801C6A58	match	1	
 2026-10-21T15:00:46Z	exe	0x80014F18	match	4	
+2026-10-21T15:01:00Z	fdat014	0x801C534C	match	2	
+2026-10-21T15:01:16Z	fdat030	0x801C5330	match	0	twin of fdat014 0x801C534C (fdat014/func_801C534C.c)
+2026-10-21T15:01:16Z	fdat084	0x801C53B0	match	0	twin of fdat014 0x801C534C (fdat014/func_801C534C.c)
