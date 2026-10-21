@@ -2969,6 +2969,7 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T02:03:54Z	ovl202	0x800784F8	match	2	
 2026-10-21T02:03:56Z	ovl202	0x80078598	match	2	
 2026-10-21T02:04:00Z	ovl202	0x80078D78	match	2	
+2026-10-21T02:04:01Z	ovl202	0x80078E1C	match	3	
 2026-10-21T02:07:02Z	ovl203	0x800753D8	match	0	twin of ovl202 0x80076658 (ovl202/func_80076658.c)
 2026-10-21T02:07:02Z	ovl204	0x8007521C	match	0	twin of ovl202 0x80076658 (ovl202/func_80076658.c)
 2026-10-21T02:07:02Z	ovl203	0x80073CD0	match	0	twin of ovl202 0x80074FA4 (ovl202/func_80074FA4.c)
@@ -2981,3 +2982,5 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T02:07:02Z	ovl204	0x8007712C	match	0	twin of ovl202 0x80078598 (ovl202/func_80078598.c)
 2026-10-21T02:07:02Z	ovl203	0x80077AF8	match	0	twin of ovl202 0x80078D78 (ovl202/func_80078D78.c)
 2026-10-21T02:07:02Z	ovl204	0x80077918	match	0	twin of ovl202 0x80078D78 (ovl202/func_80078D78.c)
+2026-10-21T02:07:02Z	ovl203	0x80077B9C	match	0	twin of ovl202 0x80078E1C (ovl202/func_80078E1C.c)
+2026-10-21T02:07:02Z	ovl204	0x800779BC	match	0	twin of ovl202 0x80078E1C (ovl202/func_80078E1C.c)
