@@ -4091,3 +4091,4 @@
 0x8001588C	exe	exe/func_8001588C.c	60	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80014ED8	exe	exe/func_80014ED8.c	64	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x800162E8	exe	exe/func_800162E8.c	64	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x80015D80	exe	exe/func_80015D80.c	64	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_8004A2A4=0x8004A2A4
