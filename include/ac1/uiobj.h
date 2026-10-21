@@ -62,6 +62,20 @@ typedef union UiWork {
         u8 pad7c[0x0E];
         s8 index;               /* +0x8A selected row */
     } sel;
+    struct {                    /* six-item ring (func_8004F024, func_8004EC24) */
+        u8 pad7c[4];
+        struct UiObj *item[6];  /* +0x80 */
+        struct UiObj *lead;     /* +0x98 its update step gates func_8004EC24 */
+        u8 pad9c[0x12];
+        s8 front;               /* +0xAE item at the front */
+    } ring;
+    struct {                    /* sliding bar (func_8004ECAC, func_8004EDC0) */
+        u8 pad7c[0x20];
+        struct UiObj *bar;      /* +0x9C */
+        u8 padA0[0xC];
+        s16 stop;               /* +0xAC x where the slide ends */
+        s8 mode;                /* +0xAE 0..5: bar image and speed */
+    } slide;
 } UiWork;
 
 typedef struct UiObj {
