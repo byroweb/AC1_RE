@@ -3266,3 +3266,12 @@
 0x801C6688	fdat060	fdat060/func_801C6688.c	84	--base 0x801C4B40 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_8007732C=0x8007732C --defsym func_80078598=0x80078598 --defsym func_801C6528=0x801C6528
 0x801C5440	fdat068	fdat060/func_801C6688.c	84	--base 0x801C4B40 --defsym func_8007732C=0x8007732C --defsym func_80078598=0x80078598 --defsym func_801C6528=0x801C52E0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x801C4EE8	fdat072	fdat060/func_801C6688.c	84	--base 0x801C4B40 --defsym func_8007732C=0x8007732C --defsym func_80078598=0x80078598 --defsym func_801C6528=0x801C4D28 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C6AB0	fdat008	fdat008/func_801C6AB0.c	268	--base 0x801C4B40 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_801C6BBC=0x801C6BBC
+0x801C732C	fdat014	fdat008/func_801C6AB0.c	268	--base 0x801C4B40 --defsym func_801C6BBC=0x801C7438 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C75B8	fdat030	fdat008/func_801C6AB0.c	268	--base 0x801C4B40 --defsym func_801C6BBC=0x801C76C4 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C6C64	fdat056	fdat008/func_801C6AB0.c	268	--base 0x801C4B40 --defsym func_801C6BBC=0x801C6D70 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C5CA0	fdat066	fdat008/func_801C6AB0.c	268	--base 0x801C4B40 --defsym func_801C6BBC=0x801C5DAC --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C6260	fdat072	fdat008/func_801C6AB0.c	268	--base 0x801C4B40 --defsym func_801C6BBC=0x801C636C --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C6BA0	fdat086	fdat008/func_801C6AB0.c	268	--base 0x801C4B40 --defsym func_801C6BBC=0x801C6CAC --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C5C50	fdat088	fdat008/func_801C6AB0.c	268	--base 0x801C4B40 --defsym func_801C6BBC=0x801C5D5C --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C7044	fdat098	fdat008/func_801C6AB0.c	268	--base 0x801C4B40 --defsym func_801C6BBC=0x801C7150 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
