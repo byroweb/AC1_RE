@@ -3051,3 +3051,4 @@
 0x80084290	201	ovl201/func_80084290.c	68	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800485F0=0x800485F0
 0x80084314	201	ovl201/func_80084314.c	80	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800485F0=0x800485F0
 0x80084364	201	ovl201/func_80084364.c	68	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800485F0=0x800485F0
+0x800841E8	201	ovl201/func_800841E8.c	84	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800485F0=0x800485F0
