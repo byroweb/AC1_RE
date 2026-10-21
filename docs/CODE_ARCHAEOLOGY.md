@@ -9,8 +9,8 @@ section turns the findings into **matching priors** for the decomp queue.
 
 Labels follow [README.md](README.md): **CONFIRMED** = read from the bytes or counted
 exactly; **HYPOTHESIS** = an inference the bytes allow but do not prove. Authors are named
-as style clusters (A/B/C). No cluster is tied to a person: the staff roll gives no per-system
-roles (section 5).
+as style clusters (A/B/C). Only cluster C is tied to a person, through the one primary source
+that gives programming roles: a pre-release developer interview (section 5).
 
 All numbers come from the scripts in [`tools/archaeology/`](../tools/archaeology/) run on
 2026-10-20 over `tools/loop/functions.tsv`. The scripts read the gitignored images through
@@ -56,10 +56,16 @@ python tools/archaeology/divergence.py
    The counts are CONFIRMED; reading them as different programmers is a HYPOTHESIS.
    Whole-TU clustering on all features is weak (silhouette ≤ 0.17), because subject matter
    (GTE, primitives, strings) dominates per-TU rates.
-4. **The staff roll credits three programmers** (CONFIRMED, from STAFF.STR frames). It has
-   *Main Programmer* Eiichi Hasegawa on his own card and *Programmer* Hiroyuki Arai and
-   Masayuki Saitoh. Wikipedia lists only the last two. There is no per-system line, so
-   A/B/C stay unnamed.
+4. **Three credited programmers, and one role split** (section 5).
+   - The staff roll (CONFIRMED, from STAFF.STR frames) has *Main Programmer* Eiichi
+     Hasegawa on his own card and *Programmer* Hiroyuki Arai and Masayuki Saitoh. Wikipedia
+     lists only the last two.
+   - A pre-release interview ([shmuplations translation](https://shmuplations.com/armoredcore/))
+     has Hasegawa saying he did the **gameplay programming**, while **menus and
+     story-related systems** were with another, unnamed programmer.
+   - So cluster **C** (the in-game engine) is labelled *Hasegawa's gameplay code*
+     (HYPOTHESIS, source-backed). Clusters **A** and **B** (the front end) belong to
+     Arai and/or Saitoh, but nothing says which of them.
 5. **Mission units come in two template families** (CONFIRMED by masked bodies):
    - A *library* family of 29 units shares a frozen object library, with one identical
      4912-byte dispatcher in 27 of them.
@@ -80,7 +86,9 @@ python tools/archaeology/divergence.py
 
    The real logic forks are the damage path (`0x80075350`), the "current player" pointer
    `0x80039D18` that 203/204 swap around calls, and the pre-START init block at
-   `0x80082D04..0x800835A0`.
+   `0x80082D04..0x800835A0`. In the interview, about one-third into development, link-cable
+   versus was planned but split-screen was not, which fits ovl204 being a late, cheap
+   re-build of the same code with half-screen constants.
 
 ---
 
@@ -287,7 +295,7 @@ Per TU, the counter habit holds inside each region:
 |---|---|---|
 | **A** | ovl201 except the B band: menus, draw commands, text, name entry, launch screens, garage stat builder | `short`/`char` loop counters (≈40 %); many `sll/sra 16` (s16 arithmetic locals); unsigned bytes with `andi 0xff` re-narrowing; almost no function pointers (0.05 method calls per 1000 instructions); heavy stack use for on-stack primitives; the only `double` user |
 | **B** | ovl201 0x800866FC–0x8009A7E8 (`t43`, `t44`, `t51`; no doc labels yet except the mission-number store 0x8008A890) | `int` counters (8 %); **plain (signed) `char`** for byte data (`lb` = 47 % of byte loads); short functions (82 instructions on average) with ~1.7 saved registers; no GTE, no method pointers |
-| **C** | ovl202/203/204, the exe game code, all mission overlays | `int` counters (0–6 %); unsigned `u8`/`u16` fields; **function-pointer methods** (`obj->think(obj)`: 2–3 indirect calls per 1000 instructions in the entity/VM code); GTE inline macros in render/transform; in ovl202, more saved registers per function (3.3 against 2.5 in ovl201) |
+| **C** — Hasegawa's gameplay code (interview, section 5) | ovl202/203/204, the exe game code, all mission overlays | `int` counters (0–6 %); unsigned `u8`/`u16` fields; **function-pointer methods** (`obj->think(obj)`: 2–3 indirect calls per 1000 instructions in the entity/VM code); GTE inline macros in render/transform; in ovl202, more saved registers per function (3.3 against 2.5 in ovl201) |
 
 C has a visible sub-profile, C′: ovl202 0x80073C2C–0x8008A048 (entities/player/combat) has
 16 % narrow counters and twice the stack traffic of the loader/render half. That could be a
@@ -295,8 +303,9 @@ second hand inside the mission build, or simply code that juggles more s16 vecto
 left as part of C.
 
 The evidence therefore supports **two robust styles (A vs C) and a probable third (B)**.
-That fits the three programmers on the roll. It does not prove three people, and it does
-not say who wrote what.
+That fits the three programmers on the roll. The interview of section 5 puts gameplay with
+Hasegawa and the menus with someone else, which matches the A/C split by overlay. It does
+not prove that B is a third person, and it does not say whether Arai or Saitoh wrote A.
 
 The pilot's claim that "0x8005B12C–0x8005E710 looks like 202-family code" is **not
 supported** by these habits. That band (`box_init`, the draw-cmd constructors) has 60 %
@@ -462,7 +471,9 @@ because both versus builds carry *different* new code there rather than one shar
 
 ---
 
-## 5. Staff roll (STAFF.STR)
+## 5. Staff roll and developer interview
+
+### Staff roll (STAFF.STR)
 
 Read from frames that jPSXdec decoded into a scratch directory; no frames were committed
 (CONFIRMED).
@@ -478,11 +489,33 @@ Read from frames that jPSXdec decoded into a scratch directory; no frames were c
 | Graphics Designer | Masahiro Kajita, Kaichi Satoh, Nozomu Iwai, Sakumi Watanabe |
 | 3D Modeler / Animator / CG Movie / Sound / Music | further cards, then the US staff (localisation, QA, voice cast) |
 
-- No card gives a per-system programming role, so A/B/C are **not** mapped to names.
+- No card gives a per-system programming role.
 - What the roll does establish is three credited programmers, one of them senior ("Main").
-  That is consistent with the three habit profiles of section 2. Pairing them, for example
-  the main programmer with the shared engine (C), would need a developer interview or a
-  role breakdown; it is not attempted here.
+  That is consistent with the three habit profiles of section 2.
+
+### Developer interview (pre-release)
+
+Source: a Japanese interview with producer Yasuyoshi Karasawa, programmer Eiichi Hasegawa
+and mecha designer Shoji Kawamori, given when the game was about one-third complete
+(development officially started the previous September). English translation:
+[shmuplations.com/armoredcore](https://shmuplations.com/armoredcore/). Arai and Saitoh are
+not mentioned. What it says about the code, paraphrased:
+
+| statement | what it supports in the bytes |
+|---|---|
+| Hasegawa handled the **gameplay programming**, and it was mostly done | cluster **C** = ovl202 family + exe game code + mission code is his (HYPOTHESIS, source-backed) |
+| **Menus and story-related systems** were assigned to a different programmer and were the larger remaining job | cluster **A** (ovl201 front end) is that programmer's: Arai or Saitoh, unnamed. B is either the same person in another file or the third programmer (HYPOTHESIS) |
+| The core system changed little while the game's direction changed a lot (adventure game → stage-based missions) | one stable engine (C) with mission content built on top of it, the frozen objective library of section 3 |
+| Hasegawa wrote a routine to stream graphics from CD during play, modelled on King's Field; the switch to stage-based missions made it unnecessary | a candidate for dead or vestigial code in the exe or ovl202 (not located yet; see the open questions) |
+| Split-screen two-player was not planned (it would double the polygon load), while link-cable versus would stay | ovl204 (split-screen) is the 202 code recompiled with half-screen clip bounds, bigger primitive buffers and a fixed arena: a late, low-cost addition. ovl203 (link) was the planned versus mode |
+
+Two cautions:
+
+- "Story-related systems" may include the mission scripting, yet the mission code is
+  C-style (section 2). Either Hasegawa also wrote the mission objects, or they were cut from
+  his template (M00, section 3) and kept its habits. The bytes cannot tell these apart.
+- The interview is a snapshot at one-third completion. Roles may have shifted before
+  release, which is why the C attribution stays a HYPOTHESIS.
 
 ---
 
@@ -553,6 +586,10 @@ try, not a rule.
 ---
 
 ## Open questions / follow-ups
+
+- **Hasegawa's obsolete CD streaming loader** (interview, section 5): look for exe or
+  ovl202 functions that read `.T` data in small chunks during play and have no callers, or
+  are reached only from unused paths.
 
 - **Cluster B has no doc labels** apart from the mission-number store. Naming the systems
   in ovl201 0x8008C088–0x8009A7E8 (`t44`, `t51`) would show whether B is a subsystem
