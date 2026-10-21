@@ -279,6 +279,7 @@
 0x80072838	201	ovl201/func_80072838.c	112	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_800728A8=0x800728A8 --defsym func_800728D8=0x800728D8
 0x800728A8	201	ovl201/func_800728A8.c	48	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_800728F8=0x800728F8
 0x800728D8	201	ovl201/func_800728D8.c	32	--defsym func_80072958=0x80072958
+0x800728F8	201	ovl201/func_800728F8.c	96	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_800506EC=0x800506EC --defsym func_800728D8=0x800728D8
 0x800736F0	201	ovl201/func_800736F0.c	40	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80073718	201	ovl201/func_80068458.c	40	--defsym func_80016F7C=0x80073904 --defsym func_80016ED8=0x80073740 --defsym InitCARD=0x800738B0 --defsym StartCARD=0x80073904 --defsym _bu_init=0x80073740 --defsym _card_clear=0x8007370C --defsym _card_info=0x80073870 --defsym _card_load=0x80073880 --defsym _card_write=0x80073890 --defsym _new_card=0x800738A0
 0x80073D20	201	ovl201/func_80073D20.c	188	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_80031A5C=0x80031A5C --defsym D_80031A5E=0x80031A5E --defsym D_80031A5F=0x80031A5F --defsym D_80031A60=0x80031A60 --defsym D_80031A61=0x80031A61 --defsym func_80051450=0x80051450
