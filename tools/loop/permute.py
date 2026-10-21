@@ -67,7 +67,7 @@ import match_fn  # noqa: E402  (stdlib only: keeps `cc` start-up cheap)
 
 SYMS_TABLES = ["include/ac1/symbols.tsv", "ac1_markup.tsv"]
 AUTO_SYM = re.compile(r"^(func|D)_([0-9A-Fa-f]{8})$")
-TRY = re.compile(r"^(\S+) MISMATCH@0x([0-9a-f]+)/(\d+)(?:~[0-9.]+)?(?:\+r\d+)?$")
+TRY = re.compile(r"^(\S+) MISMATCH@0x([0-9a-f]+)/(\d+)(?:~[0-9.]+)?(?:\+r\d+)?$")  # sweep writes /words~closeness[+rN]
 SWEEP_C = re.compile(r"^(exe|ovl20[1-4]|fdat\d{3})_([0-9A-Fa-f]{8})_([\w-]+)\.c$")
 FUNC_C = re.compile(r"func_([0-9A-Fa-f]{8})\b")
 SHT_NULL = 0
