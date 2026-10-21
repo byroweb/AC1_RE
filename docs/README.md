@@ -79,6 +79,8 @@ facts from open questions:
   gates on (range only), the stock LOS helper `0x800781E8`, and the LOS-gate insertion point.
 - [MISSION_DAMAGE_EVENTS.md](MISSION_DAMAGE_EVENTS.md) — scripted area damage (airstrike /
   breach): `op_f` is FX-only, segment hitscan `0x8007A334`, the 4-byte damage descriptor.
+- [LINK_CABLE.md](LINK_CABLE.md) — two-console link-cable versus (ovl203): libcomb `sio:`
+  setup, M/S handshake, 8-byte `'R'…'C'` packets, one-frame input lockstep, desync banners.
 - [PLAYER_CONTROL.md](PLAYER_CONTROL.md) — what makes slot 0 "the player", the global
   pad, the player vtable installers, and the in-place dismount plan.
 
