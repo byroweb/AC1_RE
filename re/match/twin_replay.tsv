@@ -2020,6 +2020,8 @@ p0166	ovl202/func_80072180.c	ovl202 0x80072180	203	0x80071504	308	MATCH	MATCH fu
 p0166	ovl202/func_80072180.c	ovl202 0x80072180	204	0x80071340	308	MATCH	MATCH func_80072180 308	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 p0401	ovl202/func_800730DC.c	ovl202 0x800730DC	203	0x80072460	40	MATCH	MATCH func_800730DC 40	--defsym g_mission_ctl=0x801C40C8 --defsym g_world_struct_count=0x801DC0F4 --defsym g_world_structs=0x801C40F0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 p0401	ovl202/func_800730DC.c	ovl202 0x800730DC	204	0x8007229C	40	MATCH	MATCH func_800730DC 40	--defsym g_mission_ctl=0x801D4460 --defsym g_world_struct_count=0x801EC48C --defsym g_world_structs=0x801D4488 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0270	ovl202/func_8007334C.c	ovl202 0x8007334C	203	0x800726D0	140	MATCH	MATCH func_8007334C 140	--defsym D_80198808=0x80194770 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+p0270	ovl202/func_8007334C.c	ovl202 0x8007334C	204	0x8007250C	140	MATCH	MATCH func_8007334C 140	--defsym D_80198808=0x801A4968 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 p0316	ovl202/func_800736AC.c	ovl202 0x800736AC	203	0x80072A30	104	MATCH	MATCH func_800736AC 104	--defsym D_80198B08=0x80194A70 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 p0316	ovl202/func_800736AC.c	ovl202 0x800736AC	204	0x8007286C	104	MATCH	MATCH func_800736AC 104	--defsym D_80198B08=0x801A4C68 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 p0407	ovl202/func_80073904.c	ovl202 0x80073904	203	0x80072A98	32	MATCH	MATCH func_80073904 32	--defsym func_8001628C=0x8001628C --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
