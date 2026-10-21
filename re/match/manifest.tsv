@@ -3452,3 +3452,4 @@
 0x80082018	204	ovl204/func_80082018.c	380	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800411EE=0x800411EE --defsym D_8004158A=0x8004158A --defsym D_801A4C68=0x801A4C68 --defsym D_801AB748=0x801AB748 --defsym D_801D4488=0x801D4488 --defsym D_801EC48C=0x801EC48C --defsym func_80073EC8=0x80073EC8
 0x8008C95C	202	ovl202/func_8008C95C.c	184	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x8008C6FC	202	ovl202/func_8008C6FC.c	192	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x8008C7BC	202	ovl202/func_8008C7BC.c	212	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
