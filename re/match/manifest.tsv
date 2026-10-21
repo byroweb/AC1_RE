@@ -3030,3 +3030,4 @@
 0x80057F74	202	ovl202/func_80057F74.c	180	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_801A6544=0x801A6544 --defsym D_801A6A48=0x801A6A48 --defsym D_801AD664=0x801AD664
 0x80062860	202	ovl202/func_80062860.c	212	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_8008DCA0=0x8008DCA0 --defsym D_80090A28=0x80090A28
 0x80062B04	202	ovl202/func_80062B04.c	212	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_801A6A48=0x801A6A48 --defsym func_80062974=0x80062974
+0x8005C630	202	ovl202/func_8005C630.c	224	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
