@@ -46,8 +46,8 @@ typedef struct WorldStruct {
     s16 bbox_min[3];            /* +0x18 */
     s16 mesh;                   /* +0x1E index into the collision-mesh table (CollMesh at 0x80091228) */
     s16 bbox_max[3];            /* +0x20 */
-    s16 unk26;
-    u8 unk28[4];
+    s16 n_parts;                /* +0x26 count of parts[] (func_8006D45C) */
+    u16 *parts;                 /* +0x28 g_world_structs indices of the parts */
     void *on_hit;               /* +0x2C handler record (fn at +4); 0 = destroyed */
     u8 unk30[8];                /* +0x30 flags (LEVEL_LOADING.md) */
     void *stats;                /* +0x38 u16 hp, effect, model, sound */

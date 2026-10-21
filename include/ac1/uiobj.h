@@ -62,6 +62,30 @@ typedef union UiWork {
         u8 pad7c[0x0E];
         s8 index;               /* +0x8A selected row */
     } sel;
+    struct {                    /* six-item ring (func_8004F024, func_8004EC24) */
+        u8 pad7c[4];
+        struct UiObj *item[6];  /* +0x80 */
+        struct UiObj *lead;     /* +0x98 its update step gates func_8004EC24 */
+        u8 pad9c[4];
+        struct UiObj *arrow[2]; /* +0xA0 */
+        u8 padA8[6];
+        s8 front;               /* +0xAE item at the front */
+        s8 dir;                 /* +0xAF turn direction (> 0: vy grows) */
+        u8 step;                /* +0xB0 step of the current turn, 0..16 */
+    } ring;
+    struct {                    /* sliding bar (func_8004ECAC, func_8004EDC0) */
+        u8 pad7c[0x20];
+        struct UiObj *bar;      /* +0x9C */
+        u8 padA0[0xC];
+        s16 stop;               /* +0xAC x where the slide ends */
+        s8 mode;                /* +0xAE 0..5: bar image and speed */
+    } slide;
+    struct {                    /* ring panel (func_8004F2CC) */
+        s16 rank;               /* +0x7C place behind the front panel, 1..5 */
+        u8 state;               /* +0x7E */
+        u8 unk7f;
+        struct UiObj *label;    /* +0x80 */
+    } panel;
 } UiWork;
 
 typedef struct UiObj {
