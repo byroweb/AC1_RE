@@ -2856,6 +2856,7 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T00:50:45Z	ovl202	0x800519B0	match	1	
 2026-10-21T00:50:46Z	ovl202	0x8005154C	match	1	
 2026-10-21T00:50:49Z	ovl202	0x80051CDC	match	1	
+2026-10-21T00:51:53Z	ovl202	0x800513EC	match	1	
 2026-10-21T00:52:13Z	ovl204	0x8005D3A8	match	0	zero-agent sweep (neighbour+imm of ovl203 0x8005DC1C, similarity 0.981)
 2026-10-21T00:57:44Z	ovl203	0x8008223C	match	0	twin of ovl202 0x800835A0 (ovl202/func_800835A0.c)
 2026-10-21T00:57:44Z	ovl204	0x80081FD0	match	0	twin of ovl202 0x800835A0 (ovl202/func_800835A0.c)
@@ -2881,3 +2882,5 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T00:57:44Z	ovl204	0x80051858	match	0	twin of ovl202 0x8005154C (ovl202/func_8005154C.c)
 2026-10-21T00:57:44Z	ovl203	0x800529A8	match	0	twin of ovl202 0x80051CDC (ovl202/func_80051CDC.c)
 2026-10-21T00:57:44Z	ovl204	0x80051FF8	match	0	twin of ovl202 0x80051CDC (ovl202/func_80051CDC.c)
+2026-10-21T00:57:44Z	ovl203	0x800520B8	match	0	twin of ovl202 0x800513EC (ovl202/func_800513EC.c)
+2026-10-21T00:57:44Z	ovl204	0x800516F8	match	0	twin of ovl202 0x800513EC (ovl202/func_800513EC.c)
