@@ -2851,3 +2851,6 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T00:45:48Z	ovl201	0x800B1ED0	match	2	
 2026-10-21T00:46:46Z	ovl202	0x80073958	match	4	
 2026-10-21T00:46:31Z	ovl202	0x80073B74	match	2	
+2026-10-21T00:50:30Z	ovl202	0x80073AD8	match	6	
+2026-10-21T00:56:08Z	ovl203	0x80072B40	match	0	twin of ovl202 0x80073AD8 (ovl202/func_80073AD8.c), table base moved by hand
+2026-10-21T00:56:08Z	ovl204	0x8007297C	match	0	twin of ovl202 0x80073AD8 (ovl202/func_80073AD8.c), table base moved by hand
