@@ -3,13 +3,6 @@
  * ring (angle and position) is slot - (front + 1), wrapped into -5..5;
  * func_8004F6DC builds its label. */
 
-typedef struct {                /* UiObj work area of a ring panel */
-    u8 pad7c[2];
-    u8 state;                   /* +0x7E */
-    u8 unk7f;
-    UiObj *label;               /* +0x80 */
-} PanelWork;
-
 extern void func_8004F4A4(UiObj *o);
 extern UiObj *func_8004F6DC(s16 kind, s16 slot, UiObj *o);
 
@@ -24,8 +17,8 @@ UiObj *func_8004F2CC(s16 kind, s16 slot, s8 front)
     o->destroy = ui_obj_nop;
     o->visible = 0;
     o->attached = 0;
-    ((PanelWork *)&o->w)->state = 0;
-    ((PanelWork *)&o->w)->unk7f = 0;
+    o->w.panel.state = 0;
+    o->w.panel.unk7f = 0;
     f = front + 1;
     switch (slot - f) {
     case 0:
@@ -82,6 +75,6 @@ UiObj *func_8004F2CC(s16 kind, s16 slot, s8 front)
         o->pos.vz = -3036;
         break;
     }
-    ((PanelWork *)&o->w)->label = func_8004F6DC(kind, slot, o);
+    o->w.panel.label = func_8004F6DC(kind, slot, o);
     return o;
 }
