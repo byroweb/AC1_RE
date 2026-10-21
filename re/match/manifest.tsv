@@ -1271,6 +1271,7 @@
 0x80078258	203	ovl203/func_80078258.c	236	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_80039D18=0x80039D18
 0x80078344	203	ovl202/func_80079888.c	124	--defsym func_8004EC4C=0x8004EE68 --defsym func_8004EDAC=0x8004EFC8 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x800783C0	203	ovl202/func_80079888.c	124	--defsym func_8004EC4C=0x8004EEC4 --defsym func_8004EDAC=0x8004EFC8 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x8007843C	203	ovl203/func_8007843C.c	368	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_80039D18=0x80039D18 --defsym func_8004F240=0x8004F240 --defsym func_80076FA0=0x80076FA0 --defsym func_800771CC=0x800771CC --defsym func_80078258=0x80078258
 0x800785AC	203	ovl203/func_800785AC.c	220	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_80039D18=0x80039D18
 0x80078688	203	ovl202/func_80076134.c	88	--defsym func_8004F0D4=0x8004F2F0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x800786E0	203	ovl203/func_800786E0.c	104	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_80039D18=0x80039D18 --defsym func_8004F29C=0x8004F29C --defsym func_80078258=0x80078258
@@ -1588,6 +1589,7 @@
 0x80077F08	204	ovl203/func_80078258.c	236	--defsym D_80039D18=0x80039D18 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80077FF4	204	ovl202/func_80079888.c	124	--defsym func_8004EC4C=0x8004ED4C --defsym func_8004EDAC=0x8004EEAC --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80078070	204	ovl202/func_80079888.c	124	--defsym func_8004EC4C=0x8004EDA8 --defsym func_8004EDAC=0x8004EEAC --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x800780EC	204	ovl203/func_8007843C.c	368	--defsym D_80039D18=0x80039D18 --defsym func_8004F240=0x8004F124 --defsym func_80076FA0=0x80076DE4 --defsym func_800771CC=0x80077010 --defsym func_80078258=0x80077F08 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x8007825C	204	ovl203/func_800785AC.c	220	--defsym D_80039D18=0x80039D18 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80078338	204	ovl202/func_80076134.c	88	--defsym func_8004F0D4=0x8004F1D4 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80078390	204	ovl203/func_800786E0.c	104	--defsym D_80039D18=0x80039D18 --defsym func_8004F29C=0x8004F180 --defsym func_80078258=0x80077F08 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
