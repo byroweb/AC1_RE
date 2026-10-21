@@ -2467,3 +2467,5 @@ g0109	fdat004/func_801C64AC.c	fdat004 0x801C64AC	fdat072	0x801C5C04	124	MATCH	MA
 g0126	fdat004/func_801C5DDC.c	fdat004 0x801C5DDC	fdat012	0x801C50EC	84	MATCH	MATCH func_801C5DDC 84	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 g0126	fdat004/func_801C5DDC.c	fdat004 0x801C5DDC	fdat012	0x801C5534	84	MATCH	MATCH func_801C5DDC 84	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 g0126	fdat004/func_801C5DDC.c	fdat004 0x801C5DDC	fdat028	0x801C5F6C	84	MATCH	MATCH func_801C5DDC 84	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+g0159	fdat038/func_801C52E0.c	fdat038 0x801C52E0	fdat070	0x801C52E0	100	MATCH	MATCH func_801C52E0 100	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+g0159	fdat038/func_801C52E0.c	fdat038 0x801C52E0	fdat084	0x801C5ECC	100	MATCH	MATCH func_801C52E0 100	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
