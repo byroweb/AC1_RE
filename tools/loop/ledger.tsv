@@ -2915,3 +2915,6 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:33:37Z	ovl204	0x80055CB8	match	0	twin of ovl202 0x80056C6C (ovl202/func_80056C6C.c)
 2026-10-21T01:33:36Z	ovl202	0x80056B54	match	1	
 2026-10-21T01:34:08Z	ovl203	0x80056550	match	0	twin of ovl202 0x80056B54 (ovl202/func_80056B54.c), pool base moved by hand
+2026-10-21T01:38:15Z	ovl202	0x80053688	match	1	
+2026-10-21T01:38:17Z	ovl203	0x80053084	match	0	twin of ovl202 0x80053688 (ovl202/func_80053688.c)
+2026-10-21T01:38:17Z	ovl204	0x800526D4	match	0	twin of ovl202 0x80053688 (ovl202/func_80053688.c)
