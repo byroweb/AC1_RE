@@ -2927,3 +2927,6 @@
 0x800574D8	202	ovl202/func_800574D8.c	1212	--rodata 0x8004B184 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80056ED4	203	ovl202/func_800574D8.c	1212	--rodata 0x8004AE10 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80056688	204	ovl202/func_800574D8.c	1212	--rodata 0x8004ADB8 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x80053FAC	202	ovl202/func_80053FAC.c	1092	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x800539A8	203	ovl202/func_80053FAC.c	1092	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x80052FF8	204	ovl202/func_80053FAC.c	1092	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
