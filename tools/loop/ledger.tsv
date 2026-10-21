@@ -4119,3 +4119,10 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T14:42:41Z	fdat034	0x801C5DC8	match	0	twin of fdat018 0x801C6AD4 (fdat018/func_801C6AD4.c)
 2026-10-21T14:42:41Z	fdat080	0x801C5D98	match	0	twin of fdat018 0x801C6AD4 (fdat018/func_801C6AD4.c)
 2026-10-21T14:42:11Z	fdat022	0x801C5F30	match	1	
+2026-10-21T14:42:20Z	fdat038	0x801C5344	match	2	
+2026-10-21T14:42:48Z	fdat060	0x801C6A80	match	0	twin of fdat038 0x801C5344 (fdat038/func_801C5344.c)
+2026-10-21T14:42:48Z	fdat068	0x801C5838	match	0	twin of fdat038 0x801C5344 (fdat038/func_801C5344.c)
+2026-10-21T14:42:48Z	fdat070	0x801C5344	match	0	twin of fdat038 0x801C5344 (fdat038/func_801C5344.c)
+2026-10-21T14:42:48Z	fdat084	0x801C5F30	match	0	twin of fdat038 0x801C5344 (fdat038/func_801C5344.c)
+2026-10-21T14:42:48Z	fdat084	0x801C690C	match	0	twin of fdat038 0x801C5344 (fdat038/func_801C5344.c)
+2026-10-21T14:42:48Z	fdat092	0x801C5994	match	0	twin of fdat038 0x801C5344 (fdat038/func_801C5344.c)
