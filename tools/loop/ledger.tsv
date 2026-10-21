@@ -2857,3 +2857,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T00:54:31Z	ovl201	0x8005DFB4	match	2	
 2026-10-21T01:00:02Z	ovl201	0x8005E318	match	0	twin of ovl201 0x8005DFB4 (ovl201/func_8005DFB4.c)
 2026-10-21T01:00:02Z	ovl201	0x8005E684	match	0	twin of ovl201 0x8005DFB4 (ovl201/func_8005DFB4.c)
+2026-10-21T01:03:27Z	ovl202	0x800739AC	match	0	permuter (levers swap func_800154D8(t->hdr, sr / rest = size - 0x24; + swap t = D_8019F564.tex; / p = arg0;, file draft)
