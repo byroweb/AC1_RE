@@ -2398,3 +2398,10 @@ g0070	fdat006/func_801C5F64.c	fdat006 0x801C5F64	fdat086	0x801C71D8	120	MATCH	MA
 g0070	fdat006/func_801C5F64.c	fdat006 0x801C5F64	fdat090	0x801C6DFC	120	MATCH	MATCH func_801C5F64 120	--base 0x801C4B40 --defsym D_80198B08=0x80198B08 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 g0070	fdat006/func_801C5F64.c	fdat006 0x801C5F64	fdat092	0x801C66B8	120	MATCH	MATCH func_801C5F64 120	--base 0x801C4B40 --defsym D_80198B08=0x80198B08 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 g0070	fdat006/func_801C5F64.c	fdat006 0x801C5F64	fdat098	0x801C767C	120	MATCH	MATCH func_801C5F64 120	--base 0x801C4B40 --defsym D_80198B08=0x80198B08 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+g0096	fdat006/func_801C5320.c	fdat006 0x801C5320	fdat024	0x801C534C	84	MATCH	MATCH func_801C5320 84	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+g0096	fdat006/func_801C5320.c	fdat006 0x801C5320	fdat036	0x801C5404	84	MATCH	MATCH func_801C5320 84	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+g0096	fdat006/func_801C5320.c	fdat006 0x801C5320	fdat060	0x801C6A2C	84	MATCH	MATCH func_801C5320 84	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+g0096	fdat006/func_801C5320.c	fdat006 0x801C5320	fdat068	0x801C57E4	84	MATCH	MATCH func_801C5320 84	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+g0096	fdat006/func_801C5320.c	fdat006 0x801C5320	fdat072	0x801C550C	84	MATCH	MATCH func_801C5320 84	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+g0096	fdat006/func_801C5320.c	fdat006 0x801C5320	fdat084	0x801C68B8	84	MATCH	MATCH func_801C5320 84	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+g0096	fdat006/func_801C5320.c	fdat006 0x801C5320	fdat092	0x801C5940	84	MATCH	MATCH func_801C5320 84	--base 0x801C4B40 --defsym func_80075418=0x80075418 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
