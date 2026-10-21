@@ -15,8 +15,8 @@ void func_8006E7D4(u32 *bits, WorldStruct *ws)
     if (ws != 0) {
         v = ws - g_world_structs;
         bits[v >> 5] |= 1 << (v & 0x1F);
-        p = *(u16 **)ws->unk28;
-        n = ws->unk26;
+        p = ws->parts;
+        n = ws->n_parts;
         while (--n != -1) {
             v = *p++;
             if (v & 0x8000) {
