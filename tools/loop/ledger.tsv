@@ -2959,3 +2959,6 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:48:33Z	ovl202	0x80079C74	match	0	twin of ovl202 0x80079C0C (ovl202/func_80079C0C.c)
 2026-10-21T01:48:33Z	ovl203	0x8007F958	match	0	twin of ovl202 0x80080D20 (ovl202/func_80080D20.c)
 2026-10-21T01:48:33Z	ovl204	0x8007F604	match	0	twin of ovl202 0x80080D20 (ovl202/func_80080D20.c)
+2026-10-21T01:53:22Z	ovl202	0x8007B994	match	0	permuter (levers args func_8004DE88 st+ proto, file draft)
+2026-10-21T02:02:59Z	ovl203	0x8007A4F8	match	0	twin of ovl202 0x8007B994 (ovl202/func_8007B994.c)
+2026-10-21T02:02:59Z	ovl204	0x8007A1A8	match	0	twin of ovl202 0x8007B994 (ovl202/func_8007B994.c)
