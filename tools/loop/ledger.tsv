@@ -3091,6 +3091,12 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:17:11Z	fdat068	0x801C58D4	match	0	twin of fdat060 0x801C6B1C (fdat060/func_801C6B1C.c)
 2026-10-21T01:17:11Z	fdat074	0x801C7190	match	0	twin of fdat068 0x801C6390 (fdat068/func_801C6390.c)
 2026-10-21T01:17:11Z	fdat180	0x801B86B4	match	0	twin of fdat068 0x801C6390 (fdat068/func_801C6390.c)
+2026-10-21T01:17:55Z	fdat092	0x801C6A20	match	0	permuter (levers bytes &D_8019FB68 + E, ctx draft)
+2026-10-21T01:17:56Z	fdat024	0x801C6CCC	match	0	permuter (levers bytes E + &D_80198B08, ctx-spframe draft)
+2026-10-21T01:17:58Z	fdat008	0x801C6D74	match	0	permuter (levers bytes E + &D_80198B08, ctx draft)
+2026-10-21T01:17:59Z	exe	0x80011F28	match	0	permuter (levers bytes &D_8004A268 + E, ctx-fix-frame draft)
+2026-10-21T01:18:02Z	fdat074	0x801C6EF4	match	0	permuter (levers bytes var_s0 += 0x170, ctx draft)
+2026-10-21T01:18:03Z	fdat016	0x801C69BC	match	0	permuter (levers index D_801D0B94 u8[], ctx-fix-frame draft)
 2026-10-21T01:19:29Z	fdat012	0x801C729C	match	4	
 2026-10-21T01:20:44Z	fdat014	0x801C7844	match	0	twin of fdat012 0x801C729C (fdat012/func_801C729C.c)
 2026-10-21T01:20:44Z	fdat016	0x801C7A70	match	0	twin of fdat012 0x801C729C (fdat012/func_801C729C.c)
@@ -3207,6 +3213,7 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:27:40Z	fdat090	0x801C5698	match	0	twin of fdat018 0x801C50F8 (fdat018/func_801C50F8.c)
 2026-10-21T01:27:40Z	fdat098	0x801C55F8	match	0	twin of fdat018 0x801C50F8 (fdat018/func_801C50F8.c)
 2026-10-21T01:27:40Z	fdat098	0x801C598C	match	0	twin of fdat018 0x801C50F8 (fdat018/func_801C50F8.c)
+2026-10-21T01:28:02Z	fdat026	0x801C5418	match	0	permuter (levers bytes E + &D_8019FAB8, ctx draft)
 2026-10-21T01:28:20Z	fdat022	0x801C6014	match	2	
 2026-10-21T01:28:22Z	fdat028	0x801C5C4C	match	0	twin of fdat022 0x801C6014 (fdat022/func_801C6014.c)
 2026-10-21T01:28:22Z	fdat080	0x801C5EA0	match	0	twin of fdat022 0x801C6014 (fdat022/func_801C6014.c)
@@ -3240,12 +3247,15 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:32:42Z	fdat042	0x801C6BD0	match	0	twin of fdat004 0x801C64AC (fdat004/func_801C64AC.c)
 2026-10-21T01:32:42Z	fdat052	0x801C5F4C	match	0	twin of fdat004 0x801C64AC (fdat004/func_801C64AC.c)
 2026-10-21T01:32:42Z	fdat072	0x801C5C04	match	0	twin of fdat004 0x801C64AC (fdat004/func_801C64AC.c)
+2026-10-21T01:33:04Z	fdat000	0x801C52C0	match	0	permuter (levers bytes E + &D_801CAB98, ctx draft)
+2026-10-21T01:33:06Z	fdat010	0x801C4E58	match	0	permuter (levers args func_800754D0 +arg0 proto, ctx draft)
 2026-10-21T01:33:17Z	fdat004	0x801C5DDC	match	1	
+2026-10-21T01:33:24Z	fdat042	0x801C6E3C	match	0	permuter (decomp-permuter, ctx draft)
+2026-10-21T01:33:28Z	fdat022	0x801C5EF8	match	1	
+2026-10-21T01:33:31Z	fdat038	0x801C52E0	match	1	
 2026-10-21T01:33:40Z	fdat012	0x801C50EC	match	0	twin of fdat004 0x801C5DDC (fdat004/func_801C5DDC.c)
 2026-10-21T01:33:40Z	fdat012	0x801C5534	match	0	twin of fdat004 0x801C5DDC (fdat004/func_801C5DDC.c)
 2026-10-21T01:33:40Z	fdat028	0x801C5F6C	match	0	twin of fdat004 0x801C5DDC (fdat004/func_801C5DDC.c)
-2026-10-21T01:33:28Z	fdat022	0x801C5EF8	match	1	
-2026-10-21T01:33:31Z	fdat038	0x801C52E0	match	1	
 2026-10-21T01:33:46Z	fdat070	0x801C52E0	match	0	twin of fdat038 0x801C52E0 (fdat038/func_801C52E0.c)
 2026-10-21T01:33:46Z	fdat084	0x801C5ECC	match	0	twin of fdat038 0x801C52E0 (fdat038/func_801C52E0.c)
 2026-10-21T01:35:06Z	fdat008	0x801C662C	match	4	
@@ -3331,24 +3341,28 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:42:16Z	fdat064	0x801C5C18	match	0	twin of fdat002 0x801C5BFC (fdat002/func_801C5BFC.c)
 2026-10-21T01:42:16Z	fdat082	0x801C62BC	match	0	twin of fdat002 0x801C5BFC (fdat002/func_801C5BFC.c)
 2026-10-21T01:42:16Z	fdat086	0x801C625C	match	0	twin of fdat002 0x801C5BFC (fdat002/func_801C5BFC.c)
+2026-10-21T01:42:58Z	fdat022	0x801C5FD0	match	0	permuter (levers index D_801D0B94 u8[], ctx draft)
 2026-10-21T01:43:01Z	fdat014	0x801C5770	match	2	
 2026-10-21T01:43:02Z	fdat014	0x801C6204	match	0	twin of fdat014 0x801C5770 (fdat014/func_801C5770.c)
 2026-10-21T01:43:02Z	fdat030	0x801C5754	match	0	twin of fdat014 0x801C5770 (fdat014/func_801C5770.c)
 2026-10-21T01:43:02Z	fdat030	0x801C61E8	match	0	twin of fdat014 0x801C5770 (fdat014/func_801C5770.c)
 2026-10-21T01:43:02Z	fdat084	0x801C57D4	match	0	twin of fdat014 0x801C5770 (fdat014/func_801C5770.c)
 2026-10-21T01:43:29Z	fdat010	0x801C5C6C	match	1	
+2026-10-21T01:43:41Z	fdat056	0x801C73F0	match	2	
 2026-10-21T01:43:43Z	fdat012	0x801C6EB0	match	0	twin of fdat010 0x801C5C6C (fdat010/func_801C5C6C.c)
 2026-10-21T01:43:43Z	fdat024	0x801C61B0	match	0	twin of fdat010 0x801C5C6C (fdat010/func_801C5C6C.c)
 2026-10-21T01:43:43Z	fdat080	0x801C6164	match	0	twin of fdat010 0x801C5C6C (fdat010/func_801C5C6C.c)
-2026-10-21T01:43:41Z	fdat056	0x801C73F0	match	2	
 2026-10-21T01:43:53Z	fdat074	0x801C71D4	match	0	twin of fdat056 0x801C73F0 (fdat056/func_801C73F0.c)
+2026-10-21T01:44:21Z	fdat044	0x801C6718	match	0	permuter (decomp-permuter, ctx draft)
 2026-10-21T01:44:22Z	fdat014	0x801C830C	match	2	
+2026-10-21T01:44:24Z	fdat016	0x801C85FC	match	0	permuter (levers bytes var_a1 += 0x2C, ctx draft)
+2026-10-21T01:44:31Z	fdat092	0x801C6800	match	0	permuter (levers index D_8019FAB9 u8[] + bytes E + &D_801A26B8, ctx draft)
 2026-10-21T01:44:40Z	fdat056	0x801C739C	match	0	twin of fdat014 0x801C830C (fdat014/func_801C830C.c)
 2026-10-21T01:45:12Z	fdat004	0x801C5E30	match	4	
 2026-10-21T01:45:29Z	fdat012	0x801C5140	match	0	twin of fdat004 0x801C5E30 (fdat004/func_801C5E30.c)
 2026-10-21T01:45:29Z	fdat012	0x801C5588	match	0	twin of fdat004 0x801C5E30 (fdat004/func_801C5E30.c)
-2026-10-21T01:46:06Z	exe	0x800154D8	match	1	
 2026-10-21T01:46:06Z	exe	0x80015508	match	1	
+2026-10-21T01:46:06Z	exe	0x800154D8	match	1	
 2026-10-21T01:47:05Z	fdat022	0x801C5A0C	match	2	
 2026-10-21T01:47:06Z	fdat038	0x801C4DD8	match	0	twin of fdat022 0x801C5A0C (fdat022/func_801C5A0C.c)
 2026-10-21T01:47:06Z	fdat070	0x801C4DD8	match	0	twin of fdat022 0x801C5A0C (fdat022/func_801C5A0C.c)
@@ -3369,8 +3383,13 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:48:18Z	fdat052	0x801CC9F4	match	0	twin of fdat008 0x801CAFB8 (fdat008/func_801CAFB8.c)
 2026-10-21T01:48:18Z	fdat054	0x801C95E4	match	0	twin of fdat008 0x801CAFB8 (fdat008/func_801CAFB8.c)
 2026-10-21T01:49:35Z	fdat028	0x801C5F3C	match	1	
+2026-10-21T01:49:37Z	fdat092	0x801C67A4	match	0	permuter (levers index D_8019FAB9 u8[] + bytes E + &D_801A26B8, ctx draft)
+2026-10-21T01:49:38Z	fdat014	0x801C54C8	match	0	permuter (levers args func_800754D0 +arg0 proto, ctx draft)
+2026-10-21T01:49:40Z	fdat002	0x801C5580	match	0	permuter (levers args func_800745D0 +arg0 proto, ctx-spframe draft)
 2026-10-21T01:50:01Z	fdat042	0x801C78B0	match	2	
 2026-10-21T01:50:17Z	fdat072	0x801C69FC	match	0	twin of fdat042 0x801C78B0 (fdat042/func_801C78B0.c)
+2026-10-21T01:50:45Z	fdat008	0x801C6884	match	0	permuter (decomp-permuter after levers etype D_80198B08 M2C_UNK->u8, ctx-spframe draft)
+2026-10-21T01:50:46Z	fdat006	0x801C6068	match	0	permuter (levers index D_801D0B94 u8[], ctx draft)
 2026-10-21T01:51:38Z	fdat004	0x801C6528	match	8	
 2026-10-21T01:51:40Z	fdat012	0x801C6AD4	match	0	twin of fdat004 0x801C6528 (fdat004/func_801C6528.c)
 2026-10-21T01:51:40Z	fdat016	0x801C7190	match	0	twin of fdat004 0x801C6528 (fdat004/func_801C6528.c)
@@ -3389,6 +3408,7 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:53:11Z	fdat182	0x801B8728	match	0	twin of fdat160 0x801C8CBC (fdat160/func_801C8CBC.c)
 2026-10-21T01:53:11Z	fdat184	0x801B84CC	match	0	twin of fdat160 0x801C8CBC (fdat160/func_801C8CBC.c)
 2026-10-21T01:53:11Z	fdat186	0x801B8598	match	0	twin of fdat160 0x801C8CBC (fdat160/func_801C8CBC.c)
+2026-10-21T01:53:37Z	fdat022	0x801C73A4	match	0	permuter (decomp-permuter, ctx draft)
 2026-10-21T01:53:39Z	fdat014	0x801C5678	match	3	
 2026-10-21T01:53:41Z	fdat014	0x801C610C	match	0	twin of fdat014 0x801C5678 (fdat014/func_801C5678.c)
 2026-10-21T01:53:41Z	fdat030	0x801C565C	match	0	twin of fdat014 0x801C5678 (fdat014/func_801C5678.c)
@@ -3400,12 +3420,14 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:55:23Z	fdat040	0x801C6020	match	3	
 2026-10-21T01:55:26Z	fdat048	0x801C5680	match	0	twin of fdat040 0x801C6020 (fdat040/func_801C6020.c)
 2026-10-21T01:55:26Z	fdat096	0x801C5D10	match	0	twin of fdat040 0x801C6020 (fdat040/func_801C6020.c)
+2026-10-21T01:55:49Z	fdat092	0x801C69E4	match	0	permuter (levers args func_800754D0 +arg0 proto, ctx draft)
 2026-10-21T01:55:59Z	fdat004	0x801C58AC	match	2	
 2026-10-21T01:56:09Z	fdat018	0x801C6998	match	0	twin of fdat004 0x801C58AC (fdat004/func_801C58AC.c)
 2026-10-21T01:56:09Z	fdat034	0x801C5C8C	match	0	twin of fdat004 0x801C58AC (fdat004/func_801C58AC.c)
 2026-10-21T01:56:09Z	fdat044	0x801C5C54	match	0	twin of fdat004 0x801C58AC (fdat004/func_801C58AC.c)
 2026-10-21T01:56:09Z	fdat074	0x801C64AC	match	0	twin of fdat004 0x801C58AC (fdat004/func_801C58AC.c)
 2026-10-21T01:56:09Z	fdat080	0x801C5C5C	match	0	twin of fdat004 0x801C58AC (fdat004/func_801C58AC.c)
+2026-10-21T01:56:14Z	fdat042	0x801C6D64	match	0	permuter (decomp-permuter after levers args func_80075030 +arg0 noproto, ctx-fix-frame draft)
 2026-10-21T01:57:22Z	fdat004	0x801C4FFC	match	4	
 2026-10-21T01:57:25Z	fdat018	0x801C6518	match	0	twin of fdat004 0x801C4FFC (fdat004/func_801C4FFC.c)
 2026-10-21T01:57:25Z	fdat034	0x801C55F8	match	0	twin of fdat004 0x801C4FFC (fdat004/func_801C4FFC.c)
@@ -3419,9 +3441,10 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:58:29Z	fdat090	0x801C60A8	match	0	twin of fdat010 0x801C5190 (fdat010/func_801C5190.c)
 2026-10-21T01:59:20Z	fdat004	0x801C59E8	match	1	
 2026-10-21T01:59:23Z	fdat006	0x801C5374	match	1	
+2026-10-21T01:59:25Z	fdat012	0x801C63A0	match	1	
 2026-10-21T01:59:44Z	fdat024	0x801C53A0	match	0	twin of fdat006 0x801C5374 (fdat006/func_801C5374.c)
 2026-10-21T01:59:44Z	fdat036	0x801C5458	match	0	twin of fdat006 0x801C5374 (fdat006/func_801C5374.c)
-2026-10-21T01:59:25Z	fdat012	0x801C63A0	match	1	
+2026-10-21T01:59:50Z	fdat024	0x801C6E14	match	0	permuter (levers etype D_801D3368 M2C_UNK->u8, ctx draft)
 2026-10-21T01:59:51Z	fdat074	0x801C5AF0	match	0	twin of fdat012 0x801C63A0 (fdat012/func_801C63A0.c)
 2026-10-21T02:00:18Z	fdat034	0x801C5738	match	5	
 2026-10-21T02:00:34Z	fdat080	0x801C5708	match	5	
@@ -3430,27 +3453,64 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T02:01:24Z	fdat012	0x801C4DA0	match	0	twin of fdat004 0x801C5A90 (fdat004/func_801C5A90.c)
 2026-10-21T02:01:57Z	fdat012	0x801C51B8	match	4	
 2026-10-21T02:01:59Z	fdat012	0x801C5C40	match	4	
-2026-10-21T02:02:47Z	fdat074	0x801C5390	match	0	twin of fdat012 0x801C5C40 (fdat012/func_801C5C40.c)
 2026-10-21T02:02:17Z	fdat036	0x801C57F0	match	1	
+2026-10-21T02:02:47Z	fdat074	0x801C5390	match	0	twin of fdat012 0x801C5C40 (fdat012/func_801C5C40.c)
 2026-10-21T02:02:50Z	fdat090	0x801C5A08	match	0	twin of fdat036 0x801C57F0 (fdat036/func_801C57F0.c)
 2026-10-21T02:03:44Z	fdat006	0x801C4EC8	match	3	
-2026-10-21T02:04:20Z	fdat024	0x801C4EF4	match	0	twin of fdat006 0x801C4EC8 (fdat006/func_801C4EC8.c)
-2026-10-21T02:04:20Z	fdat036	0x801C4FAC	match	0	twin of fdat006 0x801C4EC8 (fdat006/func_801C4EC8.c)
 2026-10-21T02:03:46Z	fdat014	0x801C4CB0	match	2	
-2026-10-21T02:04:24Z	fdat030	0x801C4C94	match	0	twin of fdat014 0x801C4CB0 (fdat014/func_801C4CB0.c)
-2026-10-21T02:04:24Z	fdat084	0x801C4D14	match	0	twin of fdat014 0x801C4CB0 (fdat014/func_801C4CB0.c)
 2026-10-21T02:03:48Z	fdat014	0x801C5828	match	2	
-2026-10-21T02:04:29Z	fdat030	0x801C580C	match	0	twin of fdat014 0x801C5828 (fdat014/func_801C5828.c)
 2026-10-21T02:03:55Z	fdat022	0x801C50C8	match	2	
 2026-10-21T02:03:59Z	fdat022	0x801C5B10	match	2	
 2026-10-21T02:04:03Z	fdat038	0x801C4EDC	match	2	
+2026-10-21T02:04:06Z	fdat044	0x801C575C	match	2	
+2026-10-21T02:04:07Z	fdat060	0x801C66DC	match	2	
+2026-10-21T02:04:11Z	fdat084	0x801C656C	match	2	
+2026-10-21T02:04:20Z	fdat024	0x801C4EF4	match	0	twin of fdat006 0x801C4EC8 (fdat006/func_801C4EC8.c)
+2026-10-21T02:04:20Z	fdat036	0x801C4FAC	match	0	twin of fdat006 0x801C4EC8 (fdat006/func_801C4EC8.c)
+2026-10-21T02:04:24Z	fdat030	0x801C4C94	match	0	twin of fdat014 0x801C4CB0 (fdat014/func_801C4CB0.c)
+2026-10-21T02:04:24Z	fdat084	0x801C4D14	match	0	twin of fdat014 0x801C4CB0 (fdat014/func_801C4CB0.c)
+2026-10-21T02:04:29Z	fdat030	0x801C580C	match	0	twin of fdat014 0x801C5828 (fdat014/func_801C5828.c)
 2026-10-21T02:04:45Z	fdat070	0x801C4EDC	match	0	twin of fdat038 0x801C4EDC (fdat038/func_801C4EDC.c)
 2026-10-21T02:04:45Z	fdat084	0x801C5AC8	match	0	twin of fdat038 0x801C4EDC (fdat038/func_801C4EDC.c)
-2026-10-21T02:04:06Z	fdat044	0x801C575C	match	2	
 2026-10-21T02:04:54Z	fdat074	0x801C5FB4	match	0	twin of fdat044 0x801C575C (fdat044/func_801C575C.c)
-2026-10-21T02:04:07Z	fdat060	0x801C66DC	match	2	
 2026-10-21T02:04:58Z	fdat068	0x801C5494	match	0	twin of fdat060 0x801C66DC (fdat060/func_801C66DC.c)
-2026-10-21T02:04:11Z	fdat084	0x801C656C	match	2	
 2026-10-21T02:05:04Z	fdat092	0x801C55F4	match	0	twin of fdat084 0x801C656C (fdat084/func_801C656C.c)
 2026-10-21T02:05:41Z	fdat016	0x801C61F8	match	9	
 2026-10-21T02:05:48Z	fdat028	0x801C5B34	match	0	twin of fdat016 0x801C61F8 (fdat016/func_801C61F8.c)
+2026-10-21T14:31:37Z	fdat014	0x801C75F0	match	0	twin of fdat008 0x801C6D74 (fdat008/func_801C6D74.c)
+2026-10-21T14:31:37Z	fdat030	0x801C787C	match	0	twin of fdat008 0x801C6D74 (fdat008/func_801C6D74.c)
+2026-10-21T14:31:37Z	fdat056	0x801C6F28	match	0	twin of fdat008 0x801C6D74 (fdat008/func_801C6D74.c)
+2026-10-21T14:31:37Z	fdat066	0x801C5F64	match	0	twin of fdat008 0x801C6D74 (fdat008/func_801C6D74.c)
+2026-10-21T14:31:37Z	fdat072	0x801C6524	match	0	twin of fdat008 0x801C6D74 (fdat008/func_801C6D74.c)
+2026-10-21T14:31:37Z	fdat086	0x801C6E64	match	0	twin of fdat008 0x801C6D74 (fdat008/func_801C6D74.c)
+2026-10-21T14:31:37Z	fdat088	0x801C5F14	match	0	twin of fdat008 0x801C6D74 (fdat008/func_801C6D74.c)
+2026-10-21T14:31:37Z	fdat098	0x801C7308	match	0	twin of fdat008 0x801C6D74 (fdat008/func_801C6D74.c)
+2026-10-21T14:31:37Z	fdat160	0x801C8BA8	match	0	twin of fdat008 0x801C6D74 (fdat008/func_801C6D74.c)
+2026-10-21T14:31:40Z	fdat094	0x801C52C0	match	0	twin of fdat000 0x801C52C0 (fdat000/func_801C52C0.c)
+2026-10-21T14:31:40Z	fdat096	0x801C52F0	match	0	twin of fdat000 0x801C52C0 (fdat000/func_801C52C0.c)
+2026-10-21T14:31:40Z	fdat098	0x801C52C0	match	0	twin of fdat000 0x801C52C0 (fdat000/func_801C52C0.c)
+2026-10-21T14:31:40Z	fdat140	0x801C52C0	match	0	twin of fdat000 0x801C52C0 (fdat000/func_801C52C0.c)
+2026-10-21T14:31:42Z	fdat028	0x801C5C08	match	0	twin of fdat022 0x801C5FD0 (fdat022/func_801C5FD0.c)
+2026-10-21T14:31:42Z	fdat080	0x801C5E5C	match	0	twin of fdat022 0x801C5FD0 (fdat022/func_801C5FD0.c)
+2026-10-21T14:31:44Z	fdat030	0x801C54AC	match	0	twin of fdat014 0x801C54C8 (fdat014/func_801C54C8.c)
+2026-10-21T14:31:44Z	fdat084	0x801C552C	match	0	twin of fdat014 0x801C54C8 (fdat014/func_801C54C8.c)
+2026-10-21T14:31:49Z	fdat008	0x801C5BF0	match	0	twin of fdat002 0x801C5580 (fdat002/func_801C5580.c)
+2026-10-21T14:31:49Z	fdat018	0x801C5920	match	0	twin of fdat002 0x801C5580 (fdat002/func_801C5580.c)
+2026-10-21T14:31:49Z	fdat042	0x801C5C74	match	0	twin of fdat002 0x801C5580 (fdat002/func_801C5580.c)
+2026-10-21T14:31:49Z	fdat050	0x801C5C2C	match	0	twin of fdat002 0x801C5580 (fdat002/func_801C5580.c)
+2026-10-21T14:31:49Z	fdat056	0x801C5BE0	match	0	twin of fdat002 0x801C5580 (fdat002/func_801C5580.c)
+2026-10-21T14:31:49Z	fdat060	0x801C5C00	match	0	twin of fdat002 0x801C5580 (fdat002/func_801C5580.c)
+2026-10-21T14:31:49Z	fdat062	0x801C5BE0	match	0	twin of fdat002 0x801C5580 (fdat002/func_801C5580.c)
+2026-10-21T14:31:49Z	fdat064	0x801C559C	match	0	twin of fdat002 0x801C5580 (fdat002/func_801C5580.c)
+2026-10-21T14:31:49Z	fdat082	0x801C5C40	match	0	twin of fdat002 0x801C5580 (fdat002/func_801C5580.c)
+2026-10-21T14:31:49Z	fdat086	0x801C5BE0	match	0	twin of fdat002 0x801C5580 (fdat002/func_801C5580.c)
+2026-10-21T14:31:52Z	fdat014	0x801C7100	match	0	twin of fdat008 0x801C6884 (fdat008/func_801C6884.c)
+2026-10-21T14:31:52Z	fdat030	0x801C738C	match	0	twin of fdat008 0x801C6884 (fdat008/func_801C6884.c)
+2026-10-21T14:31:52Z	fdat056	0x801C6A38	match	0	twin of fdat008 0x801C6884 (fdat008/func_801C6884.c)
+2026-10-21T14:31:52Z	fdat066	0x801C5A74	match	0	twin of fdat008 0x801C6884 (fdat008/func_801C6884.c)
+2026-10-21T14:31:52Z	fdat072	0x801C6034	match	0	twin of fdat008 0x801C6884 (fdat008/func_801C6884.c)
+2026-10-21T14:31:52Z	fdat086	0x801C6974	match	0	twin of fdat008 0x801C6884 (fdat008/func_801C6884.c)
+2026-10-21T14:31:52Z	fdat088	0x801C5A24	match	0	twin of fdat008 0x801C6884 (fdat008/func_801C6884.c)
+2026-10-21T14:31:52Z	fdat098	0x801C6E18	match	0	twin of fdat008 0x801C6884 (fdat008/func_801C6884.c)
+2026-10-21T14:31:52Z	fdat160	0x801C86B8	match	0	twin of fdat008 0x801C6884 (fdat008/func_801C6884.c)
+2026-10-21T14:31:54Z	fdat040	0x801C66D0	match	0	twin of fdat006 0x801C6068 (fdat006/func_801C6068.c)
