@@ -2973,3 +2973,5 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:44:52Z	ovl204	0x80071474	match	0	twin of ovl202 0x800722B4 (ovl202/func_800722B4.c)
 2026-10-21T01:44:52Z	ovl203	0x8006E85C	match	0	twin of ovl202 0x8006F4D8 (ovl202/func_8006F4D8.c)
 2026-10-21T01:44:52Z	ovl204	0x8006E698	match	0	twin of ovl202 0x8006F4D8 (ovl202/func_8006F4D8.c)
+2026-10-21T01:44:52Z	ovl204	0x80089264	match	1	
+2026-10-21T01:44:54Z	ovl204	0x800892F0	match	1	
