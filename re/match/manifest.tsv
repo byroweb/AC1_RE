@@ -3253,3 +3253,13 @@
 0x801C6320	fdat092	fdat008/func_801C662C.c	228	--base 0x801C4B40 --defsym D_8019FAB8=0x8019FAB8 --defsym func_8006D45C=0x8006D45C --defsym func_8008A0B0=0x8008A0B0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x801C571C	fdat094	fdat008/func_801C662C.c	228	--base 0x801C4B40 --defsym D_8019FAB8=0x8019FAB8 --defsym func_8006D45C=0x8006D45C --defsym func_8008A0B0=0x8008A0B0 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x801C6050	fdat006	fdat006/func_801C6050.c	24	--base 0x801C4B40 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_801D0B68=0x801D0B68
+0x801C674C	fdat008	fdat008/func_801C674C.c	292	--base 0x801C4B40 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_801AC860=0x801AC860 --defsym D_801CC4D4=0x801CC4D4 --defsym func_80086854=0x80086854
+0x801C6FC8	fdat014	fdat008/func_801C674C.c	292	--base 0x801C4B40 --defsym D_801AC860=0x801AC860 --defsym D_801CC4D4=0x801C8518 --defsym func_80086854=0x80086854 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C7900	fdat014	fdat008/func_801C674C.c	292	--base 0x801C4B40 --defsym D_801AC860=0x801AC860 --defsym D_801CC4D4=0x801C8524 --defsym func_80086854=0x80086854 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C7254	fdat030	fdat008/func_801C674C.c	292	--base 0x801C4B40 --defsym D_801AC860=0x801AC860 --defsym D_801CC4D4=0x801C7B88 --defsym func_80086854=0x80086854 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C6900	fdat056	fdat008/func_801C674C.c	292	--base 0x801C4B40 --defsym D_801AC860=0x801AC860 --defsym D_801CC4D4=0x801CD758 --defsym func_80086854=0x80086854 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C593C	fdat066	fdat008/func_801C674C.c	292	--base 0x801C4B40 --defsym D_801AC860=0x801AC860 --defsym D_801CC4D4=0x801CC040 --defsym func_80086854=0x80086854 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C5EFC	fdat072	fdat008/func_801C674C.c	292	--base 0x801C4B40 --defsym D_801AC860=0x801AC860 --defsym D_801CC4D4=0x801C6C04 --defsym func_80086854=0x80086854 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C683C	fdat086	fdat008/func_801C674C.c	292	--base 0x801C4B40 --defsym D_801AC860=0x801AC860 --defsym D_801CC4D4=0x801CD4B4 --defsym func_80086854=0x80086854 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C58EC	fdat088	fdat008/func_801C674C.c	292	--base 0x801C4B40 --defsym D_801AC860=0x801AC860 --defsym D_801CC4D4=0x801CC9B0 --defsym func_80086854=0x80086854 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x801C6CE0	fdat098	fdat008/func_801C674C.c	292	--base 0x801C4B40 --defsym D_801AC860=0x801AC860 --defsym D_801CC4D4=0x801CE3A8 --defsym func_80086854=0x80086854 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
