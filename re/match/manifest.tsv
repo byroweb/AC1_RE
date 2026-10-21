@@ -3019,3 +3019,4 @@
 0x800579D4	202	ovl202/func_800579D4.c	44	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_801A5F2C=0x801A5F2C --defsym D_801A5F30=0x801A5F30
 0x800590E8	202	ovl202/func_800590E8.c	52	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x8005A330	202	ovl202/func_8005A330.c	52	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x80059140	202	ovl202/func_80059140.c	56	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
