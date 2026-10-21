@@ -3299,3 +3299,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T01:38:37Z	fdat084	0x801C5FCC	match	0	twin of fdat018 0x801C4E14 (fdat018/func_801C4E14.c)
 2026-10-21T01:38:37Z	fdat090	0x801C53B4	match	0	twin of fdat018 0x801C4E14 (fdat018/func_801C4E14.c)
 2026-10-21T01:38:37Z	fdat098	0x801C5314	match	0	twin of fdat018 0x801C4E14 (fdat018/func_801C4E14.c)
+2026-10-21T01:40:00Z	exe	0x80015538	match	1	
