@@ -2843,3 +2843,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T00:48:29Z	ovl202	0x8005E22C	match	0	zero-agent sweep (neighbour+imm of ovl203 0x8005DC1C, similarity 0.981)
 2026-10-21T01:05:34Z	ovl201	0x8005015C	match	1	
 2026-10-21T01:08:37Z	ovl201	0x8005F1DC	match	1	
+2026-10-21T01:08:39Z	ovl203	0x8006CD98	match	1	
