@@ -1541,3 +1541,99 @@ fdat022	0x801C4CFC	name	mission_hover_mover_step_e	2026-10-22T21:44:05Z
 fdat022	0x801C4CFC	hint	hover mover think: picks func_80078250 smoke by D_801A5DC4%3, dir 1..7 accelerate along yaw offsets (call per case then goto shared tail) cap 3200; dir 7 counts down +0xD2; needs --rodata 0x801C4C60	2026-10-22T21:44:05Z
 fdat010	0x801C5FD4	name	mission_slot_death_effect	2026-10-22T21:44:05Z
 fdat010	0x801C5FD4	hint	per-frame slot update: ctr (+0x14)->cnt countdown; at 0 spawns effect by type (+0x22) 0..6: func_80086598 projectile kinds 55/59, func_800889B4, func_80089628/800898A4/80089A80 (bitmap D_801AC860 gated), type 6 loops count (+0x26) random smoke func_80089C30; scale +0x24 /4096; --rodata 0x801C4C78	2026-10-22T21:44:05Z
+fdat024	0x801C6C5C	name	fx_particle_integrate	2026-10-22T21:44:19Z
+fdat024	0x801C6C5C	hint	adds vel to pos (x,y,z u16 @0..4, vel @0x18, accel @0x20), frame count +0xBC	2026-10-22T21:44:19Z
+fdat096	0x801C69E4	name	state_rec_shift_copy	2026-10-22T21:44:19Z
+fdat096	0x801C69E4	hint	copies 0x39C record [1] over [0] at 0x80040FA0 then D_80039C5D=0xFF,D_80039D00=0	2026-10-22T21:44:19Z
+fdat066	0x801C6474	name	mis_count_kind13_penalty	2026-10-22T21:44:19Z
+fdat066	0x801C6474	hint	counts 0x34 slots @80198B08 whose kind (+6) table entry id==13, subtracts count*200 from *arg1; sibling of 801C63F8	2026-10-22T21:44:19Z
+fdat056	0x801C779C	name	mis_slot_kill_tally	2026-10-22T21:44:19Z
+fdat056	0x801C779C	hint	when ent+0x160==0, slot index (ent->slot-0x8019FAB8 /0x2C) 4..10 -> D_801CD760++, 11..17 -> D_80049E78=0,D_801CD764++	2026-10-22T21:44:19Z
+fdat028	0x801C71B4	name	mis_scene_init	2026-10-22T21:44:19Z
+fdat028	0x801C71B4	hint	calls func_8008A80C, func_801C6FE4(&D_801C7494), 4x func_801C70CC, sets D_801987D8 bit0 if D_8019F524&1	2026-10-22T21:44:19Z
+fdat082	0x801C73BC	name	mis_score_slots_a	2026-10-22T21:44:19Z
+fdat082	0x801C73BC	hint	scans slots 4.. @0x8019FB68 (0x2C each, st u8 @0, kind s16 @0xA via D_8019F51C[kind+8] handler table): -1000 per st==3 handler 801C6544; +10000 if no 801C5438/5468 handler with st!=3	2026-10-22T21:44:20Z
+fdat024	0x801C6D94	name	fx_timed_burst	2026-10-22T21:44:20Z
+fdat024	0x801C6D94	hint	t=0x8C-D_801D0B52 countdown; sound 7 at t==10/80, spawns fx 0x11 for t 10..40 and 0x10 for t 80..110	2026-10-22T21:44:20Z
+fdat076	0x801C586C	name	mis_world_flag_set	2026-10-22T21:44:20Z
+fdat076	0x801C586C	hint	if D_8019F528==0: world struct n flags(+0x30) nibble7 =2, byte3 high nibble cleared; n==0x270F -> sounds 0x80/0x68, D_8019F52C=0, func_8004C318(0x80)	2026-10-22T21:44:20Z
+fdat162	0x801C86E8	name	mis_line_clear_test	2026-10-22T21:44:20Z
+fdat162	0x801C86E8	hint	calls func_80012794 (segment/LOS test?) with obj+0x22,+0x16,+0x18 against two records at 0x801AB750 and +0x170; returns 1 if first hits else second!=0	2026-10-22T21:44:20Z
+fdat040	0x801C5DE4	name	mis_door_on_hit_msg	2026-10-22T21:44:20Z
+fdat040	0x801C5DE4	hint	msg 0x8100 && (*arg)[3]&7==2 -> calls func_801C5CE0(world[o->ids[0]], o+0x10, *o->def, o); twin of 801C5D80 (func_801C5CE0 = door/mover toggle)	2026-10-22T21:44:20Z
+fdat026	0x801C549C	name	mis_spawn_nearer_ent	2026-10-22T21:44:20Z
+fdat026	0x801C549C	hint	once-init (msg 0x601), then if D_801CB0CC==1 and func_80052338: picks 0x8019FB94 or 0x8019FBC0 by which dist (func_801C5418(5/6)) is smaller, func_80078CFC(that), state=2	2026-10-22T21:44:20Z
+fdat036	0x801C6594	name	mis_ent_init_scanner	2026-10-22T21:44:20Z
+fdat036	0x801C6594	hint	sets faction=2, ignore_mask=0x10, fn_state=801C61AC, fn_move=801C6460, fn_think=801C6238 then calls move(e,0) and state(e,e->state)	2026-10-22T21:44:20Z
+fdat064	0x801C6F78	name	mis_all_slots_idle_poll	2026-10-22T21:44:20Z
+fdat064	0x801C6F78	hint	every 16th frame: if all 252 slots @0x8019FB68 are idle (kind==-1 or st==3) -> sound 0x68, func_8004C318(0x80), done flag	2026-10-22T21:44:20Z
+fdat120	0x801C52F8	name	mis_all_slots_idle_poll_init	2026-10-22T21:44:20Z
+fdat120	0x801C52F8	hint	same as fdat064 801C6F78 plus once-init func_8008C2FC(0)	2026-10-22T21:44:20Z
+fdat036	0x801C70F0	name	mis_timed_event_update	2026-10-22T21:44:21Z
+fdat036	0x801C70F0	hint	once init; timer D_801C7364 counts, at 0x528 clears bit 6 of D_8019FBA8/FBD4; when state==1 and timer!=0 and func_80052338 -> func_8004DB18(5), state=2	2026-10-22T21:44:21Z
+fdat030	0x801C7998	name	mis_count_slots_done	2026-10-22T21:44:21Z
+fdat030	0x801C7998	hint	counts slots 4..10 @0x8019FAB8 with kind!=-1 and st==3; when >=4: at D_801C7B90==10 sound 0x68 + func_8004C318(0x80); D_801C7B90++	2026-10-22T21:44:21Z
+fdat096	0x801C68C4	name	fx_fade_to_white_music_down	2026-10-22T21:44:21Z
+fdat096	0x801C68C4	hint	D_801AC8A0-A2 rgb brighten +12 (cap 255) while t<=26, then master volume -6 (SsSetMVol) when D_801D0B52<21; D_801AC8A3=2	2026-10-22T21:44:21Z
+fdat096	0x801C67AC	name	mis_intro_door_seq	2026-10-22T21:44:21Z
+fdat096	0x801C67AC	hint	state machine D_801CDB04 (0,1): when D_801D3614/D_801D3314 obj +0x10==1 sets 4 and spawns slots 0..4 @0x8019FB68 / 0..3 @0x8019FC44 via func_80078CFC	2026-10-22T21:44:21Z
+fdat022	0x801C5E40	name	mis_event_msg_spawn_dir	2026-10-22T21:44:21Z
+fdat022	0x801C5E40	hint	msg a1==0: func_800759A4(a0, dir byte (1 if func_80073714>4999 else table 801C7534[func_80014DFC(4,..)]), D_80039C78); 5 and others ignored	2026-10-22T21:44:21Z
+fdat038	0x801C6214	name	mis_msg_handler_cutscene	2026-10-22T21:44:21Z
+fdat038	0x801C6214	hint	msg 1: if D_801C6508 && func_80052338 -> sound 0x68, func_8004C318(0x80), ret 1; msg 2: sounds 0x7A,0x1E,0x7B, sets +6 byte of 4 objs, D_801C6504=1, ret 1	2026-10-22T21:44:21Z
+fdat086	0x801C7738	name	mis_timeline_events	2026-10-22T21:44:21Z
+fdat086	0x801C7738	hint	tick counter D_801CD4C0 (cap 0xFFFF): sound 0x56 at 660, clears D_80198BB8/BEC at 836, sound 0x57 at 880	2026-10-22T21:44:21Z
+fdat052	0x801C72B4	name	mis_intro_flags_update	2026-10-22T21:44:21Z
+fdat052	0x801C72B4	hint	D_801CE578 frame counter to 0x1000 calling func_8008A798; D_8019F52A==0xFFFE reset; sounds 0x75 and 0xA0 once each	2026-10-22T21:44:21Z
+fdat036	0x801C71D8	name	mis_msg_handler_door_trigger	2026-10-22T21:44:22Z
+fdat036	0x801C71D8	hint	msg0: if D_801C7364==0 and obj D_801D3214 +0x10==0: sound 0x4F, sfx 0x3B, sets two objs +6=0x66, flag=1 (ret 0 if obj busy); msg1: D_801C7368=1; mostly ret 1	2026-10-22T21:44:22Z
+fdat140	0x801C5480	name	mis_intro_step	2026-10-22T21:44:22Z
+fdat140	0x801C5480	hint	step counter D_801CBB1C to 0x24: sets flags 0x2400 on D_8019F524, sound 0x8F at 0, func_8004D178 at 0x16; at 0x24 clears	2026-10-22T21:44:22Z
+fdat040	0x801C66F8	name	mis_scene_cmd	2026-10-22T21:44:22Z
+fdat040	0x801C66F8	hint	msg 0: if D_8019F52C set clear it, D_801CCB60=1 ret 1; msg 1: copies 32 bytes D_801CCB6C->D_8008DCC4 (unaligned), func_801C66D0(0xFB), sound/ui calls, sets 4 slot bytes=3, D_801CCB64=1	2026-10-22T21:44:22Z
+fdat084	0x801C7630	name	mis_world_scan_mesh47	2026-10-22T21:44:22Z
+fdat084	0x801C7630	hint	scans D_801E8B6C world structs for mesh==0x47 with on_hit==0: copies 32 bytes, sounds 0x29/0x2A, flags; else pulses func_80062860/func_8004D178 with rsin	2026-10-22T21:44:22Z
+fdat182	0x801B847C	name	mis_trigger_check	2026-10-22T21:44:22Z
+fdat182	0x801B847C	hint	obj->def (+0x38): slot kind (table 0x8019B4F8 stride 0x2C) 3 or 1 (entity 0x170 stride check) then o->timer=0, func_8006C8FC(o,kind,..) and func_80088D2C(def fields)	2026-10-22T21:44:22Z
+fdat034	0x801C6C5C	name	mis_spawn_slot_group	2026-10-22T21:44:22Z
+fdat034	0x801C6C5C	hint	calls func_801C6B44(a0,a1,a2) a3 times, then sets slot st(+0) 0->3 for a2 slots from index a1 (0x2C stride @0x8019FAB8)	2026-10-22T21:44:22Z
+fdat034	0x801C6D24	name	mis_phase_msg_handler	2026-10-22T21:44:22Z
+fdat034	0x801C6D24	hint	switch msg 1: clears +0x40 of live entities (15x0x170 @0x801A2828), sound 9; 2: sound 0x71, spawn 2 slots, group (0xB,4,1); 3: sound 0x72, group (0xF,6,3), calls vtable fn with msg 0x8200	2026-10-22T21:44:22Z
+fdat094	0x801C5D48	name	mis_msg_handler_clear_flag40	2026-10-22T21:44:22Z
+fdat094	0x801C5D48	hint	msg0: clears bit 0x40 in flags(+0x14) of slots whose handler is 801C52C0/801C5314, sound 0x5F; msg1: sounds 0x40,0x41, func_80078CFC(slot0)	2026-10-22T21:44:22Z
+fdat028	0x801C72B4	name	mis_tutorial_step_handler	2026-10-22T21:44:23Z
+fdat028	0x801C72B4	hint	switch msg 0..4: highlights element via func_801C7254(ptr,idx 0x1F/0x25..0x28), counter D_801C74BC steps -> sounds 0x4B,0x4C,0x94 (+func_8004C318(0x100))	2026-10-22T21:44:23Z
+fdat036	0x801C6460	name	mis_ent_random_action	2026-10-22T21:44:23Z
+fdat036	0x801C6460	hint	msg not 5/0x8100: if time(func_80073714)>=7001 -> func_801C6320(a0,2) else rand()&0x3F switch picks 801C6320/6390/63F8 action with mode 1..5	2026-10-22T21:44:23Z
+fdat162	0x801C85D0	name	mis_switch_msg_handler	2026-10-22T21:44:23Z
+fdat162	0x801C85D0	hint	msgs 0x8100 (check cnt+0x10<4, hit state), 0x8200, 0x8201: clears world flag 0x100, func_801C8580(o,1 or 4) when cnt+0x11<+0x12	2026-10-22T21:44:23Z
+fdat034	0x801C6B44	name	mis_pick_nearest_slot	2026-10-22T21:44:23Z
+fdat034	0x801C6B44	hint	scans slots a1.. (a2 count) at 0x8019FAB8 st==0, picks nearest beyond radius (a0>>2)^2 else farthest, func_80078CFC(slot)	2026-10-22T21:44:23Z
+fdat072	0x801C5050	name	mis_ent_raycast_side	2026-10-22T21:44:23Z
+fdat072	0x801C5050	hint	ray-test (func_800745D0 set up, func_80073C2C trace) from ent; on hit flag&2: stores hit pos +0x76, +0x78=-y, +0x7A=0; returns 1	2026-10-22T21:44:23Z
+fdat072	0x801C4F3C	name	mis_ent_raycast_side_clear	2026-10-22T21:44:23Z
+fdat072	0x801C4F3C	hint	as 801C5050 but uses +0x12 angle and zeroes +0x76/78/7A on miss	2026-10-22T21:44:23Z
+fdat072	0x801C539C	name	mis_ent_msg_handler_cannon	2026-10-22T21:44:23Z
+fdat072	0x801C539C	hint	msg 5: toggles ent state 1<->6; msg 8: aims func_80075B08 at midpoint of box (arg2); msg 0: if func_801C4F3C(e,12000,1600) picks dir from table 801C6AC0 else 801C6AD0, func_800759A4	2026-10-22T21:44:23Z
+fdat060	0x801C68F8	name	mis_ent_msg_handler_turret	2026-10-22T21:44:23Z
+fdat060	0x801C68F8	hint	msg 0: func_80073C2C sweep, then picks dir from table 801CC400 (t<2500) or 801CC408 (t>3000) via func_80014DFC and func_800759A4	2026-10-22T21:44:23Z
+fdat024	0x801C6E80	name	mis_light_switch_msg	2026-10-22T21:44:24Z
+fdat024	0x801C6E80	hint	msgs 0..4 clear flag 0x1000 of lamp obj i (D_801D3368..), sound 0x85/0x8C/0x93 by step counter D_801C70EC, func_8004CE44; msg 10: when counter>=5 func_8008C2FC(0x100, 801C6D94)	2026-10-22T21:44:24Z
+fdat028	0x801C5C7C	name	mis_ent_raycast_hit_vec	2026-10-22T21:44:24Z
+fdat028	0x801C5C7C	hint	ray (func_80073C2C) from ent: on flag&2 stores hit-delta to +0x108 and calls func_80015258 to get aim values -> +0x76/+0x78/+0x7A, ret 1	2026-10-22T21:44:24Z
+fdat060	0x801C6528	name	mis_ent_turn_toward	2026-10-22T21:44:24Z
+fdat060	0x801C6528	hint	mode (+0x3C) 1..8 picks angle offset (+-0x200/0x400), func_800132CC steers ent angle +0x12 toward target; builds vector via func_80014728 and func_80014338; default 800143B8	2026-10-22T21:44:24Z
+fdat098	0x801C662C	name	mis_slots_follow_world_obj	2026-10-22T21:44:24Z
+fdat098	0x801C662C	hint	for def->count slots from 0x8019FAB8[def->first]: st 1 (and def->mode==0): adds world.hit pos to entity pos; else adds to slot pos and turns slot ang via func_8006E6B4	2026-10-22T21:44:24Z
+fdat038	0x801C51A8	name	mis_ent_msg_handler_rotator	2026-10-22T21:44:24Z
+fdat038	0x801C51A8	hint	msg 5: zero +0xCC/CE/D0 and rotate ent state (1<->6,2<->8,3<->7,4<->5); msg 0: func_800759A4 with dir from table 801C649C	2026-10-22T21:44:24Z
+fdat038	0x801C4FD0	name	mis_ent_ai_shoot_pick	2026-10-22T21:44:24Z
+fdat038	0x801C4FD0	hint	AI tick: clears +0x148/+0x15C; if ai_mode(+0x40)==0xFF && func_801C4EDC: random burst (func_80077B78 with 2 weapon setups) sets +0x148=0xF,+0x14A..C color, +0x15C=1; cooldown +0x3F	2026-10-22T21:44:24Z
+fdat096	0x801C623C	name	fx_spawn_scatter_effect	2026-10-22T21:44:24Z
+fdat096	0x801C623C	hint	allocs effect (func_80072120(0x14)), stores abs() of def vector (+0..4) into effect+0x10.., copies 8 bytes from D_80039C78, copies obj pos fields; sets update fn 801C605C if def+0xC	2026-10-22T21:44:24Z
+fdat096	0x801C605C	name	fx_effect_update_explode	2026-10-22T21:44:24Z
+fdat096	0x801C605C	hint	msg 0x8000: counts down timer (+0xC) by tick dt; at zero plays sound, sets D_801CDAF4/F8 bitfield, spawns hits via func_800869F0/800873F8/80087798, kills obj (func_8006D39C)	2026-10-22T21:44:24Z
+fdat096	0x801C5DE8	name	fx_debris_bounce	2026-10-22T21:44:24Z
+fdat096	0x801C5DE8	hint	per axis: pos(+0x10)+=vel(def+6), clamp to +-lim(def+0); copies 8 bytes to +8 (or D_80039C78 if func_80072a00==0); flips vel when pos leaves [lo,hi] (+0x18/+0x1E)	2026-10-22T21:44:25Z
+fdat040	0x801C5E5C	name	mis_mover_update	2026-10-22T21:44:25Z
+fdat040	0x801C5E5C	hint	door/mover step: speed/accel clamp toward range (range +0x18, acc +0x14, vmax +0x16), sets speed +0xA, plays loop sound via func_8004CC30 or stops (func_8004CE44), cnt +0x1A timeout -> func_801C5CE0	2026-10-22T21:44:25Z
