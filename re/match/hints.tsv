@@ -821,3 +821,23 @@ ovl202	0x80062974	name	wstruct_spawn_emitters	2026-10-22T16:48:44Z
 ovl202	0x80062974	hint	WorldStruct flags +0x30 bits 24..27 select up to 4 EmitPt of model D_801A5F34[mesh+260] (hdr+0x24), rotates by unk16 and calls fx spawn func_80056B54	2026-10-22T16:48:44Z
 ovl202	0x8005F2CC	name	fx_draw_line3d	2026-10-22T16:48:44Z
 ovl202	0x8005F2CC	hint	LINE_F2 (code 0x42) + DR_MODE from scratchpad-projected ends (0x1F800068..74); if an end z<=320 splits into halves via func_8005EF38	2026-10-22T16:48:45Z
+ovl202	0x8006D9DC	name	mis_reloc_ptr_pairs	2026-10-22T16:48:51Z
+ovl202	0x8006D9DC	hint	adds table base 0x80091228 to both words of 0x400 8-byte entries (pointer fixup after load)	2026-10-22T16:48:52Z
+ovl202	0x8006DFCC	name	mis_mask_combine3	2026-10-22T16:48:52Z
+ovl202	0x8006DFCC	hint	ANDs three 64x16-word mask rows from D_801EA790[3][64][16] (a,b,c<64) into obj+0x80 tmp, then ORs into obj+0 (count obj+0x40)	2026-10-22T16:48:52Z
+ovl202	0x800743A0	name	mis_target_score_cmp	2026-10-22T16:48:52Z
+ovl202	0x800743A0	hint	qsort-style comparator of two target slots (def, dist, |dx|*2+|dz|*4, flags bit1, current target halved); variant of 0x8007449C	2026-10-22T16:48:52Z
+ovl202	0x80076C48	name	ai_move_state_11	2026-10-22T16:48:52Z
+ovl202	0x80076C48	hint	-: sibling of 0x80076B94 (state 0x10); on entering state 0x11 (+0x3D) copies 8 B +0x10 -> +0x18, func_80076548(e,0x11,a3), mover setup via 0x8004E98C/0x8004E22C/0x8004DEAC	2026-10-22T16:48:52Z
+ovl202	0x8007AB04	name	aim_probe_extended	2026-10-22T16:48:52Z
+ovl202	0x8007AB04	hint	-: twin-shape of 0x8007A4F4: gets aim segment via func_800745D0, sets both y to pos.y - (+0x2A>>1), doubles segment length in x/z, probes midpoint to previous (D_80040FD8) and segment with func_8007A334, saves segment	2026-10-22T16:48:52Z
+ovl202	0x80078A2C	name	ac_entity_alloc	2026-10-22T16:48:52Z
+ovl202	0x80078A2C	hint	symbols.tsv name; free slot in g_ac_entities[1..15], else (def+0x14 bit15) evicts first entity whose def lacks bit15 via func_80078D78	2026-10-22T16:48:52Z
+ovl202	0x8007959C	name	ac_entities_frame	2026-10-22T16:48:52Z
+ovl202	0x8007959C	hint	per-frame driver: 3 pre-passes, func_8008D69C on a pad/flag condition, player fn_move(e,0), one rotating entity (D_801A5DC4 % 16) fn_move, then ac_entity_update(e, i) for all 16 live slots	2026-10-22T16:48:52Z
+ovl202	0x80073598	name	obj_find_hit_other	2026-10-22T16:48:52Z
+ovl202	0x80073598	hint	scans object list D_8019F308[D_8019F508] for the first object other than self that func_80012E5C(a,b,c,obj,obj+0x1E,obj+0x20) reports hit; port of 0x80073454	2026-10-22T16:48:52Z
+ovl202	0x800731E8	name	mis_nodes_load	2026-10-22T16:48:52Z
+ovl202	0x800731E8	hint	fills 512 0x34-byte nodes at D_80198B08 from 0x20-byte source records, clears runtime fields, copies 3 u16 from type table D_80198808[type] (stride 0x18) or 0xC000, calls g_objective_obj+0xA0 per-type init; then func_80073170	2026-10-22T16:48:52Z
+ovl202	0x8007790C	name	ai_move_state_80	2026-10-22T16:48:52Z
+ovl202	0x8007790C	hint	-: sets +0xCC vel from arg, vy=0, shrinks horizontal speed by 0x80 (SquareRoot0), func_80076548(e,0x80,fn), mover setup, optional limit at +0xD2 from func_8004ED1C, then the 0x80077170 ballistic probe	2026-10-22T16:48:53Z
