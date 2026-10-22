@@ -412,6 +412,35 @@ class Session:
         return True
 
 
+def cleanup(mcp, sess):
+    """Remove our breakpoints and resume the game if it stopped on one.  If another client
+    took the MCP session, take it back once for this: leaving hundreds of breakpoints in a
+    paused game is worse than ending the other client's session."""
+    for attempt in (0, 1):
+        try:
+            st = mcp.call("wait_for_pause")
+            ours = isinstance(st, dict) and st.get("status") == "paused" and \
+                int(st.get("pc", "0"), 16) in sess.armed
+            for v in list(sess.armed):
+                mcp.call("breakpoint", {"action": "remove", "type": "execute", "address": "0x%08X" % v})
+                del sess.armed[v]
+            if ours:
+                mcp.call("continue")
+            return True
+        except McpError as e:
+            if attempt:
+                print("coverage_tag: could not remove %d breakpoint(s): %s" % (len(sess.armed), e),
+                      file=sys.stderr)
+                return False
+            try:
+                mcp.initialize()
+                print("coverage_tag: re-opened the MCP session to remove %d breakpoint(s)"
+                      % len(sess.armed), file=sys.stderr)
+            except McpError:
+                pass
+    return False
+
+
 def stdin_labels(q, quit_on_eof=True):
     """Labels typed in the terminal; end of input quits unless a --minutes limit runs the show."""
     try:
@@ -448,7 +477,8 @@ def main(argv=None):
     print("MCP: %s %s" % (info.get("name", "?"), info.get("version", "")))
     sess = Session(mcp, units, max(1, args.hits))
     for u in units:
-        print("%s: %d function(s), probe window 0x%08X" % (u.name, len(u.functions), u.base + u.probe))
+        print("%s: %d function(s), %s" % (u.name, len(u.functions), "always loaded" if u.probe is None
+                                            else "probe window 0x%08X" % (u.base + u.probe)))
     if args.check:
         t = time.time()
         st = mcp.call("wait_for_pause")
@@ -508,15 +538,7 @@ def main(argv=None):
         print("coverage_tag: %s" % e, file=sys.stderr)
         status = 2
     finally:
-        try:
-            st = mcp.call("wait_for_pause")
-            ours = isinstance(st, dict) and st.get("status") == "paused" and \
-                int(st.get("pc", "0"), 16) in sess.armed
-            sess.disarm()
-            if ours:
-                mcp.call("continue")
-        except McpError:
-            pass
+        cleanup(mcp, sess)
     cov = merge(cov0, sess.new)
     write_coverage(args.out, cov)
     rows = append_hints(args.hints, cov, sess.seen) if args.hints else []
