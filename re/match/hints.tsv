@@ -314,3 +314,35 @@ ovl201	0x8007AD64	name	assembly_draw_status	2026-10-22T06:30:27Z
 ovl201	0x8007AD64	hint	cancel head (assembly screen); after the func_8005BA2C object is gone sets up two 128x144 draw envs, shows warning icons (missing part, credits 0x8004AC38 < 0, arm load over core limit, total weight over leg limit) and the names of the 11 equipped parts from the per-slot part tables ("NO EQUIP" when 255); update := 0x8007B850	2026-10-22T06:30:27Z
 ovl201	0x80081C5C	name	name_entry_update	2026-10-22T06:30:27Z
 ovl201	0x80081C5C	hint	ac name entry/type Byron; update of the name-entry object: d-pad moves the cursor o+0x9A/o+0x9B over the 17x8 character grid 0x800B8608 (with jumps around holes), confirm writes the 2-byte character (0x8140 space at END-1) into the AC or pilot name 0x80031BD4/0x80031BE6 and moves the > mark, cancel erases, START jumps to END; confirm on END opens "Confirm the registered name?" (update 0x8008240C)	2026-10-22T06:30:27Z
+exe	0x80015A48	name	cd_queue_wait_idle	2026-10-22T06:42:05Z
+exe	0x80015A48	hint	ac test: spins EnterCriticalSection until the CD request ring at 0x80049FE0 is drained (rd == wr at 0x8004A260/64 and *rd == 0), calling func_800161F8 (queue service) between checks.	2026-10-22T06:42:05Z
+exe	0x800121AC	name	loading_screen_begin	2026-10-22T06:42:05Z
+exe	0x800121AC	hint	ac test: blanks display, ClearImage, loads TIM 0x65 of archive 1 via func_800165E4 + func_80011FD8, sets 320x240 Disp/DrawEnv, installs func_80012048 as the vsync callback (0x80049F98).	2026-10-22T06:42:05Z
+exe	0x80012048	name	loading_screen_vsync_draw	2026-10-22T06:42:05Z
+exe	0x80012048	hint	ac test: vsync callback installed by 0x800121AC; every 64-tick window builds a POLY_FT4 at 0x80049FA4 (32,96 255x48, clut 0xC00, tpage 0x20) with rsin-pulsed grey and DrawPrims it.	2026-10-22T06:42:05Z
+exe	0x80016328	name	cd_read_sectors_retry	2026-10-22T06:42:05Z
+exe	0x80016328	hint	ac test: waits for the CD queue (0x80015A48), CdControl(CdlSetloc), CdRead(n, buf, 0x80), CdReadSync; retries 3 times, then func_80015DC0(1) error.	2026-10-22T06:42:05Z
+ovl201	0x80075520	name	assembly_draw_ac_stats	2026-10-22T06:42:05Z
+ovl201	0x80075520	hint	assembly/cancel head/swap head: formats 8 numbers from the stat block at 0x8004AC38..54 (value, delta vs max) into char[8][7] at 0x8017EE48 via func_80074E44 and lays them out as text objects (func_8005D80C) with labels; negative deltas get light 13 (warning colour).	2026-10-22T06:42:05Z
+ovl201	0x80073B7C	name	garage_load_ac_part_assets	2026-10-22T06:42:05Z
+ovl201	0x80073B7C	hint	yes load: for each equipped part id in D_80031A58[] that is not 255 calls func_80051450(kind, id + D_80039CA2*k); then either builds paint CLUTs (func_80073DDC) when D_80039CA2 == 0 or loads entry D_80039CA3 + D_80039CA2*4 + 58.	2026-10-22T06:42:05Z
+ovl201	0x80073904	name	garage_load_ac_part_assets_cond	2026-10-22T06:42:05Z
+ovl201	0x80073904	hint	yes load: variant of 0x80073B7C; frame/core/arm/leg ids and 3 optional parts only when D_80039CAB == 0 && D_80039CAD == 0, otherwise only parts 6/7 with id >= 31; also loads parts 8/9 (kinds 18/16) and the paint (func_80073DDC or entry CA3 + CA2*4 + 58).	2026-10-22T06:42:05Z
+ovl201	0x800744A8	name	assembly_screen_create	2026-10-22T06:42:05Z
+ovl201	0x800744A8	hint	assembly: ctor of the assembly screen object (kind 0, update func_80078A38): draws the labels, snapshots the equipped part ids D_80031A58[], calls func_80074A18, and if any part changed starts a transition (func_8005DED8); then sets up the head/core selector (part 2 or 0 per D_80031A5A != 255) and returns the object.	2026-10-22T06:42:06Z
+ovl201	0x8007509C	name	assembly_show_part_info	2026-10-22T06:42:06Z
+ovl201	0x8007509C	hint	assembly/swap head: for the selected part (category w+0x90, index w+0xA6, 255 = none) reads name and three u16 stats from the per-category part table (strides 0x2C..0x60 at 0x800B91F4..0x800BAFCC) plus func_80083C00(cat, idx), kills the six old text objects at 0x8017EF80..94 and re-creates name + number texts.	2026-10-22T06:42:06Z
+ovl201	0x80078AAC	name	assembly_selector_refresh	2026-10-22T06:42:06Z
+ovl201	0x80078AAC	hint	assembly/swap head: clears the pending model load in D_801F36D0[1 or 2], recreates the selector bar (func_8007BE0C) with saved rot/rank, refreshes part info (0x8007509C), the 3D AC (0x80075898), stats (0x80075520), then shows the warning text D_800B8448 when the chosen part does not fit the frame (D_80031A5B/63 rules per mode w+0x92) and sets update = func_80078D84.	2026-10-22T06:42:06Z
+ovl201	0x80074A18	name	garage_fix_ac_parts	2026-10-22T06:42:06Z
+ovl201	0x80074A18	hint	assembly/yes load: fills empty (255) part slots of D_80031A58[] with defaults from func_8007AA04(slot) and clears parts that conflict with the chosen frame/legs (slot 3 >= 8, slot 11 >= 27, slot 5 == 15, slot 3 == 5 rules).	2026-10-22T06:42:06Z
+ovl201	0x800740AC	name	assembly_preview_part_stats	2026-10-22T06:42:06Z
+ovl201	0x800740AC	hint	assembly/cancel head/swap head: saves D_80031A58[0..11] to 0x8017EE20, puts the highlighted part (w+0xA6) into slot w+0x92, applies the same frame-compatibility clears as garage_fix_ac_parts, calls func_80071A18 (stat computation) and restores the saved parts.	2026-10-22T06:42:06Z
+ovl201	0x800714FC	name	ac_check_legal	2026-10-22T06:42:06Z
+ovl201	0x800714FC	hint	ac test: copies the AC name into buf, returns 0 when a required part slot is empty or stats are bad (D_8004AC38 < 0 after func_80071A18), checks legs+booster+? weight against core load (+0x32) and total weight against arms load; on overload writes "Illegal machine.>" (debug flag D_80039D22) else fails; returns 1 when the machine is legal.	2026-10-22T06:42:06Z
+ovl201	0x80071A18	name	ac_compute_stats	2026-10-22T06:42:06Z
+ovl201	0x80071A18	hint	ac test/assembly/check performance: zeroes the stat block at 0x8004AC38 (struct of 6 s32 + 3 u16), seeds it from core/arms/generator capacities, then for each of the 12 part slots adds weight/price/energy from the per-category part table (category per slot from the s16 list at 0x8004BDC0) and subtracts drain; a twin back weapon pair (func_80083C00) gets a correction.	2026-10-22T06:42:06Z
+ovl201	0x80075898	name	assembly_draw_part_specs	2026-10-22T06:42:06Z
+ovl201	0x80075898	hint	assembly/cancel head/swap head: on pad 0x10 toggles a help window (obj id 9); when w+0xAE is set rebuilds the spec panel for the part at (category w+0x90, index w+0xA6): description lines from per-category string tables plus every stat formatted by func_80074F5C into 0x8017EE80 and drawn with func_8005D80C at x=0x7A (or "-" placeholders for none).	2026-10-22T06:42:06Z
+ovl201	0x80078D84	name	assembly_update	2026-10-22T06:42:06Z
+ovl201	0x80078D84	hint	assembly/cancel head/swap head: per-frame update installed by 0x80078AAC; refreshes stats/specs (0x800740AC, 0x80075520, 0x80075898), reads pad bits 0x1000/0x4000 to step the part category (skipping empty tables via D_800B8228 and the frame-compat rules), plays SsUtKeyOn, loads/unloads part models (func_80051450/func_80050AF4) and handles confirm/cancel transitions.	2026-10-22T06:42:07Z
