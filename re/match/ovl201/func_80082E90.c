@@ -1,5 +1,5 @@
 #include "ac1/ac1.h"
-/* ovl201 0x80082E90 - update of the kana character list (rows built by 0x800829F4, 18
+/* ovl201 0x80082E90 - update of the name-entry character list (rows built by 0x800829F4, 18
  * chars per row, 8 rows visible): shows the scroll arrows, the d-pad moves the cursor
  * o+0x9C/o+0x9D inside the view (wrapping around the short last row), R1/L1 page by 8 rows
  * and redraw them, confirm writes the character into the AC or pilot name, confirm and
@@ -31,7 +31,7 @@ typedef struct {
     u8 pad9a[2];
     u8 cx;                      /* +0x9C cursor column 0..17 */
     u8 cy;                      /* +0x9D cursor row in the view 0..7 */
-} KanaListWork;
+} CharListWork;
 
 extern char D_80031BD4[2][18];  /* AC name, pilot name: 2-byte chars, '>' mark */
 extern char D_8017EF9C[8][38];
@@ -44,7 +44,7 @@ extern void func_80083790(UiObj *o);
 
 void func_80082E90(UiObj *o)
 {
-    KanaListWork *w = (KanaListWork *)&o->w;
+    CharListWork *w = (CharListWork *)&o->w;
     char *p;
     char *src;
     u16 i;

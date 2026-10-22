@@ -1,7 +1,7 @@
 #include "ac1/ac1.h"
-/* ovl201 0x800813A8 - update of the kana name-entry grid (11 x 5 keys; column 10 holds
- * two extra marks, the kana list, SPACE and END): the d-pad moves the cursor with jumps
- * around the holes, confirm on a kana key opens its character list (box, update
+/* ovl201 0x800813A8 - update of the name-entry key grid (US build: English letters; the 5-row column-major layout is inherited from the JP kana table) (11 x 5 keys; column 10 holds
+ * two extra marks, the character list, SPACE and END): the d-pad moves the cursor with jumps
+ * around the holes, confirm on a key opens its character list (box, update
  * 0x80082820), on a mark / SPACE writes it into the AC or pilot name, on END asks for
  * confirmation (update 0x800824D0); cancel erases, START jumps to END. */
 
