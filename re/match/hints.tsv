@@ -907,3 +907,33 @@ ovl203	0x8007C740	name	vs_obj_take_hit	2026-10-22T16:49:22Z
 ovl203	0x8007C740	hint	cf. fdat000 0x801C91CC take-hit; swaps D_80039D18 to the owning side (D_80039D30/D_80039D34) for the duration	2026-10-22T16:49:22Z
 ovl204	0x8004CCC0	name	snd_distance_volume	2026-10-22T16:49:22Z
 ovl204	0x8004CCC0	hint	GTE sqr distance from ear, volume scaled by (len-dist)/len, 0 if out of range or <30 (cf ovl202 0x8004CC30 body)	2026-10-22T16:49:22Z
+ovl204	0x8005CCB4	name	render_draw_model_part	2026-10-22T16:49:34Z
+ovl204	0x8005CCB4	hint	twin of ovl202 0x8005DB10: ApplyMatrix/RotMatrixYXZ/MulMatrix2 then draws part via func_8005C910	2026-10-22T16:49:34Z
+ovl204	0x80061698	name	world_draw_visible_structs	2026-10-22T16:49:34Z
+ovl204	0x80061698	hint	twin of ovl202 0x80062B04: current world struct + neighbours with vis bit set	2026-10-22T16:49:34Z
+ovl204	0x80062CB4	name	world_draw_part_list	2026-10-22T16:49:34Z
+ovl204	0x80062CB4	hint	twin of ovl202 0x800639D8: per-entry light/rot/trans matrices, fog 80	2026-10-22T16:49:34Z
+ovl204	0x8006176C	name	view_update_frame	2026-10-22T16:49:34Z
+ovl204	0x8006176C	hint	twin of ovl202 0x80062BD8: build view matrices, transform object table with RTV0, per-frame updaters	2026-10-22T16:49:34Z
+ovl204	0x8008156C	name	fx_reset	2026-10-22T16:49:34Z
+ovl204	0x8008156C	hint	sets D_80039D18->+0x398 state=0xFF, clears +8/+0x18, copies 8-byte block from 0x80039C78 to +0x2C	2026-10-22T16:49:34Z
+ovl204	0x800815DC	name	fx_set_params	2026-10-22T16:49:35Z
+ovl204	0x800815DC	hint	stores 8 args into D_80039D18->+0x398 fields (+A,+C,+10,+14,+E,+1,+2,+4)	2026-10-22T16:49:35Z
+ovl204	0x80077C30	name	pad_read_both	2026-10-22T16:49:35Z
+ovl204	0x80077C30	hint	func_80016A84(1) pad word: low half to rec[0] at 0x80040FA0, high half to rec[1] (stride 0x39C); now/old/x/xold, x cleared when 0x801AB684&0x400	2026-10-22T16:49:35Z
+ovl204	0x8008166C	name	cam_ease_view_offset	2026-10-22T16:49:35Z
+ovl204	0x8008166C	hint	twin of ovl202 0x80082D04 via player record D_80039D18 (+0x80 target, +0x254 flags, +0x398 cam)	2026-10-22T16:49:35Z
+ovl204	0x8008181C	name	cam_eye_target_from_angles	2026-10-22T16:49:35Z
+ovl204	0x8008181C	hint	twin of ovl202 0x80082E7C	2026-10-22T16:49:35Z
+ovl204	0x80081A00	name	cam_update_frame	2026-10-22T16:49:35Z
+ovl204	0x80081A00	hint	twin of ovl202 0x80083038 (player +0x394 entity, +0x220 pitch)	2026-10-22T16:49:35Z
+ovl204	0x8007C3F0	name	ac_take_hit_2p	2026-10-22T16:49:35Z
+ovl204	0x8007C3F0	hint	2-player twin of fdat000 0x801C91CC: picks player record (0x80040FA0/0x8004133C) by entity 0x801AB748, knock-back/stagger/fall	2026-10-22T16:49:35Z
+ovl204	0x800611D0	name	weapon_draw_current	2026-10-22T16:49:35Z
+ovl204	0x800611D0	hint	draws current weapon record D_80039D18->rec[cur] (+0x2DA stride 0x3C) by type 0/1/2, items[8] at +0x84	2026-10-22T16:49:35Z
+ovl204	0x8005F1E8	name	render_billboard_sprite	2026-10-22T16:49:35Z
+ovl204	0x8005F1E8	hint	RTPS world point, POLY_FT4 (code 0x2E) sized size*40/z, addPrim at ot[z>>1]	2026-10-22T16:49:35Z
+ovl204	0x8005CE20	name	render_place_model	2026-10-22T16:49:35Z
+ovl204	0x8005CE20	hint	mode 0: ApplyMatrix+RotMatrixYXZ+MulMatrix2 (far: cam2, shift 0; near: cam, t<<=2), else re-translate; then func_80056DF4(obj, model, z)	2026-10-22T16:49:36Z
+ovl204	0x8005D068	name	render_place_lit_model	2026-10-22T16:49:36Z
+ovl204	0x8005D068	hint	light set from world struct +0x30 (table 0x801B425C stride 0x68: colour, back colour, fog), place model, then func_80057CA8 or func_80064CC8 by func_80066D90	2026-10-22T16:49:36Z
