@@ -550,7 +550,7 @@ def side_by_side(ours, retail, vaddr, diffs, masks, objdump, work, context):
     return rows
 
 
-def main(argv=None):
+def make_parser():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("vaddr", type=parse_int, help="runtime address of the retail function (0x...)")
     ap.add_argument("src", help="C file containing the function")
@@ -578,7 +578,11 @@ def main(argv=None):
     ap.add_argument("--maspsx")
     ap.add_argument("--cpp")
     ap.add_argument("-q", "--quiet", action="store_true", help="only the final line (and JSON)")
-    args = ap.parse_args(argv)
+    return ap
+
+
+def main(argv=None):
+    args = make_parser().parse_args(argv)
 
     facts = {"result": None, "fn": None, "vaddr": "0x%08x" % args.vaddr, "src": args.src,
              "bytes": None, "first_diff_offset": None, "diff_words": 0, "aligned_words": None,

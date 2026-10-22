@@ -209,6 +209,9 @@ skip (never pass vacuously) when the toolchain or the carved overlay is missing.
 `test_maspsx_patch.py` runs maspsx + `as` on tiny `.ent`-framed sequences and checks
 the load-delay `nop` before `l* $r,%lo(sym)($base)` (needs only the toolchain).
 
+`test_objdiff_prep.py` covers `objdiff_prep.py`: the object writer, path parsing, masks, the
+config shape, and the worked example building the same bytes as its target.
+
 `test_variants.py` covers `variants.py` (below): edit parsing, and a batch on the perturbed
 source whose swap variant must come back as a clean MATCH.
 
@@ -232,6 +235,112 @@ from `--ovl`/`--unit`, the file's directory or the exe range; the size from
 `--expect-size` or `tools/loop/functions.tsv`.  The input is untouched unless `--apply`;
 `--out F` writes the best variant, `--keep DIR` every variant plus `variants.tsv`.
 Run `variants.py -h` for the full format.
+
+## objdiff workstation (`objdiff_prep.py`)
+
+[objdiff](https://github.com/encounter/objdiff) is a free GUI that shows the target
+and your current build side by side, instruction by instruction, and rebuilds when a
+source file changes.  `objdiff_prep.py` makes this repo an objdiff project, so you can
+edit a function's C in your own editor and watch the diff update, without an agent.
+
+```
+python tools/match/objdiff_prep.py config --unit ovl201      # objdiff.json + one target .o per open function
+python tools/match/objdiff_prep.py config                    # every unit (exe, ovl201..204, fdatNNN)
+python tools/match/objdiff_prep.py config --with-matched --prebuild -j 16   # + manifest rows, bases built now
+python tools/match/objdiff_prep.py one ovl201 0x8004F7E8     # build both objects for one function, print SAME/DIFF
+```
+
+`config` writes `objdiff.json` at the repo root and `build/objdiff/target/<unit>/func_<ADDR>.o`
+(both gitignored).  Each unit in objdiff is one function, named `<unit>/func_<ADDR>`:
+
+- **target** = the retail bytes `match_fn.py` compares against (`--expect-size` long, from
+  `tools/loop/functions.tsv`);
+- **base** = `re/match/<unit>/func_<ADDR>.c` compiled by `match_fn.py`'s own functions with
+  the argv `drive.py try` would pass (open functions: unit flags, `--expect-size`,
+  `--rodata` from `jt_addrs`, `--syms` when the file includes `ac1/ac1.h`, auto
+  `--defsym` for `func_<ADDR>`/`D_<ADDR>`) or the manifest row's argv (matched functions).
+  objdiff builds it itself through `objdiff_prep.py build <path>` whenever a watched file
+  (`*.c`, `*.h`, `*.inc`, `ac1_markup.tsv`, `include/ac1/symbols.tsv`) changes.
+- A function with no C file yet gets `drive.py next`'s skeleton the first time objdiff
+  builds it: an empty `void func_<ADDR>(void)` with the m2c draft in a comment.
+
+Both objects are flat: `.text` holds final bytes with relocations already applied, and a
+word the oracle masks (unresolved symbol) carries the retail value in its masked field.
+So objdiff compares exactly what the oracle compares, and "100%" in objdiff means the
+oracle will say MATCH (checked: `func_8004F7E8` 100% both ways; an open skeleton 10.8%).
+The cost: `jal`/`lui` targets show as numbers, not symbol names.  Jump tables in
+`.rodata` are not shown; `--rodata` still checks the `lui/addiu` that loads them.
+
+### Setup (once)
+
+1. Download `objdiff-windows-x86_64.exe` (GUI) from the objdiff releases page (3.8.2 is
+   what this was tested with; `objdiff-cli` is optional) and put it anywhere.
+2. `python tools/match/objdiff_prep.py config --unit ovl201` (rerun after matches land or
+   to switch units; it is quick: ~10 s for ovl201, under a minute for all 972 open functions).
+3. Start objdiff, *File > Project* (or the project button), pick the repo root.  The
+   sidebar lists the units by unit; click one.  The build command and the MIPS options
+   (`o32`, `r3000gte`) come from `objdiff.json`.
+
+The build runs in the repo root with the toolchain from `tools/match/setup.sh`, so the
+same `AC1_BIN` / `MIPS_PREFIX` environment the oracle needs must be visible to objdiff
+(set them as user environment variables, not only in a Git Bash profile).
+
+### Match, check, commit
+
+1. Pick a function in objdiff and edit `re/match/<unit>/func_<ADDR>.c`; save; objdiff
+   rebuilds and re-diffs.  Hints from `drive.py try` and the match-function skill's
+   diff-pattern table apply unchanged.
+2. When objdiff shows no differences, run the judge:
+   `python tools/loop/drive.py try <unit> <vaddr>`.  Exit 0 = clean MATCH; it appends the
+   manifest row and the ledger row and prints the `git commit` command (`--commit` runs it).
+3. Commit the C file and `re/match/manifest.tsv` (and the ledger), then rerun
+   `objdiff_prep.py config` so the function moves to the matched side.
+
+objdiff's percentage is a guide, not a verdict: only `match_fn.py` exit 0 (through
+`drive.py try`) counts.
+
+## Coverage tagging from play (`tools/duckstation/coverage_tag.py`)
+
+Which screen a function runs on is a strong naming hint, and you know the game.  This
+script puts execute breakpoints on the open functions while you play and tags each one
+with the activity you type.
+
+```
+python tools/duckstation/coverage_tag.py --check                  # MCP up? which overlay is loaded? call latency
+python tools/duckstation/coverage_tag.py --context garage         # ovl201 (default); type labels as you play
+python tools/duckstation/coverage_tag.py --unit ovl202 --unit fdat060 --minutes 10
+```
+
+Start DuckStation (the MCP fork, port 2346, see `tools/README.md`) with the game running,
+then the script in a terminal.  Type a label and Enter when the screen changes
+(`garage`, `shop`, `mission briefing`, `combat`), `?` for status, `q` to stop.
+
+- Every open function of the chosen units gets an execute breakpoint; a hit is counted
+  under the current label and the breakpoint comes off after `--hits` hits (default 1),
+  so the game stutters only while new code runs.  A new label re-arms everything, so a
+  function that runs on several screens gets one row per screen.
+- Overlays share load addresses (ovl201..204 at `0x8004ADA0`, mission overlays at theirs).
+  A unit is armed only while a 64-byte probe window of its image (where it differs from
+  its slot mates) is in RAM, checked every `--sync` seconds, and a hit only counts when
+  the word at the PC is that unit's retail word.
+- A pause that is not on one of its breakpoints (yours, from the emulator menu) is left
+  alone.  On exit it removes its breakpoints and resumes the game if it stopped on one.
+
+Output, merged with what is there:
+- `re/match/coverage.tsv`: `unit vaddr context hits` (hits = times counted; with
+  `--hits 1`, the number of labels/re-arms the function ran under);
+- `re/match/hints.tsv` (`unit vaddr kind text timestamp`, shared with the match viewer):
+  one `hint` row per function hit in this run, `play coverage: garage (3), shop (1)`,
+  skipped when that function's newest play-coverage row already says the same.
+
+The script talks to `http://127.0.0.1:2346/mcp`, not `localhost`: on Windows `localhost`
+tries IPv6 first and every call then waits ~2 s for that to fail (2074 ms vs 33 ms per call
+measured here; arming 331 breakpoints takes 1.8 s at 33 ms).  Other MCP clients in this repo
+that use `localhost` pay the same 2 s per call.
+
+The MCP server has one session: starting the script ends any other client's session
+(another Claude session's trap script, for example), so check nobody else is driving
+DuckStation first.
 
 ## Codegen probes
 
@@ -270,6 +379,7 @@ include the delay slot after the final `jr ra`.
   struct layouts and named globals in `<repo>/include/ac1` (see `include/ac1/README.md`);
   such rows add `--syms include/ac1/symbols.tsv --syms ac1_markup.tsv`
 - `variants.py` — parallel batch of small C rewrites through the oracle's compile (Variant sweeps)
+- `objdiff_prep.py` — objdiff project + per-function target/base objects (objdiff workstation)
 - `ctx.py` — keeps `include/ac1/symbols.h` in step with `symbols.tsv`, writes the m2c
   context, and decompiles one function with it (`ctx.py m2c VADDR --unit 201`)
 - `tests/` — pytest suite, shell runner, the two sources
