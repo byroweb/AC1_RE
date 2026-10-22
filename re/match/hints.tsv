@@ -969,3 +969,49 @@ fdat004	0x801C513C	name	mission_ai_aim_at_target	2026-10-22T16:49:49Z
 fdat004	0x801C513C	hint	func_800745D0+func_80073C2C hit query toward e->target (range 10000, +-1024/1400); jitters yaw/pitch if unk42==2; eases +0x76/+0x78 via func_800132CC step 16; else copies D_80039C78 8 bytes to +0x76	2026-10-22T16:49:49Z
 fdat010	0x801C4D30	name	mission_entity_state_change	2026-10-22T16:49:49Z
 fdat010	0x801C4D30	hint	fn_state-style: st (or +0x3C if faction&0x10) selects func_80076578 / func_800766E0 modes 1,2 / func_8007790C; stores st to +0x3C unless faction&0x10 (param is s32, no mask)	2026-10-22T16:49:49Z
+fdat024	0x801C6C5C	name	fx_particle_integrate	2026-10-22T16:50:28Z
+fdat024	0x801C6C5C	hint	adds vel to pos (x,y,z u16 @0..4, vel @0x18, accel @0x20), frame count +0xBC	2026-10-22T16:50:28Z
+fdat096	0x801C69E4	name	state_rec_shift_copy	2026-10-22T16:50:28Z
+fdat096	0x801C69E4	hint	copies 0x39C record [1] over [0] at 0x80040FA0 then D_80039C5D=0xFF,D_80039D00=0	2026-10-22T16:50:28Z
+fdat066	0x801C6474	name	mis_count_kind13_penalty	2026-10-22T16:50:28Z
+fdat066	0x801C6474	hint	counts 0x34 slots @80198B08 whose kind (+6) table entry id==13, subtracts count*200 from *arg1; sibling of 801C63F8	2026-10-22T16:50:28Z
+fdat056	0x801C779C	name	mis_slot_kill_tally	2026-10-22T16:50:29Z
+fdat056	0x801C779C	hint	when ent+0x160==0, slot index (ent->slot-0x8019FAB8 /0x2C) 4..10 -> D_801CD760++, 11..17 -> D_80049E78=0,D_801CD764++	2026-10-22T16:50:29Z
+fdat028	0x801C71B4	name	mis_scene_init	2026-10-22T16:50:29Z
+fdat028	0x801C71B4	hint	calls func_8008A80C, func_801C6FE4(&D_801C7494), 4x func_801C70CC, sets D_801987D8 bit0 if D_8019F524&1	2026-10-22T16:50:29Z
+fdat082	0x801C73BC	name	mis_score_slots_a	2026-10-22T16:50:29Z
+fdat082	0x801C73BC	hint	scans slots 4.. @0x8019FB68 (0x2C each, st u8 @0, kind s16 @0xA via D_8019F51C[kind+8] handler table): -1000 per st==3 handler 801C6544; +10000 if no 801C5438/5468 handler with st!=3	2026-10-22T16:50:29Z
+fdat024	0x801C6D94	name	fx_timed_burst	2026-10-22T16:50:29Z
+fdat024	0x801C6D94	hint	t=0x8C-D_801D0B52 countdown; sound 7 at t==10/80, spawns fx 0x11 for t 10..40 and 0x10 for t 80..110	2026-10-22T16:50:29Z
+fdat076	0x801C586C	name	mis_world_flag_set	2026-10-22T16:50:29Z
+fdat076	0x801C586C	hint	if D_8019F528==0: world struct n flags(+0x30) nibble7 =2, byte3 high nibble cleared; n==0x270F -> sounds 0x80/0x68, D_8019F52C=0, func_8004C318(0x80)	2026-10-22T16:50:29Z
+fdat162	0x801C86E8	name	mis_line_clear_test	2026-10-22T16:50:29Z
+fdat162	0x801C86E8	hint	calls func_80012794 (segment/LOS test?) with obj+0x22,+0x16,+0x18 against two records at 0x801AB750 and +0x170; returns 1 if first hits else second!=0	2026-10-22T16:50:29Z
+fdat040	0x801C5DE4	name	mis_door_on_hit_msg	2026-10-22T16:50:29Z
+fdat040	0x801C5DE4	hint	msg 0x8100 && (*arg)[3]&7==2 -> calls func_801C5CE0(world[o->ids[0]], o+0x10, *o->def, o); twin of 801C5D80 (func_801C5CE0 = door/mover toggle)	2026-10-22T16:50:29Z
+fdat026	0x801C549C	name	mis_spawn_nearer_ent	2026-10-22T16:50:29Z
+fdat026	0x801C549C	hint	once-init (msg 0x601), then if D_801CB0CC==1 and func_80052338: picks 0x8019FB94 or 0x8019FBC0 by which dist (func_801C5418(5/6)) is smaller, func_80078CFC(that), state=2	2026-10-22T16:50:29Z
+fdat036	0x801C6594	name	mis_ent_init_scanner	2026-10-22T16:50:30Z
+fdat036	0x801C6594	hint	sets faction=2, ignore_mask=0x10, fn_state=801C61AC, fn_move=801C6460, fn_think=801C6238 then calls move(e,0) and state(e,e->state)	2026-10-22T16:50:30Z
+fdat064	0x801C6F78	name	mis_all_slots_idle_poll	2026-10-22T16:50:30Z
+fdat064	0x801C6F78	hint	every 16th frame: if all 252 slots @0x8019FB68 are idle (kind==-1 or st==3) -> sound 0x68, func_8004C318(0x80), done flag	2026-10-22T16:50:30Z
+fdat120	0x801C52F8	name	mis_all_slots_idle_poll_init	2026-10-22T16:50:30Z
+fdat120	0x801C52F8	hint	same as fdat064 801C6F78 plus once-init func_8008C2FC(0)	2026-10-22T16:50:30Z
+fdat036	0x801C70F0	name	mis_timed_event_update	2026-10-22T16:50:30Z
+fdat036	0x801C70F0	hint	once init; timer D_801C7364 counts, at 0x528 clears bit 6 of D_8019FBA8/FBD4; when state==1 and timer!=0 and func_80052338 -> func_8004DB18(5), state=2	2026-10-22T16:50:30Z
+fdat030	0x801C7998	name	mis_count_slots_done	2026-10-22T16:50:30Z
+fdat030	0x801C7998	hint	counts slots 4..10 @0x8019FAB8 with kind!=-1 and st==3; when >=4: at D_801C7B90==10 sound 0x68 + func_8004C318(0x80); D_801C7B90++	2026-10-22T16:50:30Z
+fdat096	0x801C68C4	name	fx_fade_to_white_music_down	2026-10-22T16:50:30Z
+fdat096	0x801C68C4	hint	D_801AC8A0-A2 rgb brighten +12 (cap 255) while t<=26, then master volume -6 (SsSetMVol) when D_801D0B52<21; D_801AC8A3=2	2026-10-22T16:50:30Z
+fdat096	0x801C67AC	name	mis_intro_door_seq	2026-10-22T16:50:30Z
+fdat096	0x801C67AC	hint	state machine D_801CDB04 (0,1): when D_801D3614/D_801D3314 obj +0x10==1 sets 4 and spawns slots 0..4 @0x8019FB68 / 0..3 @0x8019FC44 via func_80078CFC	2026-10-22T16:50:30Z
+fdat022	0x801C5E40	name	mis_event_msg_spawn_dir	2026-10-22T16:50:30Z
+fdat022	0x801C5E40	hint	msg a1==0: func_800759A4(a0, dir byte (1 if func_80073714>4999 else table 801C7534[func_80014DFC(4,..)]), D_80039C78); 5 and others ignored	2026-10-22T16:50:30Z
+fdat038	0x801C6214	name	mis_msg_handler_cutscene	2026-10-22T16:50:30Z
+fdat038	0x801C6214	hint	msg 1: if D_801C6508 && func_80052338 -> sound 0x68, func_8004C318(0x80), ret 1; msg 2: sounds 0x7A,0x1E,0x7B, sets +6 byte of 4 objs, D_801C6504=1, ret 1	2026-10-22T16:50:31Z
+fdat086	0x801C7738	name	mis_timeline_events	2026-10-22T16:50:31Z
+fdat086	0x801C7738	hint	tick counter D_801CD4C0 (cap 0xFFFF): sound 0x56 at 660, clears D_80198BB8/BEC at 836, sound 0x57 at 880	2026-10-22T16:50:31Z
+fdat052	0x801C72B4	name	mis_intro_flags_update	2026-10-22T16:50:31Z
+fdat052	0x801C72B4	hint	D_801CE578 frame counter to 0x1000 calling func_8008A798; D_8019F52A==0xFFFE reset; sounds 0x75 and 0xA0 once each	2026-10-22T16:50:31Z
+fdat036	0x801C71D8	name	mis_msg_handler_door_trigger	2026-10-22T16:50:31Z
+fdat036	0x801C71D8	hint	msg0: if D_801C7364==0 and obj D_801D3214 +0x10==0: sound 0x4F, sfx 0x3B, sets two objs +6=0x66, flag=1 (ret 0 if obj busy); msg1: D_801C7368=1; mostly ret 1	2026-10-22T16:50:31Z
