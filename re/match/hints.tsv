@@ -937,3 +937,35 @@ ovl204	0x8005CE20	name	render_place_model	2026-10-22T16:49:35Z
 ovl204	0x8005CE20	hint	mode 0: ApplyMatrix+RotMatrixYXZ+MulMatrix2 (far: cam2, shift 0; near: cam, t<<=2), else re-translate; then func_80056DF4(obj, model, z)	2026-10-22T16:49:36Z
 ovl204	0x8005D068	name	render_place_lit_model	2026-10-22T16:49:36Z
 ovl204	0x8005D068	hint	light set from world struct +0x30 (table 0x801B425C stride 0x68: colour, back colour, fog), place model, then func_80057CA8 or func_80064CC8 by func_80066D90	2026-10-22T16:49:36Z
+fdat010	0x801C6540	name	mission_world_find_objective_bit	2026-10-22T16:49:47Z
+fdat010	0x801C6540	hint	scans world structs with s16 +6==-1 and u8 +0x3D index into g_objective_obj table +0x60==func_801C5B1C, then score -= 12000	2026-10-22T16:49:47Z
+fdat014	0x801C83C0	name	mission_score_tally_credits	2026-10-22T16:49:47Z
+fdat014	0x801C83C0	hint	adds D_801C8540 to *a, counts kinds 21/22 via func_801C830C, D_801C8544 -= sum, *b -= 1000*result	2026-10-22T16:49:47Z
+fdat008	0x801C6F10	name	mission_penalty_slot_kind13	2026-10-22T16:49:47Z
+fdat008	0x801C6F10	hint	loop 512 slots (0x34, kind +6, flags +0x1C bit15) whose kind table id==13: score -= 500 for slots 59/61 else 200	2026-10-22T16:49:48Z
+fdat004	0x801C6DC4	name	mission_spawn_entity1_init	2026-10-22T16:49:48Z
+fdat004	0x801C6DC4	hint	same shape as fdat012 func_801C7960: ent[1] init via func_80078B14(slot 4), dispatch D_8019F51C[pos.w+8], then func_80056C6C(1,507,1,1,2,13,1)	2026-10-22T16:49:48Z
+fdat016	0x801C7FA8	name	mission_spawn_entity1_clear_world_flags	2026-10-22T16:49:48Z
+fdat016	0x801C7FA8	hint	ent[1] init like 801C6DC4 then clears low 12 bits of world-struct +0x34 for slots 5..9 (slot +0x22 = world index)	2026-10-22T16:49:48Z
+fdat018	0x801C7804	name	mission_zone_toggle_faction2_ignore	2026-10-22T16:49:48Z
+fdat018	0x801C7804	hint	every 8 frames: if any slot in owner range has state==1 set ignore_mask bit0 on all live faction-2 entities else clear it	2026-10-22T16:49:48Z
+fdat018	0x801C800C	name	mission_phase_transition_audio	2026-10-22T16:49:48Z
+fdat018	0x801C800C	hint	phase 0/1 (if D_80041226&1 play sfx 131 | 129,130), phase 1 also re-inits three slots at 0x8019FB68; returns 1; guarded by D_8019F528==0	2026-10-22T16:49:48Z
+fdat006	0x801C6090	name	mission_event_handler_phase100_102	2026-10-22T16:49:48Z
+fdat006	0x801C6090	hint	switch on event 100/101 (counter D_801C6204++ ==2 -> func_801C6050 221,222 + sfx 119), 102 plays 270/128; returns 1	2026-10-22T16:49:48Z
+fdat014	0x801C5EEC	name	mission_turret_think_fire	2026-10-22T16:49:48Z
+fdat014	0x801C5EEC	hint	ai_mode!=0xFF: func_801C6880(e,tbl)->func_80078E1C; else 1967/32768 rand chance + checks -> two func_80077B78 shots (arg 0 and 2), muzzle flash bytes +0x14A..C	2026-10-22T16:49:48Z
+fdat014	0x801C5B8C	name	mission_turret_step_mode	2026-10-22T16:49:48Z
+fdat014	0x801C5B8C	hint	switch mover.mode 2/5 -> func_80076E20(e,3|6,1,tbl)+x72=0x100, 3/6 -> same call if func_8004EBF8(&mover)==0; returns 1 (needs per-case return 1)	2026-10-22T16:49:48Z
+fdat004	0x801C6770	name	mission_slot_proximity_burst	2026-10-22T16:49:48Z
+fdat004	0x801C6770	hint	every 8th tick (ctr+8), if slot idx bit set in D_801AC860 bitmap and within 12000 of player: spawn proj (func_80086F20 kind 41/80) plus second (func_80086854, kind 5, 400/400/100)	2026-10-22T16:49:48Z
+fdat016	0x801C5B7C	name	mission_turret2_think	2026-10-22T16:49:49Z
+fdat016	0x801C5B7C	hint	ai think: ai_mode!=0xFF -> func_800754D0/func_80078E1C + every 4th tick (D_801A5DC4&3) spawn func_80086F20 effect; else aim-gated shot (func_80077B78 snd 23), ai_sub/ai_sub2 timers, flash 180/160/140	2026-10-22T16:49:49Z
+fdat014	0x801C6008	name	mission_turret_event_handler	2026-10-22T16:49:49Z
+fdat014	0x801C6008	hint	varargs-style (e,msg,...) msg 5 toggles state 1<->2, 0x8100 ignored, else if unk42==0 pick func_801C5D58 mode by player distance (>6000:1, <1000:2, else rand)	2026-10-22T16:49:49Z
+fdat014	0x801C5520	name	mission_turret3_event_handler	2026-10-22T16:49:49Z
+fdat014	0x801C5520	hint	same as 801C6008 plus mid-range (1000..5000) branch: func_80073924(+0x44)>120 -> func_800759A4(e,4,tbl) and +0x44 = func_80073904()+(rand&0x7F)	2026-10-22T16:49:49Z
+fdat004	0x801C513C	name	mission_ai_aim_at_target	2026-10-22T16:49:49Z
+fdat004	0x801C513C	hint	func_800745D0+func_80073C2C hit query toward e->target (range 10000, +-1024/1400); jitters yaw/pitch if unk42==2; eases +0x76/+0x78 via func_800132CC step 16; else copies D_80039C78 8 bytes to +0x76	2026-10-22T16:49:49Z
+fdat010	0x801C4D30	name	mission_entity_state_change	2026-10-22T16:49:49Z
+fdat010	0x801C4D30	hint	fn_state-style: st (or +0x3C if faction&0x10) selects func_80076578 / func_800766E0 modes 1,2 / func_8007790C; stores st to +0x3C unless faction&0x10 (param is s32, no mask)	2026-10-22T16:49:49Z
