@@ -102,7 +102,7 @@ echo "$vout"
 after=$(python tools/loop/progress.py 2>/dev/null | grep -o '| [0-9]* | [0-9]* |' | tail -1)
 echo "progress (functions | matched): before $before, after $after"
 
-if ! echo "$vout" | grep -qE '^([0-9]+)/ matched'; then
+if ! echo "$vout" | grep -qE '^([0-9]+)/\1 matched'; then
   step "verify did not say all matched: nothing committed, see $LOG"
   exit 1
 fi
