@@ -103,7 +103,7 @@ typedef struct UiObj {
     u8 unk10[4];
     s16 unk14;                  /* +0x14 */
     u16 light;                  /* +0x16 light-matrix index */
-    u8 unk18[8];
+    u32 *ot[2];                 /* +0x18 ordering tables, indexed by the buffer in use */
     MATRIX mat;                 /* +0x20 local-to-world */
     SVECTOR rot;                /* +0x40 */
     VECTOR pos;                 /* +0x48 */
