@@ -160,9 +160,10 @@ takes a few minutes; needs `gcc`, `make` (or `mingw32-make`), `patch`, `curl`, `
 
 Caveats of the local build: it is a 64-bit host build (old-gcc uses `-m32`); on
 Windows `long` is still 32 bits so `HOST_WIDE_INT` is right, but pointers are
-64-bit.  No divergence from the Linux tarball has been seen on the functions
-tried; if a function refuses to match for no visible reason, cross-check with the
-official tarball (`setup.sh --wsl` once WSL is installed, or on a Linux box).
+64-bit.  That broke floating-point constants until `patches/gcc-const-double-slots.patch`
+(see "Our gcc patches" below).  If a function refuses to match for no visible
+reason, cross-check with the official tarball (`setup.sh --wsl` once WSL is
+installed, or on a Linux box).
 Also: this cc1 must always get `-G0` (the retail flag line has it); with a
 non-zero `-G` the compiler tries to open a Unix-style temp file and fails.
 
@@ -189,7 +190,39 @@ retail compiler) — nothing is downloaded for it.
 A checkout whose `vendor/maspsx` predates this just needs a plain
 `tools/match/setup.sh` (no `--force`): it patches the existing clone in place, CRLF or
 not, and re-clones only maspsx if the clone is at the wrong commit or hand-edited.
-cc1 is never rebuilt for this (`--force` is the only thing that rebuilds cc1).
+cc1 is never rebuilt for this.
+
+### Our gcc patches (Windows build only)
+
+The Windows `cc1.exe` build applies every `tools/match/patches/gcc-*.patch` after the
+old-gcc recipe and links with a 64 MB stack reserve.  `setup.sh` records both (patch
+names + sha256, the reserve) in `vendor/cc1.exe.build`; when that does not match the
+tree, a plain `tools/match/setup.sh` rebuilds `cc1.exe` (otherwise only `--force` does).
+
+- Stack reserve (`-Wl,--stack,67108864`): gcc 2.7.2 recurses over a function's insn
+  chain, so its stack use grows with the length of a basic block.  With MinGW's default
+  2 MB reserve, cc1.exe died with no message (a stack overflow) on long
+  straight-line code.  A 4000-call function reproduces it every time.  The shop
+  constructor ovl201 0x8008C3EC (108 `MoveImage` calls in a row) was reported crashing
+  in a matching run.  Its final C compiles with either reserve, so that report is not
+  reproduced; the 4000-call case is.
+  `tests/test_cc1_stack.py` and the build self-test compile the 4000-call function.
+
+Patches, currently one:
+
+- `gcc-const-double-slots.patch`: a `CONST_DOUBLE` keeps its value in rtx slots that
+  are each an `rtunion`, i.e. pointer-sized.  gcc 2.7.2 moves a real value in and out
+  with `bcopy` to `&CONST_DOUBLE_LOW (r)`, which assumes a slot is one `HOST_WIDE_INT`
+  (true for old-gcc's `-m32` build).  On the 64-bit MinGW host a slot is 8 bytes and
+  `HOST_WIDE_INT` 4, so `REAL_VALUE_FROM_CONST_DOUBLE` read the low word plus 4 bytes
+  of slot padding: every float/double literal came out with a zero or garbage high
+  word (`x * 1.15` gave `.word 0x66666666, 0x00000150`, `1.5f` gave `0`).
+  `mips_const_double_ok` judged constants on the same garbage, so every literal went to
+  the constant pool; with the patch a literal in 1e-300..1e300 (float 1e-38..1e38) is
+  an `li.d`/`li.s` immediate, which maspsx expands to `lui`/`ori` as retail has it, and
+  only the rest is pooled.  The patch copies one `HOST_WIDE_INT` per slot (`real.h`,
+  `emit-rtl.c`, `varasm.c`, `rtl.c`).  `tests/test_cc1_float_const.py` fails without
+  it; the build's own self-test checks `1.15` and `1e305` too.
 
 Environment overrides read by `match_fn.py`: `AC1_CC1`, `AC1_AS`, `AC1_MASPSX`,
 `AC1_CPP`, `MIPS_PREFIX`, `AC1_BIN` (disc image, for exe addresses),

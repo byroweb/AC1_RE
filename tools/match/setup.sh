@@ -161,8 +161,22 @@ EOF
   echo "cc1 decompals/old-gcc release $OLDGCC_RELEASE $tb via WSL sha256=$(sha256_of "$VENDOR/dl/$tb")" >> "$VERSIONS"
 
 else
-  # Windows, native: build cc1.exe from source with MinGW-w64 gcc.
-  if [ ! -f "$VENDOR/cc1.exe" ] || $FORCE; then
+  # Windows, native: build cc1.exe from source with MinGW-w64 gcc.  Our additions to
+  # the recipe (tools/match/patches/gcc-*.patch, the stack reserve) are stamped next
+  # to it, so a cc1.exe built without the current ones is rebuilt by a plain setup.sh.
+  CC1_STACK=67108864   # 64 MB: MinGW's default 2 MB overflows on long straight-line functions
+  CC1_BUILD_STAMP="stack-reserve $CC1_STACK"$'\n'
+  for p in "$HERE"/patches/gcc-*.patch; do
+    [ -f "$p" ] && CC1_BUILD_STAMP="${CC1_BUILD_STAMP}patch $(basename "$p") sha256=$(sha256_of "$p")"$'\n'
+  done
+  if [ -f "$VENDOR/cc1.exe" ] && ! $FORCE \
+     && [ "$(cat "$VENDOR/cc1.exe.build" 2>/dev/null)" != "$(printf '%s' "$CC1_BUILD_STAMP")" ]; then
+    say "vendor/cc1.exe was built without the current gcc patches / stack reserve: rebuilding it"
+    FORCE_CC1=true
+  else
+    FORCE_CC1=$FORCE
+  fi
+  if [ ! -f "$VENDOR/cc1.exe" ] || $FORCE_CC1; then
     need gcc; need patch
     MAKE=make; command -v make >/dev/null 2>&1 || MAKE=mingw32-make; need "$MAKE"
     fetch "$GCC_SRC_URL" "$VENDOR/dl/gcc-2.7.2.tar.gz" "$GCC_SRC_MIRROR"
@@ -187,6 +201,13 @@ else
       patch -s -u -p1 config.sub -i "$P/config.sub.patch"
       patch -s -u -p1 config/mips/mips.h -i "$P/mipsel-2.7.patch"
       patch -s -u -p1 < "$P/psx-2.5.7.patch" )
+    # ... then ours (README "Our gcc patches"): fixes for a 64-bit MinGW host,
+    # where old-gcc's -m32 build is not available.
+    for p in "$HERE"/patches/gcc-*.patch; do
+      [ -f "$p" ] || continue
+      say "patch gcc: $(basename "$p")"
+      ( cd "$SRC" && patch -s -u -p1 < "$p" ) || die "gcc patch $(basename "$p") does not apply"
+    done
 
     # ... plus the bits a MinGW host lacks: <sys/times.h>, <sys/resource.h>,
     # <sys/param.h>, <sys/file.h>, <sys/wait.h> and the BSD string helpers.
@@ -230,7 +251,7 @@ EOF
       || die "configure failed, see $BUILD/configure.log"
     say "make cc1 (a few minutes)"
     ( cd "$SRC" && "$MAKE" cc1 CC=gcc CFLAGS="-std=gnu89 -w -O1 -I$STUBS_W" \
-        LDFLAGS="$STUBS_W/compat.o" > "$BUILD/make.log" 2>&1 ) \
+        LDFLAGS="$STUBS_W/compat.o -Wl,--stack,$CC1_STACK" > "$BUILD/make.log" 2>&1 ) \
       || die "make cc1 failed, see $BUILD/make.log"
     [ -f "$SRC/cc1.exe" ] || die "no cc1.exe after make, see $BUILD/make.log"
 
@@ -240,12 +261,25 @@ EOF
     ( cd "$SRC" && ./cc1.exe -quiet -O2 -G0 "$BUILD/old-gcc/tests/host_wide_int.c" -o hwi.s \
         && grep -qE '# 0x80000000$' hwi.s ) || die "cc1 self-test: HOST_WIDE_INT is not 32-bit"
     ( cd "$SRC" && { ./cc1.exe -quiet -help </dev/null 2>&1 || true; } | grep -q -- -msoft-float ) || die "cc1 self-test: no -msoft-float"
+    # ours: double literals keep their high word (patches/gcc-const-double-slots.patch):
+    # 1.15 is an li.d immediate, 1e305 a constant-pool entry
+    printf 'double f(double x) { return x * 1.15 + 1e305; }\n' > "$BUILD/fconst.c"
+    ( cd "$SRC" && ./cc1.exe -quiet -O2 -G0 -msoft-float "$BUILD/fconst.c" -o fconst.s \
+        && grep -qE 'li\.d\s+\$[0-9]+,1\.1499999' fconst.s \
+        && grep -qiE '\.word\s+0x7f423a51' fconst.s )|| die "cc1 self-test: wrong double constants"
+    # ours: 4000 straight-line calls overflow a 2 MB stack
+    "$PY" -c "print('extern int g(int);\nvoid f(void)\n{\n' + ''.join('    g(%d);\n' % i for i in range(4000)) + '}')" > "$BUILD/deep.c"
+    ( cd "$SRC" && ./cc1.exe -quiet -O2 -G0 -msoft-float "$BUILD/deep.c" -o deep.s </dev/null ) \
+      || die "cc1 self-test: crashed on a long function (stack reserve not applied?)"
 
     cp "$SRC/cc1.exe" "$VENDOR/cc1.exe"
+    rm -f "$VENDOR/cc1.exe.patches"   # this stamp's name before the stack reserve
+    printf '%s' "$CC1_BUILD_STAMP" > "$VENDOR/cc1.exe.build"
     if $KEEP_BUILD; then say "build tree kept in $BUILD"; else rm -rf "$BUILD"; fi
   fi
   CC1="$VENDOR/cc1.exe"
   echo "cc1 built here: GNU gcc-2.7.2.tar.gz sha256=$GCC_SRC_SHA256 + decompals/old-gcc patches @ $OLDGCC_COMMIT (gcc-2.7.2-psx recipe), host $(gcc -dumpmachine 2>/dev/null) gcc $(gcc -dumpversion 2>/dev/null)" >> "$VERSIONS"
+  if [ -f "$VENDOR/cc1.exe.build" ]; then sed 's/^/cc1 /' "$VENDOR/cc1.exe.build" >> "$VERSIONS"; fi
 fi
 
 # ---------------------------------------------------------------- 3. binutils
