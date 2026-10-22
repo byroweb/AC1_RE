@@ -2149,3 +2149,65 @@ fdat080	0x801C52FC	name	mis_ent_move_hover_b	2026-10-22T22:12:48Z
 fdat080	0x801C52FC	hint	hover mover variant (speed limit 0x6400000, ce clamps, loop sound 0x80) twin of fdat034 801C532C	2026-10-22T22:12:48Z
 fdat034	0x801C532C	name	mis_ent_move_hover_c	2026-10-22T22:12:48Z
 fdat034	0x801C532C	hint	hover mover variant (speed limit 0x1900000, ce -=0x80)	2026-10-22T22:12:48Z
+ovl204	0x80055BA0	name	fx_pool_push	2026-10-22T22:21:19Z
+ovl204	0x80055BA0	hint	twin of ovl202 0x80056B54 (bitmask-gated push into 16-entry 0x30 FxEnt pool at 0x801B4118)	2026-10-22T22:21:19Z
+ovl204	0x8005625C	name	gfx4_present_frame	2026-10-22T22:21:19Z
+ovl204	0x8005625C	hint	same shape as ovl202 0x800571F0: DrawSync, vsync wait on rcnt, PutDispEnv/PutDrawEnv/DrawOTag	2026-10-22T22:21:19Z
+ovl204	0x800561A8	name	gfx4_flip_frame	2026-10-22T22:21:20Z
+ovl204	0x800561A8	hint	same shape as ovl202 0x8005715C: toggles flip, ClearOTagR both OTs, resets prim buffer, zeroes counters	2026-10-22T22:21:20Z
+ovl204	0x8005631C	name	gfx4_init_frames	2026-10-22T22:21:20Z
+ovl204	0x8005631C	hint	sets both display buffers: prim heap 0x8013E960 split, OTs 0x80184960.., dtd/isbg of three DRAWENVs, then func_8001604C(0x8009D348,0x10000)	2026-10-22T22:21:20Z
+ovl204	0x80052244	name	hud_draw_target_marker	2026-10-22T22:21:20Z
+ovl204	0x80052244	hint	port of ovl203 0x80052BF4: RotTrans marker pos, project at 160, draw sprite if on screen (half-size viewport, split screen?)	2026-10-22T22:21:20Z
+ovl204	0x80050344	name	hud_draw_clipped_line	2026-10-22T22:21:20Z
+ovl204	0x80050344	hint	like ovl202 0x8004FF48: clip line via func_8004FE38 (484), LINE_F2 at x+D_800AD958+43, y+192 into ot[3]	2026-10-22T22:21:20Z
+ovl204	0x8005145C	name	hud_draw_text	2026-10-22T22:21:20Z
+ovl204	0x8005145C	hint	draws string with POLY_FT4 glyphs (glyph map 0x800894E0, Glyph[12B] 0x8008A884 + font, colours 0x800894C0, backslash-digit colour escape), returns pixel width	2026-10-22T22:21:20Z
+ovl204	0x8005A134	name	render_draw_model_list	2026-10-22T22:21:20Z
+ovl204	0x8005A134	hint	port of ovl202 0x8005AF90 (DrawEnt list: light/colour matrix per set, fog, GTE rot/trans, draw part via func_8005A374)	2026-10-22T22:21:20Z
+ovl203	0x8008196C	name	cam_ease_view_offset	2026-10-22T22:21:20Z
+ovl203	0x8008196C	hint	port of ovl202 0x80082D04 (eases camera ox/oy toward locked target aim)	2026-10-22T22:21:20Z
+ovl204	0x800505E8	name	radar_draw_projectile_blip	2026-10-22T22:21:20Z
+ovl204	0x800505E8	hint	port of ovl202 0x800501DC (LINE_F3 radar arrow, colour blend by height difference)	2026-10-22T22:21:20Z
+ovl203	0x8007F9D8	name	mover_ground_step	2026-10-22T22:21:21Z
+ovl203	0x8007F9D8	hint	cf. fdat000 0x801C59EC: 8-direction accelerate/brake, lean, footstep sounds; tuning in *D_80039D18 +0x210..	2026-10-22T22:21:21Z
+ovl203	0x80081C9C	name	cam_update_view	2026-10-22T22:21:21Z
+ovl203	0x80081C9C	hint	port of ovl202 0x80083038 (per-frame view camera eye/target with collision push)	2026-10-22T22:21:21Z
+ovl203	0x8007C740	name	vs_obj_take_hit	2026-10-22T22:21:21Z
+ovl203	0x8007C740	hint	cf. fdat000 0x801C91CC take-hit; swaps D_80039D18 to the owning side (D_80039D30/D_80039D34) for the duration	2026-10-22T22:21:21Z
+ovl204	0x8004CCC0	name	snd_distance_volume	2026-10-22T22:21:21Z
+ovl204	0x8004CCC0	hint	GTE sqr distance from ear, volume scaled by (len-dist)/len, 0 if out of range or <30 (cf ovl202 0x8004CC30 body)	2026-10-22T22:21:21Z
+ovl204	0x8004F964	name	vs_mode_init	2026-10-22T22:21:21Z
+ovl204	0x8004F964	hint	sets side pointers D_80039D30/34 to records 0x80040FA0[2] (0x39C), loads stage data chunks, spawns both ACs (func_800776B4/func_8007D3B0) into 0x801AB748	2026-10-22T22:21:21Z
+ovl203	0x8007BBC4	name	weapon_lockon_fire_step	2026-10-22T22:21:21Z
+ovl203	0x8007BBC4	hint	counts locked target slots (flag 8) into o+0x3E burst count, fires via func_8007B8CC twice per 4 ticks; same shape as ovl202 0x8007D068 (unmatched)	2026-10-22T22:21:21Z
+ovl203	0x8007B8CC	name	weapon_fire_at_lock	2026-10-22T22:21:21Z
+ovl203	0x8007B8CC	hint	finds first locked target slot (flag 8, n>0) of *D_80039D18, fires n shots via func_80084F94 with spread, decrements ammo +0x10; returns slot	2026-10-22T22:21:21Z
+ovl203	0x80080FE4	name	ac_pick_action_from_pad	2026-10-22T22:21:21Z
+ovl203	0x80080FE4	hint	message handler (o, msg, ...): msg 0 maps held buttons of *D_80039D18 (masks +0x290..+0x2A4) to action o+0x41 (1..10 ground, 64..75 airborne kind 192)	2026-10-22T22:21:22Z
+ovl203	0x8007D704	name	vs_ac_init_stats	2026-10-22T22:21:22Z
+ovl203	0x8007D704	hint	derives side record stats (+0x204..+0x21E) from part bytes +0x259.., halves/clamps for b257>=6, then spawns via func_8007F958/func_8008182C by mode +0x27A	2026-10-22T22:21:22Z
+ovl204	0x80059508	name	render_project_vertices	2026-10-22T22:21:22Z
+ovl204	0x80059508	hint	GTE RTPS pipeline over n SVECTORs at *D_801AE2EC into 16-byte records at D_801AE340 (sxy, otz, clip code 1/2/4/8 vs 160x120 view, depth cue)	2026-10-22T22:21:22Z
+ovl204	0x8005BFE0	name	world_draw_visible_cells	2026-10-22T22:21:22Z
+ovl204	0x8005BFE0	hint	from current cell (World4 0x801B4118 +0xE70) walks its portal list, distance-culls cells (Square0), sets vis/drawn bitmasks, builds two DrawEnt lists, draws them via func_8005A134/func_80062CB4	2026-10-22T22:21:22Z
+ovl204	0x8005BAA8	name	world_queue_cell	2026-10-22T22:21:22Z
+ovl204	0x8005BAA8	hint	box-visibility test (func_8005B8B4), LOD pick from model at D_801ADCD8.tbl[mesh+260], near cells drawn immediately with lights, others appended as DrawEnt to list a/b	2026-10-22T22:21:22Z
+ovl204	0x80050E60	name	hud_draw_vs	2026-10-22T22:21:22Z
+ovl204	0x80050E60	hint	weapon list with ammo (slots 0x3C at side+0x2DA), AP counter, radar frame (80000/range) and blips via func_800505E8/func_80050490/func_80050190	2026-10-22T22:21:22Z
+ovl204	0x80050888	name	hud_draw_vs_gauges	2026-10-22T22:21:22Z
+ovl204	0x80050888	hint	energy/heat bars (func_8005D784), blinking warning sprites + sounds (func_8004D0C8) for the side in D_80039D18	2026-10-22T22:21:22Z
+ovl203	0x80081358	name	ac_ground_tilt_step	2026-10-22T22:21:22Z
+ovl203	0x80081358	hint	engine sound, probes 4 foot points (func_800812B0 into D_8008A958..70), drops highest, tilts body (+0x108) toward plane of the other three (func_8001467C), eased by func_80013390	2026-10-22T22:21:22Z
+ovl203	0x8007F414	name	ac_pick_action_jumper	2026-10-22T22:21:22Z
+ovl203	0x8007F414	hint	variant of ovl203 0x80080FE4 for kind 0xB0 (jump: acts 0x30..0x38 with h12 timer, 0x40 boost uses -h20A/4 into o+0xCE)	2026-10-22T22:21:22Z
+ovl203	0x8007BE54	name	weapon_fire	2026-10-22T22:21:23Z
+ovl203	0x8007BE54	hint	fires selected weapon w of *D_80039D18: aim pose (dir 34), part-flag-4 block, trigger edge/held by spec mode, muzzle via func_800732FC, recoil, launch per kind 0..6, cool-down tick (func_80078C50/6C)	2026-10-22T22:21:23Z
+ovl203	0x8007CB90	name	vs_ac_control	2026-10-22T22:21:23Z
+ovl203	0x8007CB90	hint	per-frame AC control: wreck sparks if dead, missile intercept by rand vs side+0x262 within cone side+0x263*8, energy drain/recharge (+0x1E..), weapon cycle (k298), fire dispatch per weapon type (0x8007B318/0x8007BBC4/0x8007BE54), dash (k29E) via func_80072C98	2026-10-22T22:21:23Z
+ovl203	0x800860A4	name	fx_spawn_debris	2026-10-22T22:21:23Z
+ovl203	0x800860A4	hint	blows debris off an AC (0x8019B550 range), pool object (0x80194A70) or world cell (0x801C40F0): part positions via func_80055EA8, cell parts crumbled, one tumbling piece per part via func_80085D1C	2026-10-22T22:21:23Z
+ovl204	0x8004BF3C	name	vs_battle_main	2026-10-22T22:21:23Z
+ovl204	0x8004BF3C	hint	saves both player records, inits VS mode, frame loop (phase/clock at 0x801AB684, KO/draw detection, round wins 0x80039D08..0E), restores records; returns 1 on double KO	2026-10-22T22:21:23Z
+ovl203	0x8008001C	name	ac_move_state_machine	2026-10-22T22:21:23Z
+ovl203	0x8008001C	hint	fn_move of a player AC in VS (AC counterpart of fdat000 0x801C981C): events 0..10 walk/turn, 32/33 boost/jump, 64..75 hover, 96/97 land, 128/129 fall; probes 50 above via func_80073CD0	2026-10-22T22:21:23Z
