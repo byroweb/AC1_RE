@@ -156,3 +156,23 @@ ovl201	0x80096FFC	name	mail_list_open	2026-10-22T06:04:25Z
 ovl201	0x80096FFC	hint	Mail screen update after ctor (set by 0x80096944): once obj id 3 is gone and the busy byte is clear, runs mail_check_new_arrivals + 0x800968C4 + mail_build_order, counts list entries into view->n, clamps rows to 5 and the selection, draws the frame (0x8005BA2C), plays a sound and moves to 0x800972A0.	2026-10-22T06:04:25Z
 ovl201	0x800972A0	name	mail_list_build_rows	2026-10-22T06:04:25Z
 ovl201	0x800972A0	hint	Mail list update after mail_list_open: waits for the frame drawer (0x8005BA2C) and 0x800517C8, sets two 9-entry s16 tables, then per visible row creates the read mark (0x8005CAE0, mail_set_row_read_mark), the subject text object (mail_copy_subject_to_row + 0x8005CB94, light 20 read / 12 unread) and a row frame; then hands over to mail_list_input.	2026-10-22T06:04:25Z
+ovl201	0x800B3E98	name	rank_detail_wait_close	2026-10-22T06:08:58Z
+ovl201	0x800B3E98	hint	Ran on selecting/exiting rank 5/10; on confirm/cancel (trig&0x60) plays a key, closes windows 4/6/8/10, kills objects 3/5/7/9 and sets update to 0x800B3FFC.	2026-10-22T06:08:59Z
+ovl201	0x800B32D4	name	rank_detail_draw	2026-10-22T06:08:59Z
+ovl201	0x800B32D4	hint	Ran on selecting rank 5/10; draws the selected rank entry (page+row at +0x98/+0x99) from the table at 0x8017F584, extra path when the row kind is 0xF (player), then update = rank_detail_wait_close.	2026-10-22T06:08:59Z
+ovl201	0x800B2398	name	rank_build_table	2026-10-22T06:08:59Z
+ovl201	0x800B2398	hint	Ran on ranking/system/load screens; fills points of 15 built-in rows from 0x80049E74, the player row from 0x80049E70, copies 16 x 0x10 rows to 0x8017F584 and bubble-sorts them by points descending.	2026-10-22T06:08:59Z
+ovl201	0x800B203C	name	rank_player_place	2026-10-22T06:08:59Z
+ovl201	0x800B203C	hint	Ran on system/create/load screens; calls rank_build_table and returns the 1-based place of the row whose kind byte is 0xF (the player), 0 if none.	2026-10-22T06:08:59Z
+ovl201	0x800B27A0	name	rank_list_draw_rows	2026-10-22T06:08:59Z
+ovl201	0x800B27A0	hint	Ran on ranking and rank select/exit; for 6 rows from the scroll position (+0x99) prints place and points, kills and recreates the three row text objects at 0x8017F684, and shows the up/down arrows (+0x88/+0x8C) by scroll limits.	2026-10-22T06:08:59Z
+ovl201	0x800B20A4	name	rank_screen_create	2026-10-22T06:08:59Z
+ovl201	0x800B20A4	hint	Ran on ranking; allocates the ranking UiObj (ctor itself, update 0x800B26C8), opens windows, resets the row object arrays to g_ui_none, builds and sorts the rank table, clears 0x801A2574, returns the object.	2026-10-22T06:08:59Z
+ovl201	0x800B597C	name	fe_relocate_block	2026-10-22T06:08:59Z
+ovl201	0x800B597C	hint	Ran on swap head / yes load; once per block (flag bit 0), adds the block data address to words +0x00/+0x08/+0x10 of each 0x1C-byte entry (offset-to-pointer relocation of a loaded file).	2026-10-22T06:08:59Z
+ovl201	0x800B2AC4	name	rank_list_update	2026-10-22T06:08:59Z
+ovl201	0x800B2AC4	hint	Ran on ranking and rank select/exit; per frame redraws rows, scrolls the cursor (+0x98) and page (+0x99) on pad up/down with key repeat, on confirm opens the selected entry's detail (func_800B2F18, update 0x800B2F74), on cancel closes the screen (update 0x800B2EC4).	2026-10-22T06:08:59Z
+ovl201	0x800B5EEC	name	sf_double_div	2026-10-22T06:09:00Z
+ovl201	0x800B5EEC	hint	Ran on AC test / check performance; soft-float a / b on two doubles: exponent difference + 1022, restoring division of 53-bit mantissas with func_800B61D0 compare, func_800B6850 negate and shifts, rounding, overflow error 34/15; sibling of the matched add (0x800B59F4) and multiply (0x800B68C4).	2026-10-22T06:09:00Z
+ovl201	0x8009C964	name	ac_calc_performance	2026-10-22T06:09:00Z
+ovl201	0x8009C964	hint	Ran on AC test / check performance; for AC record arg0 (0x800411F4 + arg0*0x39C) sums weights/stats of the equipped parts (part ids at 0x80031A58..0x80031A63, per-type tables at 0x800B9xxx/0x800BAxxx), caps by the legs' max load and derives figures with the soft-float double helpers (add/mul/div, __fixunsdfsi); not attempted (25504 bytes).	2026-10-22T06:09:00Z
