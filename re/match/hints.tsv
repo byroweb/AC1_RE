@@ -1967,3 +1967,53 @@ ovl202	0x8007C7C8	name	player_weapon_fire	2026-10-22T22:07:46Z
 ovl202	0x8007C7C8	hint	player fire for one ammo slot: shots 1/2/4 by +9&3, range from the per-category weapon tables (g_weapon_defs / 0x8008FC48 / 0x8008FEE8 / 0x8008FB58), lock update 0x8007BA98 or reset, recoil +0x7C, then per shot muzzle (func_800745D0) aimed at g_target_list[0] or forward, launch by id band (0x80085E98/0x800889B4/0x8008915C/0x8008840C/0x80087DEC), muzzle flash, cooldown +0x3F	2026-10-22T22:07:47Z
 ovl202	0x8007BA98	name	player_lock_update	2026-10-22T22:07:47Z
 ovl202	0x8007BA98	hint	lock-on update: g_target_head = &g_target_list[0]; scans candidates (0x80073F38 into a 16-slot local array), picks best with func_80015440 + comparator 0x800743A0; same target: track delta, lock progress +0x08/+0x0A vs distance*ammo+0x20, lead aim via func_80015258, lock sounds 42/46 (func_8004CFF4); new target: copy slot; sets aim offsets +0x76..+0x7A	2026-10-22T22:07:47Z
+ovl202	0x80064CB8	name	gfx_project_verts_dq	2026-10-22T22:09:22Z
+ovl202	0x80064CB8	hint	GTE rtps over D_801A6544 SVECTOR list into ScrVtx buffer 0x801A6A48, depth-cue flag 0x801AD664 checked per vertex (twin-ish of 0x80057F74)	2026-10-22T22:09:22Z
+ovl202	0x80067AB4	name	coll_sphere_box_mask	2026-10-22T22:09:22Z
+ovl202	0x80067AB4	hint	loops sphere set 0x801AE82C (Sphere48, n at +0x304) from last to first, returns bitmask of spheres whose c±r overlaps pos±(h,v,h); skips c.pad!=0	2026-10-22T22:09:22Z
+ovl202	0x8006023C	name	fx_draw_billboard_ft4	2026-10-22T22:09:22Z
+ovl202	0x8006023C	hint	GTE-projects pos, builds a depth-scaled POLY_FT4 (code 0x2E) from SprInfo into DrawCtx 0x801A5F24, OT slot sz>>1	2026-10-22T22:09:22Z
+ovl202	0x80062974	name	wstruct_spawn_emitters	2026-10-22T22:09:22Z
+ovl202	0x80062974	hint	WorldStruct flags +0x30 bits 24..27 select up to 4 EmitPt of model D_801A5F34[mesh+260] (hdr+0x24), rotates by unk16 and calls fx spawn func_80056B54	2026-10-22T22:09:22Z
+ovl202	0x8005F2CC	name	fx_draw_line3d	2026-10-22T22:09:22Z
+ovl202	0x8005F2CC	hint	LINE_F2 (code 0x42) + DR_MODE from scratchpad-projected ends (0x1F800068..74); if an end z<=320 splits into halves via func_8005EF38	2026-10-22T22:09:22Z
+ovl202	0x8006260C	name	hud_draw_overlay	2026-10-22T22:09:22Z
+ovl202	0x8006260C	hint	screen fade quad (0x801AC8A0 col/fade), func_80051148, then if targeting on: camera matrix and per-HUD-mode (rec 0x3C at 0x8004127A indexed by D_80040FB8) lock-box draws over g_target_list	2026-10-22T22:09:22Z
+ovl202	0x800610A4	name	fx_draw_polyline_f	2026-10-22T22:09:22Z
+ovl202	0x800610A4	hint	flat polyline through n s32 screen xy: LINE_F3 (0x48) per two segments, LINE_F2 for odd tail, optional DR_MODE abr; OT slot z of DrawCtx 0x801A5F24	2026-10-22T22:09:22Z
+ovl202	0x80060800	name	fx_draw_sprite3d_rot	2026-10-22T22:09:22Z
+ovl202	0x80060800	hint	textured POLY_FT4/FT3 (0x2C/0x24, uv record arg2, tri flag +0xA) of half-size s at pos rotated by RotMatrixYXZ(rot) * camera 0x801AD67C, OT 0x801A5F28+400	2026-10-22T22:09:23Z
+ovl202	0x800672CC	name	light_point_accumulate	2026-10-22T22:09:23Z
+ovl202	0x800672CC	hint	ambient 0x404040 + up to n point lights (scratch 0x1F80005C, 0x20 each: pos, col +0x18, radius +0x1C) attenuated by sqrt(dist^2)/radius via lzc + sqrt table 0x80031564, GTE gpf12/gpl12 into scratch colour 0x1F8000E0	2026-10-22T22:09:23Z
+ovl202	0x800604B8	name	fx_draw_sprite3d_hang	2026-10-22T22:09:23Z
+ovl202	0x800604B8	hint	RotTrans pos into scratch matrix t, view matrix 0x801AD7CC, w x h POLY_FT4 (0x2E) corners (-w,-h)(w,-h)(-w,0)(w,0) via RTPT+RTPS; undoes the prim alloc when otz==0	2026-10-22T22:09:23Z
+ovl202	0x8005EF38	name	fx_draw_line3d_split	2026-10-22T22:09:23Z
+ovl202	0x8005EF38	hint	recursive half of fx_draw_line3d (0x8005F2CC): LNode stack in scratch 0x1F800014 (a, b, saved sxy/sz, child at +0x1C), projects new end, splits while z<=320 and depth>0, drops <16, draws LINE_F2+DR_MODE	2026-10-22T22:09:23Z
+ovl202	0x80064684	name	model_draw_part_gouraud	2026-10-22T22:09:23Z
+ovl202	0x80064684	hint	draws model part idx (0x1C records at model+0xC of D_801A5F30): projects verts (depth-cued or not), walks prim records (0x24 GT3 / 0x2C GT4 / 0x6C GT4 no-cull) with NCLIP + NCDS lighting into POLY_GT3/GT4, OT z bias from header byte	2026-10-22T22:09:23Z
+ovl202	0x80067BE0	name	gfx_project_verts_clip	2026-10-22T22:09:23Z
+ovl202	0x80067BE0	hint	projects D_801A6544 SVECTOR list into ClipVtx 0x801A6A48 pipelined one vertex ahead (func_80067BAC first), storing otz, near level (z<1000/80) and screen clip codes (1/2/4/8, 31 for z 0)	2026-10-22T22:09:23Z
+ovl202	0x800659EC	name	model_draw_joints	2026-10-22T22:09:23Z
+ovl202	0x800659EC	hint	copies camera MATRIX 0x800B1228 to scratch, for each 0x7C joint with part>=0 composes camera*joint matrix in the GTE (rtv0tr + 3x rtir), sets D_801A6544 to the part verts and draws it via func_80064DC8 (mode 0) or func_8006611C	2026-10-22T22:09:23Z
+ovl202	0x80065CF8	name	model_project_tinted	2026-10-22T22:09:23Z
+ovl202	0x80065CF8	hint	projects part verts into CVtx 0x801A6A48 with colour = obj col (+0xE0) plus per-vertex 4-bit group tints (vertex pad & mask, tables 0x80090928[4][16]) clamped to 255; clears dp when depth cue off; then n_extra plain verts	2026-10-22T22:09:23Z
+ovl202	0x8005F5DC	name	fx_draw_beam_split	2026-10-22T22:09:24Z
+ovl202	0x8005F5DC	hint	recursive textured beam (POLY_FT4 0x2E) between two 3D points, screen width scaled 80*w/z, split near camera like 0x8005EF38; quads chained by sharing the previous far edge (scratch +0x78)	2026-10-22T22:09:24Z
+ovl202	0x8005FB90	name	fx_draw_beam	2026-10-22T22:09:24Z
+ovl202	0x8005FB90	hint	textured beam entry: OT 0x801A5F28+100/120 by height vs D_801AD694, projects ends; near camera -> 2-level split via fx_draw_beam_split 0x8005F5DC, else one POLY_FT4 with min 1px width; width 0 also draws fx_draw_line3d	2026-10-22T22:09:24Z
+ovl202	0x80062090	name	fx_draw_lamps	2026-10-22T22:09:24Z
+ovl202	0x80062090	hint	256 lamp/flare slots at 0x801AD82C (0x10: pos, def id, world struct, kind, frame limit/period/counter): visibility bit + func_80061F44 cull, world-struct light set (back colour, fog), POLY_FT4 from def table 0x8008DC90 lit by NCDS, animated frames	2026-10-22T22:09:24Z
+ovl202	0x800674B0	name	light_world_struct_points	2026-10-22T22:09:24Z
+ovl202	0x800674B0	hint	if any point light (sphere set 0x801AE82C, flag bit 0, not owned by ws) overlaps the world structure box: seeds vertex colours from table 0x80090A28[flags>>28] by vertex pad, then adds each light linearly attenuated (sqrt via lzc) to vertices inside its box; returns lit	2026-10-22T22:09:24Z
+ovl202	0x8006308C	name	wstruct_draw_part	2026-10-22T22:09:24Z
+ovl202	0x8006308C	hint	world-structure model part renderer: projects verts (0x80062FFC), walks prim records 0x24/0x2C flat NCCS (0x8006306C), 0x25/0x2D per-vertex colour from table 0x80090A28[nib] by vertex pad with NCDS, 0x6C flat quad no-cull	2026-10-22T22:09:24Z
+ovl202	0x80063BE8	name	wstruct_draw_part_fog	2026-10-22T22:09:24Z
+ovl202	0x80063BE8	hint	depth-cued (fog) twin of wstruct_draw_part 0x8006308C: flat polys become gouraud via per-vertex DPCS (0x8006466C) of the NCCS colour	2026-10-22T22:09:24Z
+ovl202	0x80064DC8	name	model_draw_part_lit	2026-10-22T22:09:24Z
+ovl202	0x80064DC8	hint	draws model part idx lit by the scratchpad point-light colour (light_point_accumulate): projects verts (+joint extras when bits), prim kinds 0x24/0x2C flat NCDS, 0x34/0x3C smooth NCDT, 0xA4/0xAC unlit; drops polys at or behind zmin	2026-10-22T22:09:24Z
+ovl202	0x80067EBC	name	model_draw_part_clipped	2026-10-22T22:09:24Z
+ovl202	0x80067EBC	hint	model part renderer with near-plane handling: clip-coded verts (gfx_project_verts_clip), visible far polys drawn flat (NCCS) or vertex-lit, near ones queued in four stack lists (tri/quad x flat/lit) by subdivision level and drawn by the subdividers 0x80069F04/0x8006A7EC/0x8006C580/0x8006D0C0	2026-10-22T22:09:24Z
+ovl202	0x80068D18	name	wstruct_draw_part_clipped	2026-10-22T22:09:25Z
+ovl202	0x80068D18	hint	world-structure twin of model_draw_part_clipped: near-plane handling for 0x24/0x2C flat, 0x25/0x2D vertex-colour (table 0x80090A28[nib]), 0x6C; near prims to four stack lists for subdividers 0x80069F04/0x8006A7EC/0x8006B0BC/0x8006BC30	2026-10-22T22:09:25Z
+ovl202	0x8006131C	name	mission_draw_world	2026-10-22T22:09:25Z
+ovl202	0x8006131C	hint	per-frame world draw: player AC and entities 1-15 (section visibility bits, view cull func_80061F44, model draw / shadow-second-section), 512 world objects 0x80198B08 (box vs camera, lit/unlit/structure models), lamps (fx_draw_lamps), 256 projectiles by type (jump table 0x8004B404) to the fx sprite/beam/line drawers	2026-10-22T22:09:25Z
