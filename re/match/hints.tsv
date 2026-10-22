@@ -811,3 +811,13 @@ ovl202	0x800572A8	name	mis_init_work_buffers	2026-10-22T16:48:41Z
 ovl202	0x800572A8	hint	points buffer ptrs 0x801A5E1C..F20 into big buffers at 0x8014C7C8/0x801887C8/0x801907C8, sets 4 flags, inits heap 0x800A1228 size 0x10000 via func_8001604C (arena header)	2026-10-22T16:48:41Z
 ovl202	0x80050088	name	radar_draw_box_outline	2026-10-22T16:48:41Z
 ovl202	0x80050088	hint	twin of ovl203 0x80050998 (box corners relative to player AC, projected by func_8004FEAC, lines by func_8004FF48)	2026-10-22T16:48:42Z
+ovl202	0x80064CB8	name	gfx_project_verts_dq	2026-10-22T16:48:44Z
+ovl202	0x80064CB8	hint	GTE rtps over D_801A6544 SVECTOR list into ScrVtx buffer 0x801A6A48, depth-cue flag 0x801AD664 checked per vertex (twin-ish of 0x80057F74)	2026-10-22T16:48:44Z
+ovl202	0x80067AB4	name	coll_sphere_box_mask	2026-10-22T16:48:44Z
+ovl202	0x80067AB4	hint	loops sphere set 0x801AE82C (Sphere48, n at +0x304) from last to first, returns bitmask of spheres whose c±r overlaps pos±(h,v,h); skips c.pad!=0	2026-10-22T16:48:44Z
+ovl202	0x8006023C	name	fx_draw_billboard_ft4	2026-10-22T16:48:44Z
+ovl202	0x8006023C	hint	GTE-projects pos, builds a depth-scaled POLY_FT4 (code 0x2E) from SprInfo into DrawCtx 0x801A5F24, OT slot sz>>1	2026-10-22T16:48:44Z
+ovl202	0x80062974	name	wstruct_spawn_emitters	2026-10-22T16:48:44Z
+ovl202	0x80062974	hint	WorldStruct flags +0x30 bits 24..27 select up to 4 EmitPt of model D_801A5F34[mesh+260] (hdr+0x24), rotates by unk16 and calls fx spawn func_80056B54	2026-10-22T16:48:44Z
+ovl202	0x8005F2CC	name	fx_draw_line3d	2026-10-22T16:48:44Z
+ovl202	0x8005F2CC	hint	LINE_F2 (code 0x42) + DR_MODE from scratchpad-projected ends (0x1F800068..74); if an end z<=320 splits into halves via func_8005EF38	2026-10-22T16:48:45Z
