@@ -797,3 +797,11 @@ exe	0x800126D8	name	math_svec_dist2_within	2026-10-22T16:48:36Z
 exe	0x800126D8	hint	box test |b-a|<=r per axis, then squared half-distance <= r2 -> returns it, else -1	2026-10-22T16:48:36Z
 exe	0x800132CC	name	math_angle_approach	2026-10-22T16:48:36Z
 exe	0x800132CC	hint	turns 12-bit angle cur toward tgt by at most step along the short way (0x800 half turn), clamps at tgt, returns s16	2026-10-22T16:48:36Z
+ovl201	0x8008C3EC	name	shop_ctrl_new	2026-10-22T16:48:38Z
+ovl201	0x8008C3EC	hint	w2c07: shop controller ctor, 108 MoveImage tiles	2026-10-22T16:48:38Z
+ovl202	0x8004C25C	name	link_wait_ready	2026-10-22T16:48:38Z
+ovl202	0x8004C25C	hint	waits until link status buf [0]==R or [7]==C (1); after 300 ticks of timer func_80016278 sets D_8008D920 and returns 0	2026-10-22T16:48:38Z
+ovl201	0x800ADB40	name	ui_row_label_create	2026-10-22T16:48:38Z
+ovl201	0x800ADB40	hint	w2c10: render-type-3 UiObj, update func_800ADC20	2026-10-22T16:48:38Z
+ovl202	0x8004C854	name	snd_vab_pack_open	2026-10-22T16:48:38Z
+ovl202	0x8004C854	hint	parses pack {s32 n; n VAB headers {size,data}; n bodies {size,slot,data}} and opens each via func_8004C7A8(slot, head, body) (SsVabOpenHead/TransBody); returns body start	2026-10-22T16:48:38Z

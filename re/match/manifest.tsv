@@ -5112,3 +5112,5 @@
 0x8001594C	exe	exe/func_8001594C.c	188	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_8001588C=0x8001588C
 0x800126D8	exe	exe/func_800126D8.c	188	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x800132CC	exe	exe/func_800132CC.c	196	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x8008C3EC	201	ovl201/func_8008C3EC.c	2236	--rodata 0x8004CC18 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_8019C090=0x8019C090 --defsym D_801A2574=0x801A2574 --defsym func_8005CC48=0x8005CC48 --defsym func_8005D71C=0x8005D71C --defsym func_8008CCA8=0x8008CCA8 --defsym func_8008DD48=0x8008DD48 --defsym func_80095094=0x80095094
+0x8004C25C	202	ovl202/func_8004C25C.c	188	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_8004A28C=0x8004A28C --defsym D_8008D91C=0x8008D91C --defsym D_8008D920=0x8008D920 --defsym func_80016278=0x80016278 --defsym func_8001628C=0x8001628C
