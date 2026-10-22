@@ -1055,3 +1055,81 @@ ovl202	0x800826FC	name	player_ground_posture	2026-10-22T17:21:07Z
 ovl202	0x800826FC	hint	probes 4 foot points 0x8008EC68..80 (0x80082654), drops the highest, plane fit 0x8001467C, eases tilt +0x108..+0x10C	2026-10-22T17:21:07Z
 ovl202	0x8008080C	name	player_input_boost_msg	2026-10-22T17:21:07Z
 ovl202	0x8008080C	hint	boost variant of 0x8008238C: kind 0xB0 uses boost timer 0x80040FB2 (states 48..56, 64), 0xC0 airborne set, else walking set	2026-10-22T17:21:07Z
+exe	0x80014C10	name	math_within_window	2026-10-22T21:42:26Z
+exe	0x80014C10	hint	returns 1 when c lies in [a-b, a+d] (window test, 4 s32 args)	2026-10-22T21:42:26Z
+exe	0x800131D0	name	math_divmod_s16	2026-10-22T21:42:26Z
+exe	0x800131D0	hint	stores n/d, |n%d|, (d+1)/2 and q+-1 into an s16[4] result	2026-10-22T21:42:26Z
+exe	0x80016E64	name	ac_rec_init_both	2026-10-22T21:42:26Z
+exe	0x80016E64	hint	sets current record ptr (gp+0xBC = 0x80039D18) to 0x80040FA0 and 0x80040FA0+0x39C, calls the 0x39C-record reset 0x80016E14 for each	2026-10-22T21:42:26Z
+exe	0x80016E14	name	ac_rec_reset_current	2026-10-22T21:42:26Z
+exe	0x80016E14	hint	clears current 0x39C record via 0x8001555C(p,0,0x12A) then flag bits 16,17 off, 18 on at +0x254	2026-10-22T21:42:26Z
+exe	0x80015DC8	name	mem_coalesce_free	2026-10-22T21:42:26Z
+exe	0x80015DC8	hint	heap walk: blocks {u8 used (0 free, 0xFF end); s32 size; 16-byte header}; merges the free block after head into head	2026-10-22T21:42:26Z
+exe	0x80014774	name	math_angle_to_dir	2026-10-22T21:42:26Z
+exe	0x80014774	hint	SVECTOR angles (pitch vx, yaw vy) -> unit direction vector via rsin/rcos (x=-sin(yaw)cos(p), y=-sin(p), z=cos(yaw)cos(p))	2026-10-22T21:42:27Z
+exe	0x80014AE4	name	math_dir_to_angle	2026-10-22T21:42:27Z
+exe	0x80014AE4	hint	vector (x,y,z) -> SVECTOR angles: yaw=-ratan2(x,z), pitch=ratan2(y,sqrt(x*x+z*z))&0xFFF, roll 0 (inverse of 0x80014774)	2026-10-22T21:42:27Z
+exe	0x8001594C	name	cd_sector_to_msf	2026-10-22T21:42:27Z
+exe	0x8001594C	hint	linear sector -> BCD min/sec/frame (4500=60*75, 75) via itob 0x8001588C; same as CdIntToPos	2026-10-22T21:42:27Z
+exe	0x800126D8	name	math_svec_dist2_within	2026-10-22T21:42:27Z
+exe	0x800126D8	hint	box test |b-a|<=r per axis, then squared half-distance <= r2 -> returns it, else -1	2026-10-22T21:42:27Z
+exe	0x800132CC	name	math_angle_approach	2026-10-22T21:42:27Z
+exe	0x800132CC	hint	turns 12-bit angle cur toward tgt by at most step along the short way (0x800 half turn), clamps at tgt, returns s16	2026-10-22T21:42:27Z
+ovl201	0x80066898	name	ui_queue_draw_mode	2026-10-22T21:42:27Z
+ovl201	0x80066898	hint	hint name; queues DR_MODE (SetDrawMode tpage 7) at o->ot[buf]+o->unk14	2026-10-22T21:42:27Z
+exe	0x80013430	name	math_vec_dir_scaled	2026-10-22T21:42:27Z
+exe	0x80013430	hint	out = (b-a) * len / |b-a| as SVECTOR; 0x80014988 = vector length (x,y,z)	2026-10-22T21:42:27Z
+exe	0x80015C9C	name	cd_file_entry_size	2026-10-22T21:42:27Z
+exe	0x80015C9C	hint	archive table D_8004A2A4[file] {u16 *sector_tab; pos +4}: optionally seeks (0x80015A08) to entry idx, returns entry byte size (sectors<<11)	2026-10-22T21:42:27Z
+exe	0x800144FC	name	math_matrix_to_angles	2026-10-22T21:42:27Z
+exe	0x800144FC	hint	rotation MATRIX -> SVECTOR euler angles via SquareRoot0/ratan2 (inverse of RotMatrix)	2026-10-22T21:42:28Z
+exe	0x80016ACC	name	snd_init	2026-10-22T21:42:28Z
+exe	0x80016ACC	hint	locates 20 sound files (CdSearchFile wrapper 0x800162E8 into 0x24-byte table 0x80031784, slot 2 skipped), SsInit/SsSetTableSize/SsStart2/reverb/serial setup, clears VAB/SEQ slot tables, volumes 0x7F	2026-10-22T21:42:28Z
+exe	0x800163F8	name	cd_load_file_alloc	2026-10-22T21:42:28Z
+exe	0x800163F8	hint	builds "\GG\<name>;1", CdSearchFile (0x800191C0), allocates size rounded to 2048 (0x80016190) and reads it (0x80016328); returns buffer	2026-10-22T21:42:28Z
+exe	0x800167D0	name	sys_init_events	2026-10-22T21:42:28Z
+exe	0x800167D0	hint	system init: VSync root counter event, SIO slot table reset, card/SIO/pad events (OpenEvent/EnableEvent), link-cable open() fds +0x2F4/+0x2F8, _comb_control setup, heap ptr, CdControl(0xE) mode set	2026-10-22T21:42:28Z
+ovl201	0x8005D544	name	snd_music_swap	2026-10-22T21:42:28Z
+ovl201	0x8005D544	hint	closes the playing music slot of SndBanks 0x801BC450 (SsSeqStop/Close, SsVabClose, free buffers), opens+plays the other slot at volume D_80048662*2, kills the task object	2026-10-22T21:42:28Z
+exe	0x800135E8	name	math_matrix_rot_y_quarter	2026-10-22T21:42:28Z
+exe	0x800135E8	hint	copies the 3x3 rotation of a MATRIX turned by q*90 degrees about Y (column swap/negate)	2026-10-22T21:42:28Z
+exe	0x8001606C	name	mem_alloc	2026-10-22T21:42:28Z
+exe	0x8001606C	hint	heap alloc: rounds size to 4, finds a free block (0x80015E68), splits off the rest if >= 0x810, marks used=2 with owner/tag, stores the data ptr into *owner	2026-10-22T21:42:28Z
+exe	0x80015FB4	name	mem_wait_loading	2026-10-22T21:42:28Z
+exe	0x80015FB4	hint	walks the heap blocks and spins on 0x80015A48 while a block is in state 3 (loading)	2026-10-22T21:42:28Z
+exe	0x80013F5C	name	math_look_matrix	2026-10-22T21:42:28Z
+exe	0x80013F5C	hint	builds pitch (rx) and yaw (ry) rotation matrices from the a->b direction (SquareRoot0, <<12 divides), out = rx*ry via MulMatrix0	2026-10-22T21:42:29Z
+exe	0x80015B78	name	cd_queue_request	2026-10-22T21:42:29Z
+exe	0x80015B78	hint	queues a 0x28-byte CD request {cmd, status, CdlLOC loc/cur, dst, sectors=(size+2047)/2048, arg} in the 16-entry ring 0x80049FE0 (wr 0x8004A260, rd 0x8004A264); if it is the head, issues CdControl(CdlSetloc) until accepted	2026-10-22T21:42:29Z
+exe	0x80014A68	name	math_svec_length	2026-10-22T21:42:29Z
+exe	0x80014A68	hint	|v| of an SVECTOR via GTE sqr0 + SquareRoot0	2026-10-22T21:42:29Z
+exe	0x800149D4	name	math_svec_distance	2026-10-22T21:42:29Z
+exe	0x800149D4	hint	|b-a| of two SVECTORs via GTE sqr0 + SquareRoot0	2026-10-22T21:42:29Z
+exe	0x80015440	name	util_find_best	2026-10-22T21:42:29Z
+exe	0x80015440	hint	linear search over n elements of size bytes with cmp(best, p, arg) > 0 picking p; returns the best element	2026-10-22T21:42:29Z
+exe	0x80013E04	name	math_look_matrix_mul	2026-10-22T21:42:29Z
+exe	0x80013E04	hint	like 0x80013F5C but multiplies the pitch matrix in place with the yaw matrix (MulMatrix)	2026-10-22T21:42:29Z
+exe	0x80013CC0	name	math_dir_matrix_xz	2026-10-22T21:42:29Z
+exe	0x80013CC0	hint	pitch matrix from a direction vector times a Z-rotation built from (x,y) (MulMatrix)	2026-10-22T21:42:29Z
+ovl201	0x8006F79C	name	emb_rgb_slider_new	2026-10-22T21:42:29Z
+ovl201	0x8006F79C	hint	emblem editor colour slider object: chan 0..2 (r/g/b) of palette D_8017E5D8[edit->color], x=(value>>3)|0x60, y=183/191/199; update 0x8006F8C0	2026-10-22T21:42:29Z
+exe	0x80013510	name	math_angle_turn_rate	2026-10-22T21:42:29Z
+exe	0x80013510	hint	-: if 0x800148E4(a,b,tol/2) and |d|<=tol returns a-b, else accelerates d by tol toward b (0x80014920 picks the side) and damps it by step	2026-10-22T21:42:29Z
+exe	0x80014DFC	name	util_rand_weighted	2026-10-22T21:42:30Z
+exe	0x80014DFC	hint	picks an index 0..n-1 with probability proportional to the u8 weights (stride bytes apart) using rand(); -1 if none	2026-10-22T21:42:30Z
+exe	0x80014C40	name	math_vec_in_cylinder	2026-10-22T21:42:30Z
+exe	0x80014C40	hint	VECTOR p vs centre (x,y,z): |dx|,|dz| <= r, y window [y-down, y+up] unless y==0xFFFF, then planar distance (sqrt of /8 deltas)*8 <= r -> distance else -1	2026-10-22T21:42:30Z
+ovl201	0x80055950	name	save_format_card	2026-10-22T21:42:30Z
+ovl201	0x80055950	hint	formats the memory card in w->slot (up to 3 tries via format("bu00:"/"bu10:")), re-reads card status (0x800684A0), shows the result message box	2026-10-22T21:42:30Z
+exe	0x800122A8	name	main	2026-10-22T21:42:30Z
+exe	0x800122A8	hint	boot: ResetGraph/InitGeom, sys_init_events, snd_init, loads 18 archive headers (0x80016678), then the forever loop: clear heap to 0x801F8000, load+run overlay 201 (front end 0x8009B414), then the mission overlay chosen by gp+2 (202/203/204) until D_8004ADA4() returns 0	2026-10-22T21:42:30Z
+exe	0x80015710	name	cd_ready_callback	2026-10-22T21:42:30Z
+exe	0x80015710	hint	CD sync/ready callback for the request ring head (rd 0x8004A264): status 0 issues CdRead, status 1 verifies (0x80015B24, retries via CdlSetloc) then runs the done callback and retires the request (0x80015580); cmd 0x60 retires directly. Implicit-int return (no value)	2026-10-22T21:42:30Z
+exe	0x80015E68	name	mem_find_free	2026-10-22T21:42:30Z
+exe	0x80015E68	hint	first free heap block with size >= n; else frees the first run of purgeable (state 1) blocks big enough (0x80015E48 each, then mem_coalesce_free) and returns it; 0 if none	2026-10-22T21:42:30Z
+exe	0x80014F78	name	math_ballistic_solve	2026-10-22T21:42:30Z
+exe	0x80014F78	hint	solves the launch for a target (dx, dy) with gravity g and muzzle speed v: quadratic in time (SquareRoot0), picks the low/high (arg0) positive root, outputs speed and pitch angle (-ratan2); -1 if unreachable	2026-10-22T21:42:30Z
+exe	0x80015258	name	math_aim_lead	2026-10-22T21:42:30Z
+exe	0x80015258	hint	iterative target lead: n times predicts the target position pos + vel * (distance / speed) into out, then aim angles from->out (math_dir_to_angle) relative to ref yaw, wrapped to +-0x800; returns flight time	2026-10-22T21:42:30Z
+ovl201	0x80085640	name	garage_check_performance	2026-10-22T21:42:31Z
+ovl201	0x80085640	hint	"check performance" screen of the assembled AC: AP / weight / price, offense/defense (x1.15 with options 0x80/0x100), stability, mobility, speed, radar, FCS, grade	2026-10-22T21:42:31Z
