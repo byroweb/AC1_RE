@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AC1 Scene Viewer</title>
+<style>
+:root {
+  --bg: #f4f4f1; --panel: #ffffff; --ink: #1d1f22; --muted: #63676d; --line: #dcdcd6;
+  --accent: #2f6fdb; --accent-ink: #ffffff; --chip: #eef1f6; --warn: #b4540a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121315; --panel: #1b1c1f; --ink: #e8e8e6; --muted: #9a9ea5; --line: #2c2e33;
+    --accent: #6c9cff; --accent-ink: #0d1020; --chip: #23262c; --warn: #f0a050;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121315; --panel: #1b1c1f; --ink: #e8e8e6; --muted: #9a9ea5; --line: #2c2e33;
+  --accent: #6c9cff; --accent-ink: #0d1020; --chip: #23262c; --warn: #f0a050;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+  font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; }
+#app { display: grid; grid-template-columns: 1fr 330px; height: 100vh; }
+#view { position: relative; min-width: 0; background: #000; }
+canvas#gl { width: 100%; height: 100%; display: block; outline: none; cursor: grab; }
+canvas#gl:active { cursor: grabbing; }
+#hud { position: absolute; left: 10px; top: 8px; right: 10px; color: #e6f3e6; font: 12px/1.4 ui-monospace, Consolas, monospace;
+  text-shadow: 0 1px 2px #000; pointer-events: none; white-space: pre-wrap; }
+#keys { position: absolute; left: 10px; bottom: 8px; color: #cfd8cf; font: 11px/1.4 ui-monospace, Consolas, monospace;
+  text-shadow: 0 1px 2px #000; pointer-events: none; }
+#msg { position: absolute; inset: 0; display: grid; place-items: center; color: #ddd; font-size: 15px; pointer-events: none; }
+aside { background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding: 10px 12px 40px; }
+h1 { font-size: 15px; margin: 2px 0 8px; display: flex; justify-content: space-between; align-items: center; }
+details { border-top: 1px solid var(--line); padding: 6px 0; }
+summary { cursor: pointer; font-weight: 600; padding: 2px 0; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "▸ "; color: var(--muted); }
+details[open] summary::before { content: "▾ "; }
+.row { display: grid; grid-template-columns: 112px 1fr 58px; gap: 6px; align-items: center; margin: 5px 0; }
+.row label { color: var(--muted); }
+.row output { text-align: right; font-variant-numeric: tabular-nums; }
+.row.sel { grid-template-columns: 112px 1fr; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+select, button { font: inherit; color: var(--ink); background: var(--chip); border: 1px solid var(--line);
+  border-radius: 6px; padding: 4px 6px; }
+button { cursor: pointer; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; margin: 4px 0; }
+.toggles label { display: flex; gap: 6px; align-items: center; }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.note { color: var(--muted); font-size: 12px; margin: 4px 0; }
+.warn { color: var(--warn); }
+@media (max-width: 860px) {
+  #app { grid-template-columns: 1fr; grid-template-rows: 58vh 1fr; }
+  aside { border-left: 0; border-top: 1px solid var(--line); padding: 10px 16px 40px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="view">
+    <canvas id="gl" tabindex="0"></canvas>
+    <div id="hud"></div>
+    <div id="keys">click the view · W/S move · A/D turn · Q/E strafe · drag to look · wheel = camera distance · Shift = fast · F = fly/follow</div>
+    <div id="msg">loading…</div>
+  </div>
+  <aside>
+    <h1>AC1 scene viewer <button id="theme" title="theme">◐</button></h1>
+    <div class="row sel"><label for="mission">Mission</label><select id="mission"></select></div>
+    <div class="row sel"><label for="texsrc">Texels</label><select id="texsrc"></select></div>
+    <div class="note" id="scenenote"></div>
+
+    <details open><summary>Pilot</summary>
+      <div class="btns"><button data-preset="ac">AC (collision 212)</button><button data-preset="human" class="primary">Pilot on foot</button></div>
+      <div id="k-pilot"></div>
+      <div class="toggles"><label><input type="checkbox" id="showAC" checked> AC ghost for scale</label>
+        <label><input type="checkbox" id="walk" checked> walk on floors</label></div>
+    </details>
+
+    <details open><summary>Camera</summary>
+      <div id="k-cam"></div>
+      <div class="toggles">
+        <label><input type="checkbox" id="dyncam" checked> dynamic ceiling (AC1-style)</label>
+        <label><input type="checkbox" id="camscale" checked> camera scales with pilot</label>
+        <label><input type="checkbox" id="fly"> free fly</label>
+      </div>
+    </details>
+
+    <details open><summary>Textures</summary>
+      <div id="k-tex"></div>
+      <div class="toggles">
+        <label><input type="checkbox" id="heat"> texel-density map</label>
+        <label><input type="checkbox" id="light" checked> simple lighting</label>
+      </div>
+      <div class="note">Density tiles each face's own texel rectangle N times (same texture, smaller texels). Texture LOD merges 2<sup>n</sup>×2<sup>n</sup> texels. Map: red = 1 texel covers several screen pixels (blocky), green ≈ 1:1, blue = shimmer.</div>
+    </details>
+
+    <details open><summary>LOD &amp; distance</summary>
+      <div id="k-lod"></div>
+      <div class="note" id="lodnote"></div>
+    </details>
+
+    <details open><summary>PS1 look</summary>
+      <div class="row sel"><label for="res">Internal res</label>
+        <select id="res"><option value="320">320×240 (PS1)</option><option value="640">640×480</option><option value="0">native</option></select></div>
+      <div class="toggles">
+        <label><input type="checkbox" id="affine" checked> affine UVs (warp)</label>
+        <label><input type="checkbox" id="snap" checked> vertex snap (jitter)</label>
+        <label><input type="checkbox" id="dither" checked> 15-bit + dither</label>
+        <label><input type="checkbox" id="ceil" checked> ceilings</label>
+        <label><input type="checkbox" id="wire"> wireframe</label>
+        <label><input type="checkbox" id="cull"> backface cull</label>
+      </div>
+      <div class="btns"><button id="modern">Modern look</button><button id="ps1">PS1 look</button></div>
+    </details>
+
+    <details open><summary>Capture</summary>
+      <div class="btns"><button id="shot">Screenshot</button><button id="pair" class="primary">AC vs on-foot pair</button></div>
+      <div class="note">Units are game units: the AC's collision box is 212 tall. Metres below assume the AC is as tall as the slider says.</div>
+      <div id="k-units"></div>
+    </details>
+  </aside>
+</div>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------- knobs ----
+const P = {};
+let needRebuild = false;
+function slider(box, id, label, min, max, step, val, fmt, onchange) {
+  const r = document.createElement("div"); r.className = "row";
+  r.innerHTML = `<label for="${id}">${label}</label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"><output id="${id}-o"></output>`;
+  document.getElementById(box).appendChild(r);
+  const el = r.querySelector("input"), out = r.querySelector("output");
+  const f = fmt || (v => v);
+  const upd = () => { P[id] = parseFloat(el.value); out.textContent = f(P[id]); onchange && onchange(); };
+  el.addEventListener("input", upd); upd();
+  return el;
+}
+const setSlider = (id, v) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event("input")); };
+const m = v => (v / unitsPerM()).toFixed(1) + " m";
+const unitsPerM = () => 212 / (P.acMetres || 10);
+
+slider("k-pilot", "pilotH", "Pilot height", 20, 260, 1, 40, v => v + " u");
+slider("k-pilot", "speed", "Walk speed", 50, 3000, 10, 400, v => v + " u/s");
+slider("k-cam", "camDist", "Distance", 0, 1500, 5, 520, v => v + " u");
+slider("k-cam", "camLift", "Height above", -150, 800, 5, 170, v => v + " u");
+slider("k-cam", "pitch", "Pitch", -30, 70, 1, 12, v => v + "°");
+slider("k-cam", "fov", "Field of view", 30, 100, 1, 60, v => v + "°");
+slider("k-cam", "clear", "Ceiling clearance", 2, 120, 1, 20, v => v + " u");
+slider("k-tex", "tile", "Density ×", 1, 8, 1, 1, v => v + "×");
+slider("k-tex", "lodBias", "Texture LOD", 0, 4, 1, 0, v => v ? "1/" + (1 << v) : "full");
+slider("k-tex", "subdiv", "Floor subdivide", 0, 2, 1, 0, v => v ? (4 ** v) + "× tris" : "off", () => { needRebuild = true; });
+slider("k-lod", "lodDist", "Detail LOD dist", 0, 40000, 100, 40000, v => v >= 40000 ? "∞" : v + " u");
+slider("k-lod", "drawDist", "Section draw dist", 500, 60000, 100, 60000, v => v >= 60000 ? "∞" : v + " u");
+slider("k-lod", "fogStart", "Fog start", 0, 40000, 100, 6000, v => v + " u");
+slider("k-lod", "fogEnd", "Fog end", 100, 60000, 100, 30000, v => v + " u");
+slider("k-units", "acMetres", "AC height", 4, 20, 0.5, 10, v => v + " m");
+
+const $ = id => document.getElementById(id);
+const chk = id => $(id).checked;
+document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => {
+  if (b.dataset.preset === "ac") { setSlider("pilotH", 212); setSlider("speed", 1200); }
+  else { setSlider("pilotH", Math.round(1.8 * unitsPerM())); setSlider("speed", 300); }
+});
+$("modern").onclick = () => { $("res").value = "0"; ["affine", "snap", "dither"].forEach(i => $(i).checked = false); };
+$("ps1").onclick = () => { $("res").value = "320"; ["affine", "snap", "dither"].forEach(i => $(i).checked = true); };
+$("theme").onclick = () => {
+  const r = document.documentElement, dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const cur = r.dataset.theme || (dark ? "dark" : "light");
+  r.dataset.theme = cur === "dark" ? "light" : "dark";
+};
+
+// ---------------------------------------------------------------- GL -------
+const cv = $("gl");
+const gl = cv.getContext("webgl2", { antialias: false, preserveDrawingBuffer: true });
+if (!gl) { $("msg").textContent = "WebGL2 is not available in this browser."; throw new Error("no webgl2"); }
+
+const VS = `#version 300 es
+precision highp float;
+layout(location=0) in vec3 a_pos; layout(location=1) in vec2 a_uv; layout(location=2) in vec4 a_uvr;
+layout(location=3) in vec4 a_mat; layout(location=4) in vec3 a_rgb; layout(location=5) in vec3 a_nrm;
+layout(location=6) in vec3 a_bary; layout(location=7) in vec3 a_smin; layout(location=8) in vec3 a_smax;
+uniform mat4 u_vp; uniform vec3 u_eye, u_pilot; uniform float u_ceil, u_lodDist, u_drawDist, u_snap; uniform vec2 u_res;
+out vec2 v_uvp; out vec3 v_uva; flat out vec4 v_uvr; flat out vec4 v_mat; out vec3 v_rgb;
+flat out vec3 v_nrm; out vec3 v_bary; out float v_dist;
+void main() {
+  int f = int(a_mat.z + 0.5); int cls = (f >> 2) & 3;
+  float sd = length(max(max(a_smin - u_pilot, u_pilot - a_smax), 0.0));
+  bool hide = (cls == 2 && u_ceil < 0.5) || ((f & 2) != 0 && sd > u_lodDist) || sd > u_drawDist;
+  vec4 c = u_vp * vec4(a_pos, 1.0);
+  if (u_snap > 0.5 && c.w > 0.0) { vec2 h = u_res * 0.5; c.xy = floor(c.xy / c.w * h + 0.5) / h * c.w; }
+  gl_Position = hide ? vec4(2.0, 2.0, 2.0, 1.0) : c;
+  // affine (PS1) UVs: interpolate uv*w and w, divide per pixel -> screen-linear
+  v_uvp = a_uv; v_uva = vec3(a_uv * gl_Position.w, gl_Position.w); v_uvr = a_uvr; v_mat = a_mat; v_rgb = a_rgb; v_nrm = a_nrm; v_bary = a_bary;
+  v_dist = distance(a_pos, u_eye);
+}`;
+const FS = `#version 300 es
+precision highp float; precision highp int; precision highp usampler2D;
+uniform usampler2D u_vram; uniform int u_hasVram;
+uniform float u_tile, u_lodBias, u_affine, u_dither, u_heat, u_wire, u_light, u_fogStart, u_fogEnd;
+uniform vec3 u_fogCol;
+in vec2 v_uvp; in vec3 v_uva; flat in vec4 v_uvr; flat in vec4 v_mat; in vec3 v_rgb;
+flat in vec3 v_nrm; in vec3 v_bary; in float v_dist;
+out vec4 o;
+uint tx(int x, int y) { return texelFetch(u_vram, ivec2(x & 1023, y & 511), 0).r; }
+vec3 c15(uint c) { return vec3(float(c & 31u), float((c >> 5) & 31u), float((c >> 10) & 31u)) / 31.0; }
+float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+void main() {
+  int f = int(v_mat.z + 0.5);
+  vec2 uv = u_affine > 0.5 ? v_uva.xy / v_uva.z : v_uvp;
+  vec3 col; vec2 dens = uv * u_tile;
+  if ((f & 1) != 0) {
+    vec2 mn = v_uvr.xy, sz = max(v_uvr.zw - v_uvr.xy, vec2(1.0));
+    vec2 t = mn + mod((uv - mn) * u_tile, sz);            // tile within the face's own texel rect
+    float b = exp2(u_lodBias); t = (floor(t / b) + 0.5) * b;  // coarser texels
+    if (u_hasVram == 1) {
+      int tp = int(v_mat.x + 0.5), cl = int(v_mat.y + 0.5);
+      int px = (tp & 15) * 64, py = ((tp >> 4) & 1) * 256, bpp = (tp >> 7) & 3;
+      int cx = (cl & 63) * 16, cy = cl >> 6;
+      int u = int(floor(t.x)) & 255, v = int(floor(t.y)) & 255;
+      uint c;
+      if (bpp == 0) { uint w = tx(px + u / 4, py + v); c = tx(cx + int((w >> (uint(u & 3) * 4u)) & 15u), cy); }
+      else if (bpp == 1) { uint w = tx(px + u / 2, py + v); c = tx(cx + int((w >> (uint(u & 1) * 8u)) & 255u), cy); }
+      else { c = tx(px + u, py + v); }
+      if (c == 0u) discard;                                  // PS1: 0x0000 is transparent
+      col = min(c15(c) * (v_rgb / 128.0), vec3(1.0));
+    } else {                                                 // stand-in texels at the real texel grid
+      float n = hash(floor(t) + v_mat.xy * 0.37);
+      float g = 0.38 + 0.3 * hash(v_mat.xy);                   // muted, per-material
+      vec3 tint = g * mix(vec3(1.0), vec3(hash(v_mat.xy + 1.7), hash(v_mat.xy + 3.1), hash(v_mat.xy + 5.3)) * 1.6, 0.3);
+      col = tint * (0.62 + 0.38 * n);
+    }
+  } else col = v_rgb / 255.0;
+  if (u_light > 0.5) col *= 0.5 + 0.6 * abs(dot(v_nrm, normalize(vec3(0.35, 0.85, 0.4))));
+  if (u_heat > 0.5 && (f & 1) != 0) {
+    float d = length(fwidth(dens)) / exp2(u_lodBias);      // texels per screen pixel
+    vec3 h = d < 0.5 ? mix(vec3(0.95, 0.1, 0.1), vec3(1.0, 0.75, 0.1), d / 0.5)
+           : d < 1.5 ? mix(vec3(1.0, 0.75, 0.1), vec3(0.2, 0.85, 0.3), d - 0.5)
+           : mix(vec3(0.2, 0.85, 0.3), vec3(0.2, 0.4, 1.0), clamp((d - 1.5) / 2.0, 0.0, 1.0));
+    col = mix(col, h, 0.65);
+  }
+  col = mix(col, u_fogCol, clamp((v_dist - u_fogStart) / max(u_fogEnd - u_fogStart, 1.0), 0.0, 1.0));
+  if (u_wire > 0.5) { vec3 d = fwidth(v_bary); vec3 a = smoothstep(vec3(0.0), d * 1.2, v_bary);
+    col = mix(col, vec3(0.1, 1.0, 0.6), (1.0 - min(min(a.x, a.y), a.z)) * 0.9); }
+  if (u_dither > 0.5) {
+    const int dm[16] = int[16](-4, 0, -3, 1, 2, -2, 3, -1, -3, 1, -4, 0, 3, -1, 2, -2);
+    ivec2 q = ivec2(gl_FragCoord.xy) & 3;
+    col = floor(clamp(col + float(dm[q.y * 4 + q.x]) / 255.0, 0.0, 1.0) * 31.0 + 0.5) / 31.0;
+  }
+  o = vec4(col, 1.0);
+}`;
+const SOLID_VS = `#version 300 es
+layout(location=0) in vec3 a_pos; uniform mat4 u_vp; void main(){ gl_Position = u_vp * vec4(a_pos, 1.0); }`;
+const SOLID_FS = `#version 300 es
+precision mediump float; uniform vec4 u_col; out vec4 o; void main(){ o = u_col; }`;
+const BLIT_VS = `#version 300 es
+out vec2 v; void main(){ vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2); v = p; gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0); }`;
+const BLIT_FS = `#version 300 es
+precision mediump float; uniform sampler2D u_t; in vec2 v; out vec4 o; void main(){ o = texture(u_t, v); }`;
+
+function prog(vs, fs) {
+  const p = gl.createProgram();
+  for (const [t, s] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
+    const sh = gl.createShader(t); gl.shaderSource(sh, s); gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+    gl.attachShader(p, sh);
+  }
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const u = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(p, i); u[a.name] = gl.getUniformLocation(p, a.name); }
+  return { p, u };
+}
+const SCN = prog(VS, FS), SOL = prog(SOLID_VS, SOLID_FS), BLT = prog(BLIT_VS, BLIT_FS);
+
+// ------------------------------------------------------------- math --------
+const V = {
+  sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+  mul: (a, s) => [a[0] * s, a[1] * s, a[2] * s], dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  len: a => Math.hypot(a[0], a[1], a[2]), norm: a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+  lerp: (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t],
+};
+function persp(fovy, asp, n, f) {
+  const t = 1 / Math.tan(fovy / 2), r = 1 / (n - f);
+  return [t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n) * r, -1, 0, 0, 2 * f * n * r, 0];
+}
+function lookAt(e, c, up) {
+  const z = V.norm(V.sub(e, c)), x = V.norm(V.cross(up, z)), y = V.cross(z, x);
+  return [x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -V.dot(x, e), -V.dot(y, e), -V.dot(z, e), 1];
+}
+function mmul(a, b) {
+  const o = new Array(16).fill(0);
+  for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) o[c * 4 + r] += a[k * 4 + r] * b[c * 4 + k];
+  return o;
+}
+
+// ------------------------------------------------------------ scene --------
+let ready = false, S = null, mesh = null, vramTex = null, hasVram = 0, grid = null, playerInfo = null;
+const STRIDE = 28;
+function buildMesh() {
+  const n = S.tris, lvl = P.subdiv | 0;
+  const floors = []; for (let i = 0; i < n; i++) if (((S.flags[i] >> 2) & 3) === 0) floors.push(i);
+  const total = n + floors.length * (4 ** lvl - 1);
+  const buf = new Float32Array(total * 3 * STRIDE);
+  let w = 0;
+  const secB = S.sections.map(s => { const b = s.bbox; return [[b[0], -b[4], b[2]], [b[3], -b[1], b[5]]]; });
+  function emit(p, uv, i, uvr, nrm, sb) {
+    const bary = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    for (let k = 0; k < 3; k++) {
+      buf.set(p[k], w); buf.set(uv[k], w + 3); buf.set(uvr, w + 5);
+      buf[w + 9] = S.tpage[i]; buf[w + 10] = S.clut[i]; buf[w + 11] = S.flags[i]; buf[w + 12] = S.sec[i];
+      buf[w + 13] = S.rgb[3 * i]; buf[w + 14] = S.rgb[3 * i + 1]; buf[w + 15] = S.rgb[3 * i + 2];
+      buf.set(nrm, w + 16); buf.set(bary[k], w + 19); buf.set(sb[0], w + 22); buf.set(sb[1], w + 25);
+      w += STRIDE;
+    }
+  }
+  function split(p, uv, d, i, uvr, nrm, sb) {
+    if (d === 0) return emit(p, uv, i, uvr, nrm, sb);
+    const mp = (a, b) => V.lerp(p[a], p[b], 0.5), mu = (a, b) => [(uv[a][0] + uv[b][0]) / 2, (uv[a][1] + uv[b][1]) / 2];
+    const p01 = mp(0, 1), p12 = mp(1, 2), p20 = mp(2, 0), u01 = mu(0, 1), u12 = mu(1, 2), u20 = mu(2, 0);
+    split([p[0], p01, p20], [uv[0], u01, u20], d - 1, i, uvr, nrm, sb);
+    split([p01, p[1], p12], [u01, uv[1], u12], d - 1, i, uvr, nrm, sb);
+    split([p20, p12, p[2]], [u20, u12, uv[2]], d - 1, i, uvr, nrm, sb);
+    split([p01, p12, p20], [u01, u12, u20], d - 1, i, uvr, nrm, sb);
+  }
+  for (let i = 0; i < n; i++) {
+    const q = S.pos, p = [0, 1, 2].map(k => [q[9 * i + 3 * k], -q[9 * i + 3 * k + 1], q[9 * i + 3 * k + 2]]);
+    const uv = [0, 1, 2].map(k => [S.uv[6 * i + 2 * k], S.uv[6 * i + 2 * k + 1]]);
+    const uvr = [Math.min(uv[0][0], uv[1][0], uv[2][0]), Math.min(uv[0][1], uv[1][1], uv[2][1]),
+                 Math.max(uv[0][0], uv[1][0], uv[2][0]) + 1, Math.max(uv[0][1], uv[1][1], uv[2][1]) + 1];
+    const nrm = V.norm(V.cross(V.sub(p[1], p[0]), V.sub(p[2], p[0])));
+    const cls = (S.flags[i] >> 2) & 3;
+    split(p, uv, cls === 0 ? lvl : 0, i, uvr, nrm, secB[S.sec[i]]);
+  }
+  if (mesh) { gl.deleteBuffer(mesh.vbo); gl.deleteVertexArray(mesh.vao); }
+  const vao = gl.createVertexArray(), vbo = gl.createBuffer();
+  gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, vbo); gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
+  const lay = [[0, 3, 0], [1, 2, 3], [2, 4, 5], [3, 4, 9], [4, 3, 13], [5, 3, 16], [6, 3, 19], [7, 3, 22], [8, 3, 25]];
+  for (const [loc, sz, off] of lay) { gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, sz, gl.FLOAT, false, STRIDE * 4, off * 4); }
+  gl.bindVertexArray(null);
+  mesh = { vao, vbo, count: total * 3, tris: total };
+  needRebuild = false;
+}
+
+// collision: display-space triangles in an XZ grid
+const CELL = 512;
+function buildGrid() {
+  const n = S.tris, pos = new Float32Array(n * 9), cells = new Map();
+  for (let i = 0; i < n; i++) {
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (let k = 0; k < 3; k++) {
+      const x = S.pos[9 * i + 3 * k], y = -S.pos[9 * i + 3 * k + 1], z = S.pos[9 * i + 3 * k + 2];
+      pos[9 * i + 3 * k] = x; pos[9 * i + 3 * k + 1] = y; pos[9 * i + 3 * k + 2] = z;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
+    }
+    for (let cx = Math.floor(x0 / CELL); cx <= Math.floor(x1 / CELL); cx++)
+      for (let cz = Math.floor(z0 / CELL); cz <= Math.floor(z1 / CELL); cz++) {
+        const key = cx + "," + cz; let a = cells.get(key); if (!a) cells.set(key, a = []); a.push(i);
+      }
+  }
+  grid = { pos, cells };
+}
+function rayTri(o, d, i) {          // Möller–Trumbore, returns t or -1
+  const p = grid.pos, a = [p[9 * i], p[9 * i + 1], p[9 * i + 2]];
+  const e1 = [p[9 * i + 3] - a[0], p[9 * i + 4] - a[1], p[9 * i + 5] - a[2]], e2 = [p[9 * i + 6] - a[0], p[9 * i + 7] - a[1], p[9 * i + 8] - a[2]];
+  const h = V.cross(d, e2), det = V.dot(e1, h);
+  if (Math.abs(det) < 1e-9) return -1;
+  const f = 1 / det, s = V.sub(o, a), u = f * V.dot(s, h);
+  if (u < 0 || u > 1) return -1;
+  const q = V.cross(s, e1), v = f * V.dot(d, q);
+  if (v < 0 || u + v > 1) return -1;
+  const t = f * V.dot(e2, q);
+  return t > 1e-4 ? t : -1;
+}
+function raycast(o, dir, maxLen, filter) {   // nearest hit distance along unit dir (or Infinity)
+  const seen = new Set(); let best = Infinity;
+  const steps = Math.max(1, Math.ceil(maxLen / (CELL / 2)));
+  for (let s = 0; s <= steps; s++) {
+    const p = V.add(o, V.mul(dir, Math.min(maxLen, s * CELL / 2)));
+    const key = Math.floor(p[0] / CELL) + "," + Math.floor(p[2] / CELL);
+    const a = grid.cells.get(key); if (!a) continue;
+    for (const i of a) {
+      if (seen.has(i)) continue; seen.add(i);
+      if (filter && !filter(i)) continue;
+      const t = rayTri(o, dir, i); if (t >= 0 && t < best && t <= maxLen) best = t;
+    }
+  }
+  return best;
+}
+const cls = i => (S.flags[i] >> 2) & 3;
+const floorAt = (x, yFrom, z, down) => { const t = raycast([x, yFrom, z], [0, -1, 0], down, i => cls(i) === 0); return t === Infinity ? null : yFrom - t; };
+
+// ------------------------------------------------------------ state --------
+const pilot = { p: [0, 0, 0], yaw: 0 }, cam = { p: [0, 0, 0], look: [0, 0, 1], yaw: 0, pitch: 0 };
+let camSmooth = null, keys = new Set(), lastT = performance.now(), fps = 0, info = {};
+function placePilot() {
+  if (playerInfo && playerInfo.mission === S.mission) {
+    pilot.p = [playerInfo.pos[0], -playerInfo.pos[1], playerInfo.pos[2]];
+    pilot.yaw = playerInfo.yaw / 4096 * 2 * Math.PI;
+  } else {                                   // a floor face near the level's middle
+    let best = null, c = [0, 0, 0], k = 0;
+    for (let i = 0; i < S.tris; i++) if (cls(i) === 0) { c = V.add(c, [S.pos[9 * i], -S.pos[9 * i + 1], S.pos[9 * i + 2]]); k++; }
+    c = V.mul(c, 1 / Math.max(k, 1));
+    for (let i = 0; i < S.tris; i++) if (cls(i) === 0) {
+      const q = [S.pos[9 * i], -S.pos[9 * i + 1], S.pos[9 * i + 2]], d = V.len(V.sub(q, c));
+      if (!best || d < best.d) best = { d, q };
+    }
+    pilot.p = best ? best.q : [0, 0, 0]; pilot.yaw = 0;
+  }
+  const y = floorAt(pilot.p[0], pilot.p[1] + 300, pilot.p[2], 4000); if (y !== null) pilot.p[1] = y;
+  camSmooth = null;
+}
+
+// ------------------------------------------------------------ loading ------
+async function getJSON(u) { const r = await fetch(u); const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); return j; }
+async function loadMissions() {
+  const ms = await getJSON("/api/missions");
+  $("mission").innerHTML = ms.map(x => `<option value="${x.n}">mission ${x.n} · ${x.sections} sections</option>`).join("");
+  $("mission").value = ms.some(x => x.n === 30) ? 30 : ms[0].n;
+  $("mission").onchange = () => loadMission(+$("mission").value);
+  $("texsrc").onchange = () => loadTexels($("texsrc").value);
+  await loadMission(+$("mission").value);
+}
+async function loadMission(n) {
+  ready = false; $("mission").value = n; $("msg").textContent = "loading mission " + n + "…";
+  S = await getJSON("/api/level?m=" + n); S.mission = n;
+  const det = S.flags.reduce((a, f) => a + ((f & 2) ? 1 : 0), 0);
+  $("lodnote").innerHTML = det ? `${det.toLocaleString()} faces exist only in the detail LOD; they hide past the detail distance.`
+    : `<span class="warn">This level has no detail-LOD faces</span>, so only draw distance and fog change with range (the AC and object models carry the two LODs).`;
+  const st = await getJSON("/api/states?m=" + n), all = await getJSON("/api/states");
+  const opts = st.map(s => `<option value="${s.id}">VRAM of ${s.id}</option>`)
+    .concat(all.filter(s => s.mission !== n).map(s => `<option value="${s.id}">VRAM of ${s.id} (other mission)</option>`));
+  $("texsrc").innerHTML = opts.join("") + `<option value="">stand-in texels (no state)</option>`;
+  $("texsrc").value = st.length ? st[0].id : "";
+  buildGrid(); buildMesh();
+  await loadTexels($("texsrc").value);
+  ready = true; $("msg").textContent = "";
+  cv.focus();
+}
+async function loadTexels(id) {
+  hasVram = 0; playerInfo = null;
+  if (id) {
+    $("msg").textContent = "reading VRAM of " + id + "…";
+    const [buf, pl] = await Promise.all([fetch("/api/vram?id=" + id).then(r => r.arrayBuffer()), getJSON("/api/state?id=" + id)]);
+    if (!vramTex) vramTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, vramTex); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, 1024, 512, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, new Uint16Array(buf));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    hasVram = 1; playerInfo = pl;
+    $("scenenote").textContent = pl.mission === S.mission
+      ? `Texels and start position from ${id}.` : `Texels from ${id}, which is mission ${pl.mission}: pages may not match this level.`;
+  } else {
+    if (!vramTex) { vramTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, vramTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, 1, 1, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, new Uint16Array(1)); }
+    $("scenenote").textContent = "No save state: stand-in noise at the real texel grid (grain size is honest, colours are not).";
+  }
+  placePilot(); $("msg").textContent = "";
+}
+
+// ------------------------------------------------------------ input --------
+cv.addEventListener("keydown", e => { keys.add(e.key.toLowerCase()); if (e.key.toLowerCase() === "f") $("fly").checked = !$("fly").checked; e.preventDefault(); });
+cv.addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+cv.addEventListener("blur", () => keys.clear());
+let drag = null;
+cv.addEventListener("pointerdown", e => { cv.focus(); drag = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener("pointerup", () => drag = null);
+cv.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const dx = e.clientX - drag[0], dy = e.clientY - drag[1]; drag = [e.clientX, e.clientY];
+  if (chk("fly")) { cam.yaw -= dx * 0.005; cam.pitch = Math.max(-1.5, Math.min(1.5, cam.pitch - dy * 0.005)); }
+  else { pilot.yaw -= dx * 0.005; setSlider("pitch", Math.max(-30, Math.min(70, P.pitch + dy * 0.25))); }
+});
+cv.addEventListener("wheel", e => { e.preventDefault(); setSlider("camDist", Math.max(0, Math.min(1500, P.camDist * (e.deltaY > 0 ? 1.1 : 0.9)))); }, { passive: false });
+
+// ------------------------------------------------------------ frame --------
+function step(dt) {
+  const fast = keys.has("shift") ? 3 : 1;
+  if (chk("fly")) {
+    const f = [Math.sin(cam.yaw) * Math.cos(cam.pitch), Math.sin(cam.pitch), Math.cos(cam.yaw) * Math.cos(cam.pitch)];
+    const r = V.norm(V.cross(f, [0, 1, 0])), sp = P.speed * 2 * fast * dt;
+    if (keys.has("w")) cam.p = V.add(cam.p, V.mul(f, sp)); if (keys.has("s")) cam.p = V.add(cam.p, V.mul(f, -sp));
+    if (keys.has("d") || keys.has("e")) cam.p = V.add(cam.p, V.mul(r, sp)); if (keys.has("a") || keys.has("q")) cam.p = V.add(cam.p, V.mul(r, -sp));
+    cam.look = V.add(cam.p, f);
+    return;
+  }
+  const h = P.pilotH, sp = P.speed * fast * dt;
+  if (keys.has("a")) pilot.yaw += 2.2 * dt; if (keys.has("d")) pilot.yaw -= 2.2 * dt;
+  const f = [Math.sin(pilot.yaw), 0, Math.cos(pilot.yaw)], r = [Math.cos(pilot.yaw), 0, -Math.sin(pilot.yaw)];
+  let mv = [0, 0, 0];
+  if (keys.has("w")) mv = V.add(mv, f); if (keys.has("s")) mv = V.sub(mv, f);
+  if (keys.has("e")) mv = V.sub(mv, r); if (keys.has("q")) mv = V.add(mv, r);
+  if (V.len(mv) > 0) {
+    mv = V.mul(V.norm(mv), sp);
+    const tryMove = d => {
+      const knee = V.add(pilot.p, [0, h * 0.5, 0]), L = V.len(d); if (!L) return false;
+      if (chk("walk") && raycast(knee, V.mul(d, 1 / L), L + h * 0.3, i => cls(i) === 1) !== Infinity) return false;
+      const np = V.add(pilot.p, d);
+      if (chk("walk")) { const y = floorAt(np[0], np[1] + h * 0.45, np[2], 4000); if (y === null) return false; np[1] = y; }
+      pilot.p = np; return true;
+    };
+    if (!tryMove(mv)) { tryMove([mv[0], 0, 0]) || tryMove([0, 0, mv[2]]); }
+  }
+  // follow camera
+  const k = chk("camscale") ? h / 212 : 1;
+  const dist = P.camDist * k, lift = P.camLift * k, pr = P.pitch * Math.PI / 180;
+  const pivot = V.add(pilot.p, [0, h * 0.8, 0]);
+  let want = V.add(pivot, [-f[0] * dist * Math.cos(pr), dist * Math.sin(pr) + lift, -f[2] * dist * Math.cos(pr)]);
+  info.lowered = 0;
+  if (chk("dyncam")) {
+    const up = want[1] - pivot[1];
+    if (up > 0) {                                // ceiling above the pivot caps the camera height
+      const t = raycast(pivot, [0, 1, 0], up + P.clear, i => cls(i) !== 0);
+      if (t !== Infinity) { const cap = pivot[1] + Math.max(0, t - P.clear); if (cap < want[1]) { info.lowered = want[1] - cap; want[1] = cap; } }
+    }
+    const d = V.sub(want, pivot), L = V.len(d);
+    if (L > 1) {                                  // walls/ceilings between pilot and camera pull it in
+      const t = raycast(pivot, V.mul(d, 1 / L), L, null);
+      if (t !== Infinity) want = V.add(pivot, V.mul(d, Math.max(0, t - P.clear) / L));
+    }
+  }
+  camSmooth = camSmooth ? V.lerp(camSmooth, want, 1 - Math.exp(-dt * 10)) : want;
+  cam.p = camSmooth;
+  cam.look = V.add(pivot, V.mul(f, h * 0.6));
+  cam.yaw = Math.atan2(cam.look[0] - cam.p[0], cam.look[2] - cam.p[2]);
+  cam.pitch = Math.atan2(cam.look[1] - cam.p[1], Math.hypot(cam.look[0] - cam.p[0], cam.look[2] - cam.p[2]));
+}
+
+let fbo = null, fboTex = null, fboDepth = null, fboSize = [0, 0], boxVao = null, boxVbo = null;
+function ensureTarget(w, h) {
+  if (fbo && fboSize[0] === w && fboSize[1] === h) return;
+  if (!fbo) { fbo = gl.createFramebuffer(); fboTex = gl.createTexture(); fboDepth = gl.createRenderbuffer(); }
+  gl.bindTexture(gl.TEXTURE_2D, fboTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.bindRenderbuffer(gl.RENDERBUFFER, fboDepth); gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fboTex, 0);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, fboDepth);
+  fboSize = [w, h];
+}
+function boxTris(c, hw, h) {      // axis-aligned box standing on c
+  const x0 = c[0] - hw, x1 = c[0] + hw, y0 = c[1], y1 = c[1] + h, z0 = c[2] - hw, z1 = c[2] + hw;
+  const v = [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0], [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]];
+  const f = [0, 1, 2, 0, 2, 3, 4, 6, 5, 4, 7, 6, 0, 4, 5, 0, 5, 1, 3, 2, 6, 3, 6, 7, 0, 3, 7, 0, 7, 4, 1, 5, 6, 1, 6, 2];
+  return f.flatMap(i => v[i]);
+}
+function render() {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const W = Math.max(1, Math.round(cv.clientWidth * dpr)), H = Math.max(1, Math.round(cv.clientHeight * dpr));
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  if (!S || !mesh) return;
+  const res = +$("res").value, iw = res ? res : W, ih = res ? Math.round(res * H / W) : H;
+  ensureTarget(iw, ih);
+  const fogCol = [0.04, 0.045, 0.05];
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo); gl.viewport(0, 0, iw, ih);
+  gl.clearColor(...fogCol, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST);
+  if (chk("cull")) { gl.enable(gl.CULL_FACE); gl.frontFace(gl.CW); } else gl.disable(gl.CULL_FACE);
+  const near = Math.max(1, P.pilotH * 0.05), far = Math.max(P.drawDist, P.fogEnd) * 1.2;
+  const vp = mmul(persp(P.fov * Math.PI / 180, iw / ih, near, far), lookAt(cam.p, cam.look, [0, 1, 0]));
+  gl.useProgram(SCN.p); const u = SCN.u;
+  gl.uniformMatrix4fv(u.u_vp, false, vp); gl.uniform3fv(u.u_eye, cam.p); gl.uniform3fv(u.u_pilot, pilot.p);
+  gl.uniform1f(u.u_ceil, chk("ceil") ? 1 : 0); gl.uniform1f(u.u_lodDist, P.lodDist >= 40000 ? 1e9 : P.lodDist);
+  gl.uniform1f(u.u_drawDist, P.drawDist >= 60000 ? 1e9 : P.drawDist); gl.uniform1f(u.u_snap, chk("snap") ? 1 : 0);
+  gl.uniform2f(u.u_res, iw, ih);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, vramTex); gl.uniform1i(u.u_vram, 0); gl.uniform1i(u.u_hasVram, hasVram);
+  gl.uniform1f(u.u_tile, P.tile); gl.uniform1f(u.u_lodBias, P.lodBias); gl.uniform1f(u.u_affine, chk("affine") ? 1 : 0);
+  gl.uniform1f(u.u_dither, chk("dither") ? 1 : 0); gl.uniform1f(u.u_heat, chk("heat") ? 1 : 0);
+  gl.uniform1f(u.u_wire, chk("wire") ? 1 : 0); gl.uniform1f(u.u_light, chk("light") ? 1 : 0);
+  gl.uniform1f(u.u_fogStart, P.fogStart); gl.uniform1f(u.u_fogEnd, Math.max(P.fogEnd, P.fogStart + 1)); gl.uniform3fv(u.u_fogCol, fogCol);
+  gl.bindVertexArray(mesh.vao); gl.drawArrays(gl.TRIANGLES, 0, mesh.count);
+  // pilot + AC ghost
+  {
+    gl.disable(gl.CULL_FACE);
+    // AC: its collision box (half-width 100 of 212); a person is far slimmer (~0.14 h)
+    const boxes = boxTris(pilot.p, P.pilotH >= 150 ? P.pilotH * 100 / 212 : P.pilotH * 0.14, P.pilotH);
+    const f = [Math.sin(pilot.yaw), 0, Math.cos(pilot.yaw)], r = [Math.cos(pilot.yaw), 0, -Math.sin(pilot.yaw)];
+    const ghost = chk("showAC") && P.pilotH < 200 ? boxTris(V.add(pilot.p, V.mul(r, 260)), 100, 212) : [];
+    if (!boxVao) { boxVao = gl.createVertexArray(); boxVbo = gl.createBuffer(); gl.bindVertexArray(boxVao); gl.bindBuffer(gl.ARRAY_BUFFER, boxVbo);
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 12, 0); }
+    gl.bindVertexArray(boxVao); gl.bindBuffer(gl.ARRAY_BUFFER, boxVbo);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxes.concat(ghost)), gl.DYNAMIC_DRAW);
+    gl.useProgram(SOL.p); gl.uniformMatrix4fv(SOL.u.u_vp, false, vp);
+    gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); gl.depthMask(false);
+    gl.uniform4f(SOL.u.u_col, 1.0, 0.55, 0.15, 0.7); gl.drawArrays(gl.TRIANGLES, 0, boxes.length / 3);
+    if (ghost.length) { gl.uniform4f(SOL.u.u_col, 0.35, 0.8, 1.0, 0.25); gl.drawArrays(gl.TRIANGLES, boxes.length / 3, ghost.length / 3); }
+    gl.depthMask(true); gl.disable(gl.BLEND);
+  }
+  // blit
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W, H); gl.disable(gl.DEPTH_TEST);
+  gl.useProgram(BLT.p); gl.bindTexture(gl.TEXTURE_2D, fboTex); gl.uniform1i(BLT.u.u_t, 0); gl.bindVertexArray(null);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  info.res = iw + "×" + ih;
+}
+function hud() {
+  if (!S) return;
+  const floorY = floorAt(cam.p[0], cam.p[1] + 1, cam.p[2], 20000);
+  const camAbove = floorY === null ? "?" : m(cam.p[1] - floorY);
+  const ceil = raycast(V.add(pilot.p, [0, 1, 0]), [0, 1, 0], 20000, i => cls(i) !== 0);
+  $("hud").textContent =
+    `mission ${S.mission} · ${mesh.tris.toLocaleString()} tris · ${info.res} · ${fps.toFixed(0)} fps\n` +
+    `pilot ${m(P.pilotH)} tall · camera ${camAbove} above the floor · ceiling ${ceil === Infinity ? "open" : m(ceil)} over the pilot` +
+    (info.lowered > 1 ? ` · camera lowered ${m(info.lowered)} by the ceiling` : "");
+}
+function frame(t) {
+  const dt = Math.min(0.05, (t - lastT) / 1000); lastT = t; fps = fps * 0.95 + (dt > 0 ? 1 / dt : 0) * 0.05;
+  requestAnimationFrame(frame);
+  if (!ready) return;
+  try { if (needRebuild) buildMesh(); step(dt); render(); hud(); }
+  catch (e) { console.error(e); $("msg").textContent = "error: " + e.message; ready = false; }
+}
+
+// ------------------------------------------------------------ capture ------
+function download(name, canvas) { canvas.toBlob(b => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = name; a.click(); }); }
+$("shot").onclick = () => { render(); download(`ac1_m${S.mission}_${Date.now()}.png`, cv); };
+$("pair").onclick = () => {
+  const keep = { h: P.pilotH }, shots = [];
+  for (const h of [212, Math.round(1.8 * unitsPerM())]) {
+    setSlider("pilotH", h); camSmooth = null; step(0.016); camSmooth = null; step(0.016); render();
+    const c = document.createElement("canvas"); c.width = cv.width; c.height = cv.height; c.getContext("2d").drawImage(cv, 0, 0); shots.push([h, c]);
+  }
+  setSlider("pilotH", keep.h); camSmooth = null;
+  const out = document.createElement("canvas"); out.width = cv.width * 2; out.height = cv.height;
+  const g = out.getContext("2d"); shots.forEach(([h, c], i) => { g.drawImage(c, i * cv.width, 0);
+    g.fillStyle = "#000a"; g.fillRect(i * cv.width + 8, 8, 260, 26); g.fillStyle = "#fff"; g.font = "16px system-ui";
+    g.fillText(h >= 200 ? "AC view (212 u)" : `on foot (${h} u ≈ 1.8 m)`, i * cv.width + 16, 27); });
+  download(`ac1_m${S.mission}_ac_vs_foot.png`, out);
+};
+
+loadMissions().catch(e => { $("msg").textContent = "error: " + e.message; console.error(e); });
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

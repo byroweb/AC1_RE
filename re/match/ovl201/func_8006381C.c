@@ -1,0 +1,142 @@
+#include "ac1/ac1.h"
+/* ovl201 0x8006381C - draw the inner pieces of a window frame (corners
+ * c[0..3]) with func_800646AC: four 8x8 tiles in a column at x+72, a
+ * 9-slice band, then the rest of the frame with func_8006035C. */
+
+typedef struct {
+    s16 x, y, w, h;
+} RECT16;
+
+extern void func_800646AC(UiObj *o, SVECTOR *v, RECT16 *tw);
+extern void func_8006035C(UiObj *o, SVECTOR *c);
+
+void func_8006381C(UiObj *o, SVECTOR *c)
+{
+    SVECTOR v[4];
+    RECT16 r;
+
+    v[0] = c[0];
+    v[0].vx += 72;
+    v[0].vy += 20;
+    v[1] = c[1];
+    v[1].vx = v[0].vx + 8;
+    v[1].vy += 20;
+    v[2] = c[2];
+    v[2].vx = v[1].vx;
+    v[2].vy = v[0].vy + 8;
+    v[3] = c[3];
+    r.x = 208;
+    r.y = 208;
+    r.w = 8;
+    r.h = 8;
+    v[3].vx = v[2].vx;
+    v[3].vy = v[1].vy + 8;
+    func_800646AC(o, v, &r);
+
+    v[0] = c[0];
+    v[0].vx += 72;
+    v[0].vy += 0;
+    v[1] = c[1];
+    v[1].vx = v[0].vx + 8;
+    v[1].vy = v[0].vy;
+    v[2] = c[2];
+    v[2].vx = v[0].vx;
+    v[2].vy = v[0].vy + 8;
+    v[3] = c[3];
+    r.x = 208;
+    r.y = 192;
+    r.w = 8;
+    r.h = 8;
+    v[3].vx = v[1].vx;
+    v[3].vy = v[1].vy + 8;
+    func_800646AC(o, v, &r);
+
+    v[0] = c[0];
+    v[0].vx += 72;
+    v[0].vy += 48;
+    v[1] = c[1];
+    v[1].vx = v[0].vx + 8;
+    v[1].vy = v[0].vy;
+    v[2] = c[2];
+    v[2].vx = v[0].vx;
+    v[2].vy = v[0].vy + 8;
+    v[3] = c[3];
+    r.x = 208;
+    r.y = 216;
+    r.w = 8;
+    r.h = 8;
+    v[3].vx = v[1].vx;
+    v[3].vy = v[1].vy + 8;
+    func_800646AC(o, v, &r);
+
+    v[0] = c[0];
+    v[0].vx += 72;
+    v[0].vy += 2;
+    v[1] = c[1];
+    v[1].vx = v[0].vx + 8;
+    v[1].vy += 2;
+    v[2] = c[2];
+    v[2].vy = v[0].vy + 52;
+    v[2].vx += 72;
+    v[3] = c[3];
+    r.x = 208;
+    r.y = 200;
+    r.w = 8;
+    r.h = 8;
+    v[3].vy = v[1].vy + 52;
+    v[3].vx = v[2].vx + 8;
+    func_800646AC(o, v, &r);
+
+    v[0] = c[0];
+    v[0].vy += 20;
+    v[1] = c[1];
+    v[1].vx = c[0].vx + 8;
+    v[1].vy += 20;
+    v[2] = c[2];
+    v[2].vy = v[0].vy + 8;
+    v[3] = c[3];
+    v[3].vx = c[0].vx + 8;
+    r.x = 192;
+    r.y = 208;
+    r.w = 8;
+    r.h = 8;
+    v[3].vy = v[1].vy + 8;
+    func_800646AC(o, v, &r);
+
+    v[0] = c[0];
+    v[0].vx = c[1].vx - 8;
+    v[0].vy += 20;
+    v[1] = c[1];
+    v[1].vx = c[1].vx;
+    v[1].vy += 20;
+    v[2] = c[2];
+    v[2].vx = v[0].vx;
+    v[2].vy = v[0].vy + 8;
+    v[3] = c[3];
+    v[3].vx = v[1].vx;
+    v[3].vy = v[1].vy + 8;
+    r.x = 216;
+    r.y = 208;
+    r.w = 8;
+    r.h = 8;
+    func_800646AC(o, v, &r);
+
+    v[0] = c[0];
+    v[0].vx += 8;
+    v[0].vy += 20;
+    v[1] = c[1];
+    v[1].vx -= 8;
+    v[1].vy += 20;
+    v[2] = c[2];
+    v[2].vy = v[0].vy + 8;
+    v[2].vx += 8;
+    v[3] = c[3];
+    r.x = 200;
+    r.y = 208;
+    r.w = 8;
+    r.h = 8;
+    v[3].vy = v[1].vy + 8;
+    v[3].vx -= 8;
+    func_800646AC(o, v, &r);
+    func_8006035C(o, c);
+}

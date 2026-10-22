@@ -1,29 +1,23 @@
-/* ovl201 0x80087EB8  size 160  permuter tier (tools/loop/permute.py): levers imm 4->2 + imm 2->1, from the file draft, 2026-10-22 */
 #include "ac1/ac1.h"
-#include "m2c_compat.h"
 
-M2C_UNK DrawSync(M2C_UNK);                          /* extern */
-M2C_UNK func_8005D15C(s8 *, M2C_UNK, s32);          /* extern */
-M2C_UNK func_80087C94(s32, s8 *);                   /* extern */
-extern M2C_UNK D_801F4114;
+extern s32 D_801F4114[2][64];
+extern void func_80087C94(s32 value, char *buf);
+extern void func_8005D15C(char *s, s32 x, s32 y);
 
-void func_80087EB8(s32 arg0, s32 arg1) {
-    union { s8 b[0x8]; s32 w; } sp_frame;
-    s32 temp_s0;
-    s32 temp_v1;
+void func_80087EB8(u8 id, u8 row)
+{
+    char buf[8];
 
-    temp_s0 = arg0 & 0xFF;
-    temp_v1 = temp_s0 * 1;
-    func_80087C94(*(temp_v1 + &D_801F4114) + M2C_FIELD((&D_801F4114 + temp_v1), s32 *, 0x100), &(*(s8 *)(sp_frame.b + 0x0)));
-    if (temp_s0 == 0x1C) {
-        (*(s8 *)(sp_frame.b + 0x0)) = 0x2D;
-        (*(s8 *)(sp_frame.b + 0x1)) = 0x2D;
-        (*(s8 *)(sp_frame.b + 0x2)) = 0x2D;
-        (*(s8 *)(sp_frame.b + 0x3)) = 0x2D;
-        (*(s8 *)(sp_frame.b + 0x4)) = 0x2D;
-        (*(s8 *)(sp_frame.b + 0x5)) = 0x2D;
-        (*(s8 *)(sp_frame.b + 0x6)) = 0;
+    func_80087C94(D_801F4114[0][id] + D_801F4114[1][id], buf);
+    if (id == 28) {
+        buf[0] = '-';
+        buf[1] = '-';
+        buf[2] = '-';
+        buf[3] = '-';
+        buf[4] = '-';
+        buf[5] = '-';
+        buf[6] = 0;
     }
-    func_8005D15C(&(*(s8 *)(sp_frame.b + 0x0)), 0x3C0, ((arg1 & 0xFF) * 0x10) + 0xB0);
+    func_8005D15C(buf, 960, row * 16 + 176);
     DrawSync(0);
 }

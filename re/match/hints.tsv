@@ -140,3 +140,640 @@ ovl201	0x800B32D4	hint	play coverage: selecting rank 10 (1), selecting rank 5 (1
 ovl201	0x800B3E98	hint	play coverage: exiting rank 10 (1), selecting rank 10 (1), selecting rank 5 (1)	2026-10-22T05:46:34Z
 ovl201	0x800B597C	hint	play coverage: swap head (1), yes load (1)	2026-10-22T05:46:34Z
 ovl201	0x800B5EEC	hint	play coverage: ac test (1), check performance (1)	2026-10-22T05:46:34Z
+ovl201	0x800968EC	name	mail_build_order	2026-10-22T06:04:24Z
+ovl201	0x800968EC	hint	Mail screen + opening letter: for each of 64 mails with the received bit (flags&1) it writes order[count-1-(flags>>2)] = mail index, i.e. rebuilds the newest-first list order from the receive sequence number stored in flags bits 2..7.	2026-10-22T06:04:24Z
+ovl201	0x800971AC	name	mail_set_row_read_mark	2026-10-22T06:04:24Z
+ovl201	0x800971AC	hint	Mail list: sets view->items[slot]->+2 to 1 or 0 from the read bit (flags&2) of the given mail; called per list row.	2026-10-22T06:04:24Z
+ovl201	0x8009720C	name	mail_copy_subject_to_row	2026-10-22T06:04:24Z
+ovl201	0x8009720C	hint	Mail list: copies the 32-byte subject string of a mail (table at 0x8017F860, terminated by >) into list row slot of the view (stride 34 at view+0x447) with x=0x40, y=0x30 header bytes.	2026-10-22T06:04:24Z
+ovl201	0x80096944	name	mail_screen_ctor	2026-10-22T06:04:24Z
+ovl201	0x80096944	hint	Mail screen constructor: allocates the 0x96C view (D_80180860), allocates a kind-0 UiObj whose ctor/update/destroy are 0x80096944/0x80096FFC/0x80097930, then copies 64 VRAM tiles with MoveImage to 960..1022 x 128/152 and DrawSync.	2026-10-22T06:04:24Z
+ovl201	0x80096684	name	mail_check_new_arrivals	2026-10-22T06:04:25Z
+ovl201	0x80096684	hint	Mail screen + opening letter: for each unreceived mail tests its (type,arg) condition (rank >= arg, story flag bits at 0x801F3788, or mail 18 special case) and marks it received with sequence number count++; mode 1 with pad 0xC delivers all.	2026-10-22T06:04:25Z
+ovl201	0x8009760C	name	mail_list_input	2026-10-22T06:04:25Z
+ovl201	0x8009760C	hint	Mail list update: on button 0x40 marks the selected mail read and opens it (letter reader), on 0x20 plays the cancel sound and closes; both retire the five list objects and kill obj id 3.	2026-10-22T06:04:25Z
+ovl201	0x80096FFC	name	mail_list_open	2026-10-22T06:04:25Z
+ovl201	0x80096FFC	hint	Mail screen update after ctor (set by 0x80096944): once obj id 3 is gone and the busy byte is clear, runs mail_check_new_arrivals + 0x800968C4 + mail_build_order, counts list entries into view->n, clamps rows to 5 and the selection, draws the frame (0x8005BA2C), plays a sound and moves to 0x800972A0.	2026-10-22T06:04:25Z
+ovl201	0x800972A0	name	mail_list_build_rows	2026-10-22T06:04:25Z
+ovl201	0x800972A0	hint	Mail list update after mail_list_open: waits for the frame drawer (0x8005BA2C) and 0x800517C8, sets two 9-entry s16 tables, then per visible row creates the read mark (0x8005CAE0, mail_set_row_read_mark), the subject text object (mail_copy_subject_to_row + 0x8005CB94, light 20 read / 12 unread) and a row frame; then hands over to mail_list_input.	2026-10-22T06:04:25Z
+ovl201	0x800B3E98	name	rank_detail_wait_close	2026-10-22T06:08:58Z
+ovl201	0x800B3E98	hint	Ran on selecting/exiting rank 5/10; on confirm/cancel (trig&0x60) plays a key, closes windows 4/6/8/10, kills objects 3/5/7/9 and sets update to 0x800B3FFC.	2026-10-22T06:08:59Z
+ovl201	0x800B32D4	name	rank_detail_draw	2026-10-22T06:08:59Z
+ovl201	0x800B32D4	hint	Ran on selecting rank 5/10; draws the selected rank entry (page+row at +0x98/+0x99) from the table at 0x8017F584, extra path when the row kind is 0xF (player), then update = rank_detail_wait_close.	2026-10-22T06:08:59Z
+ovl201	0x800B2398	name	rank_build_table	2026-10-22T06:08:59Z
+ovl201	0x800B2398	hint	Ran on ranking/system/load screens; fills points of 15 built-in rows from 0x80049E74, the player row from 0x80049E70, copies 16 x 0x10 rows to 0x8017F584 and bubble-sorts them by points descending.	2026-10-22T06:08:59Z
+ovl201	0x800B203C	name	rank_player_place	2026-10-22T06:08:59Z
+ovl201	0x800B203C	hint	Ran on system/create/load screens; calls rank_build_table and returns the 1-based place of the row whose kind byte is 0xF (the player), 0 if none.	2026-10-22T06:08:59Z
+ovl201	0x800B27A0	name	rank_list_draw_rows	2026-10-22T06:08:59Z
+ovl201	0x800B27A0	hint	Ran on ranking and rank select/exit; for 6 rows from the scroll position (+0x99) prints place and points, kills and recreates the three row text objects at 0x8017F684, and shows the up/down arrows (+0x88/+0x8C) by scroll limits.	2026-10-22T06:08:59Z
+ovl201	0x800B20A4	name	rank_screen_create	2026-10-22T06:08:59Z
+ovl201	0x800B20A4	hint	Ran on ranking; allocates the ranking UiObj (ctor itself, update 0x800B26C8), opens windows, resets the row object arrays to g_ui_none, builds and sorts the rank table, clears 0x801A2574, returns the object.	2026-10-22T06:08:59Z
+ovl201	0x800B597C	name	fe_relocate_block	2026-10-22T06:08:59Z
+ovl201	0x800B597C	hint	Ran on swap head / yes load; once per block (flag bit 0), adds the block data address to words +0x00/+0x08/+0x10 of each 0x1C-byte entry (offset-to-pointer relocation of a loaded file).	2026-10-22T06:08:59Z
+ovl201	0x800B2AC4	name	rank_list_update	2026-10-22T06:08:59Z
+ovl201	0x800B2AC4	hint	Ran on ranking and rank select/exit; per frame redraws rows, scrolls the cursor (+0x98) and page (+0x99) on pad up/down with key repeat, on confirm opens the selected entry's detail (func_800B2F18, update 0x800B2F74), on cancel closes the screen (update 0x800B2EC4).	2026-10-22T06:08:59Z
+ovl201	0x800B5EEC	name	sf_double_div	2026-10-22T06:09:00Z
+ovl201	0x800B5EEC	hint	Ran on AC test / check performance; soft-float a / b on two doubles: exponent difference + 1022, restoring division of 53-bit mantissas with func_800B61D0 compare, func_800B6850 negate and shifts, rounding, overflow error 34/15; sibling of the matched add (0x800B59F4) and multiply (0x800B68C4).	2026-10-22T06:09:00Z
+ovl201	0x8009C964	name	ac_calc_performance	2026-10-22T06:09:00Z
+ovl201	0x8009C964	hint	Ran on AC test / check performance; for AC record arg0 (0x800411F4 + arg0*0x39C) sums weights/stats of the equipped parts (part ids at 0x80031A58..0x80031A63, per-type tables at 0x800B9xxx/0x800BAxxx), caps by the legs' max load and derives figures with the soft-float double helpers (add/mul/div, __fixunsdfsi); not attempted (25504 bytes).	2026-10-22T06:09:00Z
+ovl201	0x80051A74	name	ui_format_int8	2026-10-22T06:10:00Z
+ovl201	0x80051A74	hint	ran on slot 1/system/create/load; writes n clamped to +-9999999 right-aligned in 8 chars with blanks and a leading minus (8-digit twin of 0x80074E44).	2026-10-22T06:10:00Z
+ovl201	0x80053DB4	name	saveload_slot_screen_enter	2026-10-22T06:10:00Z
+ovl201	0x80053DB4	hint	ran on slot 1; once func_8005BA2C box is gone prints the save (kind S) or load header and slot texts, calls 80051C44 for L/R arrows, 80053E98, then update=800542F0.	2026-10-22T06:10:00Z
+ovl201	0x80054AB0	name	saveload_save_confirm_step	2026-10-22T06:10:00Z
+ovl201	0x80054AB0	hint	kind S confirm box set by 800542F0; ran on NEW / yes create new data; card check 800685A8(slot) aborts with error box, else mode 0 opens three option boxes and goes to 80054C34, mode 1 back to 800542F0.	2026-10-22T06:10:00Z
+ovl201	0x80054F1C	name	saveload_load_confirm_step	2026-10-22T06:10:00Z
+ovl201	0x80054F1C	hint	ran on selecting save slot 1 / yes load; same body as 80054AB0 but next state 800550A0.	2026-10-22T06:10:00Z
+ovl201	0x80054D44	name	saveload_create_data	2026-10-22T06:10:00Z
+ovl201	0x80054D44	hint	ran on yes create new data; stores 800684A0(slot) in status[slot], on error shows message + key-on sound, else 80066F90(slot, entry) and shows done/fail message, update=ui_obj_nop2.	2026-10-22T06:10:01Z
+ovl201	0x80052134	name	saveload_menu_create	2026-10-22T06:10:01Z
+ovl201	0x80052134	hint	ran on system; ui_obj_alloc(0) ctor/destroy setup, kind S when owner ctor is 8004FDF4, L for 800A2D0C or a non-null 2nd arg, else error box; sets D_801A2574=2, returns the object.	2026-10-22T06:10:01Z
+ovl201	0x80053AB4	name	saveload_slot_open	2026-10-22T06:10:01Z
+ovl201	0x80053AB4	hint	ran on slot 1; checks the card (800684A0), reloads its directory (80066994, 80066CB0), flags +0xA7 when saving with fewer than 15 used blocks in D_801EF6D0[slot], resets cursor/top and picks the next state from used/+0x08.	2026-10-22T06:10:01Z
+ovl201	0x80053E98	name	saveload_draw_entry_list	2026-10-22T06:10:01Z
+ovl201	0x80053E98	hint	ran on slot 1; draws up to 5 row frames, then per visible card entry (0x2C records at 0x801F5098 from top +0xA6) the number, name, an s16 value and an 8-digit value (func_80051A74), plus the NEW DATA row when +0xA7 is set.	2026-10-22T06:10:01Z
+ovl201	0x800551B0	name	saveload_load_data	2026-10-22T06:10:01Z
+ovl201	0x800551B0	hint	ran on yes load; card check, then 80067CF0(slot, entry) reads the save, copies the 0xA0-byte block 0x80031A94 to 0x80042AA8, rebuilds state (80083A58, 80074A18, 8005EB80, 80073B7C), waits on 800517C8, fixes VRAM with MoveImage, and shows the loaded/failed message.	2026-10-22T06:10:01Z
+ovl201	0x8005252C	name	system_draw_pilot_status	2026-10-22T06:10:01Z
+ovl201	0x8005252C	hint	ran on system / yes create / yes load; prints the pilot and AC names from 0x80031BD4, credits (D_80039CA4, 8 digits), rank (800B203C), missions/successes/failures from 0x80041B3C/40/44 with success and failure percentages, and a completion percentage from 11 part flags in the two 0xA0 blocks at 0x80031A94; update=80052BD0.	2026-10-22T06:10:01Z
+ovl201	0x80052BD0	name	system_menu_update	2026-10-22T06:10:01Z
+ovl201	0x80052BD0	hint	ran on system / save data / load data / exiting to general menu; pad up/down (0x1000/0x4000, with repeat delay/rate from D_801A2574) moves the 5-entry cursor +0xA1, cancel 0x20 closes the boxes (update 80055C2C), confirm 0x40 sets kind S/L and D/E then update 80052F68, entry 4 exits via 8005700C.	2026-10-22T06:10:01Z
+ovl201	0x800542F0	name	saveload_entry_list_update	2026-10-22T06:10:01Z
+ovl201	0x800542F0	hint	ran on NEW / selecting save slot 1 / slot 1; creates the up/down scroll arrows (+0x90/+0x94), shows them by top +0xA6 vs the entry count, moves the row cursor +0xA2 with pad repeat and scrolls via 80053E98, cancel goes to 8005489C, confirm opens the save (S: 80054AB0) or load (80054F1C) / new-data (80055580) confirm box.	2026-10-22T06:10:02Z
+ovl201	0x800531B8	name	saveload_slot_select_update	2026-10-22T06:10:02Z
+ovl201	0x800531B8	hint	ran on load data / save data / slot 1; polls card slot 0/1 on alternate frames (800685A8) to light the slot icons, up/down moves +0xA0, confirm checks the card (800684A0, 3 retries) and opens the slot (80053924) or a card error box, cancel returns to the caller menu.	2026-10-22T06:10:02Z
+ovl201	0x8005CC48	name	ui_light_fade_create	2026-10-22T06:12:40Z
+ovl201	0x8005CC48	hint	Runs on every garage/menu screen; singleton UiObj (ctor=self) that resets four light MATRIX globals 0x800B8F24/84/A4/9024 and installs update 0x8005CDEC which ramps the light colour up to 0x180.	2026-10-22T06:12:40Z
+ovl201	0x80061164	name	asm_draw_frame_edges	2026-10-22T06:12:40Z
+ovl201	0x80061164	hint	Assembly (swap/cancel head); copies a 4-corner quad, insets it by 8 px and draws six 8-px edge strips from texture u=192..216 v=208 via func_800646AC, then calls func_8006035C.	2026-10-22T06:12:40Z
+ovl201	0x80062D58	name	asm_draw_frame_corners	2026-10-22T06:12:40Z
+ovl201	0x80062D58	hint	Assembly (swap/cancel head, check performance); same 4-corner quad as 0x80061164, draws eight 8x8 tiles (u/v 192..216) of a 9-slice window frame via func_800646AC.	2026-10-22T06:12:40Z
+ovl201	0x8005EB80	name	garage_reload_part_resources	2026-10-22T06:12:40Z
+ovl201	0x8005EB80	hint	Ran on yes-load; for each part slot whose byte in D_80031A58[] is 0xFF asks func_8007AA04(slot) for an id and loads it with func_80050AF4/func_80051450 (offset by D_80039CA2), optional func_80074A18 when flag set.	2026-10-22T06:12:40Z
+ovl201	0x80059B50	name	tmd_draw_object	2026-10-22T06:12:40Z
+ovl201	0x80059B50	hint	Assembly/paint screens; takes TMD model D_801F36D0[mi] object oi (0x1C entry), sets rot/trans matrix, RTPS all vertices into sxy/sz tables, then dispatches each primitive packet through handler table D_800B7048[type].	2026-10-22T06:12:40Z
+ovl201	0x80059E44	name	tmd_prim_line_tri	2026-10-22T06:12:40Z
+ovl201	0x80059E44	hint	TMD primitive handler from table D_800B7048 (assembly/paint screens); per packet builds a closed flat polyline (code 0x4C, 4 points + 0x55555555) from the 3 projected vertices, NCCS colour, AVSZ3 depth, addPrim into the OT.	2026-10-22T06:12:40Z
+ovl201	0x8005A3A4	name	tmd_prim_line_quad	2026-10-22T06:12:40Z
+ovl201	0x8005A3A4	hint	TMD primitive handler (table D_800B7048), 20-byte quad packets; draws a quad wireframe as a closed LINE polyline (0x4C) plus a LINE_F2 (0x40) diagonal, NCCS colour, AVSZ3 depth.	2026-10-22T06:12:40Z
+ovl201	0x8005A5F8	name	tmd_prim_line_quad_b	2026-10-22T06:12:41Z
+ovl201	0x8005A5F8	hint	Same body as 0x8005A3A4 for 32-byte quad packets (vertex indices at +0x16..+0x1C); wireframe quad handler.	2026-10-22T06:12:41Z
+ovl201	0x8005AAA0	name	tmd_prim_line_quad_c	2026-10-22T06:12:41Z
+ovl201	0x8005AAA0	hint	Same body as 0x8005A3A4 for 36-byte quad packets (vertex indices at +0x16 stride 4, i.e. gouraud normal/vertex pairs); wireframe quad handler.	2026-10-22T06:12:41Z
+ovl201	0x800572C4	name	tmd_prim_flat_tri	2026-10-22T06:12:41Z
+ovl201	0x800572C4	hint	Assembly screen; TMD primitive handler over 16-byte packets at D_8017E500: NCLIP backface cull, NCCS-lit flat triangle (POLY_F3, tag 0x04FFFFFF), AVSZ3 depth, addPrim into the OT.	2026-10-22T06:12:41Z
+ovl201	0x80058100	name	tmd_prim_gt3	2026-10-22T06:12:41Z
+ovl201	0x80058100	hint	Assembly screen; TMD primitive handler over 28-byte packets at D_8017E500: NCLIP cull, NCCT lighting of 3 normals into a gouraud textured triangle (POLY_GT3, uv/clut/tpage copied), AVSZ3 depth, addPrim.	2026-10-22T06:12:41Z
+ovl201	0x80059634	name	tmd_prim_ft4	2026-10-22T06:12:41Z
+ovl201	0x80059634	hint	TMD primitive handler over 32-byte packets at D_8017E500 (ran on garage/mail/ranking screens): NCLIP cull, NCCS-lit flat textured quad (POLY_FT4, tag 0x09533900, uv/clut/tpage copied), AVSZ3 depth, addPrim.	2026-10-22T06:12:41Z
+ovl201	0x8004E2BC	name	garage_ring_idle	2026-10-22T06:12:41Z
+ovl201	0x8004E2BC	hint	Garage main menu (6-item ring, ran on garage/mail/ranking/system screens): on confirm runs the front item setup (switch on ring.front, e.g. AC data copy for item 0), then ranks the other panels and switches to func_8004EC24; left/right start a turn via func_8004E894 and reset the light matrices.	2026-10-22T06:12:41Z
+ovl201	0x8009795C	name	letter_line_reset	2026-10-22T06:14:22Z
+ovl201	0x8009795C	hint	ran on opening letter; resets work->line[i] (text "@0>" colour codes, read pos/len/flags)	2026-10-22T06:14:22Z
+ovl201	0x800981BC	name	letter_line2_reset	2026-10-22T06:14:23Z
+ovl201	0x800981BC	hint	twin of 0x8009795C for the second line array at work+0x264	2026-10-22T06:14:23Z
+ovl201	0x800997C8	name	mail_cursor_ctor	2026-10-22T06:14:23Z
+ovl201	0x800997C8	hint	mail/opening letter; allocs a kind-4 UiObj (render_type 3, res 0x800B8CDC) at y=(D_8017F795-D_8017F796)*24, update 0x800998B4	2026-10-22T06:14:23Z
+ovl201	0x80097B4C	name	letter_lines_ctor	2026-10-22T06:14:23Z
+ovl201	0x80097B4C	hint	opening letter; allocs kind-6 UiObj, builds 2 text labels (func_8005CB94) from work->line[i].text at y=i*16+5 and resets each line	2026-10-22T06:14:23Z
+ovl201	0x80097F30	name	letter_copy_text	2026-10-22T06:14:23Z
+ovl201	0x80097F30	hint	opening letter; copies src text up to > or / into work+0x520, frees src (free2), clears work+0x0A	2026-10-22T06:14:23Z
+ovl201	0x800980E4	name	letter_upload_tim	2026-10-22T06:14:23Z
+ovl201	0x800980E4	hint	opening letter; switch on volatile work->tim_slot (+0x0B, 1..3) loads the TIM via 0x80097FDC to VRAM 896/960 with CLUT row 481..483, clears the slot, DrawSync(0), free2	2026-10-22T06:14:23Z
+ovl201	0x80097FDC	name	letter_load_tim	2026-10-22T06:14:23Z
+ovl201	0x80097FDC	hint	TIM chain loader: while word==0x10, LoadImage the CLUT (flag bit 3) at (cx,cy) and the image at (x,y); called only by 0x800980E4	2026-10-22T06:14:23Z
+ovl201	0x80097D24	name	letter_lines_update	2026-10-22T06:14:23Z
+ovl201	0x80097D24	hint	opening letter; update of the 0x80097B4C object: src = work text + sum of line[].next, unless a dialog (0x8005BA2C) is up types the first unfinished line via 0x80097A08 (fast while pad 0x40/0x1000/0x4000 held), on new 0x20 press closes (kills obj id 11, opens 0x8005C2D0) and switches update to 0x80097EE8	2026-10-22T06:14:23Z
+ovl201	0x80097A08	name	letter_type_line	2026-10-22T06:14:23Z
+ovl201	0x80097A08	hint	opening letter; copies one source char (two for @ ^ { escapes) into line->text and appends ">" cursor; "	2026-10-22T06:14:23Z
+ovl201	0x80098550	name	letter_reply_ctor	2026-10-22T06:14:24Z
+ovl201	0x80098550	hint	opening letter; allocs kind-6 UiObj, 5 labels from work->line2[i] (y=i*16+5), resets letter state, clears work text buffers, requests the letter body message (row[order[sel]].id[...] + 819) through 0x800513F0 with callback 0x80097F30, clears VRAM 896/960 pages and CLUT rows 481..483	2026-10-22T06:14:24Z
+ovl201	0x80098268	name	letter_type_reply_line	2026-10-22T06:14:24Z
+ovl201	0x80098268	hint	opening letter; line2 twin of 0x80097A08 plus %N escapes (advance work->unk9, request reply message row[order[sel]].reply[unk9]+819 via 0x800513F0 after waiting on volatile tim_slot, mark seen[N%3] and store 0x8009A218() at work+0x80); plays SsUtKeyOn click after each typed step	2026-10-22T06:14:24Z
+ovl201	0x800998B4	name	mail_cursor_update	2026-10-22T06:14:24Z
+ovl201	0x800998B4	hint	mail screen; update of the 0x800997C8 cursor: up/down (pad 0x1000/0x4000 new press) moves sel with wrap, moves cursor y by 24 or scrolls the row names/icons/labels via 0x80099868 and refills the new row (0x8009720C/0x800971AC), then handles the held-key repeat counters 0x800B8CC8/0x800B8CCC	2026-10-22T06:14:24Z
+ovl201	0x80098A58	name	letter_reply_update	2026-10-22T06:14:24Z
+ovl201	0x80098A58	hint	opening letter; update of the 0x80098550 object: scrolls line2[] up/down (unk4/unk5 step counters, history of offsets at +0x10), types the next line via 0x80098268 (fast while 0x40/0x1000/0x4000 held), up/down/advance keys page the letter and request message ids, 0x20 closes back to the list (kills/creates buttons), 0x8/0x4 page the reply TIMs via 0x800980E4	2026-10-22T06:14:24Z
+ovl201	0x80068828	name	memcard_wait_sw_event	2026-10-22T06:19:46Z
+ovl201	0x80068828	hint	Ran on every save/load slot screen; loops TestEvent over the 4 events at 0x8017E5B4..C0 and returns which fired (0..3); waited on after _card_info/_card_load.	2026-10-22T06:19:46Z
+ovl201	0x800688AC	name	memcard_wait_hw_event	2026-10-22T06:19:46Z
+ovl201	0x800688AC	hint	Twin of memcard_wait_sw_event over the 4 events at 0x8017E5C4..D0; waited on after _card_clear (PsyQ _card_event_x pattern), ran on slot 1.	2026-10-22T06:19:47Z
+ovl201	0x800703D0	name	emblem_spawn_marker	2026-10-22T06:19:47Z
+ovl201	0x800703D0	hint	Ran on edit emblem; allocates a kind-4 UiObj (update 0x8007046C) at the position of the object at o+0x98 and stores o in its +0x7C.	2026-10-22T06:19:47Z
+ovl201	0x8006C324	name	emblem_put_pixel	2026-10-22T06:19:47Z
+ovl201	0x8006C324	hint	Ran on draw red line; converts cursor screen pos (o+0x98 +0x7E/+0x80, minus 172/36, / zoom at +0x84) plus view origin into a pixel and writes the pen color (+0x86) as a 4bpp nibble into the 64-px-wide canvas at +0x88.	2026-10-22T06:19:47Z
+ovl201	0x800684A0	name	memcard_check_card	2026-10-22T06:19:48Z
+ovl201	0x800684A0	hint	Ran on slot 1/create/load; PsyQ card-check sequence: _card_info, on new card _card_clear + _card_load, returns 0..4 status from the event waits; arg = port (chan = port?16:0).	2026-10-22T06:19:48Z
+ovl201	0x8006B080	name	emblem_apply_confirm	2026-10-22T06:19:48Z
+ovl201	0x8006B080	hint	Ran on apply / yes apply; on answer 0 (+0xC4) restores VRAM rects, kills dialog objects 3/5/7/9, sets flag 0x20 in 0x801A2550 and moves on to 0x8006B1E8; answer 1 returns to the editor 0x80068FBC.	2026-10-22T06:19:48Z
+ovl201	0x8006A2C4	name	emblem_sample_draw_grid	2026-10-22T06:19:48Z
+ovl201	0x8006A2C4	hint	Ran on sample / sel purple cat; draws the 4x4 grid of sample emblems (table 0x800B7EE0, 12-byte entries) at 0x44 px spacing, scrolled by the u16 at +0xC8.	2026-10-22T06:19:48Z
+ovl201	0x80068C08	name	emblem_edit_update	2026-10-22T06:19:48Z
+ovl201	0x80068C08	hint	Ran on draw/edit/circle-menu screens; per-frame editor step: calls 0x8006D1D8, Circle edge (pad 0x20) opens the menu boxes and switches to 0x80068E14, pad 0x80 edge picks the pen color into 0x8017E618 and switches to 0x8006B250, then 0x8006BA08.	2026-10-22T06:19:49Z
+ovl201	0x8006ABA4	name	emblem_sample_load_confirm	2026-10-22T06:19:49Z
+ovl201	0x8006ABA4	hint	Ran on load yes / sel purple cat; on answer 0 copies the chosen sample (index col+page*4+row*4) image and CLUT from VRAM into the canvas (+0x88) and the 15-entry palette 0x8017E5D8 (5:5:5 to 8-bit, alpha 0x60), closes the dialogs.	2026-10-22T06:19:49Z
+ovl201	0x8006BF84	name	emblem_sync_palette	2026-10-22T06:19:49Z
+ovl201	0x8006BF84	hint	Ran on edit emblem; reads the canvas image and CLUT back from VRAM, rebuilds the 8-bit palette 0x8017E5D8 (entry 0 black, alpha 0x60), re-encodes it to 5:5:5 with the STP bit for pure black and uploads CLUT and image again, then 0x8006F55C.	2026-10-22T06:19:49Z
+ovl201	0x80066CB0	name	memcard_scan_saves	2026-10-22T06:19:49Z
+ovl201	0x80066CB0	hint	Ran on slot 1; firstfile/nextfile over "bu00:BASCUS-94182*" (or bu10), skips names with Z at [12], reads the first 0x280 bytes of each save into a 0xE80 buffer and fills up to 16 0x2C slot entries at 0x801F5098 (36-byte title, +0x24, +0x28), count into 0x801A257C.	2026-10-22T06:19:50Z
+ovl201	0x80066994	name	memcard_read_dir	2026-10-22T06:19:50Z
+ovl201	0x80066994	hint	Ran on slot 1 / yes create new data; for a port fills the 0x88C card directory at 0x801EF6D0[port]: this game's saves (BASCUS-94182*, skipping Z at [12]) and every file (bu00:*) with names and 8 KB block counts, plus the used-block total.	2026-10-22T06:19:50Z
+ovl201	0x80068FBC	name	emblem_menu_update	2026-10-22T06:19:50Z
+ovl201	0x80068FBC	hint	Ran on circle-to-see-menu/sample/apply; Up/Down (pad 0x1000/0x4000, with auto-repeat delays) move the menu cursor +0x90 over 6 items (ZOOM UNDO CLEAR SAMPLE APPLY CANCEL), Circle closes the menu, Cross runs the item (zoom box, undo 0x8006F590, clear canvas 0x800 bytes, sample list, apply/cancel confirm).	2026-10-22T06:19:50Z
+ovl201	0x80067CF0	name	memcard_load_save	2026-10-22T06:19:50Z
+ovl201	0x80067CF0	hint	Ran on yes load; checks the card, opens bu00:BASCUS-94182<letter> for the chosen slot with 3 retries, reads the 0xE80-byte save, verifies the checksum of +0x230.., copies the game state blocks to their RAM homes, uploads the emblem image/CLUT (+0x438/+0xC38) to VRAM and re-inits subsystems; returns 1 on success.	2026-10-22T06:19:51Z
+ovl201	0x8006A3EC	name	emblem_sample_update	2026-10-22T06:19:51Z
+ovl201	0x8006A3EC	hint	Ran on sample / sel purple cat; per-frame sample picker: redraws the 4x4 grid (emblem_sample_draw_grid), d-pad moves col +0xC6 / row +0xC7 / page +0xC5 with auto-repeat, pad 0x8/0x4 switch bank +0xCA, Cross asks to load (msg 0x8004B7C4 -> emblem_sample_load_confirm), Circle backs out.	2026-10-22T06:19:51Z
+ovl201	0x8006D6E8	name	emblem_edit_input	2026-10-22T06:19:51Z
+ovl201	0x8006D6E8	hint	Ran on draw/edit/menu screens; editor pad handling: Cross held at the canvas edge scrolls the view (+0x7C/+0x7E of view obj, limit 32/48 by zoom), Triangle picks the color under the pen (0x8006C4C0), pad 0x2/0x1 cycle color 0..15, Select cycles zoom 2/4/8 recentring the view, pad 0x8/0x4 cycle tool +0x8C 0..6.	2026-10-22T06:19:51Z
+ovl201	0x8006D1D8	name	emblem_pen_update	2026-10-22T06:19:51Z
+ovl201	0x8006D1D8	hint	Ran on draw/edit/menu screens; per-frame editor step: unless tool +0x8C is 6, moves the pen cursor with the d-pad (8 px outside the canvas, zoom-sized steps with a repeat counter 0x800B812C inside), clamps it to the 128x128 canvas at 172,36, spawns/kills edge arrows (0x8006FE58), then dispatches the tool handler and calls emblem_edit_input.	2026-10-22T06:19:52Z
+ovl201	0x80066F90	name	memcard_write_save	2026-10-22T06:19:52Z
+ovl201	0x80066F90	hint	Ran on yes create new data; builds the 0xE80-byte save (SC header, SJIS title with slot number, pilot name and a 3-digit counter, per-letter icon, game state blocks, emblem image/CLUT from VRAM, checksum), picks a free letter A..O for a new slot, creates/opens bu00:BASCUS-94182<letter>, writes with retries and reads it back to verify.	2026-10-22T06:19:52Z
+ovl201	0x8008CFD4	name	garage_part_index	2026-10-22T06:30:26Z
+ovl201	0x8008CFD4	hint	assembly/garage/swap head; returns base[cat] + n from a local table of 10 cumulative offsets (0,10,13,..,127): global part number of the n-th part of category cat; 80083A58 indexes the owned-part bytes 0x80042AA8 with it	2026-10-22T06:30:26Z
+ovl201	0x80085320	name	fe_format_number	2026-10-22T06:30:26Z
+ovl201	0x80085320	hint	check performance; called 14x from 0x80085640; writes val as a fixed-width decimal of n digits into buf, clamped to 10^n-1, leading blanks, last digit always shown, a minus sign put on the last blank	2026-10-22T06:30:26Z
+ovl201	0x800810F0	name	name_entry_create	2026-10-22T06:30:26Z
+ovl201	0x800810F0	hint	ac name entry; ctor of the name-entry object (update 0x80081C5C), mode arg == 'A' edits the AC name buffer 0x80031BD4 with title "AC NAME", else the pilot name 0x80031BE6 with "PILOT NAME"	2026-10-22T06:30:26Z
+ovl201	0x80083A58	name	garage_build_owned_part_masks	2026-10-22T06:30:26Z
+ovl201	0x80083A58	hint	assembly/garage/yes load; for each of 10 part categories clears the 64-bit mask *0x800B89E8[cat] and sets bit j when owned byte 0x80042AA8[garage_part_index(cat,j)] != 0, j < count 0x800B8A10[cat]	2026-10-22T06:30:26Z
+ovl201	0x8007C2F0	name	garage_step_owned_part	2026-10-22T06:30:26Z
+ovl201	0x8007C2F0	hint	swap head; called 18x from 0x80078D84; dir == 'N' scans the 64-bit owned mask of category o+0x90 (table 0x800BCABC, 16-byte rows) upward from the current part o+0xA6 with wrap-around, else downward; returns the next owned part index (255 = none selected)	2026-10-22T06:30:26Z
+ovl201	0x8007C7D8	name	paint_menu_update	2026-10-22T06:30:26Z
+ovl201	0x8007C7D8	hint	change color/change pattern/exit paint; update of the paint top menu: up/down (0x1000/0x4000, repeat delays 0x801A2554/56 scaled by 0x801A2574) move the 2-row cursor o+0x80 with wrap, confirm (0x40) closes the box (obj id 3 killed, func_8005C2D0) and switches update to the colour editor 0x8007CCE4 or a pattern screen (0x8007CDD8/0x8007CECC by flag 0x80039CA2), 0x20 exits to 0x8007CBC0	2026-10-22T06:30:27Z
+ovl201	0x8007D254	name	paint_color_slot_update	2026-10-22T06:30:27Z
+ovl201	0x8007D254	hint	edit color/change to Rusty Copper/exit color; update of the colour-slot list: up/down move o+0x84 over 4 slots, confirm on a slot stores it in 0x80039CA3 and opens the colour picker (func_80051450(4, slot + 0x80039CA2*4 + 58), update 0x8007D640); confirm on row 4 or cancel closes the box and returns to the caller object o+0x7C (its update := o+0x80, self killed) or to 0x8007DE1C	2026-10-22T06:30:27Z
+ovl201	0x800807CC	name	paint_pattern_list_update	2026-10-22T06:30:27Z
+ovl201	0x800807CC	hint	change pattern/sel woodland/sel hoarfrost/exit pattern; update of the 16-entry pattern list: shows/hides the scroll arrows o+0x84/o+0x88 by the top row o+0x8D (0 / 9), up/down move the selection o+0x8C and scroll 7 visible rows (func_80080EB0 redraws), confirm stores a new pattern in 0x80039CA2 (func_80080F40, update 0x80080B80), cancel kills the arrows and goes to 0x80080CA8	2026-10-22T06:30:27Z
+ovl201	0x8007BE0C	name	assembly_part_model_create	2026-10-22T06:30:27Z
+ovl201	0x8007BE0C	hint	assembly/swap head; ctor (update 0x8007C15C, called from 0x80078AAC) of the 3D model object of the part selected in list object p (category p+0x90, part p+0xA6, 255 = none): model id in res, scale and position from the per-part pose table 0x800BCABC[cat].pose[part], x mirrored for side 'L', 0 for 'C'	2026-10-22T06:30:27Z
+ovl201	0x80085640	name	perf_check_draw	2026-10-22T06:30:27Z
+ovl201	0x80085640	hint	check performance; draws the performance table: AP/weight/price header (option prices from 0x800BB140 by bitmask 0x80039CA0), then weight, offensive/defensive points (soft-float, x1.15 per option bit), stability, mobility, moving speed (weight / 0x8004AC40), turning, boost, radar, FCS, overall, and grade by thresholds 10000..25000; update := 0x8008630C	2026-10-22T06:30:27Z
+ovl201	0x8007AD64	name	assembly_draw_status	2026-10-22T06:30:27Z
+ovl201	0x8007AD64	hint	cancel head (assembly screen); after the func_8005BA2C object is gone sets up two 128x144 draw envs, shows warning icons (missing part, credits 0x8004AC38 < 0, arm load over core limit, total weight over leg limit) and the names of the 11 equipped parts from the per-slot part tables ("NO EQUIP" when 255); update := 0x8007B850	2026-10-22T06:30:27Z
+ovl201	0x80081C5C	name	name_entry_update	2026-10-22T06:30:27Z
+ovl201	0x80081C5C	hint	ac name entry/type Byron; update of the name-entry object: d-pad moves the cursor o+0x9A/o+0x9B over the 17x8 character grid 0x800B8608 (with jumps around holes), confirm writes the 2-byte character (0x8140 space at END-1) into the AC or pilot name 0x80031BD4/0x80031BE6 and moves the > mark, cancel erases, START jumps to END; confirm on END opens "Confirm the registered name?" (update 0x8008240C)	2026-10-22T06:30:27Z
+exe	0x80015A48	name	cd_queue_wait_idle	2026-10-22T06:42:05Z
+exe	0x80015A48	hint	ac test: spins EnterCriticalSection until the CD request ring at 0x80049FE0 is drained (rd == wr at 0x8004A260/64 and *rd == 0), calling func_800161F8 (queue service) between checks.	2026-10-22T06:42:05Z
+exe	0x800121AC	name	loading_screen_begin	2026-10-22T06:42:05Z
+exe	0x800121AC	hint	ac test: blanks display, ClearImage, loads TIM 0x65 of archive 1 via func_800165E4 + func_80011FD8, sets 320x240 Disp/DrawEnv, installs func_80012048 as the vsync callback (0x80049F98).	2026-10-22T06:42:05Z
+exe	0x80012048	name	loading_screen_vsync_draw	2026-10-22T06:42:05Z
+exe	0x80012048	hint	ac test: vsync callback installed by 0x800121AC; every 64-tick window builds a POLY_FT4 at 0x80049FA4 (32,96 255x48, clut 0xC00, tpage 0x20) with rsin-pulsed grey and DrawPrims it.	2026-10-22T06:42:05Z
+exe	0x80016328	name	cd_read_sectors_retry	2026-10-22T06:42:05Z
+exe	0x80016328	hint	ac test: waits for the CD queue (0x80015A48), CdControl(CdlSetloc), CdRead(n, buf, 0x80), CdReadSync; retries 3 times, then func_80015DC0(1) error.	2026-10-22T06:42:05Z
+ovl201	0x80075520	name	assembly_draw_ac_stats	2026-10-22T06:42:05Z
+ovl201	0x80075520	hint	assembly/cancel head/swap head: formats 8 numbers from the stat block at 0x8004AC38..54 (value, delta vs max) into char[8][7] at 0x8017EE48 via func_80074E44 and lays them out as text objects (func_8005D80C) with labels; negative deltas get light 13 (warning colour).	2026-10-22T06:42:05Z
+ovl201	0x80073B7C	name	garage_load_ac_part_assets	2026-10-22T06:42:05Z
+ovl201	0x80073B7C	hint	yes load: for each equipped part id in D_80031A58[] that is not 255 calls func_80051450(kind, id + D_80039CA2*k); then either builds paint CLUTs (func_80073DDC) when D_80039CA2 == 0 or loads entry D_80039CA3 + D_80039CA2*4 + 58.	2026-10-22T06:42:05Z
+ovl201	0x80073904	name	garage_load_ac_part_assets_cond	2026-10-22T06:42:05Z
+ovl201	0x80073904	hint	yes load: variant of 0x80073B7C; frame/core/arm/leg ids and 3 optional parts only when D_80039CAB == 0 && D_80039CAD == 0, otherwise only parts 6/7 with id >= 31; also loads parts 8/9 (kinds 18/16) and the paint (func_80073DDC or entry CA3 + CA2*4 + 58).	2026-10-22T06:42:05Z
+ovl201	0x800744A8	name	assembly_screen_create	2026-10-22T06:42:05Z
+ovl201	0x800744A8	hint	assembly: ctor of the assembly screen object (kind 0, update func_80078A38): draws the labels, snapshots the equipped part ids D_80031A58[], calls func_80074A18, and if any part changed starts a transition (func_8005DED8); then sets up the head/core selector (part 2 or 0 per D_80031A5A != 255) and returns the object.	2026-10-22T06:42:06Z
+ovl201	0x8007509C	name	assembly_show_part_info	2026-10-22T06:42:06Z
+ovl201	0x8007509C	hint	assembly/swap head: for the selected part (category w+0x90, index w+0xA6, 255 = none) reads name and three u16 stats from the per-category part table (strides 0x2C..0x60 at 0x800B91F4..0x800BAFCC) plus func_80083C00(cat, idx), kills the six old text objects at 0x8017EF80..94 and re-creates name + number texts.	2026-10-22T06:42:06Z
+ovl201	0x80078AAC	name	assembly_selector_refresh	2026-10-22T06:42:06Z
+ovl201	0x80078AAC	hint	assembly/swap head: clears the pending model load in D_801F36D0[1 or 2], recreates the selector bar (func_8007BE0C) with saved rot/rank, refreshes part info (0x8007509C), the 3D AC (0x80075898), stats (0x80075520), then shows the warning text D_800B8448 when the chosen part does not fit the frame (D_80031A5B/63 rules per mode w+0x92) and sets update = func_80078D84.	2026-10-22T06:42:06Z
+ovl201	0x80074A18	name	garage_fix_ac_parts	2026-10-22T06:42:06Z
+ovl201	0x80074A18	hint	assembly/yes load: fills empty (255) part slots of D_80031A58[] with defaults from func_8007AA04(slot) and clears parts that conflict with the chosen frame/legs (slot 3 >= 8, slot 11 >= 27, slot 5 == 15, slot 3 == 5 rules).	2026-10-22T06:42:06Z
+ovl201	0x800740AC	name	assembly_preview_part_stats	2026-10-22T06:42:06Z
+ovl201	0x800740AC	hint	assembly/cancel head/swap head: saves D_80031A58[0..11] to 0x8017EE20, puts the highlighted part (w+0xA6) into slot w+0x92, applies the same frame-compatibility clears as garage_fix_ac_parts, calls func_80071A18 (stat computation) and restores the saved parts.	2026-10-22T06:42:06Z
+ovl201	0x800714FC	name	ac_check_legal	2026-10-22T06:42:06Z
+ovl201	0x800714FC	hint	ac test: copies the AC name into buf, returns 0 when a required part slot is empty or stats are bad (D_8004AC38 < 0 after func_80071A18), checks legs+booster+? weight against core load (+0x32) and total weight against arms load; on overload writes "Illegal machine.>" (debug flag D_80039D22) else fails; returns 1 when the machine is legal.	2026-10-22T06:42:06Z
+ovl201	0x80071A18	name	ac_compute_stats	2026-10-22T06:42:06Z
+ovl201	0x80071A18	hint	ac test/assembly/check performance: zeroes the stat block at 0x8004AC38 (struct of 6 s32 + 3 u16), seeds it from core/arms/generator capacities, then for each of the 12 part slots adds weight/price/energy from the per-category part table (category per slot from the s16 list at 0x8004BDC0) and subtracts drain; a twin back weapon pair (func_80083C00) gets a correction.	2026-10-22T06:42:06Z
+ovl201	0x80075898	name	assembly_draw_part_specs	2026-10-22T06:42:06Z
+ovl201	0x80075898	hint	assembly/cancel head/swap head: on pad 0x10 toggles a help window (obj id 9); when w+0xAE is set rebuilds the spec panel for the part at (category w+0x90, index w+0xA6): description lines from per-category string tables plus every stat formatted by func_80074F5C into 0x8017EE80 and drawn with func_8005D80C at x=0x7A (or "-" placeholders for none).	2026-10-22T06:42:06Z
+ovl201	0x80078D84	name	assembly_update	2026-10-22T06:42:06Z
+ovl201	0x80078D84	hint	assembly/cancel head/swap head: per-frame update installed by 0x80078AAC; refreshes stats/specs (0x800740AC, 0x80075520, 0x80075898), reads pad bits 0x1000/0x4000 to step the part category (skipping empty tables via D_800B8228 and the frame-compat rules), plays SsUtKeyOn, loads/unloads part models (func_80051450/func_80050AF4) and handles confirm/cancel transitions.	2026-10-22T06:42:07Z
+ovl201	0x80050854	name	tim_load_image	2026-10-22T11:49:11Z
+ovl201	0x80050854	hint	Parses one TIM (id, flags bit3 = CLUT block) and uploads CLUT then pixel block to VRAM via LoadImage+DrawSync using RECT at 0x800CF368.	2026-10-22T11:49:11Z
+ovl201	0x80050944	name	tim_load_list	2026-10-22T11:49:11Z
+ovl201	0x80050944	hint	Loops while the word is a TIM id (0x10), uploading each TIM CLUT/pixel block via LoadImage+DrawSync (RECT 0x800CF370); called by 0x80050804 after loading a file.	2026-10-22T11:49:11Z
+ovl201	0x80059C84	name	tmd_draw_line_f3_a	2026-10-22T11:49:11Z
+ovl201	0x80059C84	hint	TMD render handler table neighbour: per packet (0x10, verts +0xA/+0xC/+0xE) builds a closed 4-point flat polyline (code 0x4C, 0x55555555 terminator) lit by nccs from the fixed normal/colour at 0x800B7098/94, otz-sorted into the OT; same body as matched 0x80059E44.	2026-10-22T11:49:11Z
+ovl201	0x8005A004	name	tmd_draw_line_f3_b	2026-10-22T11:49:11Z
+ovl201	0x8005A004	hint	Same wireframe triangle handler as 0x80059C84 for a 0x14-byte packet (vertex indices +0xA/+0xE/+0x12, i.e. with normals interleaved).	2026-10-22T11:49:11Z
+ovl201	0x8005A1E4	name	tmd_draw_line_f3_c	2026-10-22T11:49:12Z
+ovl201	0x8005A1E4	hint	Same wireframe triangle handler as 0x80059C84 for a 0x1C-byte packet (vertex indices +0x12/+0x16/+0x1A, textured layout).	2026-10-22T11:49:12Z
+ovl201	0x8005A84C	name	tmd_draw_line_f4	2026-10-22T11:49:12Z
+ovl201	0x8005A84C	hint	Wireframe quad handler (closed 4-point polyline + 2-point line, codes 0x4C/0x40), 0x18-byte packet with vertex stride 4; template twin of matched 0x8005A3A4/0x8005AAA0.	2026-10-22T11:49:12Z
+ovl201	0x80059118	name	tmd_draw_poly_ft4_b	2026-10-22T11:49:12Z
+ovl201	0x80059118	hint	Back-face culled (nclip) flat-lit textured quad, POLY_FT4 tag 0x0903BFA0, colour from 0x800B7038; twin of matched 0x80059634.	2026-10-22T11:49:12Z
+ovl201	0x80057664	name	tmd_draw_poly_f3_b	2026-10-22T11:49:13Z
+ovl201	0x80057664	hint	Back-face culled flat-lit triangle (POLY_F3), packet colour + one normal; twin of matched 0x800572C4 (tag word 0x041465D4).	2026-10-22T11:49:13Z
+ovl201	0x80058808	name	tmd_draw_poly_f4	2026-10-22T11:49:13Z
+ovl201	0x80058808	hint	Back-face culled flat-lit quad (POLY_F4 0x18, tag 0x05FFFFFF), packet 0x14 with colour, one normal, 4 vertex offsets.	2026-10-22T11:49:13Z
+ovl201	0x80058A18	name	tmd_draw_poly_f4_b	2026-10-22T11:49:13Z
+ovl201	0x80058A18	hint	Byte-identical twin of 0x80058808 (flat quad TMD handler).	2026-10-22T11:49:13Z
+ovl201	0x80057860	name	tmd_draw_poly_ft3	2026-10-22T11:49:13Z
+ovl201	0x80057860	hint	Back-face culled flat-lit textured triangle (POLY_FT3, tag 0x07FFFFFF, colour 0x800B7028), packet 0x18 uv/clut/tpage + normal + 3 verts.	2026-10-22T11:49:14Z
+ovl201	0x80057A9C	name	tmd_draw_poly_ft3_b	2026-10-22T11:49:14Z
+ovl201	0x80057A9C	hint	Twin of 0x80057860 (tag 0x071FEF10, colour 0x800B702C).	2026-10-22T11:49:14Z
+ovl201	0x80057CD8	name	tmd_draw_poly_g3	2026-10-22T11:49:14Z
+ovl201	0x80057CD8	hint	Back-face culled gouraud triangle (ldv3/ncct/strgb3 into POLY_G3, tag 0x06FFFFF7), packet 0x14 colour + 3 normal/vertex pairs.	2026-10-22T11:49:14Z
+ovl201	0x800585D8	name	tmd_draw_poly_g3_b	2026-10-22T11:49:14Z
+ovl201	0x800585D8	hint	Twin of 0x80057CD8 (tag word 0x06010003).	2026-10-22T11:49:14Z
+ovl201	0x80058C28	name	tmd_draw_poly_g4	2026-10-22T11:49:14Z
+ovl201	0x80058C28	hint	Back-face culled gouraud quad (ncct for 3 corners + nccs for the 4th into POLY_G4, tag 0x08FFFFFF), packet 0x18.	2026-10-22T11:49:14Z
+ovl201	0x80058EA0	name	tmd_draw_poly_g4_b	2026-10-22T11:49:15Z
+ovl201	0x80058EA0	hint	Twin of 0x80058C28 (tag word 0x0847475C).	2026-10-22T11:49:15Z
+ovl201	0x80059374	name	tmd_draw_poly_gt4	2026-10-22T11:49:15Z
+ovl201	0x80059374	hint	Back-face culled gouraud textured quad (POLY_GT4 0x34, tag 0x0C7FFFD8, colour 0x800B703C), packet 0x24 uv/clut/tpage + 4 normal/vertex pairs.	2026-10-22T11:49:15Z
+ovl201	0x80059890	name	tmd_draw_poly_gt4_b	2026-10-22T11:49:15Z
+ovl201	0x80059890	hint	Twin of 0x80059374 (tag 0x0C313B54, colour 0x800B7044).	2026-10-22T11:49:15Z
+ovl201	0x800574C0	name	tmd_draw_poly_f3_nocull	2026-10-22T11:49:15Z
+ovl201	0x800574C0	hint	Flat-lit triangle like 0x800572C4 but without the nclip back-face test (double-sided).	2026-10-22T11:49:15Z
+ovl201	0x80057F08	name	tmd_draw_poly_g3_nocull	2026-10-22T11:49:16Z
+ovl201	0x80057F08	hint	Gouraud triangle like 0x80057CD8 but without the nclip back-face test (double-sided).	2026-10-22T11:49:16Z
+ovl201	0x8005ACF4	name	ac_load_preset_0	2026-10-22T11:49:16Z
+ovl201	0x8005ACF4	hint	Copies preset record 0x800B70C4 into the player AC: 12 equipped part ids -> 0x80031A58, option bitmask -> 0x80039CA0, two 0xA0-byte part-ownership blocks -> 0x80031A94/0x80031B34.	2026-10-22T11:49:16Z
+ovl201	0x8005AE8C	name	ac_load_preset_1	2026-10-22T11:49:16Z
+ovl201	0x8005AE8C	hint	Same as 0x8005ACF4 from the second preset record at 0x800B7214 (records are 0x150 bytes).	2026-10-22T11:49:17Z
+ovl201	0x800569E8	name	saveload_card_write_entry	2026-10-22T11:49:17Z
+ovl201	0x800569E8	hint	Twin of saveload_create_data (0x80054D44): checks the card (800684A0) into status[slot]; on error message + key-on, else 800B4398(slot, col+row*4) and a done/fail message box; update=ui_obj_nop2.	2026-10-22T11:49:17Z
+ovl201	0x800567B8	name	saveload_poll_card_a	2026-10-22T11:49:17Z
+ovl201	0x800567B8	hint	Polls the card in slot (800685A8); on change kills the dialog objects and goes to 0x80056770; else per mode +0xA3 reopens frames 3/5 and goes to 0x800568D8 (mode 0) or 0x8005616C (mode 1).	2026-10-22T11:49:17Z
+ovl201	0x80056B60	name	saveload_poll_card_b	2026-10-22T11:49:17Z
+ovl201	0x80056B60	hint	Same as 0x800567B8 without reopening the frames; mode 0 goes to 0x80056C48.	2026-10-22T11:49:17Z
+ovl201	0x80055580	name	saveload_reopen_list	2026-10-22T11:49:17Z
+ovl201	0x80055580	hint	By mode +0xA3: rebuilds frames 3/5/7 (list height from save count 0x801A257C (+1 for the new row flag +0xA7), max 5 rows) and goes to 0x800556A8, or returns to 0x800542F0; mirrors matched 0x80054F1C.	2026-10-22T11:49:18Z
+ovl201	0x800557CC	name	saveload_check_card_format	2026-10-22T11:49:18Z
+ovl201	0x800557CC	hint	Checks card (800684A0) into status[slot]; unless status 4 (unformatted) closes the dialog and goes to 0x80055784; else per mode opens the yes/no frame and goes to 0x800558DC or back to 0x800531B8.	2026-10-22T11:49:18Z
+ovl201	0x80051DF0	name	msgbox_create	2026-10-22T11:49:18Z
+ovl201	0x80051DF0	hint	Ctor of the message-box object: stores owner, owner's next update, text, frame id and rect at +0x7C..+0x96, opens frame id-1 with func_8005BA2C; update 0x80051F24.	2026-10-22T11:49:18Z
+ovl201	0x80051FB0	name	msgbox_wait_button	2026-10-22T11:49:18Z
+ovl201	0x80051FB0	hint	Message box update: on any of pad 0x20/0x40/0x200000/0x400000 latches the press in 0x801A2550, kills the label and frame, closes the frame (8005C2D0) and goes to 0x800520E0 (which restores the owner's update).	2026-10-22T11:49:19Z
+ovl201	0x80056034	name	saveload_draw_grid	2026-10-22T11:49:19Z
+ovl201	0x80056034	hint	Once no frame object (8005BA2C) is pending: draws the 'S'ave/'L'oad title, 8 grid frames (4 per row, 0x44 apart, from 0x800B6F58) and the grid cursor 0x80056EF4(&col,&row); update=0x8005616C.	2026-10-22T11:49:19Z
+ovl201	0x80055950	name	saveload_format_card	2026-10-22T11:49:19Z
+ovl201	0x80055950	hint	Checks the card is unformatted (status 4), then format("bu00:"/"bu10:") up to 3 times re-checking the card; card error -> message + ui_obj_nop2, else closes frame 9 and goes to 0x80055B3C (ok) or 0x80055BA4 (fail).	2026-10-22T11:49:19Z
+ovl201	0x80055CE0	name	saveload_slot_opened	2026-10-22T11:49:19Z
+ovl201	0x80055CE0	hint	After a card check: reloads the card's directory (800B4054), resets grid col/row, closes frame 9, chooses next state from card dir (used blocks >= 14 / save count) and kind 'S'/'L', clears a VRAM rect (ClearImage) and loads the save icons (800B4BD4).	2026-10-22T11:49:19Z
+ovl201	0x800531B8	name	saveload_slot_select_update	2026-10-22T11:49:19Z
+ovl201	0x800531B8	hint	Wave-1 name (ran on load/save data, slot 1): slot cursor, card checks with 3 retries, card error boxes.	2026-10-22T11:49:20Z
+ovl201	0x8005616C	name	saveload_grid_update	2026-10-22T11:49:20Z
+ovl201	0x8005616C	hint	Update set by 0x80056034: card poll (800685A8), d-pad with key repeat moves the 4x2 grid cursor col +0xA8 / row +0xA9 (col 3 only on row 0), cancel -> 0x800566AC, confirm opens the yes/no prompt (8005D8D4, save or load text by kind +0xA5) and goes to 0x800567B8 / 0x80056B60.	2026-10-22T11:49:20Z
+ovl201	0x800501BC	name	ui_obj_alloc	2026-10-22T11:49:20Z
+ovl201	0x800501BC	hint	Already named in symbols.tsv; retail takes s16 kind (sll/sra on entry): per kind 0..21 picks the slot run in g_ui_pool, view g_ui_views[n] and OT pair, returns the first free slot initialised (identity matrix 0x800B6ECC) or &g_ui_none.	2026-10-22T11:49:20Z
+ovl201	0x8004E2BC	name	garage_menu_ring_idle	2026-10-22T11:49:20Z
+ovl201	0x8004E2BC	hint	Wave-1 C header: garage main menu ring idle step: confirm opens the front item (per-item setup), left/right start a ring turn (0x8004E894).	2026-10-22T11:49:20Z
+ovl201	0x800A8618	name	link_handshake	2026-10-22T11:54:00Z
+ovl201	0x800A8618	hint	_comb_control(0x800309A8) serial link: sets CTS, polls status bit until partner ready (returns 1) or cancel bit 0x80 (returns 0)	2026-10-22T11:54:00Z
+ovl201	0x800A70EC	name	link_send_checksum	2026-10-22T11:54:00Z
+ovl201	0x800A70EC	hint	if link ready, writes 8-byte packet D_8017F4B8 to sio fd D_8004A288 with byte0 = sum 1..7	2026-10-22T11:54:00Z
+ovl201	0x800A6EA0	name	vs_link_shutdown	2026-10-22T11:54:00Z
+ovl201	0x800A6EA0	hint	kills front-end panels and UiObj ids 1..11, frees TMD models D_801F36D0[3..14], clears flags, calls 0x800A2D0C(1)	2026-10-22T11:54:00Z
+ovl201	0x800A737C	name	link_wait_partner	2026-10-22T11:54:00Z
+ovl201	0x800A737C	hint	link-cable connect loop (0x800309A8 cmds 1..3); on cancel shows panel 11 and goes to 0x800A7818, else 0x800A74A4	2026-10-22T11:54:00Z
+ovl201	0x800AA61C	name	vs_check_p2_equipment	2026-10-22T11:54:00Z
+ovl201	0x800AA61C	hint	copies player 2 AC parts (D_8004083C) and colours into the current AC, validates with 0x800714FC, else message 0x8004D430	2026-10-22T11:54:01Z
+ovl201	0x800AA520	name	vs_check_p1_equipment	2026-10-22T11:54:01Z
+ovl201	0x800AA520	hint	player 1 version of 0x800AA61C (parts D_80040830, colours D_80040E38, message 0x8004D40C)	2026-10-22T11:54:01Z
+ovl201	0x800A7160	name	link_recv_packet	2026-10-22T11:54:01Z
+ovl201	0x800A7160	hint	TestEvent on sio read event; verifies byte0 checksum of D_8017F4B0 and re-arms read(D_8004A284); returns 1 on good packet	2026-10-22T11:54:01Z
+ovl201	0x800A75A0	name	link_exchange_ac_select	2026-10-22T11:54:01Z
+ovl201	0x800A75A0	hint	sends local selection bytes via 0x800A86D0, on success copies partner bytes into D_800411F8/D_80048663; on failure shows panel 11	2026-10-22T11:54:01Z
+ovl201	0x800A86D0	name	link_exchange_words	2026-10-22T11:54:01Z
+ovl201	0x800A86D0	hint	exchanges n u16 pairs over sio in 8-byte 'R'..'C' packets (read/write/GetRCnt timeout 7866); returns 1 on success	2026-10-22T11:54:01Z
+ovl201	0x800AA710	name	vs_compare_ac_stats	2026-10-22T11:54:01Z
+ovl201	0x800AA710	hint	calcs performance (0x8009C964) for AC set A then B, MoveImage when parts slot 6/7 >= 31, restores A, opens 3 panels	2026-10-22T11:54:01Z
+ovl201	0x800AAC20	name	vs_load_ac_slot	2026-10-22T11:54:01Z
+ovl201	0x800AAC20	hint	(u8 slot, UiObj*) loads AC slot (0/1) parts, palette, 160-byte block, model table and colours into the current AC	2026-10-22T11:54:01Z
+ovl201	0x800AC0B8	name	vs_store_ac_slot	2026-10-22T11:54:01Z
+ovl201	0x800AC0B8	hint	reverse of 0x800AAC20: stores current AC (parts, palette, models, names D_80031BD4) into slot (o+0x7C==2), next 0x800A9AFC	2026-10-22T11:54:01Z
+ovl201	0x800ABB10	name	vs_setup_menu_input	2026-10-22T11:54:02Z
+ovl201	0x800ABB10	hint	5-item menu cursor (o+0x7D) with pad repeat; items check CORE/OPTIONAL/equipment-incomplete messages (0x8004D4A4..E8) before opening sub-screens; cross saves via 0x800AC0B8	2026-10-22T11:54:02Z
+ovl201	0x800A89C0	name	vs_setup_init	2026-10-22T11:54:02Z
+ovl201	0x800A89C0	hint	creates panel item[3], picks D_80039CAE from D_80039D14 thresholds, and on first entry copies the current AC into both player slots (parts, palette, names, models)	2026-10-22T11:54:02Z
+ovl201	0x800A9AFC	name	vs_player_select_input	2026-10-22T11:54:02Z
+ovl201	0x800A9AFC	hint	4-item cursor (o+0x7C) driven by both pads (pad2 repeat at +0xC/+0xE); items load player 1/2 AC (0x800AAC20), compare, or open 0x800ADC4C dialog	2026-10-22T11:54:02Z
+ovl201	0x800A7A68	name	link_exchange_ac	2026-10-22T11:54:02Z
+ovl201	0x800A7A68	hint	packs current AC (parts, colours, emblem image via StoreImage) into a 700-word buffer, swaps it with the partner over the link (0x800A869C), loads partner AC/emblem and applies parts	2026-10-22T11:54:02Z
+ovl201	0x800843A8	name	optparts_list_draw_frames	2026-10-22T11:54:44Z
+ovl201	0x800843A8	hint	draws up to 5 row frames (y step 24) of two sprites 0x800B8574 (x 0) / 0x800B855C (x 16) via func_8005D754, one per available optional part counted by func_800842D4 over the 11-bit mask D_800485F0; sits between the option-list helpers 0x80084290..0x80084364 and the row builder 0x80084474	2026-10-22T11:54:44Z
+ovl201	0x8007F30C	name	paint_draw_color_swatch	2026-10-22T11:54:44Z
+ovl201	0x8007F30C	hint	update of the object made by 0x8007F2A8: reads the owner's letter codes (+0x85 part group H/C,G/A/B -> 0..3, +0x86 colour slot B/O/D/J -> 0..3), queues a 15x15 TILE at view(170,189) coloured from the AC colour table 0x80031A64[group][slot] (rgb clamped to 63, x4) into the owner's OT slot 1	2026-10-22T11:54:45Z
+ovl201	0x80084474	name	optparts_list_build_rows	2026-10-22T11:54:45Z
+ovl201	0x80084474	hint	from first entry o+0xC6 walks the 11 option bits (available D_800485F0, fitted D_80039CA0) and for up to 5 available ones makes a check mark (o+0x90[i], fitted only) and a name label from the option table 0x800BB11C (0x2C rows, price at +0x24 = 0x800BB140) at o+0xA8[i], light 21 fitted / 16 not; func_800845F8 retires these rows	2026-10-22T11:54:45Z
+ovl201	0x8007DFF0	name	paint_color_edit_setup	2026-10-22T11:54:45Z
+ovl201	0x8007DFF0	hint	update run once the 0x8005BA2C box object is gone: draws the colour-editor frames, makes the R/G/B sliders (0x8007F7B0 with R/G/B -> o+0x9C..A4), the list 0x8007FB44 (o+0xA8), titles per part group o+0x85 (G/H/C/A/B; G adds selectors by legs 0x80031A63 / arms 0x80031A5B), copies the 4x4 RGB colour table 0x80031A64 into the edit buffer 0x801BCDE8, adds the swatch 0x8007F2A8 (o+0xAC); update := 0x8007E450	2026-10-22T11:54:45Z
+ovl201	0x8007D934	name	paint_part_menu_update	2026-10-22T11:54:46Z
+ovl201	0x8007D934	hint	update of the paint part-group menu: up/down (0x1000/0x4000 with pad repeat delays) move the 6-row cursor o+0x84 with wrap, confirm on rows 0..4 sets o+0x85 to G/H/C/A/B and opens the colour editor (update 0x8007DF2C, box 3 killed, new box), row 5 copies the default palette 0x8004C4F8 into the AC colours 0x80031A64 and calls 0x80073DDC; cancel returns to the caller object o+0x7C (update := o+0x80) or to 0x8007DE1C	2026-10-22T11:54:46Z
+ovl201	0x8007F7B0	name	paint_slider_knob_create	2026-10-22T11:54:47Z
+ovl201	0x8007F7B0	hint	ctor (called 3x from 0x8007DFF0 with 'R','G','B') of a slider knob: sprite 0x800B84D8, owner o+0x7C and channel o+0x80, x = 224 + component of the AC colour 0x80031A64[group][slot] picked by the owner's letters +0x85/+0x86, row 185/193/201; update 0x8007F9C4 (which re-places it the same way)	2026-10-22T11:54:47Z
+ovl201	0x8007FB44	name	paint_value_marker_create	2026-10-22T11:54:47Z
+ovl201	0x8007FB44	hint	ctor (called from 0x8007DFF0) of the marker sprite 0x800B84E4 under the selected channel: x = 226 + component (owner +0x87 chan R/G/else B) of colour 0x80031A64[group][slot], row 189/197/205; update 0x8007FD48	2026-10-22T11:54:47Z
+ovl201	0x800829F4	name	name_entry_build_char_list	2026-10-22T11:54:47Z
+ovl201	0x800829F4	hint	for the picked key (o+0x9A*5 + o+0x9B) of the 10-u16 table 0x800B8628 writes up to 8 fixed SJIS chars (0xFFFF = none, slots 0 and 4 always) and the SJIS range e[8]..e[9] (skipping 0x7F and the 0xFD..0x13F hole) 18 per row into 0x8017EF9C[8][38] (rows end with >), makes one text label per row (func_8005CB94, max 8) and stores rows/last-row length/top at o+0x97..0x99	2026-10-22T11:54:47Z
+ovl201	0x800813A8	name	name_entry_kana_update	2026-10-22T11:54:48Z
+ovl201	0x800813A8	hint	update of the kana name-entry grid (11 cols x 5 rows, key table 0x800B85F4; col 10 = marks/SPACE/END): d-pad moves o+0x9A/o+0x9B with jumps around holes, confirm on a kana key opens its character list (box 24,64,192,88; update 0x80082820), on col 10 rows 0/1/3 writes the mark / 0x8140 into the AC or pilot name 0x80031BD4/0x80031BE6 and moves the > mark, END opens the confirm box (update 0x800824D0); cancel erases, START jumps to END; twin of 0x80081C5C	2026-10-22T11:54:48Z
+ovl201	0x80081C5C	name	name_entry_update	2026-10-22T11:54:48Z
+ovl201	0x80081C5C	hint	(wave-1 name, now matched) update of the alphanumeric name-entry object: d-pad over the 17x8 grid 0x800B8608, confirm writes the 2-byte char (0x8140 space) into the AC/pilot name and moves >, cancel erases, START to END, END opens "Confirm the registered name?" (update 0x8008240C)	2026-10-22T11:54:48Z
+ovl201	0x80082E90	name	name_entry_kana_list_update	2026-10-22T11:54:48Z
+ovl201	0x80082E90	hint	update of the kana character list built by 0x800829F4 (18 chars/row, 8 rows visible from o+0x99): shows the 4 scroll arrows o+0x84..0x90, d-pad moves cursor o+0x9C/o+0x9D wrapping around the short last row (o+0x97 rows, o+0x98 last length), R1/L1 (8/4) page by 8 rows and redraw the labels, confirm writes the char into the AC or pilot name and moves >, confirm/cancel kill the arrows and close box 7 (update 0x80083790)	2026-10-22T11:54:49Z
+ovl201	0x8007E450	name	paint_color_edit_update	2026-10-22T11:54:49Z
+ovl201	0x8007E450	hint	update of the paint colour editor (set by 0x8007DFF0): up/down cycle the channel o+0x87 R/G/B, right/left change AC colour 0x80031A64[group][slot] channel by 1 (2 with L/R held, 0..64), group G copies colour row 1 to all groups, triangle (0x10) steps the slot o+0x86 B/O/D/J and its title, redraws the 3 two-digit values (digit sprites 0x800B85CC) and calls 0x80073DDC; confirm keeps, cancel restores from the backup 0x801BCDE8; both -> update 0x8007F598	2026-10-22T11:54:49Z
+ovl201	0x8007AD64	name	assembly_draw_status	2026-10-22T11:54:49Z
+ovl201	0x8007AD64	hint	(wave-1 name, still 2 words off) assembly screen: once the 0x8005BA2C box is gone sets up two 128x144 draw envs, shows the warning icons (missing part, credits < 0, arm load over core limit, total weight over leg limit) and the names of the 11 equipped parts ("NO EQUIP" for 255); update := 0x8007B850	2026-10-22T11:54:49Z
+ovl201	0x800813A8	name	name_entry_grid_update	2026-10-22T11:56:14Z
+ovl201	0x80082E90	name	name_entry_char_list_update	2026-10-22T11:56:15Z
+ovl201	0x800813A8	hint	Correction from play (US build): the player typed the name 'Byron' with English letters, so this grid holds the alphabet, not kana. Its 11x5 column-major layout (key = row + col*5) matches the JP gojuon table, so the code keeps the Japanese layout.	2026-10-22T11:56:16Z
+ovl201	0x80093AE8	name	shop_desc_wait_scroll	2026-10-22T11:58:48Z
+ovl201	0x80093AE8	hint	New press of up (0x1000) or down (0x4000) sets update back to 0x80093A20 (redraw selected part's stats).	2026-10-22T11:58:48Z
+ovl201	0x80093E3C	name	shop_text_wait_scroll	2026-10-22T11:58:48Z
+ovl201	0x80093E3C	hint	New press of up/down sets update back to 0x80093C3C (rebuild the part description label).	2026-10-22T11:58:48Z
+ovl201	0x8008C348	name	shop_exit	2026-10-22T11:58:49Z
+ovl201	0x8008C348	hint	Copies 0xC31 bytes from the object to 0x8019C360 (func_800154D8), clears ShopState byte 0x8019C090 and frees the object (free2).	2026-10-22T11:58:49Z
+ovl201	0x8008F914	name	shop_cannot_afford	2026-10-22T11:58:49Z
+ovl201	0x8008F914	hint	Returns credits D_80039CA4 < price (func_8008F08C) of the selected list row's part.	2026-10-22T11:58:49Z
+ovl201	0x8008BEF8	name	shop_list_up_arrow_new	2026-10-22T11:58:50Z
+ovl201	0x8008BEF8	hint	Type-3 object (light 11, res 0x800B8B58) at x 288, y = list top + 92; ctor of the list's top arrow.	2026-10-22T11:58:50Z
+ovl201	0x8008BFB4	name	shop_list_down_arrow_new	2026-10-22T11:58:50Z
+ovl201	0x8008BFB4	hint	Type-3 object (res 0x800B8B64) at x 288 below the last visible row ((rows-1)*24 + top + 100).	2026-10-22T11:58:50Z
+ovl201	0x8008BDA8	name	shop_list_frame_new	2026-10-22T11:58:50Z
+ovl201	0x8008BDA8	hint	Type-3 object (light 14, res 0x800B8B4C) at x 232, y top+76; loads colour rows 0x800B8F84 (32/128/256); returns it.	2026-10-22T11:58:51Z
+ovl201	0x8008EC30	name	fmt_credits6	2026-10-22T11:58:51Z
+ovl201	0x8008EC30	hint	Formats n as 6 digits + 'C' with leading zeros blanked (at least one digit).	2026-10-22T11:58:51Z
+ovl201	0x80090D60	name	fmt_number6_inf	2026-10-22T11:58:51Z
+ovl201	0x80090D60	hint	Formats n right-aligned in 6 chars; 0xFFFF gives "INFINITY" (0x8004CD84), -1 gives "------".	2026-10-22T11:58:52Z
+ovl201	0x80093A20	name	shop_show_part_stats	2026-10-22T11:58:52Z
+ovl201	0x80093A20	hint	Picks (kind, part) of the selected row (buy list via start[]/ids[], sell via kinds[]/ids[]) and calls func_80090E88, then waits in 0x80093AE8.	2026-10-22T11:58:52Z
+ovl201	0x8008FA00	name	part_is_equipped	2026-10-22T11:58:52Z
+ovl201	0x8008FA00	hint	Maps shop category to equipped byte at 0x80031A58 (table 0x8004CD30) and compares with id; categories 6/8/9 answer 0.	2026-10-22T11:58:52Z
+ovl201	0x8008EED4	name	part_record_ptr	2026-10-22T11:58:52Z
+ovl201	0x8008EED4	hint	Switch on category 0..9 returning &table[idx] of the 11 part tables (twin of func_8008F08C which returns the +0x24 price).	2026-10-22T11:58:53Z
+ovl201	0x8008CD38	name	shop_menu_init	2026-10-22T11:58:53Z
+ovl201	0x8008CD38	hint	Draws BUY/SELL text, makes their labels and two cursors, sets colour rows 0x800B8F84[0,1,2,6], next update 0x8008D560.	2026-10-22T11:58:53Z
+ovl201	0x8008D060	name	shop_build_buy_list	2026-10-22T11:58:53Z
+ovl201	0x8008D060	hint	For part ids 0..159 with flag at 0x80031B34 fills ShopState kinds[]/ids[], per-category counts and start[].	2026-10-22T11:58:54Z
+ovl201	0x8008D2E0	name	shop_build_sell_list	2026-10-22T11:58:54Z
+ovl201	0x8008D2E0	hint	Same as shop_build_buy_list over owned counts 0x80031A94.	2026-10-22T11:58:54Z
+ovl201	0x8008DF6C	name	shop_category_list_init	2026-10-22T11:58:54Z
+ovl201	0x8008DF6C	hint	Wraps selected category, draws 4 category rows (func_8008DE30), labels+cursors, both DRAWENVs centred, two arrow objects.	2026-10-22T11:58:54Z
+ovl201	0x8008DE30	name	shop_draw_category_name	2026-10-22T11:58:54Z
+ovl201	0x8008DE30	hint	Draws one of HEAD/CORE/.../ARM WEAPON (rodata 0x8004CC40) into VRAM text area at row slot.	2026-10-22T11:58:55Z
+ovl201	0x80093C3C	name	shop_make_part_description	2026-10-22T11:58:55Z
+ovl201	0x80093C3C	hint	Copies selected part's 2-byte text row (78-byte rows at 0x8019C360, ended by 13) after "@0" into ShopState text and makes a text label.	2026-10-22T11:58:55Z
+ovl201	0x8008D560	name	shop_menu_input	2026-10-22T11:58:55Z
+ovl201	0x8008D560	hint	BUY/SELL menu: confirm (0x40) builds buy/sell list, empty sell list opens dialog; cancel (0x20) closes windows.	2026-10-22T11:58:55Z
+ovl201	0x80090668	name	shop_load_part_model	2026-10-22T11:58:56Z
+ovl201	0x80090668	hint	Waits for loader func_800517C8, loads model first[kind]+index (table 0x8004CD48) via func_80050AF4(29,..), refreshes viewer.	2026-10-22T11:58:56Z
+ovl201	0x8008D8AC	name	shop_unequip_unowned	2026-10-22T11:58:56Z
+ovl201	0x8008D8AC	hint	For each equipped slot byte 0x80031A58[] unequips (0xFF) parts with zero owned count; back-weapon pair needs 2.	2026-10-22T11:58:56Z
+ovl201	0x80090448	name	shop_place_part_viewer	2026-10-22T11:58:56Z
+ovl201	0x80090448	hint	Sets the part viewer (func_80090B90 object) scale and pos from model group table 0x800BCAC0 chosen by category (rodata 0x8004CD3C) and part index.	2026-10-22T11:58:57Z
+ovl201	0x8008E260	name	shop_category_list_input	2026-10-22T11:58:57Z
+ovl201	0x8008E260	hint	Confirm opens the selected category part list (restores per-category cursor/top at ShopState+0x78/+0x60) or a dialog if empty; cancel returns to BUY/SELL; arrows show more rows.	2026-10-22T11:58:57Z
+ovl201	0x8008E880	name	fmt_signed8	2026-10-22T11:58:57Z
+ovl201	0x8008E880	hint	Formats signed n as 8 digits with leading zeros blanked and a minus sign before the first digit.	2026-10-22T11:58:58Z
+ovl201	0x8008F3B4	name	shop_part_list_init	2026-10-22T11:58:58Z
+ovl201	0x8008F3B4	hint	Makes name/price label columns, clamps cursor/top to the list length, draws each visible row (func_8008F274/F2D0 names, func_8008F344 prices) and row cursors; next update 0x8008FA94.	2026-10-22T11:58:58Z
+ovl201	0x800908F8	name	shop_load_part_texture	2026-10-22T11:58:58Z
+ovl201	0x800908F8	hint	Calls func_80051450(base by category from 0x8004CD5C or 14 for kind 9 >=16, index, extra) where head/core/arms/legs add D_80039CA2 times a per-category stride (0x8004CD70).	2026-10-22T11:58:59Z
+ovl201	0x8008FA94	name	shop_part_list_input	2026-10-22T11:58:59Z
+ovl201	0x8008FA94	hint	Part list pad handling: arrows; confirm buys (dialog if func_8008F914 says too expensive) or sells (checks via func_800892AC/935C/95D4/8008FA00); cancel closes windows and returns to category list or BUY/SELL; 0x10 toggles stats/description windows.	2026-10-22T11:58:59Z
+ovl201	0x800940A4	name	shop_confirm_input	2026-10-22T11:58:59Z
+ovl201	0x800940A4	hint	Yes/no dialog of a buy or sell: YES updates owned (0x80031A94) / stock (0x80031B34) counts and credits D_80039CA4 (clamped -999999..99999999), closes windows and rebuilds the list; NO/cancel returns to the part list.	2026-10-22T11:59:00Z
+ovl201	0x8008C3EC	name	shop_ctrl_new	2026-10-22T11:59:00Z
+ovl201	0x8008C3EC	hint	Shop controller constructor: resets ShopState mode/selection/saved cursors, allocates the controller (update 0x8008CCA8, destroy 0x8008DD48), tiles the window frame in VRAM with 108 MoveImage calls, clears D_801A2574, returns the object.	2026-10-22T11:59:00Z
+ovl201	0x800B55E4	name	libpress_DecDCTvlcSize2	2026-10-22T12:01:18Z
+ovl201	0x800B55E4	hint	hand-written asm: stores the max-size word kept at 0x800B55E4 (0xFFFFFF default) and returns the old one; PsyQ libpress DecDCTvlcSize.	2026-10-22T12:01:18Z
+ovl201	0x800B5618	name	libpress_DecDCTvlc2	2026-10-22T12:01:18Z
+ovl201	0x800B5618	hint	hand-written asm MDEC VLC decoder using tables at 0x800BEB58/0x800CEB58, saves state at 0x800B5958; PsyQ libpress DecDCTvlc.	2026-10-22T12:01:18Z
+ovl201	0x800AE184	name	config_swap_pad_map	2026-10-22T12:01:18Z
+ovl201	0x800AE184	hint	swaps the 12 u16 pad-mapping words at 0x80041230 with the alternate set at 0x800415CC (0x80041230 is the active map written by func_800AE838).	2026-10-22T12:01:18Z
+ovl201	0x800ADC4C	name	ui_yesno_box_create	2026-10-22T12:01:18Z
+ovl201	0x800ADC4C	hint	allocs a UiObj (update func_800ADD70), stores owner/target/n/mode/initial choice, marks target used=2, draws a 0x90x0x30 window and plays SE 7.	2026-10-22T12:01:18Z
+ovl201	0x800ADE38	name	ui_yesno_box_update	2026-10-22T12:01:18Z
+ovl201	0x800ADE38	hint	left/right (or alt pad bits when mode 0) moves a 0/1 choice and the cursor x (sel*69+4); confirm/cancel set result +0x96, close the window and kill the three labels.	2026-10-22T12:01:18Z
+ovl201	0x800ADB40	name	ui_row_label_create	2026-10-22T12:01:18Z
+ovl201	0x800ADB40	hint	allocs a render-type-3 UiObj with update func_800ADC20 (pos.vy = y + *src*0x18); stores src/x/y/kind at +0x7C..+0x84.	2026-10-22T12:01:18Z
+ovl201	0x800B498C	name	emblem_load_from_card	2026-10-22T12:01:18Z
+ovl201	0x800B498C	hint	opens the port's BASCUS-94182Z save, reads 0x3B00 bytes with 3 retries, checks the 0x38E2-byte sum at +0x200 and LoadImages emblem idx (CLUT + 64x64 4bpp) to VRAM.	2026-10-22T12:01:18Z
+ovl201	0x800B4BD4	name	emblem_load_all_from_card	2026-10-22T12:01:18Z
+ovl201	0x800B4BD4	hint	same card read/sum check as 0x800B498C, then uploads all 7 emblems (CLUT rows from y=0x80, images tiled at x 0x380..0x3C0).	2026-10-22T12:01:19Z
+ovl201	0x800B4054	name	card_scan_emblem_files	2026-10-22T12:01:19Z
+ovl201	0x800B4054	hint	twin of 0x80066994 with the BASCUS-94182* pattern counting only 'Z' files: fills CardDir[port] saves/files and used block total.	2026-10-22T12:01:19Z
+ovl201	0x800AEF2C	name	options_menu_update	2026-10-22T12:01:19Z
+ovl201	0x800AEF2C	hint	options top menu: up/down over 6 rows (+0x88), confirm opens volume ('M'/'B' via func_800AFEB4), pad config, other sub-pages; cancel applies config (func_800AE838).	2026-10-22T12:01:19Z
+ovl201	0x800AF740	name	options_toggle_update	2026-10-22T12:01:19Z
+ovl201	0x800AF740	hint	options 2-way choice: up/down toggles +0x89, confirm stores (sel != 1) to config byte 0x80048660, both exits close the window and return to func_800AFA00.	2026-10-22T12:01:19Z
+ovl201	0x800AFBFC	name	options_choice3_update	2026-10-22T12:01:19Z
+ovl201	0x800AFBFC	hint	options 3-way choice (+0x89 0..2) stored to config byte 0x80048663 on confirm; closes window id 7.	2026-10-22T12:01:19Z
+ovl201	0x800B1C18	name	options_choice3b_update	2026-10-22T12:01:19Z
+ovl201	0x800B1C18	hint	twin of 0x800AFBFC for config byte 0x80048664 (window at y 0x70).	2026-10-22T12:01:19Z
+ovl201	0x800B0048	name	options_volume_update	2026-10-22T12:01:19Z
+ovl201	0x800B0048	hint	left/right changes volume +0x85 (0..63) and applies it live (SsSetMVol for 'M', SsSeqSetVol on the current SEQ otherwise); confirm stores it to 0x80048661/0x80048662.	2026-10-22T12:01:20Z
+ovl201	0x800B3414	name	assembly_build_ac_model	2026-10-22T12:01:20Z
+ovl201	0x800B3414	hint	builds the AC preview model objects (func_800B3748 kinds 3..14) from the equipped part bytes at 0x80031A58 (core, arms 0x5B, weapons 0x5E/0x5F).	2026-10-22T12:01:20Z
+ovl201	0x800B2AC4	name	rank_list_update	2026-10-22T12:01:20Z
+ovl201	0x800B2AC4	hint	ranking list input: up/down scroll page/row with key repeat, confirm opens the selected RankEnt (message kind+11), cancel closes the list.	2026-10-22T12:01:20Z
+ovl201	0x800B5EEC	name	softfloat_divdf3	2026-10-22T12:01:20Z
+ovl201	0x800B5EEC	hint	soft-float double divide: restoring division one bit per step with the 64-bit helpers 0x800B5D74 (add), 0x800B5E24 (shift), 0x800B61D0 (compare), 0x800B6214.	2026-10-22T12:01:20Z
+ovl201	0x800B146C	name	options_padcfg_assign	2026-10-22T12:01:20Z
+ovl201	0x800B146C	hint	pad config: the pressed button becomes D_80048630[row+col*8] and its name label text (12-char names at 0x800BDE18); then relights all 12 rows, clashing mappings at light 13; returns to func_800B0CF0.	2026-10-22T12:01:20Z
+ovl201	0x800B4398	name	emblem_save_to_card	2026-10-22T12:01:20Z
+ovl201	0x800B4398	hint	builds the 0x3B00 BASCUS-94182Z save (SC header, SJIS title 0x800BE114, icon 0x800BE154/0x800BE174, 7 emblems StoreImaged from VRAM, slot idx from the edit buffer, sum at +0x200), creates/writes it with retries and verifies by reading back.	2026-10-22T12:01:20Z
+ovl201	0x800B0CF0	name	options_padcfg_update	2026-10-22T12:01:20Z
+ovl201	0x800B0CF0	hint	pad config screen: up/down/left/right move col/row (+0x7C/+0x7D, rows 4,5 absent in col 1), confirm selects an action (-> func_800B146C), row 6 col 1 restores the default map 0x800BDDA0, exit/cancel refuse (func_8005DED8 message) while two actions share a button.	2026-10-22T12:01:21Z
+ovl201	0x800B0598	name	options_padcfg_init	2026-10-22T12:01:21Z
+ovl201	0x800B0598	hint	once the window object (func_8005BA2C) is gone: maps each D_80048630 button bit to a name index, creates the 12 button-name labels (D_8017F4D8) and 14 action labels (D_8017F508), lights clashes, inits the cursor (func_800B1980) and sets update func_800B0CF0.	2026-10-22T12:01:21Z
+ovl201	0x800B3748	name	assembly_part_obj_create	2026-10-22T12:01:21Z
+ovl201	0x800B3748	hint	allocs a part model UiObj (update func_800B3E7C) for model kind 3..14, finds its attach point from the core tables 0x800BC428/0x800BC440 (+arms 0x800BC638/0x800BC6B8, legs 0x800BC968) plus per-part offsets 0x800BCAC4[kind], mirrors x for flag bit 0, hides it when the slot is empty.	2026-10-22T12:01:21Z
+ovl201	0x8005B024	name	vram_stash_garage_pages	2026-10-22T12:02:23Z
+ovl201	0x8005B024	hint	MoveImage copies three VRAM rects (0x2C0,0x100 / 0x220,0x180 / 0,0x1E6) to spare areas plus two fixed RECTs, then DrawSync; mirror of 0x8005B12C.	2026-10-22T12:02:23Z
+ovl201	0x8005B12C	name	vram_restore_garage_pages	2026-10-22T12:02:23Z
+ovl201	0x8005B12C	hint	Inverse MoveImage set of 0x8005B024, then packs flag bytes 0x80031AE0..EA into a mask ANDed into D_80039CA0 and clears it/part slots when core (0x80031A58) or arms (0x80031A5B) are empty.	2026-10-22T12:02:23Z
+ovl201	0x8005B2CC	name	ac_reset_colours_and_names	2026-10-22T12:02:23Z
+ovl201	0x8005B2CC	hint	Copies default Rgb3[4][4] colour table 0x800B73A8 to 0x80031A64, two StoreImage saves, and struct-copies default names 0x800B7384 to the AC/pilot names at 0x80031BD4.	2026-10-22T12:02:23Z
+ovl201	0x8005B4B8	name	pad_poll_update	2026-10-22T12:02:23Z
+ovl201	0x8005B4B8	hint	Update of 0x8005B46C: counts down key-repeat timers at 0x801A2554..5E, reads pad 1 (func_80016A84), stirs seed D_80039D14, optional half-swap, and builds the new-press mask 0x801A2568 from latch 0x801A2550.	2026-10-22T12:02:23Z
+ovl201	0x8005CDEC	name	light_colour_pulse	2026-10-22T12:02:23Z
+ovl201	0x8005CDEC	hint	Update of 0x8005CC48: pulses the m[.][2] colour columns of light matrices 0x800B8F24/8F84/8FA4/9024 by 8/16 per frame, reversing direction (+0x7C) at 384/128.	2026-10-22T12:02:23Z
+ovl201	0x8005D544	name	sound_swap_music_bank	2026-10-22T12:02:24Z
+ovl201	0x8005D544	hint	Final step of the 0x8005D39C sequencer: stops/closes the playing SEQ+VAB slot and frees its buffers, opens/plays the other slot's SEQ at the master volume, flips SndBanks.which, kills itself.	2026-10-22T12:02:24Z
+ovl201	0x8005E3A4	name	ui_msgbox_wait_button	2026-10-22T12:02:24Z
+ovl201	0x8005E3A4	hint	Waits for a pad press in 0x600060, latches the pressed buttons into 0x801A2550, kills the child and id-1 object, opens the closing box (func_8005C2D0 20,104,280,32) and moves to 0x8005E4D4; twin of 0x8005E040 without the timeout.	2026-10-22T12:02:24Z
+ovl201	0x8005F260	name	text_draw_sjis_string	2026-10-22T12:02:24Z
+ovl201	0x8005F260	hint	Walks a '>'-terminated SJIS string, maps each code through the 16-entry glyph block table 0x800B7470 to a glyph cell, draws it with func_8005F49C every 4 px, then LoadImage's the 16x1 CLUT 0x800B74D0.	2026-10-22T12:02:24Z
+ovl201	0x80060ABC	name	frame_draw_edge_row_136	2026-10-22T12:02:24Z
+ovl201	0x80060ABC	hint	Draws three 8 px frame strips at y+136 (texels 200/192/216,208) via func_800646AC from the 4 corners, then func_8006035C; twin of 0x80061164.	2026-10-22T12:02:24Z
+ovl201	0x80060E10	name	frame_draw_edge_row_152	2026-10-22T12:02:24Z
+ovl201	0x80060E10	hint	Same as 0x80060ABC with y offset 152.	2026-10-22T12:02:24Z
+ovl201	0x800617A8	name	frame_draw_edge_row_24	2026-10-22T12:02:24Z
+ovl201	0x800617A8	hint	Same family with y offset 24 and a 3 px first strip.	2026-10-22T12:02:24Z
+ovl201	0x80061B00	name	frame_draw_edge_row_20	2026-10-22T12:02:24Z
+ovl201	0x80061B00	hint	Same family with y offset 20 and a 3 px first strip.	2026-10-22T12:02:24Z
+ovl201	0x8005BF0C	name	ui_box_open_update	2026-10-22T12:02:24Z
+ovl201	0x8005BF0C	hint	Grows box (+0x7C x,y,w,h) by 6*speed towards target (+0x8A), clamps to 320x240, sets both DRAWENV slots (0x801BCE88/0x801D62E0 stride 0x64) centred, on arrival kills itself and calls func_8005B648.	2026-10-22T12:02:24Z
+ovl201	0x8005C6CC	name	ui_box_close_update	2026-10-22T12:02:24Z
+ovl201	0x8005C6CC	hint	Twin of 0x8005BF0C: shrinks the box (+0x7C) towards its target (+0x8A) at 6*speed, updates both DRAWENV slots, kills itself on arrival.	2026-10-22T12:02:24Z
+ovl201	0x8005C2D0	name	ui_box_close_new	2026-10-22T12:02:25Z
+ovl201	0x8005C2D0	hint	Ctor (x,y,w,h,kind): allocs in pool kind, render_type 5, env slot (kind-1)/2 via switch, target = centre with size 0, sets both DRAWENVs, update 0x8005C6CC; called by msgbox closers (0x8005E3A4/E040).	2026-10-22T12:02:25Z
+ovl201	0x8005B648	name	ui_box_static_new	2026-10-22T12:02:25Z
+ovl201	0x8005B648	hint	Ctor (x,y,w,h,kind,a,b): pool-kind object with render_type 1 and update ui_obj_nop2, env slot from (kind-1)/2, sets both DRAWENVs for the box; the end state of the 0x8005BF0C open animation.	2026-10-22T12:02:25Z
+ovl201	0x8005BA2C	name	ui_box_open_new	2026-10-22T12:02:25Z
+ovl201	0x8005BA2C	hint	Ctor (x,y,w,h,kind,a,b): target = the given box, start = a centred sliver along the longer side, render_type 5, env slot by kind, update 0x8005BF0C which grows it.	2026-10-22T12:02:25Z
+ovl201	0x8006035C	name	frame_draw_corners	2026-10-22T12:02:25Z
+ovl201	0x8006035C	hint	Tail call of the frame_draw_edge_row_* family: eight func_800646AC quads (texels 192..216) built from the 4 corner points, the frame corners and connecting pieces.	2026-10-22T12:02:25Z
+ovl201	0x80061E58	name	frame_draw_divided	2026-10-22T12:02:25Z
+ovl201	0x80061E58	hint	Same frame family: fifteen func_800646AC quads (edges at y+56/+136 etc., texels 192..216,208) then frame_draw_corners (0x8006035C).	2026-10-22T12:02:25Z
+ovl201	0x8005F5E8	name	ui_box_render	2026-10-22T12:02:25Z
+ovl201	0x8005F5E8	hint	Render hook of the box objects: id 1 delegates to the tiled backdrop 0x80060168; else projects the box quad through o->mat (RTPT/RTPS), emits a textured FT4 (+0x8A == 0) or gouraud G4 panel between SetDrawArea clip/unclip and a SetTexWindow, then draws frame style +0x84 (0..11) via the frame_draw_* family.	2026-10-22T12:02:25Z
+ovl201	0x80088A18	name	garage_list_entry_reset	2026-10-22T12:03:33Z
+ovl201	0x80088A18	hint	Sets entry i (0x60 stride at list+0x5C) of the *0x801F5094 list work to colour 0x40/0x30/0x3E and clears its s32 fields; called per row by 0x80088DE4.	2026-10-22T12:03:33Z
+ovl201	0x80086E34	name	garage_list_load_done	2026-10-22T12:03:33Z
+ovl201	0x80086E34	hint	Load callback (passed to func_800513F0 by 0x80086E80): copies 0x620 bytes of the loaded buffer to 0x801F3814, clears the busy byte 0x801F37C8, frees the buffer.	2026-10-22T12:03:33Z
+ovl201	0x800892AC	name	ac_parts_incomplete	2026-10-22T12:03:33Z
+ovl201	0x800892AC	hint	Returns 1 if head/core/arms/legs/FCS/0x80031A60 slot is empty (255) or booster presence mismatches leg type (legs id >= 27 must have no booster).	2026-10-22T12:03:34Z
+ovl201	0x80087EB8	name	garage_list_draw_count	2026-10-22T12:03:34Z
+ovl201	0x80087EB8	hint	Formats D_801F4114[0][id]+[1][id] via 0x80087C94 ("------" for id 28) and draws it at x 960, y row*16+176.	2026-10-22T12:03:34Z
+ovl201	0x80087F58	name	garage_list_build_row	2026-10-22T12:03:34Z
+ovl201	0x80087F58	hint	Builds list row text: SJIS prefix (0x81A6 when flag bit 2 of 0x801F3788[id] set, else fullwidth space) then the '>'-terminated name 0x801F3914[id].	2026-10-22T12:03:34Z
+ovl201	0x800887B8	name	garage_list_load_text_done	2026-10-22T12:03:34Z
+ovl201	0x800887B8	hint	Load callback: copies a '>'/'/'-terminated string into list+0x2F0, frees the buffer, clears list+9 busy flag.	2026-10-22T12:03:34Z
+ovl201	0x800895D4	name	ac_energy_over	2026-10-22T12:03:34Z
+ovl201	0x800895D4	hint	Sums the +2 column (energy drain) of every equipped part table and returns generator(0x80031A60 table) value < total.	2026-10-22T12:03:34Z
+ovl201	0x8008935C	name	ac_weight_over	2026-10-22T12:03:35Z
+ovl201	0x8008935C	hint	Returns 1 when arm-weapon weight exceeds core arm load, else whether total AC weight exceeds legs max load (+0xA column).	2026-10-22T12:03:35Z
+ovl201	0x80088940	name	garage_list_load_image_done	2026-10-22T12:03:35Z
+ovl201	0x80088940	hint	Load callback: per list+0xA mode (1..3) uploads the image via 0x80088838 to VRAM (896/960,0/128, clut row 481..483), clears the mode, frees the buffer.	2026-10-22T12:03:35Z
+ovl201	0x80087AEC	name	garage_list_open	2026-10-22T12:03:35Z
+ovl201	0x80087AEC	hint	When id-3 object is gone and not busy: counts used order[] slots into list->count, rows=min(count,5), clamps cursor, opens box (0x8005BA2C), plays sound, update=0x80088040.	2026-10-22T12:03:35Z
+ovl201	0x80088040	name	garage_list_draw_rows	2026-10-22T12:03:35Z
+ovl201	0x80088040	hint	Waits for loads, rebuilds the row objects: count labels (0x80087EB8), names (0x80087F58 + text labels into list+0x28), markers; update=0x80088334.	2026-10-22T12:03:35Z
+ovl201	0x80087C94	name	garage_format_count	2026-10-22T12:03:36Z
+ovl201	0x80087C94	hint	Formats n as 5 digits + 'C' with leading-zero blanking; all-zero becomes " Parts" (0x8004CBC4).	2026-10-22T12:03:36Z
+ovl201	0x8008729C	name	garage_list_ctor	2026-10-22T12:03:36Z
+ovl201	0x8008729C	hint	Constructor (ctor key of its own UiObj): debug flag toggles, allocs list work 0x6F0 into 0x801F5094, selects cursor entry, builds 0x80088DE4 or waits via 0x80087AEC, copies 64 VRAM strips.	2026-10-22T12:03:36Z
+ovl201	0x80088DE4	name	garage_list_detail_ctor	2026-10-22T12:03:36Z
+ovl201	0x80088DE4	hint	Creates the detail object (update 0x800891BC): 5 entry labels, resets list fields, queues text load of tbl[order[cursor]][b7] (0x800887B8), clears VRAM areas.	2026-10-22T12:03:36Z
+ovl201	0x80086FFC	name	garage_list_build_order	2026-10-22T12:03:36Z
+ovl201	0x80086FFC	hint	Fills order[] 0x801F37D4 with entries of the 4-byte table 0x801F3814 whose rank range covers 0x801F3752 (special cases for ids 14/17/27, kind filter by 0x801F3778 sign at rank>=26, skips flag bit 2); retries next rank until non-empty.	2026-10-22T12:03:36Z
+ovl201	0x80088AC4	name	garage_text_step	2026-10-22T12:03:36Z
+ovl201	0x80088AC4	hint	Twin of letter-reader text step 0x80097A08: copies one control-coded char of the source into a LetterLine; '%'n loads page n (0x800513F0 + 0x80088940) and opens window 0x8008B778/B918/BAB8.	2026-10-22T12:03:37Z
+ovl201	0x80086838	name	garage_apply_result	2026-10-22T12:03:37Z
+ovl201	0x80086838	hint	Copies the 0x78-byte progress block 0x80041B10 into 0x801F3750, then for the finished id sets flag bits, counters (cap 999), credits 0x80049E70 and rank-based part unlocks in 0x80031A64[2][0xA0]; clears ids.	2026-10-22T12:03:37Z
+ovl201	0x80084AE4	name	opshop_update	2026-10-22T12:03:37Z
+ovl201	0x80084AE4	hint	Optional-parts shop input: up/down with key repeat (0x801A2550), circle toggles OP bit in 0x80039CA0 after core OP-capacity check (0x800B9482/0x800BB11C), cross tears the screen down.	2026-10-22T12:03:37Z
+ovl201	0x80085640	name	perf_check_draw	2026-10-22T12:03:37Z
+ovl201	0x80085640	hint	Wave-1 name kept: check-performance screen, AP/weight/price header, performance table and grade.	2026-10-22T12:03:37Z
+ovl201	0x800897D0	name	garage_detail_update	2026-10-22T12:03:37Z
+ovl201	0x800897D0	hint	Detail window update: steps text via 0x80088AC4, scrolls the 5 LetterLines up/down with history, page loads, circle runs AC checks 0x800892AC/0x8008935C/0x800895D4 before 0x8008A338, cross closes windows.	2026-10-22T12:03:38Z
+ovl201	0x800A2F14	name	credits_slide_matrix_left	2026-10-22T12:04:18Z
+ovl201	0x800A2F14	hint	Subtracts 8 from six s16 entries of light matrix 7 (0x800B8F24) per frame until x<0x40, then kills the two panels at +0x7C/+0x80 and goes to func_800A2FD0.	2026-10-22T12:04:18Z
+ovl201	0x800A5318	name	result_panel_close	2026-10-22T12:04:18Z
+ovl201	0x800A5318	hint	Clears D_80039CAC, sets D_80039CAD, kills the +0x80 child, redraws the frame (func_800A5368) and switches update to func_800A5414.	2026-10-22T12:04:18Z
+ovl201	0x8009A658	name	mail_list_arrow_up_create	2026-10-22T12:04:18Z
+ovl201	0x8009A658	hint	Allocates a kind-2 sprite (res D_800B8D3C) at x 0x120, y = mail view top+0x5C; sibling of the mail list (MailState.view at 0x8017F6D0+0x1190).	2026-10-22T12:04:19Z
+ovl201	0x8009A714	name	mail_list_arrow_down_create	2026-10-22T12:04:19Z
+ovl201	0x8009A714	hint	Same as 0x8009A658 with res D_800B8D48 and y = top + (rows-1)*0x18 + 0x64, i.e. under the last visible mail row.	2026-10-22T12:04:19Z
+ovl201	0x800A448C	name	movie_play	2026-10-22T12:04:19Z
+ovl201	0x800A448C	hint	Sets SPU serial/CD mix, allocates 5 decode buffers, clears VRAM, plays entry idx of the 8-byte movie table 0x800BDC68 via func_800A46AC (entry 2 fallback when idx 0 fails), restores display env and frees buffers.	2026-10-22T12:04:19Z
+ovl201	0x80094EC0	name	credits_screen_build	2026-10-22T12:04:19Z
+ovl201	0x80094EC0	hint	After the box opener is gone, uploads the strings 'CREDITS' and 'C' (func_8005D15C), builds three text labels into D_8019C1A0..A8 (light 0x14) and the frame, then update func_80095044.	2026-10-22T12:04:19Z
+ovl201	0x800A2DBC	name	credits_panels_create	2026-10-22T12:04:19Z
+ovl201	0x800A2DBC	hint	When the box is ready and D_800BDBBD set, copies light matrix 0x800B8E44 to 0x800B8F24 and builds the 'L'/'R' panels (func_800A4274) into +0x7C/+0x80; then update func_800A2EA0 or func_800A2FE0.	2026-10-22T12:04:19Z
+ovl201	0x800A4274	name	credits_panel_create	2026-10-22T12:04:19Z
+ovl201	0x800A4274	hint	ui_obj_alloc(2) sprite whose res and x (0 or 0x100) depend on side 'L' vs other; returns the object (caller 0x800A2DBC).	2026-10-22T12:04:19Z
+ovl201	0x8009C5C0	name	movie_check_ending	2026-10-22T12:04:19Z
+ovl201	0x8009C5C0	hint	Returns its s8 id unless: D_80039CA4 <= -50000 (resets pilot via func_8009C6DC, clears progress, returns -1) or id 22/21 with D_80041B5E/D_80041B5D bit 1 set (plays movie 4/3, returns -1).	2026-10-22T12:04:19Z
+ovl201	0x800A4A74	name	movie_frame_upload	2026-10-22T12:04:19Z
+ovl201	0x800A4A74	hint	Movie per-frame callback: StCdInterrupt if pending, swaps decode buffers (0x8017F408/cur 0x8017F410), advances the dest RECT 0x8017F428 by its width, switches half when past the segment end, LoadImage of the finished slice.	2026-10-22T12:04:20Z
+ovl201	0x800A51B8	name	result_panel_open	2026-10-22T12:04:20Z
+ovl201	0x800A51B8	hint	When the box is ready draws D_800BDD08; on first entry copies 0xA0 bytes D_80031A94 -> D_80042AA8 and zeroes counters D_80039D08/0A; then clamps both counters to 999 and goes to func_800A5318.	2026-10-22T12:04:20Z
+ovl201	0x8009C6DC	name	pilot_name_reset	2026-10-22T12:04:20Z
+ovl201	0x8009C6DC	hint	Bumps counter D_80039D20, copies the 18-byte template 0x8004D150 to the pilot name 0x80031BE6 and appends three random SJIS full-width digits (func_8009C928 RNG D_80039D14), with fixed triples for some rolls; then plays movie 6.	2026-10-22T12:04:21Z
+ovl201	0x800A310C	name	title_press_start_update	2026-10-22T12:04:21Z
+ovl201	0x800A310C	hint	Title screen: blinks the prompt (+0x8C visible 20/40 frames), returns to the attract credits (func_800A2DBC) after 500 idle frames, on START builds the NEW GAME/CONTINUE items (+0x90..+0x98) and goes to func_800A3334.	2026-10-22T12:04:21Z
+ovl201	0x800A3334	name	title_menu_update	2026-10-22T12:04:21Z
+ovl201	0x800A3334	hint	Title menu: item +0x94 image depends on the alt/pad flag, up/down (0x1000/0x4000 edges) move the cursor y between 0xB0 and 0xC0 by 16, START/X highlights the chosen item (light 16) and goes to func_800A3554.	2026-10-22T12:04:21Z
+ovl201	0x800A46AC	name	movie_stream	2026-10-22T12:04:21Z
+ovl201	0x800A46AC	hint	CdSearchFile + StSetRing stream of one movie into Strm D_8017F3FC (0x8017F3FC: dec bufs, rect, done), per-frame MDEC decode (func_800B4FF0/B506C), re-seek via StGetBackloc, 24-bit DISPENV flip; stops on D_8017F448 or START/X when skippable (returns 1).	2026-10-22T12:04:21Z
+ovl201	0x800A57F0	name	main_menu_update	2026-10-22T12:04:21Z
+ovl201	0x800A57F0	hint	Six-item main menu: cursor +0x8A with key repeat; X dispatches (jump table 0x8004D324) to mission start (rank tier 90..94 from RNG D_80039D14, func_80051450), func_80083A58-based items 1/2, AC items 3/4 that require core/head/arms/legs (0x80031A58/5A/5B/63) equipped, item 5 -> func_800A6520; refusals open message box func_8005DED8; triangle opens func_8005D8D4 prompt.	2026-10-22T12:04:21Z
+ovl201	0x80095824	name	partlist_cursor_update	2026-10-22T12:04:22Z
+ovl201	0x80095824	hint	Part list cursor (ctor 0x80095784): up/down move PartList.sel (0x8019C0EA) over count 0x8019C0E8, refresh panes func_80090668/func_800908F8, at the edges scroll two VRAM columns by 16, shift the six row-label lights (0x8019C188) and draw the new row via func_8008F344 + func_8008F274/func_8008F2D0; then key-repeat tail.	2026-10-22T12:04:22Z
+ovl201	0x8009A83C	name	ui_frames_init	2026-10-22T12:04:22Z
+ovl201	0x8009A83C	hint	Sets both frames' DRAWENV/DISPENV (draw/disp at y 0/240 swapped), background on, 10 per-frame layer DRAWENVs in Frame[2] at 0x801BCE18 centred by ofs, and each layer's 0x580-word buffer halves (0x80180868.. 0x80199470).	2026-10-22T12:04:22Z
+ovl201	0x8009B414	name	frontend_main	2026-10-22T12:04:22Z
+ovl201	0x8009B414	hint	Front-end entry and frame loop: display/view/pool setup, picks the first screen from game-state flags (ending, credits, new pilot via func_8009C5C0, movies), then until D_801A2560: flip frame, ClearOTagR the 10 layers, update used objects, build g_ui_active, retire killed/orphaned objects, Rot/TransMatrix views and objects, compose parent/attach, draw by render_type, present layers; then shutdown.	2026-10-22T12:04:22Z
+ovl201	0x8006AAC4	name	emblem_sample_scroll_up	2026-10-22T12:06:58Z
+ovl201	0x8006AAC4	hint	Update step set by the sample picker 0x8006A3EC: +0xC8 scroll -= 16 per frame until it reaches page*68 (+0xC5), then back to 0x8006A3EC; twin of 0x8006AB34 (scroll down).	2026-10-22T12:06:58Z
+ovl201	0x8006AFA0	name	emblem_exit_confirm_update	2026-10-22T12:06:58Z
+ovl201	0x8006AFA0	hint	Reads the dialog answer +0xC4 set by 0x80068FBC's confirm box: 0 closes objects 5/7/9 and the box (func_8005C2D0) and goes to 0x8006B1E8, 1 returns to the editor menu 0x80068FBC.	2026-10-22T12:06:58Z
+ovl201	0x800634C4	name	ui_frame_draw_top_trim	2026-10-22T12:06:58Z
+ovl201	0x800634C4	hint	Called from 0x80060108 (frame renderer): three func_800646AC tiles along the top edge of corners c[0..3] (tex windows 200/192/216,208), then func_8006035C(o, c).	2026-10-22T12:06:58Z
+ovl201	0x800646AC	name	ui_frame_draw_tile	2026-10-22T12:06:58Z
+ovl201	0x800646AC	hint	Called by every frame renderer (0x80060ABC.., 0x800634C4..): SetDrawMode with texture window tw, projects v[0] and v[3] with RTPS, queues a 0x3817-clut SPRT spanning them, NCCS-lit, at ot+1.	2026-10-22T12:06:59Z
+ovl201	0x80064874	name	ui_view_draw_outline	2026-10-22T12:06:59Z
+ovl201	0x80064874	hint	Render handler (jal at 0x8009C1B0 in the frame loop): outlines the view rect (w,h of view[k] for odd ids 1..19) with a LINE_F4 polyline + closing LINE_F2 in the object's matrix.	2026-10-22T12:06:59Z
+ovl201	0x80064EB0	name	ui_draw_mirrored_bars	2026-10-22T12:06:59Z
+ovl201	0x80064EB0	hint	Render handler (jal at 0x8009C244): two POLY_G4 bars of length (+0x7C)>>2 either side of the origin, alternating colours D_800B75B0/B4, NCCS-lit.	2026-10-22T12:06:59Z
+ovl201	0x8006599C	name	ui_draw_text	2026-10-22T12:06:59Z
+ovl201	0x8006599C	hint	Render handler (jal at 0x8009C1FC): walks the '>'-terminated string o->res with control codes (CR, ';', ' ', '{n', '}n', '^n' size, '~', '@n' palette); ASCII/kana via func_800660C4, SJIS via glyph-page table D_800B75B8 + func_80065DBC.	2026-10-22T12:06:59Z
+ovl201	0x800660C4	name	ui_draw_ascii_glyph	2026-10-22T12:06:59Z
+ovl201	0x800660C4	hint	Called only from ui_draw_text 0x8006599C: one 8x16 (or 8/6/4 x 8) font SPRT for char c at (x,y) in view[k], clut 0x3817/0x3C16 by palette, then func_80066898.	2026-10-22T12:06:59Z
+ovl201	0x80066898	name	ui_queue_draw_mode	2026-10-22T12:06:59Z
+ovl201	0x80066898	hint	Called from 0x80066434/0x800665D8 (end of the glyph drawers): queues a DR_MODE packet (SetDrawMode tpage 7) at the object's depth.	2026-10-22T12:06:59Z
+ovl201	0x80069D40	name	emblem_menu2_update	2026-10-22T12:06:59Z
+ovl201	0x80069D40	hint	Emblem editor 5-item menu (cursor +0x91), sibling of 0x80068FBC: up/down repeat, X closes object 11 and goes to 0x8006B194, O runs 0x8006F590 / canvas clear / sample picker / APPLY / CANCEL confirm.	2026-10-22T12:06:59Z
+ovl201	0x800695E8	name	emblem_zoom_picker_update	2026-10-22T12:06:59Z
+ovl201	0x800695E8	hint	Set by 0x8006957C: zoom x2/x4/x8 picker (+0x91), re-centres the canvas view (+0x9C obj +0x7C/+0x7E) on the pen cursor (+0x98 obj +0x7E/+0x80); X restores +0x85 and goes to 0x80069C80, O to 0x80069490.	2026-10-22T12:06:59Z
+ovl201	0x80067CF0	name	memcard_load_save	2026-10-22T12:06:59Z
+ovl201	0x80067CF0	hint	Ran on 'yes load' (wave-1 hint), called from 0x800551B0: opens bu00/bu10:BASCUS-94182<letter> with 3 retries, reads 0xE80 bytes, checks func_80066F68 checksum, copies the game-state blocks home, LoadImage of the emblem, re-inits subsystems.	2026-10-22T12:06:59Z
+ovl201	0x80066F90	name	memcard_write_save	2026-10-22T12:06:59Z
+ovl201	0x80066F90	hint	Ran on 'yes create new data' (wave-1 hint), called from 0x80054D44: builds the 0xE80-byte save (SC header, SJIS title, icons, state blocks, emblem via StoreImage, checksum), picks a free letter, writes with retries and reads back to verify.	2026-10-22T12:07:00Z
+ovl201	0x8006C4C0	name	emblem_image_get_pixel	2026-10-22T12:10:18Z
+ovl201	0x8006C4C0	hint	Returns the 4-bit pixel at (x,y) of a 64x64 4bpp image (+0xC pixels, 32 B/row, high nibble for odd x) when x,y < 64; neighbour of the emblem canvas code.	2026-10-22T12:10:19Z
+ovl201	0x8006C408	name	emblem_image_put_pixel	2026-10-22T12:10:19Z
+ovl201	0x8006C408	hint	Writes the image pen colour (+0xA) into the nibble at (x,y) of the 64x64 4bpp image at +0xC when x,y < 64; twin of 0x8006C4C0.	2026-10-22T12:10:19Z
+ovl201	0x8006FD24	name	emblem_zoom_label_update	2026-10-22T12:10:19Z
+ovl201	0x8006FD24	hint	UiObj update: picks res sprite D_800B818C/98/A4 for editor zoom 2/4/8 (work+0x80 -> +0x84) and sets pos from its own x/y (+0x7C/+0x7E) +40/+48.	2026-10-22T12:10:19Z
+ovl201	0x8006F8C0	name	emblem_rgb_marker_update	2026-10-22T12:10:20Z
+ovl201	0x8006F8C0	hint	UiObj update: work +0x80 picks channel r/g/b of palette D_8017E5D8[edit->color] (edit at +0x7C, colour +0x86); x = (value>>3)|0x60, y = 183/191/199 (slider row).	2026-10-22T12:10:20Z
+ovl201	0x8006FB20	name	emblem_pen_cursor_update	2026-10-22T12:10:20Z
+ovl201	0x8006FB20	hint	UiObj update of the pen cursor: outside the 128x128 canvas (x-172, y-36) shows sprite D_800B7EB0 at x/y; inside it snaps x/y to the zoom grid (edit +0x84 zoom 2/4/8) and picks a zoom-sized sprite.	2026-10-22T12:10:20Z
+ovl201	0x8006E0A8	name	emblem_dpad_dispatch	2026-10-22T12:10:20Z
+ovl201	0x8006E0A8	hint	Reads the pad press word D_801A2568 and calls func_8006E148(o, dir) with U/R/D/L for d-pad bits 0x1000/0x2000/0x4000/0x8000.	2026-10-22T12:10:20Z
+ovl201	0x8006F79C	name	emblem_rgb_marker_create	2026-10-22T12:10:20Z
+ovl201	0x8006F79C	hint	Constructor (edit, channel) of the RGB slider marker: ui_obj_alloc(4), update 0x8006F8C0, sprite D_800B815C, work = {edit, chan}, then places it like its update; returns the object.	2026-10-22T12:10:20Z
+ovl201	0x8006FE58	name	emblem_edge_arrow_create	2026-10-22T12:10:21Z
+ovl201	0x8006FE58	hint	Constructor (s16 which 0..3): ui_obj_alloc(4) sprite D_800B81BC/D_800B81C8 placed at the canvas edges (171,28)/(300,35)/(171,164)/(164,35); returns the object (edge arrows +0xA0/+0xA4 of EmbWork).	2026-10-22T12:10:21Z
+ovl201	0x8007046C	name	emblem_fill_tool_update	2026-10-22T12:10:21Z
+ovl201	0x8007046C	hint	UiObj update: when the pen cursor (edit+0x98) is on the canvas, converts it to image x/y through view (edit+0x9C) and zoom and calls func_8007053C(&edit->img, x, y, o->unk14, D_800B7E54, 0) (fill/stamp at the pixel).	2026-10-22T12:10:21Z
+ovl201	0x8006C1B4	name	emblem_palette_reset	2026-10-22T12:10:21Z
+ovl201	0x8006C1B4	hint	Copies the 16-entry default palette D_800B7E08 into the editor palette D_8017E5D8, converts it to a 15-bit CLUT (black gets the STP bit) and LoadImages it to the rects D_800B811C and D_800B8124; same CLUT code as 0x8006BF84.	2026-10-22T12:10:21Z
+ovl201	0x8006DD54	name	emblem_shape_tool_update	2026-10-22T12:10:21Z
+ovl201	0x8006DD54	hint	Editor shape tools: X press (0x40 edge) on the canvas records the start pixel (+0x92/+0x94) and bumps step (+0x8E), or finishes (calls func_8006F55C); 0x20 cancels; while a step is active dispatches tool +0x8C 1..4 to 0x8006E924/0x8006EC38/0x8006EF54/0x8006E490(e, done); returns done.	2026-10-22T12:10:21Z
+ovl201	0x8006C934	name	emblem_draw_palette	2026-10-22T12:10:21Z
+ovl201	0x8006C934	hint	Draws the 16 palette swatches as TILE prims (8x16, the selected entry +0x86 15x23 into a different OT slot), colours from D_8017E5D8 (entry 0 from D_800B7E48), positions from the screen table D_801BCEEC[player].	2026-10-22T12:10:21Z
+ovl201	0x8006E924	name	emblem_tool_line	2026-10-22T12:10:22Z
+ovl201	0x8006E924	hint	Tool 1 of the shape driver 0x8006DD54: Bresenham line from the start pixel (+0x92/+0x94) to the cursor pixel; done != 0 plots with emblem_image_put_pixel, else previews each pixel with func_8007053C(img, x, y, 3, D_800B7E58, 1).	2026-10-22T12:10:22Z
+ovl201	0x8006EC38	name	emblem_tool_rect	2026-10-22T12:10:22Z
+ovl201	0x8006EC38	hint	Tool 2 of 0x8006DD54: orders the start pixel and cursor pixel into a box and draws its outline (top/bottom rows, then the side columns) with put_pixel when done, else preview pixels via func_8007053C(img, x, y, 3, D_800B7E58, 1).	2026-10-22T12:10:22Z
+ovl201	0x8006EF54	name	emblem_tool_fill_rect	2026-10-22T12:10:22Z
+ovl201	0x8006EF54	hint	Tool 3 of 0x8006DD54: same box set-up as emblem_tool_rect; when done fills every pixel of the box with put_pixel, else previews the outline with func_8007053C.	2026-10-22T12:10:22Z
+ovl201	0x8006E490	name	emblem_tool_circle	2026-10-22T12:10:22Z
+ovl201	0x8006E490	hint	Tool 4 of 0x8006DD54: radius = SquareRoot0(dx*dx+dy*dy) from start pixel to cursor pixel, midpoint circle with 8-way symmetric put_pixel when done, else preview pixels via func_8007053C.	2026-10-22T12:10:22Z
+ovl201	0x8007053C	name	emblem_draw_preview_pixel	2026-10-22T12:10:23Z
+ovl201	0x8007053C	hint	Draws a 1x1 TILE for image pixel (x,y) in the small preview (+40/+48) and, when big != 0 and the pixel is inside the zoomed view (img+0x20 x0/y0, 64/(zoom/2) cells), a zoom x zoom TILE on the canvas; colour from *rgb, OT entry layer of cursor->ot[player] (img+0x1C).	2026-10-22T12:10:23Z
+ovl201	0x8006F2CC	name	emblem_fill_scanline	2026-10-22T12:10:23Z
+ovl201	0x8006F2CC	hint	Scanline flood-fill step called by 0x8006F220: pops (x,y) from the byte stack, extends left/right while get_pixel == old colour, paints the run with put_pixel and pushes run starts of the rows above and below; returns the new stack top.	2026-10-22T12:10:23Z
+ovl201	0x80072958	name	asm_build_ac_model	2026-10-22T12:10:23Z
+ovl201	0x80072958	hint	Finds the assembly owner (ctor 0x800744A8) and builds the AC part objects with func_80072C80 (kinds 6,4,3,5x2,8,9,10,14,+extra 7/11/12/13), variants chosen from the equipped part bytes D_80031A58..5F; stores the arms object at owner+0x88 and returns the root (kind 6).	2026-10-22T12:10:23Z
+ovl201	0x8006E148	name	emblem_image_scroll	2026-10-22T12:10:23Z
+ovl201	0x8006E148	hint	Scrolls the 64x64 4bpp image (+0x88) one pixel with wrap-around by dir U/D (32-byte rows via a 32-byte temp) or L/R (per row of 8 words, nibble shifts by 4 with carry from the neighbour word); called by emblem_dpad_dispatch 0x8006E0A8.	2026-10-22T12:10:23Z
+ovl201	0x8006BA08	name	emblem_editor_draw	2026-10-22T12:10:24Z
+ovl201	0x8006BA08	hint	Per-frame editor draw: LoadImage of the 4bpp image (+0x88) and the CLUT built from palette D_8017E5D8, draws canvas (0x8006C554) and palette (0x8006C934), cycles the cursor colours D_800B7E54/58, fades colour 0 D_800B7E48 in or out by +0x8F, copies light matrix 0 to 10 and zeroes/sets its third column by the brightness of the pixel under the cursor.	2026-10-22T12:10:24Z
+ovl201	0x8006B250	name	emblem_color_edit_update	2026-10-22T12:10:24Z
+ovl201	0x8006B250	hint	UiObj update of the palette colour editor: L1/R1 (0x1/0x2) step the edited entry (+0x86) restoring/saving the undo colour D_8017E618, up/down pick channel r/g/b (+0x96), right/left add/subtract 8 with key repeat, X keeps and O reverts (SsUtKeyOn), redraws via 0x8006BA08; exit (0x80/0x40/0x20 edge) kills the slider objects and returns to func_80068C08, else draws 0x8006CC78.	2026-10-22T12:10:24Z
+ovl201	0x800744A8	name	asm_screen_create	2026-10-22T12:10:24Z
+ovl201	0x800744A8	hint	Assembly screen constructor (src, owner, mode): ui_obj_alloc(0) with update 0x80078A38, draws the menu labels, saves equipped part bytes, calls 0x80074A18 and reports changed parts, sets up the part list by mode (D_80031A58[2] == 255), then 0x800740AC; returns the object. Wave-1 near miss.	2026-10-22T12:10:24Z
+ovl201	0x80072C80	name	asm_part_create	2026-10-22T12:10:24Z
+ovl201	0x80072C80	hint	Assembly part object ctor (owner, kind, parent, core, var): ui_obj_alloc(6), update 0x800736F0, highlight rules vs owner +0x84/+0x94, parent links, per-kind joint offset from core tables D_800BC428/D_800BC440 (+arm/leg tables D_800BC638/6B8/968), plus per-part offset D_800BCAC4[tbl].ofs[part id]; mirrors x for right-side parts; sets slot +0x7C and position; returns the object.	2026-10-22T12:10:24Z
+ovl201	0x80070A44	name	ac_menu_update	2026-10-22T12:10:24Z
+ovl201	0x80070A44	hint	UiObj update of the 7-entry AC menu: up/down with key repeat move the cursor byte (src obj +0x7C, wraps 0..6), X dispatches entries 0..6 (copy AC data D_80031A94 to D_80042AA8 and test/save, part checks on D_80031A59..63 with error dialogs via func_8005DED8, name entry 0x8005D8D4 ...), O closes the boxes and returns to func_80072730.	2026-10-22T12:10:24Z
+ovl201	0x8006CC78	name	emblem_draw_color_values	2026-10-22T12:10:24Z
+ovl201	0x8006CC78	hint	Draws the selected colour swatch (TILE 15x15 at +42/+188) and the r/g/b values of palette[edit+0x86] as two-digit SPRT numbers (font at v=248, clut 0x3957, x 136/140, y 184+8*i), then a DR_MODE; all into OT slot 2 of the cursor object.	2026-10-22T12:10:25Z
