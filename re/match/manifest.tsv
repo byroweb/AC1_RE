@@ -5541,3 +5541,4 @@
 0x801B8810	fdat186	fdat000/func_801C558C.c	8	--base 0x801B80C8 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x801B81E8	fdat188	fdat000/func_801C558C.c	8	--base 0x801B80C8 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x8004C854	202	ovl202/func_8004C854.c	200	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym func_8004C7A8=0x8004C7A8
+0x80052350	202	ovl202/func_80052350.c	76	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
