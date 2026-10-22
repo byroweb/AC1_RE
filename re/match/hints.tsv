@@ -1887,3 +1887,83 @@ ovl203	0x8006735C	name	render_draw_model_rec_near	2026-10-22T22:04:34Z
 ovl203	0x8006735C	hint	draws model record idx with clip-code rejection; near-plane polygons queued to four subdivider work lists (func_800693A4/69C8C/6BA20/6C560), others FT3/FT4 NCCS or GT3/GT4 lit; 8 KB stack lists	2026-10-22T22:04:34Z
 ovl203	0x800681B8	name	render_draw_model_rec_near_lt	2026-10-22T22:04:34Z
 ovl203	0x800681B8	hint	light-table variant of func_8006735C: FT3/FT4 NCCS + GT3/GT4 lit (func_80068180/800681A0), near-plane polygons to subdivider lists (func_800693A4/69C8C/6A55C/6B0D0)	2026-10-22T22:04:34Z
+ovl202	0x8006D9DC	name	mis_reloc_ptr_pairs	2026-10-22T22:07:42Z
+ovl202	0x8006D9DC	hint	adds table base 0x80091228 to both words of 0x400 8-byte entries (pointer fixup after load)	2026-10-22T22:07:42Z
+ovl202	0x8006DFCC	name	mis_mask_combine3	2026-10-22T22:07:42Z
+ovl202	0x8006DFCC	hint	ANDs three 64x16-word mask rows from D_801EA790[3][64][16] (a,b,c<64) into obj+0x80 tmp, then ORs into obj+0 (count obj+0x40)	2026-10-22T22:07:42Z
+ovl202	0x800743A0	name	mis_target_score_cmp	2026-10-22T22:07:42Z
+ovl202	0x800743A0	hint	qsort-style comparator of two target slots (def, dist, |dx|*2+|dz|*4, flags bit1, current target halved); variant of 0x8007449C	2026-10-22T22:07:42Z
+ovl202	0x80076C48	name	ai_move_state_11	2026-10-22T22:07:42Z
+ovl202	0x80076C48	hint	-: sibling of 0x80076B94 (state 0x10); on entering state 0x11 (+0x3D) copies 8 B +0x10 -> +0x18, func_80076548(e,0x11,a3), mover setup via 0x8004E98C/0x8004E22C/0x8004DEAC	2026-10-22T22:07:42Z
+ovl202	0x8007AB04	name	aim_probe_extended	2026-10-22T22:07:42Z
+ovl202	0x8007AB04	hint	-: twin-shape of 0x8007A4F4: gets aim segment via func_800745D0, sets both y to pos.y - (+0x2A>>1), doubles segment length in x/z, probes midpoint to previous (D_80040FD8) and segment with func_8007A334, saves segment	2026-10-22T22:07:42Z
+ovl202	0x80078A2C	name	ac_entity_alloc	2026-10-22T22:07:42Z
+ovl202	0x80078A2C	hint	symbols.tsv name; free slot in g_ac_entities[1..15], else (def+0x14 bit15) evicts first entity whose def lacks bit15 via func_80078D78	2026-10-22T22:07:42Z
+ovl202	0x8007959C	name	ac_entities_frame	2026-10-22T22:07:42Z
+ovl202	0x8007959C	hint	per-frame driver: 3 pre-passes, func_8008D69C on a pad/flag condition, player fn_move(e,0), one rotating entity (D_801A5DC4 % 16) fn_move, then ac_entity_update(e, i) for all 16 live slots	2026-10-22T22:07:42Z
+ovl202	0x80073598	name	obj_find_hit_other	2026-10-22T22:07:42Z
+ovl202	0x80073598	hint	scans object list D_8019F308[D_8019F508] for the first object other than self that func_80012E5C(a,b,c,obj,obj+0x1E,obj+0x20) reports hit; port of 0x80073454	2026-10-22T22:07:42Z
+ovl202	0x800731E8	name	mis_nodes_load	2026-10-22T22:07:43Z
+ovl202	0x800731E8	hint	fills 512 0x34-byte nodes at D_80198B08 from 0x20-byte source records, clears runtime fields, copies 3 u16 from type table D_80198808[type] (stride 0x18) or 0xC000, calls g_objective_obj+0xA0 per-type init; then func_80073170	2026-10-22T22:07:43Z
+ovl202	0x8007790C	name	ai_move_state_80	2026-10-22T22:07:43Z
+ovl202	0x8007790C	hint	-: sets +0xCC vel from arg, vy=0, shrinks horizontal speed by 0x80 (SquareRoot0), func_80076548(e,0x80,fn), mover setup, optional limit at +0xD2 from func_8004ED1C, then the 0x80077170 ballistic probe	2026-10-22T22:07:43Z
+ovl202	0x8006C580	name	render_mesh_gt3_lit	2026-10-22T22:07:43Z
+ovl202	0x8006C580	hint	draws a 0-terminated list of {face*, ot, arg, flags}: per face 3 vertex lookups in D_801A6A48 (xy/z/rgb), NCCS lighting via 0x8006BF54/74 into scratchpad corners, uv from table at spad+0x35C, clut/tpage, code 0x34|flags&2, ot slot, emit via 0x8006BF8C	2026-10-22T22:07:43Z
+ovl202	0x8006B0BC	name	render_mesh_gt3_vcol	2026-10-22T22:07:43Z
+ovl202	0x8006B0BC	hint	sibling of 0x8006C580 whose lighting colours come from spad+0x374 indexed by the uv record's s16 at +6 (calls 0x8006AA90/0x8006AAB0, emits via 0x8006AAC8)	2026-10-22T22:07:43Z
+ovl202	0x80069F04	name	render_mesh_ft3_lit	2026-10-22T22:07:43Z
+ovl202	0x80069F04	hint	flat-shaded sibling of 0x8006C580: one NCCS of the face normal with spad+0x390 colour, strgb to spad+0x2C, code 0x24|flags&2 at +0x393, emit via 0x80069A5C	2026-10-22T22:07:43Z
+ovl202	0x8006A7EC	name	render_mesh_ft4_lit	2026-10-22T22:07:43Z
+ovl202	0x8006A7EC	hint	quad version of 0x80069F04 (4 corners, cp[4] at spad+0x10C, code 0x2C, emit via 0x8006A13C)	2026-10-22T22:07:43Z
+ovl202	0x8006BC30	name	render_mesh_gt4_vcol	2026-10-22T22:07:43Z
+ovl202	0x8006BC30	hint	quad version of 0x8006B0BC (code 0x3C, calls 0x8006B34C/0x8006B36C, emit via 0x8006B384)	2026-10-22T22:07:43Z
+ovl202	0x8006D0C0	name	render_mesh_gt4_lit	2026-10-22T22:07:43Z
+ovl202	0x8006D0C0	hint	quad version of 0x8006C580 (per-vertex NCCS via 0x8006C7DC/0x8006C7FC, code 0x3C, emit via 0x8006C814)	2026-10-22T22:07:43Z
+ovl202	0x80075798	name	ai_steer_step	2026-10-22T22:07:44Z
+ovl202	0x80075798	hint	-: blends normalised dir with normalised (pos - target)/16, returns 0x800-(yaw-ratan2) heading delta, scales by speed*8*def[4], writes per-frame displacement clamped to +0x28 (x/z) and +0x2A/2 (y) into out	2026-10-22T22:07:44Z
+ovl202	0x800733D8	name	obj_sweep_hit_list	2026-10-22T22:07:44Z
+ovl202	0x800733D8	hint	sweeps a probe segment (a, d) against the object list D_8019F308[D_8019F508] via func_80012794; returns the first hit when d==0, else the last hit, restoring the segment on solid objects (+0x1C bit13); sibling of 0x80073598	2026-10-22T22:07:44Z
+ovl202	0x800767D8	name	ai_move_state_10_land	2026-10-22T22:07:44Z
+ovl202	0x800767D8	hint	-: state 0x10 entry (zero +0x18 vel), mover setup, ballistic step via func_8004E22C/func_800749A0, ground probe box (func_80014338/func_80071DC4); calls fn_move(e,5,r) when blocked or the step was more than halved	2026-10-22T22:07:44Z
+ovl202	0x8006E8D4	name	coll_face_test_point	2026-10-22T22:07:44Z
+ovl202	0x8006E8D4	hint	-: y on the face plane at (x,z) = -(nx*x+nz*z+d)/ny, range-checked against +0x102/+0x104, side 1/2 by sign of ny; for bounded faces (+0xA8&7==1) edge tests via func_8006F028 for tri (+0xAC==0x7FF80000) or quad	2026-10-22T22:07:44Z
+ovl202	0x8007732C	name	ai_move_state_b0_jump	2026-10-22T22:07:44Z
+ovl202	0x8007732C	hint	-: state 0xB0 entry, mover setup or +0x70=b, ballistic step from v>>6 with 3/4 size, wall probe func_80074800, keeps x/z velocity unless the step moved >=7, recomputes vy	2026-10-22T22:07:44Z
+ovl202	0x8007863C	name	mis_pause_loop	2026-10-22T22:07:44Z
+ovl202	0x8007863C	hint	pause: blacks out (DrawEnv isbg, PolyFT4 'PAUSE' sprite 121..199 x 101..139), mutes SsSetMVol, CdControl(9) pause, loops VSync+pad poll (state 0x890/0x860 bits), on 0x100 (quit?) func_80052A2C(99)==1 -> g_mission_timer=0, func_8004C318(0x100); resumes CdRead2(200) and adds paused ticks to D_80041BC4	2026-10-22T22:07:44Z
+ovl202	0x80071244	name	coll_face_hit_record	2026-10-22T22:07:44Z
+ovl202	0x80071244	hint	-: same plane/edge test as 0x8006E8D4 on a +0x10C-based face; on hit appends a 0x1C record (x, (y>>2)+src->y, z, src, +0xB0, +0x94) at the face's +0x48 cursor	2026-10-22T22:07:44Z
+ovl202	0x8007B548	name	player_hover_step	2026-10-22T22:07:45Z
+ovl202	0x8007B548	hint	player twin of fdat000 0x801C5CB8 hover mover: params from the global block at 0x800411A8 (sink/floor/accel/max), climb unless pad mask D_8004123A held in D_80040FA8; directions 65..72 accelerate along yaw offsets	2026-10-22T22:07:45Z
+ovl202	0x8006EB10	name	coll_face_probe_box	2026-10-22T22:07:45Z
+ovl202	0x8006EB10	hint	-: projects a face onto its dominant axis plane ((+0x9C>>2)&3: corners -> +0xEC 2D points, normal/bbox components -> +0xFC..+0x104) and tests the 4 bbox corners with 0x8006E8D4; returns side + axis*16 + corner*4, 0 when the pre-test (+0x60, func_8006F04C) rejects, -1 when none hit	2026-10-22T22:07:45Z
+ovl202	0x80072548	name	ws_move_push_entities	2026-10-22T22:07:45Z
+ovl202	0x80072548	hint	moves a world struct by its mover delta (+0x2C ->+8): unregisters it (func_8006DD00), pushes every live entity whose box (r +0x28, h +0x2A) hits it at the old or new place by the delta (func_800749A0), commits the new origin/bbox/box and re-registers (func_8006DC3C)	2026-10-22T22:07:45Z
+ovl202	0x80071E14	name	ws_load_world_structs	2026-10-22T22:07:45Z
+ovl202	0x80071E14	hint	unpacks the mission's 512 world structs in place (52-byte records -> 64-byte WorldStruct, tail data moved to 0x801D8B68 heap), sets parts/stats heap pointers, registers each in the bucket grid (func_8006DC3C), g_world_struct_count, D_801E8B70 = words of bitset, D_801E8B68 heap cursor, runs per-class init g_objective_obj+0x60[cls]	2026-10-22T22:07:45Z
+ovl202	0x8007CD74	name	wpn_fire_locked_volley	2026-10-22T22:07:45Z
+ovl202	0x8007CD74	hint	fires up to n rounds at the first locked target slot (g_target_list, flags&8, +0x26): per round spends ammo +0x10, muzzle via func_800745D0, aim from slot +0x18/+0x1A plus random spread (func_80014D78), launches projectile func_800862E8; records the projectile for g_target_head in D_80040FC4; returns the slot	2026-10-22T22:07:45Z
+ovl202	0x800775B8	name	ai_move_state_c0_fall	2026-10-22T22:07:45Z
+ovl202	0x800775B8	hint	-: state 0xC0 entry (D_801A5DC8 set for a straight drop), ballistic step at 3/4 size via func_80074CA0; on a near-vertical landing probes 50 up (func_80074FA4) and switches +0x3C to 96/97 by fall speed, faction|=0x10, fn_move(e,4); keeps velocity unless blocked	2026-10-22T22:07:45Z
+ovl202	0x80075BC0	name	ai_aim_vector	2026-10-22T22:07:45Z
+ovl202	0x80075BC0	hint	-: target-relative vector by mode +0xDC: 0..3 (target+off-pos, negated, func_8001380C x1/x3), 4/5 x/z toward/away with y = off.y-pos.y clamped to s16, 6 fixed point; else D_80039C78 zero	2026-10-22T22:07:45Z
+ovl202	0x800749A0	name	ac_move_collide	2026-10-22T22:07:45Z
+ovl202	0x800749A0	hint	moves pos by v into out with up to 6 slide retries: entity hits (func_80074800; reports kind 2/3 hits to D_801A5DD0 and fn_move(e,7)), object hits (func_800733D8, solid objects call their +0x14 callback) and terrain (func_80074620); D_801A5DCC==1 zeroes v; returns last hit	2026-10-22T22:07:46Z
+ovl202	0x800749A0	name	ac_move_collide	2026-10-22T22:07:46Z
+ovl202	0x800749A0	hint	(see earlier line) MATCH	2026-10-22T22:07:46Z
+ovl202	0x80074CA0	name	ac_move_collide_keep_y	2026-10-22T22:07:46Z
+ovl202	0x80074CA0	hint	twin of 0x800749A0 that keeps the vertical component on a full stop (callback data D_8008E520)	2026-10-22T22:07:46Z
+ovl202	0x8006E380	name	world_section_pick	2026-10-22T22:07:46Z
+ovl202	0x8006E380	hint	picks the world struct containing point p from the bucket candidates, preferring cur and its linked parts (score = part index, 1024 for +0x30 bit14, 16384 unlinked); else the nearest origin among cur's parts, or among all structs when cur==0	2026-10-22T22:07:46Z
+ovl202	0x80073C2C	name	target_slot_eval	2026-10-22T22:07:46Z
+ovl202	0x80073C2C	hint	evaluates one candidate target into a TargetSlot: hostile (+0x36&7), section visible (D_801A5DD8 bitset), ignore_mask coin flip (rand), within range box/circle; lock = distance, flags 1, |2 when the aim angles (func_80014AE4) fall inside the pitch/yaw cone; returns 1	2026-10-22T22:07:46Z
+ovl202	0x80073F38	name	target_scan_all	2026-10-22T22:07:46Z
+ovl202	0x80073F38	hint	fills consecutive TargetSlots for every live hostile, visible, in-range entity of g_ac_entities (inlined 0x80073C2C test, mask|0x10, no rand); returns the count	2026-10-22T22:07:46Z
+ovl202	0x8007ACC0	name	player_hover_follow_lock	2026-10-22T22:07:46Z
+ovl202	0x8007ACC0	hint	-: hover mover variant steering toward the first target slot via func_80015258 lead prediction (prev pos in g_target_list[0].proj), turns yaw (func_800132CC), sets clamped x/z/y velocity, mode +0x6E effects (func_8004CE44/0x8007AB04/0x800745D0)	2026-10-22T22:07:46Z
+ovl202	0x8007A654	name	player_hover_weapon_mode	2026-10-22T22:07:46Z
+ovl202	0x8007A654	hint	player hover-unit step: faces g_target_list[0] target, mode +0x6E drives thrust (0x8007A19C/A058 vs A02C) and effects; modes 7..11 fire the selected weapon D_80041225 (0..3: single/alt/3-way spread/heavy) via func_8008915C when D_800411F7 armed and the fire bit is fresh (D_80040FE8); mode 6 aims; >=12 stops	2026-10-22T22:07:46Z
+ovl202	0x8007C7C8	name	player_weapon_fire	2026-10-22T22:07:46Z
+ovl202	0x8007C7C8	hint	player fire for one ammo slot: shots 1/2/4 by +9&3, range from the per-category weapon tables (g_weapon_defs / 0x8008FC48 / 0x8008FEE8 / 0x8008FB58), lock update 0x8007BA98 or reset, recoil +0x7C, then per shot muzzle (func_800745D0) aimed at g_target_list[0] or forward, launch by id band (0x80085E98/0x800889B4/0x8008915C/0x8008840C/0x80087DEC), muzzle flash, cooldown +0x3F	2026-10-22T22:07:47Z
+ovl202	0x8007BA98	name	player_lock_update	2026-10-22T22:07:47Z
+ovl202	0x8007BA98	hint	lock-on update: g_target_head = &g_target_list[0]; scans candidates (0x80073F38 into a 16-slot local array), picks best with func_80015440 + comparator 0x800743A0; same target: track delta, lock progress +0x08/+0x0A vs distance*ammo+0x20, lead aim via func_80015258, lock sounds 42/46 (func_8004CFF4); new target: copy slot; sets aim offsets +0x76..+0x7A	2026-10-22T22:07:47Z
