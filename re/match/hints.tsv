@@ -661,3 +661,41 @@ ovl201	0x80085640	name	perf_check_draw	2026-10-22T12:03:37Z
 ovl201	0x80085640	hint	Wave-1 name kept: check-performance screen, AP/weight/price header, performance table and grade.	2026-10-22T12:03:37Z
 ovl201	0x800897D0	name	garage_detail_update	2026-10-22T12:03:37Z
 ovl201	0x800897D0	hint	Detail window update: steps text via 0x80088AC4, scrolls the 5 LetterLines up/down with history, page loads, circle runs AC checks 0x800892AC/0x8008935C/0x800895D4 before 0x8008A338, cross closes windows.	2026-10-22T12:03:38Z
+ovl201	0x800A2F14	name	credits_slide_matrix_left	2026-10-22T12:04:18Z
+ovl201	0x800A2F14	hint	Subtracts 8 from six s16 entries of light matrix 7 (0x800B8F24) per frame until x<0x40, then kills the two panels at +0x7C/+0x80 and goes to func_800A2FD0.	2026-10-22T12:04:18Z
+ovl201	0x800A5318	name	result_panel_close	2026-10-22T12:04:18Z
+ovl201	0x800A5318	hint	Clears D_80039CAC, sets D_80039CAD, kills the +0x80 child, redraws the frame (func_800A5368) and switches update to func_800A5414.	2026-10-22T12:04:18Z
+ovl201	0x8009A658	name	mail_list_arrow_up_create	2026-10-22T12:04:18Z
+ovl201	0x8009A658	hint	Allocates a kind-2 sprite (res D_800B8D3C) at x 0x120, y = mail view top+0x5C; sibling of the mail list (MailState.view at 0x8017F6D0+0x1190).	2026-10-22T12:04:19Z
+ovl201	0x8009A714	name	mail_list_arrow_down_create	2026-10-22T12:04:19Z
+ovl201	0x8009A714	hint	Same as 0x8009A658 with res D_800B8D48 and y = top + (rows-1)*0x18 + 0x64, i.e. under the last visible mail row.	2026-10-22T12:04:19Z
+ovl201	0x800A448C	name	movie_play	2026-10-22T12:04:19Z
+ovl201	0x800A448C	hint	Sets SPU serial/CD mix, allocates 5 decode buffers, clears VRAM, plays entry idx of the 8-byte movie table 0x800BDC68 via func_800A46AC (entry 2 fallback when idx 0 fails), restores display env and frees buffers.	2026-10-22T12:04:19Z
+ovl201	0x80094EC0	name	credits_screen_build	2026-10-22T12:04:19Z
+ovl201	0x80094EC0	hint	After the box opener is gone, uploads the strings 'CREDITS' and 'C' (func_8005D15C), builds three text labels into D_8019C1A0..A8 (light 0x14) and the frame, then update func_80095044.	2026-10-22T12:04:19Z
+ovl201	0x800A2DBC	name	credits_panels_create	2026-10-22T12:04:19Z
+ovl201	0x800A2DBC	hint	When the box is ready and D_800BDBBD set, copies light matrix 0x800B8E44 to 0x800B8F24 and builds the 'L'/'R' panels (func_800A4274) into +0x7C/+0x80; then update func_800A2EA0 or func_800A2FE0.	2026-10-22T12:04:19Z
+ovl201	0x800A4274	name	credits_panel_create	2026-10-22T12:04:19Z
+ovl201	0x800A4274	hint	ui_obj_alloc(2) sprite whose res and x (0 or 0x100) depend on side 'L' vs other; returns the object (caller 0x800A2DBC).	2026-10-22T12:04:19Z
+ovl201	0x8009C5C0	name	movie_check_ending	2026-10-22T12:04:19Z
+ovl201	0x8009C5C0	hint	Returns its s8 id unless: D_80039CA4 <= -50000 (resets pilot via func_8009C6DC, clears progress, returns -1) or id 22/21 with D_80041B5E/D_80041B5D bit 1 set (plays movie 4/3, returns -1).	2026-10-22T12:04:19Z
+ovl201	0x800A4A74	name	movie_frame_upload	2026-10-22T12:04:19Z
+ovl201	0x800A4A74	hint	Movie per-frame callback: StCdInterrupt if pending, swaps decode buffers (0x8017F408/cur 0x8017F410), advances the dest RECT 0x8017F428 by its width, switches half when past the segment end, LoadImage of the finished slice.	2026-10-22T12:04:20Z
+ovl201	0x800A51B8	name	result_panel_open	2026-10-22T12:04:20Z
+ovl201	0x800A51B8	hint	When the box is ready draws D_800BDD08; on first entry copies 0xA0 bytes D_80031A94 -> D_80042AA8 and zeroes counters D_80039D08/0A; then clamps both counters to 999 and goes to func_800A5318.	2026-10-22T12:04:20Z
+ovl201	0x8009C6DC	name	pilot_name_reset	2026-10-22T12:04:20Z
+ovl201	0x8009C6DC	hint	Bumps counter D_80039D20, copies the 18-byte template 0x8004D150 to the pilot name 0x80031BE6 and appends three random SJIS full-width digits (func_8009C928 RNG D_80039D14), with fixed triples for some rolls; then plays movie 6.	2026-10-22T12:04:21Z
+ovl201	0x800A310C	name	title_press_start_update	2026-10-22T12:04:21Z
+ovl201	0x800A310C	hint	Title screen: blinks the prompt (+0x8C visible 20/40 frames), returns to the attract credits (func_800A2DBC) after 500 idle frames, on START builds the NEW GAME/CONTINUE items (+0x90..+0x98) and goes to func_800A3334.	2026-10-22T12:04:21Z
+ovl201	0x800A3334	name	title_menu_update	2026-10-22T12:04:21Z
+ovl201	0x800A3334	hint	Title menu: item +0x94 image depends on the alt/pad flag, up/down (0x1000/0x4000 edges) move the cursor y between 0xB0 and 0xC0 by 16, START/X highlights the chosen item (light 16) and goes to func_800A3554.	2026-10-22T12:04:21Z
+ovl201	0x800A46AC	name	movie_stream	2026-10-22T12:04:21Z
+ovl201	0x800A46AC	hint	CdSearchFile + StSetRing stream of one movie into Strm D_8017F3FC (0x8017F3FC: dec bufs, rect, done), per-frame MDEC decode (func_800B4FF0/B506C), re-seek via StGetBackloc, 24-bit DISPENV flip; stops on D_8017F448 or START/X when skippable (returns 1).	2026-10-22T12:04:21Z
+ovl201	0x800A57F0	name	main_menu_update	2026-10-22T12:04:21Z
+ovl201	0x800A57F0	hint	Six-item main menu: cursor +0x8A with key repeat; X dispatches (jump table 0x8004D324) to mission start (rank tier 90..94 from RNG D_80039D14, func_80051450), func_80083A58-based items 1/2, AC items 3/4 that require core/head/arms/legs (0x80031A58/5A/5B/63) equipped, item 5 -> func_800A6520; refusals open message box func_8005DED8; triangle opens func_8005D8D4 prompt.	2026-10-22T12:04:21Z
+ovl201	0x80095824	name	partlist_cursor_update	2026-10-22T12:04:22Z
+ovl201	0x80095824	hint	Part list cursor (ctor 0x80095784): up/down move PartList.sel (0x8019C0EA) over count 0x8019C0E8, refresh panes func_80090668/func_800908F8, at the edges scroll two VRAM columns by 16, shift the six row-label lights (0x8019C188) and draw the new row via func_8008F344 + func_8008F274/func_8008F2D0; then key-repeat tail.	2026-10-22T12:04:22Z
+ovl201	0x8009A83C	name	ui_frames_init	2026-10-22T12:04:22Z
+ovl201	0x8009A83C	hint	Sets both frames' DRAWENV/DISPENV (draw/disp at y 0/240 swapped), background on, 10 per-frame layer DRAWENVs in Frame[2] at 0x801BCE18 centred by ofs, and each layer's 0x580-word buffer halves (0x80180868.. 0x80199470).	2026-10-22T12:04:22Z
+ovl201	0x8009B414	name	frontend_main	2026-10-22T12:04:22Z
+ovl201	0x8009B414	hint	Front-end entry and frame loop: display/view/pool setup, picks the first screen from game-state flags (ending, credits, new pilot via func_8009C5C0, movies), then until D_801A2560: flip frame, ClearOTagR the 10 layers, update used objects, build g_ui_active, retire killed/orphaned objects, Rot/TransMatrix views and objects, compose parent/attach, draw by render_type, present layers; then shutdown.	2026-10-22T12:04:22Z
