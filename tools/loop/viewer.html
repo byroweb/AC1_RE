@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AC1 match viewer</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --panel2: #eef0f4; --text: #1d2330; --muted: #5d6677;
+  --line: #d8dce4; --accent: #2457c5; --accent-bg: #e3ebfb;
+  --diff: #fbe3e1; --diff-strong: #f2a39b; --mask: #fbf0cf; --ok: #1d7a46; --ok-bg: #dcf2e4;
+  --near: #a05a00; --near-bg: #fbecd6; --tried: #5d6677; --tried-bg: #eceef2;
+  --prio: #b4235a; --skip: #6b7280; --spark: #2457c5;
+  color-scheme: light;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #12151b; --panel: #1a1e26; --panel2: #232833; --text: #e3e7ef; --muted: #98a1b3;
+    --line: #2f3542; --accent: #7aa2ff; --accent-bg: #23314f;
+    --diff: #4a2427; --diff-strong: #8c3a3f; --mask: #4a3f1c; --ok: #5fd08f; --ok-bg: #173826;
+    --near: #f0a75a; --near-bg: #3d2c17; --tried: #98a1b3; --tried-bg: #262b36;
+    --prio: #ff7aa8; --skip: #8b93a3; --spark: #7aa2ff;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #12151b; --panel: #1a1e26; --panel2: #232833; --text: #e3e7ef; --muted: #98a1b3;
+  --line: #2f3542; --accent: #7aa2ff; --accent-bg: #23314f;
+  --diff: #4a2427; --diff-strong: #8c3a3f; --mask: #4a3f1c; --ok: #5fd08f; --ok-bg: #173826;
+  --near: #f0a75a; --near-bg: #3d2c17; --tried: #98a1b3; --tried-bg: #262b36;
+  --prio: #ff7aa8; --skip: #8b93a3; --spark: #7aa2ff;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, "Segoe UI", sans-serif;
+       display: flex; flex-direction: column; }
+button, select, input, textarea { font: inherit; color: inherit; }
+select { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; }
+button { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.on { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+.mono { font-family: var(--mono); }
+.muted { color: var(--muted); }
+
+/* top bar */
+header { background: var(--panel); border-bottom: 1px solid var(--line); padding: 8px 14px; display: flex;
+         flex-wrap: wrap; gap: 8px 18px; align-items: center; }
+header h1 { font-size: 14px; margin: 0; font-weight: 650; }
+.badge { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: var(--panel2); }
+.badge.live { background: var(--ok-bg); color: var(--ok); }
+.badge.replay { background: var(--accent-bg); color: var(--accent); }
+.badge.stale { background: var(--near-bg); color: var(--near); }
+.pipe { display: flex; gap: 2px; align-items: center; flex-wrap: wrap; }
+.pipe span { padding: 2px 8px; border-radius: 4px; color: var(--muted); font-size: 12px; }
+.pipe span.done { color: var(--text); }
+.pipe span.cur { background: var(--accent); color: #fff; font-weight: 600; }
+.pipe i { color: var(--line); font-style: normal; }
+.tools { display: flex; gap: 4px; flex-wrap: wrap; }
+.chip { font-size: 11.5px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); }
+.chip.cur { border-color: var(--accent); background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.chip.cur::before { content: "\25CF "; animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { opacity: .25; } }
+.counters { display: flex; gap: 14px; margin-left: auto; }
+.counter b { font-size: 15px; font-variant-numeric: tabular-nums; }
+.counter small { display: block; color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; }
+#replaybar { display: none; gap: 10px; align-items: center; padding: 6px 14px; background: var(--panel);
+             border-bottom: 1px solid var(--line); }
+#replaybar input[type=range] { flex: 1; }
+
+/* layout */
+main { flex: 1; display: grid; grid-template-columns: 330px 1fr; min-height: 0; }
+aside { border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; background: var(--panel); }
+.filters { padding: 8px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid var(--line); }
+.filters input { width: 100%; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+.filters .row { display: flex; gap: 4px; flex-wrap: wrap; }
+.filters button { font-size: 11.5px; padding: 1px 7px; }
+#list { overflow-y: auto; flex: 1; }
+.fn { display: grid; grid-template-columns: 58px 1fr 64px 34px; gap: 2px 6px; padding: 4px 8px; border-bottom: 1px solid var(--line);
+      cursor: pointer; align-items: center; }
+.fn:hover { background: var(--panel2); }
+.fn.sel { background: var(--accent-bg); }
+.fn.cur { box-shadow: inset 3px 0 0 var(--accent); }
+.fn .addr { font-family: var(--mono); font-size: 12px; }
+.fn .tu { grid-column: 2 / 5; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fn .score { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 12px; }
+.st { font-size: 10.5px; font-weight: 600; text-align: center; border-radius: 4px; padding: 0 3px; }
+.st.open { color: var(--muted); }
+.st.tried { color: var(--tried); background: var(--tried-bg); }
+.st.near { color: var(--near); background: var(--near-bg); }
+.st.MATCH { color: var(--ok); background: var(--ok-bg); }
+.flag { font-size: 10.5px; font-weight: 600; }
+.flag.priority { color: var(--prio); }
+.flag.skip, .flag.giveup { color: var(--skip); }
+svg.spark polyline { fill: none; stroke: var(--spark); stroke-width: 1.4; }
+svg.spark circle { fill: var(--spark); }
+
+/* function view */
+#view { overflow: auto; padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.fhead { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.fhead h2 { margin: 0; font-size: 16px; font-family: var(--mono); }
+.srcs { display: flex; gap: 4px; flex-wrap: wrap; }
+.srcs button { font-size: 12px; }
+.srcs button small { color: var(--muted); margin-left: 4px; }
+.scoreline { font-size: 12.5px; }
+.scoreline b { font-variant-numeric: tabular-nums; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); gap: 8px; height: 58vh; min-height: 300px; }
+.col { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.col h3 { margin: 0; padding: 5px 9px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+          border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
+.scroll { overflow: auto; flex: 1; font-family: var(--mono); font-size: 12px; line-height: 1.5; }
+.asm div { white-space: pre; padding: 0 8px; }
+.asm div.d { background: var(--diff); }
+.asm div.m { background: var(--mask); }
+.asm em { font-style: normal; background: var(--diff-strong); border-radius: 2px; }
+.asm .a { color: var(--muted); margin-right: 10px; }
+.c { padding: 4px 0; }
+.cl { white-space: pre; tab-size: 4; padding-right: 8px; }
+.cl .ln { display: inline-block; width: 3.4em; padding-right: 10px; text-align: right; color: var(--muted);
+          cursor: pointer; user-select: none; }
+.cl.hl { background: var(--accent-bg); }
+.cl.sel .ln { background: var(--accent); color: #fff; border-radius: 3px; }
+.asm div[data-a] { cursor: pointer; }
+.asm div.pick { outline: 2px solid var(--accent); outline-offset: -2px; }
+.controls { display: flex; flex-direction: column; gap: 7px; }
+.crow { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 12.5px; }
+.crow h3 { margin: 0 6px 0 0; }
+.sym { display: grid; grid-template-columns: minmax(180px, 260px) 1fr; gap: 4px 10px; align-items: center; font-size: 12.5px; }
+.sym .n { font-size: 11px; color: var(--muted); margin-left: 4px; }
+.moves { display: flex; flex-wrap: wrap; gap: 4px; }
+.moves button, .crow button { font-size: 12px; }
+.job { font-size: 12px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.delta { font-weight: 650; font-variant-numeric: tabular-nums; }
+.delta.good { color: var(--ok); } .delta.bad { color: var(--prio); } .delta.flat { color: var(--muted); }
+.explain { font-size: 12.5px; background: var(--panel2); border-radius: 6px; padding: 7px 10px; line-height: 1.5; }
+button:disabled { opacity: .45; cursor: default; }
+.lower { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.card h3 { margin: 0 0 6px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.series { display: grid; grid-template-columns: 110px 1fr; gap: 4px 10px; align-items: center; font-size: 12px; }
+.series svg { width: 100%; height: 34px; }
+.tries { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-top: 6px; word-break: break-word; }
+.hint { display: flex; gap: 6px; align-items: baseline; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+.hint .k { font-size: 10.5px; font-weight: 600; text-transform: uppercase; color: var(--accent); min-width: 38px; }
+.hint .x { margin-left: auto; border: none; background: none; color: var(--muted); padding: 0 4px; }
+.hint time { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.addhint { display: flex; gap: 6px; margin-top: 8px; }
+.addhint input { flex: 1; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+.addhint select { border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+.triage { display: flex; gap: 4px; margin-top: 8px; align-items: center; }
+.err { color: var(--prio); font-size: 12px; }
+.empty { color: var(--muted); padding: 30px; text-align: center; }
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; }
+  aside { max-height: 40vh; border-right: none; border-bottom: 1px solid var(--line); }
+  .cols { grid-template-columns: 1fr; height: auto; }
+  .col { height: 50vh; }
+  .lower { grid-template-columns: 1fr; }
+  .counters { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>AC1 match viewer</h1>
+  <span id="mode" class="badge">…</span>
+  <span id="work" class="muted mono"></span>
+  <div class="pipe" id="pipe"></div>
+  <div class="tools" id="tools"></div>
+  <div class="counters" id="counters"></div>
+  <button id="pause" hidden title="Holds sweep / permute before their next body (a PAUSE file in the work dir)">⏸ pause run</button>
+  <button id="theme" title="Theme: auto / light / dark">◐ auto</button>
+</header>
+<div id="replaybar">
+  <button id="play">❚❚</button>
+  <select id="speed"><option value="10">10×</option><option value="30">30×</option><option value="60" selected>60×</option><option value="180">180×</option><option value="600">600×</option></select>
+  <input type="range" id="scrub" min="0" max="1000" value="0">
+  <span id="clock" class="mono"></span>
+</div>
+<main>
+  <aside>
+    <div class="filters">
+      <input id="q" placeholder="filter: address, unit, TU, system…">
+      <div class="row" id="stfilter">
+        <button data-s="all" class="on">all</button><button data-s="open">open</button><button data-s="tried">tried</button>
+        <button data-s="near">near miss</button><button data-s="MATCH">MATCH</button><button data-s="hinted">hinted</button>
+      </div>
+      <div class="row"><span class="muted" id="listinfo"></span></div>
+    </div>
+    <div id="list"></div>
+  </aside>
+  <section id="view"><div class="empty">Waiting for the work dir…</div></section>
+</main>
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
+const STAGES = [["queue", "queue"], ["sweep", "sweep"], ["perm1", "permuter quick"], ["perm2", "permuter deep"],
+                ["twins", "twins"], ["verify", "verify"], ["end", "end"]];
+const TOOLS = ["ctx-spframe", "ctx-fix-frame", "neighbour", "levers", "permuter", "twins", "verify"];
+const ST_LABEL = {open: "open", tried: "tried", near: "near", MATCH: "MATCH"};
+
+let S = null, F = null, pinned = null, srcPick = {}, stFilter = "all";
+let replay = {t: null, playing: true, last: performance.now()};
+let lastText = null, lastAsmKey = null, lastList = null;
+
+// ---------- theme ----------
+const THEMES = ["auto", "light", "dark"];
+function applyTheme(t) {
+  if (t === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t);
+  $("#theme").textContent = (t === "dark" ? "☾ " : t === "light" ? "☀ " : "◐ ") + t;
+}
+let theme = "auto";
+try { theme = localStorage.getItem("ac1viewer.theme") || "auto"; } catch (e) {}
+applyTheme(theme);
+$("#theme").onclick = () => {
+  theme = THEMES[(THEMES.indexOf(theme) + 1) % 3];
+  try { localStorage.setItem("ac1viewer.theme", theme); } catch (e) {}
+  applyTheme(theme);
+};
+
+// ---------- helpers ----------
+function spark(vals, w = 60, h = 16) {
+  const v = (vals || []).filter(x => x !== null && x !== undefined);
+  if (v.length < 1) return "";
+  const lo = Math.min(...v), hi = Math.max(...v), span = hi - lo || 1;
+  // higher score = higher on the chart; a line falling to the floor is a body closing in on 0
+  const pts = v.map((x, i) => [v.length === 1 ? w / 2 : 1 + i * (w - 2) / (v.length - 1), h - 2 - (h - 4) * (x - lo) / span]);
+  const last = pts[pts.length - 1];
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts.map(p => p.join(",")).join(" ")}"/>` +
+         `<circle cx="${last[0]}" cy="${last[1]}" r="1.8"/></svg>`;
+}
+function hms(t) { const d = new Date(t * 1000); return d.toLocaleTimeString([], {hour12: false}); }
+function dur(s) { if (s == null) return "–"; s = Math.max(0, Math.round(s)); const m = Math.floor(s / 60);
+  return m >= 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}` : `${m}:${String(s % 60).padStart(2, "0")}`; }
+async function getJSON(url) { const r = await fetch(url, {cache: "no-store"}); return r.json(); }
+function tParam() { return S && S.mode === "replay" && replay.t ? `&t=${replay.t}` : ""; }
+
+// ---------- top bar ----------
+function renderTop() {
+  const m = $("#mode");
+  const stale = Object.values(S.heartbeats || {}).some(h => h.stale);
+  m.className = "badge " + (S.mode === "replay" ? "replay" : stale ? "stale" : "live");
+  m.textContent = S.mode === "replay" ? "REPLAY" : stale ? "STALE" : "LIVE";
+  $("#work").textContent = S.work;
+  const pb = $("#pause");
+  pb.hidden = S.mode !== "live" || !S.stage || S.stage.kind === "end";
+  pb.textContent = S.paused ? "▶ resume run" : "⏸ pause run";
+  pb.classList.toggle("on", !!S.paused);
+  if (S.paused) { m.className = "badge stale"; m.textContent = "PAUSED"; }
+  const cur = S.stage ? S.stage.kind : null;
+  const ci = STAGES.findIndex(s => s[0] === cur);
+  $("#pipe").innerHTML = STAGES.map(([k, label], i) =>
+    `<span class="${i === ci ? "cur" : i < ci ? "done" : ""}" title="${esc(i === ci && S.stage ? S.stage.clock + " " + S.stage.title : "")}">${label}</span>`
+  ).join("<i>›</i>");
+  $("#tools").innerHTML = TOOLS.map(t => {
+    let on = S.tool === t || (S.tool === "sweep" && S.variant && S.variant.split("+")[0].replace(/\d+$/, "") === t);
+    const n = S.phases && S.phases[t];
+    return `<span class="chip ${on ? "cur" : ""}">${t}${n ? " ×" + n : ""}</span>`;
+  }).join("");
+  const c = S.counters;
+  const cell = (v, l) => `<div class="counter"><b>${v}</b><small>${l}</small></div>`;
+  $("#counters").innerHTML = cell(`${c.tried}/${c.total}`, "bodies tried") + cell(c.near, "near misses") +
+    cell(c.matches, "matches") + cell(c.rate == null ? "–" : c.rate.toFixed(1), "compiles/s") + cell(dur(c.elapsed), "elapsed");
+}
+
+// ---------- list ----------
+function renderList() {
+  const q = $("#q").value.trim().toLowerCase();
+  const rows = S.funcs.filter(f => {
+    if (stFilter === "hinted" ? !(f.hints || f.triage) : stFilter !== "all" && f.status !== stFilter) return false;
+    if (!q) return true;
+    return (f.k + " " + (f.tu || "") + " " + (f.doc || "") + " " + (f.triage || "")).toLowerCase().includes(q);
+  });
+  $("#listinfo").textContent = `${rows.length} of ${S.funcs.length} bodies`;
+  const sel = pinned || S.current;
+  const html = rows.slice(0, 1500).map(f => `<div class="fn ${f.k === sel ? "sel" : ""} ${f.k === S.current ? "cur" : ""}" data-k="${esc(f.k)}" title="${esc(f.doc || "")}">
+      <span class="st ${f.status}">${ST_LABEL[f.status] || f.status}</span>
+      <span class="addr">${esc(f.unit)} ${esc(f.vaddr.slice(2))}${f.triage ? ` <span class="flag ${f.triage}">${f.triage === "priority" ? "★" : f.triage}</span>` : ""}${f.hints ? ` <span class="muted">✎${f.hints}</span>` : ""}</span>
+      ${spark(f.spark)}
+      <span class="score">${f.best ?? ""}</span>
+      <span class="tu">${esc(f.tu || "")}${f.size ? " · " + f.size + " B" : ""}${f.members > 1 ? " · ×" + f.members : ""}${f.doc ? " · " + esc(f.doc) : ""}</span>
+    </div>`).join("");
+  if (html === lastList) return;          // untouched DOM keeps clicks and selection working
+  lastList = html;
+  const el = $("#list"), top = el.scrollTop;
+  el.innerHTML = html;
+  el.scrollTop = top;
+}
+$("#list").onclick = e => {
+  const row = e.target.closest(".fn");
+  if (!row) return;
+  pinned = pinned === row.dataset.k ? null : row.dataset.k;
+  lastText = null; lastAsmKey = null;
+  renderList(); pollFunc();
+};
+$("#q").oninput = () => S && renderList();
+$("#stfilter").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  stFilter = b.dataset.s;
+  for (const x of $("#stfilter").children) x.classList.toggle("on", x === b);
+  renderList();
+};
+
+// ---------- function view ----------
+function tokens(s) { return s.split(/([\s,()]+)/); }
+function markDiff(a, b) {
+  const ta = tokens(a), tb = tokens(b);
+  return ta.map((t, i) => (t.trim() && t !== tb[i]) ? `<em>${esc(t)}</em>` : esc(t)).join("");
+}
+function renderAsm(asm) {
+  if (!asm) return ["<div class='empty'>no C for this body yet</div>", "", ""];
+  if (asm.pending) return ["<div class='empty'>compiling…</div>", "<div class='empty'>compiling…</div>", ""];
+  const L = [], R = [];
+  for (const [mark, addr, a, b] of asm.rows || []) {
+    const cls = mark === "!" ? "d" : mark === "m" ? "m" : "";
+    L.push(`<div class="${cls}" data-a="${addr}"><span class="a">${addr}</span>${mark === "!" ? markDiff(a, b) : esc(a)}</div>`);
+    R.push(`<div class="${cls}" data-a="${addr}"><span class="a">${addr}</span>${mark === "!" ? markDiff(b, a) : esc(b)}</div>`);
+  }
+  if (asm.result === "ERROR") R.unshift(`<div class="err" style="white-space:pre-wrap">${esc(asm.error || "build error")}</div>`);
+  return [L.join(""), R.join(""), asm.result];
+}
+function scoreLine(f) {
+  const a = f.asm, src = (f.sources || []).find(s => s.id === f.source);
+  const parts = [];
+  if (a && !a.pending) {
+    if (a.result === "MATCH") parts.push(`<b style="color:var(--ok)">MATCH</b>`);
+    else if (a.result === "ERROR") parts.push(`<b class="err">does not build</b>`);
+    else {
+      const words = (f.size || 0) / 4;
+      parts.push(`<b>${a.diff_words}</b> differing word${a.diff_words === 1 ? "" : "s"}`);
+      if (a.aligned != null && words) parts.push(`aligned ${a.aligned}/${words}`);
+      if (a.bytes != null && a.bytes !== f.size) parts.push(`size ours ${a.bytes} B, retail ${f.size} B`);
+      if (a.first_diff != null) parts.push(`first diff +0x${a.first_diff.toString(16)}`);
+    }
+  }
+  if (src && src.score != null) parts.push(`${src.unit} ${src.score} (${esc(src.label)})`);
+  return parts.join(" · ");
+}
+function seriesRows(f) {
+  const out = [];
+  const sw = (f.series.sweep || []).filter(x => x[1] != null);
+  if (sw.length) out.push(["sweep words", spark(sw.map(x => x[1]), 240, 34), sw.map(x => `${x[0]} ${x[1]}`).join(", ")]);
+  for (const [ps, p] of Object.entries(f.series.passes || {})) {
+    const tag = ps === "perm1" ? "quick" : "deep";
+    const lv = (p.levers || []).filter(x => x != null);
+    if (lv.length) out.push([`levers (${tag})`, spark(lv, 240, 34), `${lv[0]} → ${lv[lv.length - 1]} words over ${p.lever_evals} evals`]);
+    const pm = [p.permuter_base].concat((p.permuter || []).map(x => x[1])).filter(x => x != null);
+    const rep = p.report || {};
+    if (pm.length) out.push([`permuter (${tag})`, spark(pm, 240, 34), `score ${pm[0]} → ${pm[pm.length - 1]}${rep.iterations ? `, ${rep.iterations} it` : ""}${rep.status ? ", " + rep.status : ""}`]);
+  }
+  return out.map(([l, s, d]) => `<span>${l}</span><div>${s}<div class="muted" style="font-size:11px">${esc(d)}</div></div>`).join("");
+}
+function renderHints(f) {
+  const rows = (f.hints || []).filter(h => h.kind !== "triage");
+  const list = rows.length ? rows.map((h, i) => `<div class="hint"><span class="k">${esc(h.kind)}</span><span>${esc(h.text)}</span>
+      <time title="${esc(h.timestamp)}">${esc(h.timestamp ? new Date(h.timestamp).toLocaleString([], {hour12: false}) : "")}</time>
+      <button class="x" title="delete" data-del="${i}">×</button></div>`).join("")
+    : `<div class="muted">No hints yet. What does this function do?</div>`;
+  const on = c => c ? "on" : "";
+  const steer = `<button data-steer="next" class="${on(f.triage === "priority")}" title="priority: first in the next queues">Work on this next</button>
+    <button data-steer="deep" class="${on(f.steer === "deep")}" title="the next overnight deep pass takes it even if it is not among the closest">More deep-pass time</button>
+    <button data-steer="skip" class="${on(f.triage === "skip")}" title="left out of the queues until cleared">Skip for now</button>
+    <button data-steer="agent" class="${on(f.steer === "agent")}" title="for an agent lane or the local-LLM golem (also priority)">Send to agent / golem</button>
+    <button data-tri="giveup" class="${on(f.triage === "giveup")}" title="not worth machine time">Give up</button>
+    <button data-steer="none" title="clears the triage and steer flags">Clear</button>`;
+  return `<h3>Your insight</h3>${list}
+    <form class="addhint" id="hintform">
+      <select id="hkind"><option value="hint">hint</option><option value="name">name</option><option value="field">field</option></select>
+      <input id="htext" placeholder="draws the radar · radar_draw · AcEntity +0x4C hp" autocomplete="off">
+      <button type="submit">Add</button>
+    </form>
+    <div class="triage" style="flex-wrap:wrap">${steer}</div>
+    <div class="err" id="herr"></div>`;
+}
+function renderFunc() {
+  const v = $("#view");
+  if (!F || F.error) { v.innerHTML = `<div class="empty">${esc(F ? F.error : "Pick a function on the left, or wait for the run to start one.")}</div>`; return; }
+  const key = F.k + "|" + F.source;
+  const [L, R] = renderAsm(F.asm);
+  const asmKey = key + "|" + (F.asm ? (F.asm.pending ? "p" : F.asm.result + F.asm.diff_words + (F.asm.rows || []).length) : "-");
+  if (!$("#fcols") || $("#view").dataset.k !== F.k) {
+    v.dataset.k = F.k;
+    v.innerHTML = `<div class="fhead"><h2 id="fname"></h2><span id="fmeta" class="muted"></span><span id="ffollow"></span></div>
+      <div class="srcs" id="fsrcs"></div>
+      <div class="scoreline" id="fscore"></div>
+      <div class="cols" id="fcols">
+        <div class="col"><h3><span>retail</span><span id="hl"></span></h3><div class="scroll asm" id="aL"></div></div>
+        <div class="col"><h3><span>current best C</span><span id="hc"></span></h3><div class="scroll" id="cscroll"><div class="c" id="ctext"></div></div></div>
+        <div class="col"><h3><span>ours (compiled)</span><span id="hr"></span></h3><div class="scroll asm" id="aR"></div></div>
+      </div>
+      <div class="card controls" id="fctl"></div>
+      <div class="lower"><div class="card"><h3>Score history</h3><div class="series" id="fseries"></div><div class="tries" id="ftries"></div></div>
+      <div class="card" id="fhints"></div></div>`;
+    const a = $("#aL"), b = $("#aR");
+    a.onscroll = () => { if (Math.abs(b.scrollTop - a.scrollTop) > 1) b.scrollTop = a.scrollTop; };
+    b.onscroll = () => { if (Math.abs(a.scrollTop - b.scrollTop) > 1) a.scrollTop = b.scrollTop; };
+    lastText = null; lastAsmKey = null; lastHints = null; lastCtl = null; selLines = [];
+  }
+  $("#fname").textContent = `${F.unit} func_${F.vaddr.slice(2)}`;
+  $("#fmeta").innerHTML = [F.size ? F.size + " B" : "", F.tu, F.doc, F.members > 1 ? `${F.members} twins (${esc(F.group)})` : "",
+    `<span class="st ${F.status}">${ST_LABEL[F.status] || F.status}</span>`].filter(Boolean).map(x => x === F.doc ? esc(x) : x).join(" · ");
+  $("#ffollow").innerHTML = pinned ? `<button id="unpin">📌 pinned · follow the run</button>` : `<span class="muted">following the run · click a row to pin</span>`;
+  if ($("#unpin")) $("#unpin").onclick = () => { pinned = null; renderList(); pollFunc(); };
+  $("#fsrcs").innerHTML = (F.sources || []).map(s => `<button data-src="${esc(s.id)}" class="${s.id === F.source ? "on" : ""}">${esc(s.label)}${s.score != null ? `<small>${s.score}</small>` : ""}</button>`).join("")
+    || `<span class="muted">no C drafts in this work dir yet</span>`;
+  $("#fscore").innerHTML = scoreLine(F);
+  if (F.text !== lastText) {
+    $("#ctext").innerHTML = (F.text || "/* no C yet */").split("\n").map((l, i) =>
+      `<div class="cl" data-l="${i + 1}"><span class="ln" title="click two line numbers, then Swap">${i + 1}</span>${esc(l) || " "}</div>`).join("");
+    lastText = F.text; selLines = []; lastCtl = null;
+  }
+  const ck = JSON.stringify([F.symptoms, F.explain, F.jobs, (F.sources || []).filter(s => s.id.startsWith("human:")), selLines, explainOpen, F.source]);
+  if (ck !== lastCtl) { $("#fctl").innerHTML = renderControls(F); lastCtl = ck; }
+  if (asmKey !== lastAsmKey) {
+    const t1 = $("#aL").scrollTop;
+    $("#aL").innerHTML = L; $("#aR").innerHTML = R; $("#aL").scrollTop = t1; lastAsmKey = asmKey;
+    const d = (F.asm && F.asm.rows || []).filter(r => r[0] === "!").length;
+    $("#hl").textContent = F.asm && F.asm.rows ? `${F.asm.rows.length} words` : "";
+    $("#hr").textContent = F.asm && !F.asm.pending && F.asm.result !== "ERROR" ? `${d} differ` : "";
+  }
+  $("#hc").textContent = F.source || "";
+  $("#fseries").innerHTML = seriesRows(F) || `<span class="muted">no scores yet</span><span></span>`;
+  $("#ftries").textContent = F.sweep ? "sweep: " + F.sweep.tries : "";
+  const hk = JSON.stringify([F.k, F.hints, F.triage, F.steer]);
+  if (hk !== lastHints) { $("#fhints").innerHTML = renderHints(F); lastHints = hk; wireHints(); }
+}
+let lastHints = null, lastCtl = null, selLines = [], explainOpen = false, pmin = "5";
+
+function deltaSpan(r) {
+  if (!r || r.before == null || r.after == null) return "";
+  const d = r.after - r.before;
+  return `<span class="delta ${d < 0 ? "good" : d > 0 ? "bad" : "flat"}">${r.before} → ${r.after} (${d > 0 ? "+" : ""}${d})</span>`;
+}
+function renderControls(f) {
+  if (!f.text) return `<div class="muted">No C for this body yet: nothing to try.</div>`;
+  const sy = (f.symptoms || []).slice(0, 3).map(s => `<div><b>${esc(s.label)}</b><span class="n">×${s.count}${s.first ? " · first at " + s.first : ""}</span></div>
+      <div class="moves">${s.moves.map(m => `<button data-move="${m.id}" title="${esc(m.why)}">${esc(m.label)}</button>`).join("")}</div>`).join("");
+  const all = (f.moves || []).filter(m => m.id !== "permuter")
+    .map(m => `<button data-move="${m.id}" title="${esc(m.why)}">${esc(m.label)}</button>`).join("");
+  const jobs = (f.jobs || []).map(j => {
+    const r = j.result || {};
+    const st = j.status === "running" ? `running${j.progress ? " · " + esc(j.progress) : ""}${j.perm_best != null ? " · permuter best " + j.perm_best : ""}`
+      : j.status === "queued" ? "queued" : "";
+    return `<div class="job"><b>${esc(j.label)}</b><span class="muted">on ${esc(j.src)}</span>${st ? `<span class="muted">${st}</span>` : ""}
+      ${deltaSpan(r)}<span>${esc(r.outcome || r.error || "")}${r.version ? ` → your try ${r.version}` : ""}</span></div>`;
+  }).join("");
+  const mine = (f.sources || []).filter(s => s.id.startsWith("human:"));
+  const matched = mine.filter(s => s.result === "MATCH");
+  const sel = selLines.length ? `lines ${selLines.join(" ↔ ")}` : "two lines";
+  return `<div class="crow"><h3>Try something</h3>
+      <button id="explainbtn" class="${explainOpen ? "on" : ""}">What am I looking at?</button>
+      <span class="muted">one click runs a move on the C shown (${esc(f.source || "")}); a better result becomes “your try N”.</span></div>
+    ${explainOpen ? `<div class="explain">${esc(f.explain || "Waiting for the compile…")}</div>` : ""}
+    ${sy ? `<div class="sym">${sy}</div>` : (f.asm && f.asm.result === "MATCH" ? `<div class="muted">Nothing differs.</div>` : `<div class="muted">Waiting for the compile…</div>`)}
+    <div class="crow"><span class="muted">any move:</span>${all}</div>
+    <div class="crow"><span class="muted">or</span><button data-move="permuter" title="${esc("random small rewrites, kept when they score better")}">Let the permuter chew on it for</button>
+      <select id="pmin">${["1", "5", "15", "30"].map(m => `<option ${m === pmin ? "selected" : ""}>${m}</option>`).join("")}</select><span class="muted">min</span></div>
+    <div class="crow"><span class="muted">point and say: click an asm line to find its C line; click ${sel === "two lines" ? "two C line numbers" : sel}, then</span>
+      <button id="swapbtn" ${selLines.length === 2 ? "" : "disabled"}>Swap ${sel}</button></div>
+    ${jobs}
+    <div class="crow">${mine.length ? `<button id="undobtn">Undo my last try</button>` : ""}
+      ${matched.length ? `<button id="recordbtn" class="on">Record your try ${matched[matched.length - 1].id.split(":")[1]} as a MATCH</button>` : ""}
+      <span class="err" id="cerr"></span></div>`;
+}
+async function post(path, body) {
+  const r = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const j = await r.json();
+  if (!r.ok || j.error) { const e = $("#cerr") || $("#herr"); if (e) e.textContent = j.error || ("HTTP " + r.status); return null; }
+  return j;
+}
+function highlightC(line, scroll) {
+  for (const x of document.querySelectorAll("#ctext .cl.hl")) x.classList.remove("hl");
+  const el = line && document.querySelector(`#ctext .cl[data-l="${line}"]`);
+  if (!el) return;
+  el.classList.add("hl");
+  if (scroll) {
+    const s = $("#cscroll");
+    s.scrollTop += el.getBoundingClientRect().top - s.getBoundingClientRect().top - s.clientHeight / 3;
+  }
+}
+$("#view").addEventListener("change", e => { if (e.target.id === "pmin") pmin = e.target.value; });
+$("#view").addEventListener("click", async e => {
+  if (!F) return;
+  const b = e.target.closest("button[data-src]");
+  if (b) { srcPick[F.k] = b.dataset.src; pollFunc(); return; }
+  const mv = e.target.closest("button[data-move]");
+  if (mv) {
+    mv.disabled = true;
+    if (await post("/api/try", {k: F.k, src: F.source, move: mv.dataset.move, minutes: Number(pmin)})) delete srcPick[F.k];
+    pollFunc(); return;
+  }
+  if (e.target.id === "swapbtn" && selLines.length === 2) {
+    if (await post("/api/try", {k: F.k, src: F.source, move: "swaplines", lines: selLines})) { delete srcPick[F.k]; selLines = []; }
+    pollFunc(); return;
+  }
+  if (e.target.id === "explainbtn") { explainOpen = !explainOpen; lastCtl = null; renderFunc(); return; }
+  if (e.target.id === "undobtn") { delete srcPick[F.k]; await post("/api/undo", {k: F.k}); pollFunc(); return; }
+  if (e.target.id === "recordbtn") {
+    const j = await post("/api/record", {k: F.k});
+    if (j) { $("#cerr").textContent = j.status; }
+    pollState(); return;
+  }
+  const ln = e.target.closest(".cl .ln");
+  if (ln) {
+    const n = Number(ln.parentElement.dataset.l);
+    selLines = selLines.includes(n) ? selLines.filter(x => x !== n) : selLines.concat([n]).slice(-2);
+    for (const x of document.querySelectorAll("#ctext .cl")) x.classList.toggle("sel", selLines.includes(Number(x.dataset.l)));
+    lastCtl = null; renderFunc(); return;
+  }
+  const row = e.target.closest(".asm div[data-a]");
+  if (row) {
+    for (const x of document.querySelectorAll(".asm div.pick")) x.classList.remove("pick");
+    for (const x of document.querySelectorAll(`.asm div[data-a="${row.dataset.a}"]`)) x.classList.add("pick");
+    const line = F.asm && F.asm.lines && F.asm.lines[row.dataset.a];
+    highlightC(line, true);
+    if (!line) $("#hc").textContent = "no C line for that instruction";
+  }
+});
+$("#pause").onclick = async () => { await post("/api/pause", {on: !S.paused}); pollState(); };
+async function postHint(path, body) {
+  const r = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const j = await r.json();
+  if (!r.ok || j.error) { $("#herr").textContent = j.error || ("HTTP " + r.status); return false; }
+  $("#herr").textContent = "";
+  return true;
+}
+function wireHints() {
+  $("#hintform").onsubmit = async e => {
+    e.preventDefault();
+    const text = $("#htext").value.trim(); if (!text) return;
+    if (await postHint("/api/hints", {unit: F.unit, vaddr: F.vaddr, kind: $("#hkind").value, text})) { $("#htext").value = ""; pollFunc(); pollState(); }
+  };
+  for (const b of document.querySelectorAll("#fhints [data-tri]"))
+    b.onclick = async () => { if (await postHint("/api/hints", {unit: F.unit, vaddr: F.vaddr, kind: "triage", text: b.dataset.tri})) { pollFunc(); pollState(); } };
+  for (const b of document.querySelectorAll("#fhints [data-steer]"))
+    b.onclick = async () => { if (await postHint("/api/steer", {k: F.k, what: b.dataset.steer})) { pollFunc(); pollState(); } };
+  for (const b of document.querySelectorAll("#fhints [data-del]"))
+    b.onclick = async () => {
+      const h = F.hints.filter(x => x.kind !== "triage")[Number(b.dataset.del)];
+      if (h && await postHint("/api/hints/delete", h)) { pollFunc(); pollState(); }
+    };
+}
+
+// ---------- replay ----------
+function setupReplay() {
+  $("#replaybar").style.display = "flex";
+  if (replay.t == null) replay.t = S.range[0];
+  $("#play").onclick = () => { replay.playing = !replay.playing; $("#play").textContent = replay.playing ? "❚❚" : "▶"; };
+  $("#scrub").oninput = e => { replay.t = S.range[0] + (S.range[1] - S.range[0]) * e.target.value / 1000; pollState(); };
+}
+function tickReplay() {
+  const now = performance.now(), dt = (now - replay.last) / 1000; replay.last = now;
+  if (!S || S.mode !== "replay") return;
+  if (replay.playing) replay.t = Math.min(S.range[1], replay.t + dt * Number($("#speed").value));
+  const [a, b] = S.range;
+  if (document.activeElement !== $("#scrub")) $("#scrub").value = Math.round(1000 * (replay.t - a) / ((b - a) || 1));
+  $("#clock").textContent = `${hms(replay.t)} · ${dur(replay.t - a)} / ${dur(b - a)}`;
+}
+
+// ---------- polling ----------
+let busyS = false, busyF = false;
+async function pollState() {
+  if (busyS) return; busyS = true;
+  try {
+    S = await getJSON("/api/state?" + tParam());
+    if (S.mode === "replay" && $("#replaybar").style.display !== "flex") { setupReplay(); S = await getJSON("/api/state?" + tParam()); }
+    renderTop(); renderList();
+  } catch (e) { $("#mode").textContent = "OFFLINE"; $("#mode").className = "badge stale"; }
+  finally { busyS = false; }
+}
+async function pollFunc() {
+  const k = pinned || (S && S.current);
+  if (!k) { F = null; renderFunc(); return; }
+  if (busyF) return; busyF = true;
+  try {
+    F = await getJSON(`/api/func?k=${encodeURIComponent(k)}${srcPick[k] ? "&src=" + encodeURIComponent(srcPick[k]) : ""}${tParam()}`);
+    renderFunc();
+  } catch (e) { /* next poll */ }
+  finally { busyF = false; }
+}
+setInterval(tickReplay, 200);
+setInterval(async () => { await pollState(); pollFunc(); }, 1500);
+pollState().then(pollFunc);
+</script>
+</body>
+</html>
