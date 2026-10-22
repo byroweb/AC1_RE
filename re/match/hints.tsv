@@ -725,3 +725,55 @@ ovl201	0x80067CF0	name	memcard_load_save	2026-10-22T12:06:59Z
 ovl201	0x80067CF0	hint	Ran on 'yes load' (wave-1 hint), called from 0x800551B0: opens bu00/bu10:BASCUS-94182<letter> with 3 retries, reads 0xE80 bytes, checks func_80066F68 checksum, copies the game-state blocks home, LoadImage of the emblem, re-inits subsystems.	2026-10-22T12:06:59Z
 ovl201	0x80066F90	name	memcard_write_save	2026-10-22T12:06:59Z
 ovl201	0x80066F90	hint	Ran on 'yes create new data' (wave-1 hint), called from 0x80054D44: builds the 0xE80-byte save (SC header, SJIS title, icons, state blocks, emblem via StoreImage, checksum), picks a free letter, writes with retries and reads back to verify.	2026-10-22T12:07:00Z
+ovl201	0x8006C4C0	name	emblem_image_get_pixel	2026-10-22T12:10:18Z
+ovl201	0x8006C4C0	hint	Returns the 4-bit pixel at (x,y) of a 64x64 4bpp image (+0xC pixels, 32 B/row, high nibble for odd x) when x,y < 64; neighbour of the emblem canvas code.	2026-10-22T12:10:19Z
+ovl201	0x8006C408	name	emblem_image_put_pixel	2026-10-22T12:10:19Z
+ovl201	0x8006C408	hint	Writes the image pen colour (+0xA) into the nibble at (x,y) of the 64x64 4bpp image at +0xC when x,y < 64; twin of 0x8006C4C0.	2026-10-22T12:10:19Z
+ovl201	0x8006FD24	name	emblem_zoom_label_update	2026-10-22T12:10:19Z
+ovl201	0x8006FD24	hint	UiObj update: picks res sprite D_800B818C/98/A4 for editor zoom 2/4/8 (work+0x80 -> +0x84) and sets pos from its own x/y (+0x7C/+0x7E) +40/+48.	2026-10-22T12:10:19Z
+ovl201	0x8006F8C0	name	emblem_rgb_marker_update	2026-10-22T12:10:20Z
+ovl201	0x8006F8C0	hint	UiObj update: work +0x80 picks channel r/g/b of palette D_8017E5D8[edit->color] (edit at +0x7C, colour +0x86); x = (value>>3)|0x60, y = 183/191/199 (slider row).	2026-10-22T12:10:20Z
+ovl201	0x8006FB20	name	emblem_pen_cursor_update	2026-10-22T12:10:20Z
+ovl201	0x8006FB20	hint	UiObj update of the pen cursor: outside the 128x128 canvas (x-172, y-36) shows sprite D_800B7EB0 at x/y; inside it snaps x/y to the zoom grid (edit +0x84 zoom 2/4/8) and picks a zoom-sized sprite.	2026-10-22T12:10:20Z
+ovl201	0x8006E0A8	name	emblem_dpad_dispatch	2026-10-22T12:10:20Z
+ovl201	0x8006E0A8	hint	Reads the pad press word D_801A2568 and calls func_8006E148(o, dir) with U/R/D/L for d-pad bits 0x1000/0x2000/0x4000/0x8000.	2026-10-22T12:10:20Z
+ovl201	0x8006F79C	name	emblem_rgb_marker_create	2026-10-22T12:10:20Z
+ovl201	0x8006F79C	hint	Constructor (edit, channel) of the RGB slider marker: ui_obj_alloc(4), update 0x8006F8C0, sprite D_800B815C, work = {edit, chan}, then places it like its update; returns the object.	2026-10-22T12:10:20Z
+ovl201	0x8006FE58	name	emblem_edge_arrow_create	2026-10-22T12:10:21Z
+ovl201	0x8006FE58	hint	Constructor (s16 which 0..3): ui_obj_alloc(4) sprite D_800B81BC/D_800B81C8 placed at the canvas edges (171,28)/(300,35)/(171,164)/(164,35); returns the object (edge arrows +0xA0/+0xA4 of EmbWork).	2026-10-22T12:10:21Z
+ovl201	0x8007046C	name	emblem_fill_tool_update	2026-10-22T12:10:21Z
+ovl201	0x8007046C	hint	UiObj update: when the pen cursor (edit+0x98) is on the canvas, converts it to image x/y through view (edit+0x9C) and zoom and calls func_8007053C(&edit->img, x, y, o->unk14, D_800B7E54, 0) (fill/stamp at the pixel).	2026-10-22T12:10:21Z
+ovl201	0x8006C1B4	name	emblem_palette_reset	2026-10-22T12:10:21Z
+ovl201	0x8006C1B4	hint	Copies the 16-entry default palette D_800B7E08 into the editor palette D_8017E5D8, converts it to a 15-bit CLUT (black gets the STP bit) and LoadImages it to the rects D_800B811C and D_800B8124; same CLUT code as 0x8006BF84.	2026-10-22T12:10:21Z
+ovl201	0x8006DD54	name	emblem_shape_tool_update	2026-10-22T12:10:21Z
+ovl201	0x8006DD54	hint	Editor shape tools: X press (0x40 edge) on the canvas records the start pixel (+0x92/+0x94) and bumps step (+0x8E), or finishes (calls func_8006F55C); 0x20 cancels; while a step is active dispatches tool +0x8C 1..4 to 0x8006E924/0x8006EC38/0x8006EF54/0x8006E490(e, done); returns done.	2026-10-22T12:10:21Z
+ovl201	0x8006C934	name	emblem_draw_palette	2026-10-22T12:10:21Z
+ovl201	0x8006C934	hint	Draws the 16 palette swatches as TILE prims (8x16, the selected entry +0x86 15x23 into a different OT slot), colours from D_8017E5D8 (entry 0 from D_800B7E48), positions from the screen table D_801BCEEC[player].	2026-10-22T12:10:21Z
+ovl201	0x8006E924	name	emblem_tool_line	2026-10-22T12:10:22Z
+ovl201	0x8006E924	hint	Tool 1 of the shape driver 0x8006DD54: Bresenham line from the start pixel (+0x92/+0x94) to the cursor pixel; done != 0 plots with emblem_image_put_pixel, else previews each pixel with func_8007053C(img, x, y, 3, D_800B7E58, 1).	2026-10-22T12:10:22Z
+ovl201	0x8006EC38	name	emblem_tool_rect	2026-10-22T12:10:22Z
+ovl201	0x8006EC38	hint	Tool 2 of 0x8006DD54: orders the start pixel and cursor pixel into a box and draws its outline (top/bottom rows, then the side columns) with put_pixel when done, else preview pixels via func_8007053C(img, x, y, 3, D_800B7E58, 1).	2026-10-22T12:10:22Z
+ovl201	0x8006EF54	name	emblem_tool_fill_rect	2026-10-22T12:10:22Z
+ovl201	0x8006EF54	hint	Tool 3 of 0x8006DD54: same box set-up as emblem_tool_rect; when done fills every pixel of the box with put_pixel, else previews the outline with func_8007053C.	2026-10-22T12:10:22Z
+ovl201	0x8006E490	name	emblem_tool_circle	2026-10-22T12:10:22Z
+ovl201	0x8006E490	hint	Tool 4 of 0x8006DD54: radius = SquareRoot0(dx*dx+dy*dy) from start pixel to cursor pixel, midpoint circle with 8-way symmetric put_pixel when done, else preview pixels via func_8007053C.	2026-10-22T12:10:22Z
+ovl201	0x8007053C	name	emblem_draw_preview_pixel	2026-10-22T12:10:23Z
+ovl201	0x8007053C	hint	Draws a 1x1 TILE for image pixel (x,y) in the small preview (+40/+48) and, when big != 0 and the pixel is inside the zoomed view (img+0x20 x0/y0, 64/(zoom/2) cells), a zoom x zoom TILE on the canvas; colour from *rgb, OT entry layer of cursor->ot[player] (img+0x1C).	2026-10-22T12:10:23Z
+ovl201	0x8006F2CC	name	emblem_fill_scanline	2026-10-22T12:10:23Z
+ovl201	0x8006F2CC	hint	Scanline flood-fill step called by 0x8006F220: pops (x,y) from the byte stack, extends left/right while get_pixel == old colour, paints the run with put_pixel and pushes run starts of the rows above and below; returns the new stack top.	2026-10-22T12:10:23Z
+ovl201	0x80072958	name	asm_build_ac_model	2026-10-22T12:10:23Z
+ovl201	0x80072958	hint	Finds the assembly owner (ctor 0x800744A8) and builds the AC part objects with func_80072C80 (kinds 6,4,3,5x2,8,9,10,14,+extra 7/11/12/13), variants chosen from the equipped part bytes D_80031A58..5F; stores the arms object at owner+0x88 and returns the root (kind 6).	2026-10-22T12:10:23Z
+ovl201	0x8006E148	name	emblem_image_scroll	2026-10-22T12:10:23Z
+ovl201	0x8006E148	hint	Scrolls the 64x64 4bpp image (+0x88) one pixel with wrap-around by dir U/D (32-byte rows via a 32-byte temp) or L/R (per row of 8 words, nibble shifts by 4 with carry from the neighbour word); called by emblem_dpad_dispatch 0x8006E0A8.	2026-10-22T12:10:23Z
+ovl201	0x8006BA08	name	emblem_editor_draw	2026-10-22T12:10:24Z
+ovl201	0x8006BA08	hint	Per-frame editor draw: LoadImage of the 4bpp image (+0x88) and the CLUT built from palette D_8017E5D8, draws canvas (0x8006C554) and palette (0x8006C934), cycles the cursor colours D_800B7E54/58, fades colour 0 D_800B7E48 in or out by +0x8F, copies light matrix 0 to 10 and zeroes/sets its third column by the brightness of the pixel under the cursor.	2026-10-22T12:10:24Z
+ovl201	0x8006B250	name	emblem_color_edit_update	2026-10-22T12:10:24Z
+ovl201	0x8006B250	hint	UiObj update of the palette colour editor: L1/R1 (0x1/0x2) step the edited entry (+0x86) restoring/saving the undo colour D_8017E618, up/down pick channel r/g/b (+0x96), right/left add/subtract 8 with key repeat, X keeps and O reverts (SsUtKeyOn), redraws via 0x8006BA08; exit (0x80/0x40/0x20 edge) kills the slider objects and returns to func_80068C08, else draws 0x8006CC78.	2026-10-22T12:10:24Z
+ovl201	0x800744A8	name	asm_screen_create	2026-10-22T12:10:24Z
+ovl201	0x800744A8	hint	Assembly screen constructor (src, owner, mode): ui_obj_alloc(0) with update 0x80078A38, draws the menu labels, saves equipped part bytes, calls 0x80074A18 and reports changed parts, sets up the part list by mode (D_80031A58[2] == 255), then 0x800740AC; returns the object. Wave-1 near miss.	2026-10-22T12:10:24Z
+ovl201	0x80072C80	name	asm_part_create	2026-10-22T12:10:24Z
+ovl201	0x80072C80	hint	Assembly part object ctor (owner, kind, parent, core, var): ui_obj_alloc(6), update 0x800736F0, highlight rules vs owner +0x84/+0x94, parent links, per-kind joint offset from core tables D_800BC428/D_800BC440 (+arm/leg tables D_800BC638/6B8/968), plus per-part offset D_800BCAC4[tbl].ofs[part id]; mirrors x for right-side parts; sets slot +0x7C and position; returns the object.	2026-10-22T12:10:24Z
+ovl201	0x80070A44	name	ac_menu_update	2026-10-22T12:10:24Z
+ovl201	0x80070A44	hint	UiObj update of the 7-entry AC menu: up/down with key repeat move the cursor byte (src obj +0x7C, wraps 0..6), X dispatches entries 0..6 (copy AC data D_80031A94 to D_80042AA8 and test/save, part checks on D_80031A59..63 with error dialogs via func_8005DED8, name entry 0x8005D8D4 ...), O closes the boxes and returns to func_80072730.	2026-10-22T12:10:24Z
+ovl201	0x8006CC78	name	emblem_draw_color_values	2026-10-22T12:10:24Z
+ovl201	0x8006CC78	hint	Draws the selected colour swatch (TILE 15x15 at +42/+188) and the r/g/b values of palette[edit+0x86] as two-digit SPRT numbers (font at v=248, clut 0x3957, x 136/140, y 184+8*i), then a DR_MODE; all into OT slot 2 of the cursor object.	2026-10-22T12:10:25Z
