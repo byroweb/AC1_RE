@@ -178,7 +178,7 @@ the shared pack. e200's internal layout differs (geometry from +0x28; lighting a
 
 ## 7. Remaining open items
 
-- Shared-scene selection mechanism (e200 ↔ missions m20/m24/m28-style entries).
+- Shared-scene selection mechanism (e200 ↔ missions m20/m24/m28-style entries). Live 2026-10-21: mission 20 does read FDAT e200 (`read_T_entry(2, 200)` → `0x800B17C8`, `ra 0x8004F5D4`), after (1,100) and (1,20) to the same buffer. Missions 24 and 28 follow the same pattern with (1,24)/(1,28): archive 1 entry N = mission N. Full order in `LIVE_CHECKLIST.md` LVL-6.
 - Static source of the render orientation variant k per section.
 - Chunk 1 (large geometry sibling) and chunk 7's post-table tail (PVS/portals).
 - e200's internal header layout (geometry at +0x28, multi-descriptor blocks).

@@ -203,6 +203,10 @@ chunk 12 record (40 B, 20×int16)          ── FUN_80073B74 ──►  templa
   hw0..2 pos, hw3 block/type, hw5 rot,         +0x00 = 0, +0x04+2K = hwK, +0x02 = hw11
   hw7 resource id, hw11 HP
                                             ── spawn_group N / objobj EVENT ──► FUN_80078CFC
+                                            ── or FUN_80078F00 streaming ──► FUN_80078CFC
+                                               (template section +0x12 enters the visible-
+                                                section mask; flags +0x14 bit 0 = zone-box
+                                                test instead, 0x40 = never auto-spawn)
                                             ── 0x80078A2C allocator ──► entity slot (stride 0x170)
                                             ── FUN_800788C8 resources ─► geometry/collision
                                             ── FUN_80078B14 binder ────► copy template, geom record
@@ -211,6 +215,8 @@ chunk 12 record (40 B, 20×int16)          ── FUN_80073B74 ──►  templa
                                             ── 0x80078D50 dispatch ────► INIT[type = +0x0E](entity)
                                                                          installs +0x50..+0x5C (think)
 ```
+
+The streaming path is CONFIRMED live in mission 20 (`LIVE_CHECKLIST.md` MIS-9: templates 5 and 14 spawned ~80 s after load from `ra 0x8007908C`). The flag-bit meanings are read from its byte-matched C Live 2026-10-21: every `0x40` template seen (mission 28: records 6/7/8/12) was spawned only by objobj code, never by the streamer; zone mode (bit 0) not yet seen live. Mission 28's waves respawn the same templates after kills.
 
 Despawn: `despawn_group N` → `FUN_80078D78`; death: on-hit/death method `+0x5C`;
 *objobj* **FREE** hook (`+0x10`) adjusts kill tallies. World-structure objects

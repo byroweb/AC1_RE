@@ -125,5 +125,5 @@ and reassembles **byte-exact** (`--selftest` 56/56). To author:
 ## Open / confirm-live
 - `init_unit`/`mark_lerp`/`op_f` inline-record field meanings (HP/AI/anim names).
 - Set-header `flags`/`extra` precise meaning; per-action lerp timing units.
-- Writer of `0x801D0B64` (which chunk-stream handler stages chunk 4) — lower overlay/base EXE.
+- Writer of `0x801D0B64` — **CONFIRMED live 2026-10-21** (`LIVE_CHECKLIST.md` MIS-7, mission 20): `sw v0,0xb64(at)` @`0x8004F818` in ovl202's mission loader (`ra 0x8004F800`), once per load, right after FDAT `2N`/`2N+1` are read; value `0x8011A8E4`. Not the base EXE.
 - Ground-truth: breakpoint `0x8008B830`/`0x8008B42C` to confirm live thread order + `init_unit`.
