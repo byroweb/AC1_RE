@@ -346,3 +346,75 @@ ovl201	0x80075898	name	assembly_draw_part_specs	2026-10-22T06:42:06Z
 ovl201	0x80075898	hint	assembly/cancel head/swap head: on pad 0x10 toggles a help window (obj id 9); when w+0xAE is set rebuilds the spec panel for the part at (category w+0x90, index w+0xA6): description lines from per-category string tables plus every stat formatted by func_80074F5C into 0x8017EE80 and drawn with func_8005D80C at x=0x7A (or "-" placeholders for none).	2026-10-22T06:42:06Z
 ovl201	0x80078D84	name	assembly_update	2026-10-22T06:42:06Z
 ovl201	0x80078D84	hint	assembly/cancel head/swap head: per-frame update installed by 0x80078AAC; refreshes stats/specs (0x800740AC, 0x80075520, 0x80075898), reads pad bits 0x1000/0x4000 to step the part category (skipping empty tables via D_800B8228 and the frame-compat rules), plays SsUtKeyOn, loads/unloads part models (func_80051450/func_80050AF4) and handles confirm/cancel transitions.	2026-10-22T06:42:07Z
+ovl201	0x80050854	name	tim_load_image	2026-10-22T11:49:11Z
+ovl201	0x80050854	hint	Parses one TIM (id, flags bit3 = CLUT block) and uploads CLUT then pixel block to VRAM via LoadImage+DrawSync using RECT at 0x800CF368.	2026-10-22T11:49:11Z
+ovl201	0x80050944	name	tim_load_list	2026-10-22T11:49:11Z
+ovl201	0x80050944	hint	Loops while the word is a TIM id (0x10), uploading each TIM CLUT/pixel block via LoadImage+DrawSync (RECT 0x800CF370); called by 0x80050804 after loading a file.	2026-10-22T11:49:11Z
+ovl201	0x80059C84	name	tmd_draw_line_f3_a	2026-10-22T11:49:11Z
+ovl201	0x80059C84	hint	TMD render handler table neighbour: per packet (0x10, verts +0xA/+0xC/+0xE) builds a closed 4-point flat polyline (code 0x4C, 0x55555555 terminator) lit by nccs from the fixed normal/colour at 0x800B7098/94, otz-sorted into the OT; same body as matched 0x80059E44.	2026-10-22T11:49:11Z
+ovl201	0x8005A004	name	tmd_draw_line_f3_b	2026-10-22T11:49:11Z
+ovl201	0x8005A004	hint	Same wireframe triangle handler as 0x80059C84 for a 0x14-byte packet (vertex indices +0xA/+0xE/+0x12, i.e. with normals interleaved).	2026-10-22T11:49:11Z
+ovl201	0x8005A1E4	name	tmd_draw_line_f3_c	2026-10-22T11:49:12Z
+ovl201	0x8005A1E4	hint	Same wireframe triangle handler as 0x80059C84 for a 0x1C-byte packet (vertex indices +0x12/+0x16/+0x1A, textured layout).	2026-10-22T11:49:12Z
+ovl201	0x8005A84C	name	tmd_draw_line_f4	2026-10-22T11:49:12Z
+ovl201	0x8005A84C	hint	Wireframe quad handler (closed 4-point polyline + 2-point line, codes 0x4C/0x40), 0x18-byte packet with vertex stride 4; template twin of matched 0x8005A3A4/0x8005AAA0.	2026-10-22T11:49:12Z
+ovl201	0x80059118	name	tmd_draw_poly_ft4_b	2026-10-22T11:49:12Z
+ovl201	0x80059118	hint	Back-face culled (nclip) flat-lit textured quad, POLY_FT4 tag 0x0903BFA0, colour from 0x800B7038; twin of matched 0x80059634.	2026-10-22T11:49:12Z
+ovl201	0x80057664	name	tmd_draw_poly_f3_b	2026-10-22T11:49:13Z
+ovl201	0x80057664	hint	Back-face culled flat-lit triangle (POLY_F3), packet colour + one normal; twin of matched 0x800572C4 (tag word 0x041465D4).	2026-10-22T11:49:13Z
+ovl201	0x80058808	name	tmd_draw_poly_f4	2026-10-22T11:49:13Z
+ovl201	0x80058808	hint	Back-face culled flat-lit quad (POLY_F4 0x18, tag 0x05FFFFFF), packet 0x14 with colour, one normal, 4 vertex offsets.	2026-10-22T11:49:13Z
+ovl201	0x80058A18	name	tmd_draw_poly_f4_b	2026-10-22T11:49:13Z
+ovl201	0x80058A18	hint	Byte-identical twin of 0x80058808 (flat quad TMD handler).	2026-10-22T11:49:13Z
+ovl201	0x80057860	name	tmd_draw_poly_ft3	2026-10-22T11:49:13Z
+ovl201	0x80057860	hint	Back-face culled flat-lit textured triangle (POLY_FT3, tag 0x07FFFFFF, colour 0x800B7028), packet 0x18 uv/clut/tpage + normal + 3 verts.	2026-10-22T11:49:14Z
+ovl201	0x80057A9C	name	tmd_draw_poly_ft3_b	2026-10-22T11:49:14Z
+ovl201	0x80057A9C	hint	Twin of 0x80057860 (tag 0x071FEF10, colour 0x800B702C).	2026-10-22T11:49:14Z
+ovl201	0x80057CD8	name	tmd_draw_poly_g3	2026-10-22T11:49:14Z
+ovl201	0x80057CD8	hint	Back-face culled gouraud triangle (ldv3/ncct/strgb3 into POLY_G3, tag 0x06FFFFF7), packet 0x14 colour + 3 normal/vertex pairs.	2026-10-22T11:49:14Z
+ovl201	0x800585D8	name	tmd_draw_poly_g3_b	2026-10-22T11:49:14Z
+ovl201	0x800585D8	hint	Twin of 0x80057CD8 (tag word 0x06010003).	2026-10-22T11:49:14Z
+ovl201	0x80058C28	name	tmd_draw_poly_g4	2026-10-22T11:49:14Z
+ovl201	0x80058C28	hint	Back-face culled gouraud quad (ncct for 3 corners + nccs for the 4th into POLY_G4, tag 0x08FFFFFF), packet 0x18.	2026-10-22T11:49:14Z
+ovl201	0x80058EA0	name	tmd_draw_poly_g4_b	2026-10-22T11:49:15Z
+ovl201	0x80058EA0	hint	Twin of 0x80058C28 (tag word 0x0847475C).	2026-10-22T11:49:15Z
+ovl201	0x80059374	name	tmd_draw_poly_gt4	2026-10-22T11:49:15Z
+ovl201	0x80059374	hint	Back-face culled gouraud textured quad (POLY_GT4 0x34, tag 0x0C7FFFD8, colour 0x800B703C), packet 0x24 uv/clut/tpage + 4 normal/vertex pairs.	2026-10-22T11:49:15Z
+ovl201	0x80059890	name	tmd_draw_poly_gt4_b	2026-10-22T11:49:15Z
+ovl201	0x80059890	hint	Twin of 0x80059374 (tag 0x0C313B54, colour 0x800B7044).	2026-10-22T11:49:15Z
+ovl201	0x800574C0	name	tmd_draw_poly_f3_nocull	2026-10-22T11:49:15Z
+ovl201	0x800574C0	hint	Flat-lit triangle like 0x800572C4 but without the nclip back-face test (double-sided).	2026-10-22T11:49:15Z
+ovl201	0x80057F08	name	tmd_draw_poly_g3_nocull	2026-10-22T11:49:16Z
+ovl201	0x80057F08	hint	Gouraud triangle like 0x80057CD8 but without the nclip back-face test (double-sided).	2026-10-22T11:49:16Z
+ovl201	0x8005ACF4	name	ac_load_preset_0	2026-10-22T11:49:16Z
+ovl201	0x8005ACF4	hint	Copies preset record 0x800B70C4 into the player AC: 12 equipped part ids -> 0x80031A58, option bitmask -> 0x80039CA0, two 0xA0-byte part-ownership blocks -> 0x80031A94/0x80031B34.	2026-10-22T11:49:16Z
+ovl201	0x8005AE8C	name	ac_load_preset_1	2026-10-22T11:49:16Z
+ovl201	0x8005AE8C	hint	Same as 0x8005ACF4 from the second preset record at 0x800B7214 (records are 0x150 bytes).	2026-10-22T11:49:17Z
+ovl201	0x800569E8	name	saveload_card_write_entry	2026-10-22T11:49:17Z
+ovl201	0x800569E8	hint	Twin of saveload_create_data (0x80054D44): checks the card (800684A0) into status[slot]; on error message + key-on, else 800B4398(slot, col+row*4) and a done/fail message box; update=ui_obj_nop2.	2026-10-22T11:49:17Z
+ovl201	0x800567B8	name	saveload_poll_card_a	2026-10-22T11:49:17Z
+ovl201	0x800567B8	hint	Polls the card in slot (800685A8); on change kills the dialog objects and goes to 0x80056770; else per mode +0xA3 reopens frames 3/5 and goes to 0x800568D8 (mode 0) or 0x8005616C (mode 1).	2026-10-22T11:49:17Z
+ovl201	0x80056B60	name	saveload_poll_card_b	2026-10-22T11:49:17Z
+ovl201	0x80056B60	hint	Same as 0x800567B8 without reopening the frames; mode 0 goes to 0x80056C48.	2026-10-22T11:49:17Z
+ovl201	0x80055580	name	saveload_reopen_list	2026-10-22T11:49:17Z
+ovl201	0x80055580	hint	By mode +0xA3: rebuilds frames 3/5/7 (list height from save count 0x801A257C (+1 for the new row flag +0xA7), max 5 rows) and goes to 0x800556A8, or returns to 0x800542F0; mirrors matched 0x80054F1C.	2026-10-22T11:49:18Z
+ovl201	0x800557CC	name	saveload_check_card_format	2026-10-22T11:49:18Z
+ovl201	0x800557CC	hint	Checks card (800684A0) into status[slot]; unless status 4 (unformatted) closes the dialog and goes to 0x80055784; else per mode opens the yes/no frame and goes to 0x800558DC or back to 0x800531B8.	2026-10-22T11:49:18Z
+ovl201	0x80051DF0	name	msgbox_create	2026-10-22T11:49:18Z
+ovl201	0x80051DF0	hint	Ctor of the message-box object: stores owner, owner's next update, text, frame id and rect at +0x7C..+0x96, opens frame id-1 with func_8005BA2C; update 0x80051F24.	2026-10-22T11:49:18Z
+ovl201	0x80051FB0	name	msgbox_wait_button	2026-10-22T11:49:18Z
+ovl201	0x80051FB0	hint	Message box update: on any of pad 0x20/0x40/0x200000/0x400000 latches the press in 0x801A2550, kills the label and frame, closes the frame (8005C2D0) and goes to 0x800520E0 (which restores the owner's update).	2026-10-22T11:49:19Z
+ovl201	0x80056034	name	saveload_draw_grid	2026-10-22T11:49:19Z
+ovl201	0x80056034	hint	Once no frame object (8005BA2C) is pending: draws the 'S'ave/'L'oad title, 8 grid frames (4 per row, 0x44 apart, from 0x800B6F58) and the grid cursor 0x80056EF4(&col,&row); update=0x8005616C.	2026-10-22T11:49:19Z
+ovl201	0x80055950	name	saveload_format_card	2026-10-22T11:49:19Z
+ovl201	0x80055950	hint	Checks the card is unformatted (status 4), then format("bu00:"/"bu10:") up to 3 times re-checking the card; card error -> message + ui_obj_nop2, else closes frame 9 and goes to 0x80055B3C (ok) or 0x80055BA4 (fail).	2026-10-22T11:49:19Z
+ovl201	0x80055CE0	name	saveload_slot_opened	2026-10-22T11:49:19Z
+ovl201	0x80055CE0	hint	After a card check: reloads the card's directory (800B4054), resets grid col/row, closes frame 9, chooses next state from card dir (used blocks >= 14 / save count) and kind 'S'/'L', clears a VRAM rect (ClearImage) and loads the save icons (800B4BD4).	2026-10-22T11:49:19Z
+ovl201	0x800531B8	name	saveload_slot_select_update	2026-10-22T11:49:19Z
+ovl201	0x800531B8	hint	Wave-1 name (ran on load/save data, slot 1): slot cursor, card checks with 3 retries, card error boxes.	2026-10-22T11:49:20Z
+ovl201	0x8005616C	name	saveload_grid_update	2026-10-22T11:49:20Z
+ovl201	0x8005616C	hint	Update set by 0x80056034: card poll (800685A8), d-pad with key repeat moves the 4x2 grid cursor col +0xA8 / row +0xA9 (col 3 only on row 0), cancel -> 0x800566AC, confirm opens the yes/no prompt (8005D8D4, save or load text by kind +0xA5) and goes to 0x800567B8 / 0x80056B60.	2026-10-22T11:49:20Z
+ovl201	0x800501BC	name	ui_obj_alloc	2026-10-22T11:49:20Z
+ovl201	0x800501BC	hint	Already named in symbols.tsv; retail takes s16 kind (sll/sra on entry): per kind 0..21 picks the slot run in g_ui_pool, view g_ui_views[n] and OT pair, returns the first free slot initialised (identity matrix 0x800B6ECC) or &g_ui_none.	2026-10-22T11:49:20Z
+ovl201	0x8004E2BC	name	garage_menu_ring_idle	2026-10-22T11:49:20Z
+ovl201	0x8004E2BC	hint	Wave-1 C header: garage main menu ring idle step: confirm opens the front item (per-item setup), left/right start a ring turn (0x8004E894).	2026-10-22T11:49:20Z
