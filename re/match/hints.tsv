@@ -867,3 +867,15 @@ ovl203	0x8004F3C4	name	link_exchange_words	2026-10-22T16:49:04Z
 ovl203	0x8004F3C4	hint	sends u16 pairs over the link cable (R..C 8-byte packets, read/write on fds at 0x80049F90+0x2F4/0x2F8), stores the received pair; stops on D_800895C8 or func_8004BEB0()==0	2026-10-22T16:49:04Z
 ovl203	0x8004FD18	name	mdl_walk_prims	2026-10-22T16:49:04Z
 ovl203	0x8004FD18	hint	walks a TMD-like model (n_obj at +8, 0x1C objects from +0xC), dispatches each primitive by (mode & 0xBC): tri kinds 0x24/34/A4/B4 -> func_8004FBDC, quad kinds 0x2C/3C/AC/BC -> func_8004FC6C	2026-10-22T16:49:04Z
+ovl203	0x80062E78	name	render_draw_struct_part_list	2026-10-22T16:49:09Z
+ovl203	0x80062E78	hint	port of ovl202 func_800639D8 (light-set switch + GTE matrices per part, calls 8006252C/80063088)	2026-10-22T16:49:09Z
+ovl203	0x80062020	name	view_frame_update	2026-10-22T16:49:09Z
+ovl203	0x80062020	hint	port of ovl202 func_80062BD8 (camera pose -> view matrices, object table to view space, per-frame updaters; 203 runs func_8005414C for 2 AcEntity slots)	2026-10-22T16:49:09Z
+ovl203	0x8007A09C	name	vs_hover_mover_step	2026-10-22T16:49:09Z
+ovl203	0x8007A09C	hint	port of fdat000 func_801C5CB8 hover mover; sink on player buttons +0x29A, accel/max from VsPlayer +0x20C/+0x20E	2026-10-22T16:49:09Z
+ovl203	0x80077E10	name	vs_link_exchange_pads	2026-10-22T16:49:09Z
+ovl203	0x80077E10	hint	sends R..C 8-byte packet with pad word/random/checksum via write(), reads peer packet via read(); sets link error flags 0x100/0x200/0x300 + 80-frame timer; latches both VsPlayer pads	2026-10-22T16:49:09Z
+ovl203	0x8007738C	name	vs_pause	2026-10-22T16:49:09Z
+ovl203	0x8007738C	hint	START (pad 0x800) on either VsPlayer: draws PAUSE POLY_FT4 over the frame, SsSetMVol(0,0), CdControl(9) pause, waits press/release via VSync+func_80077E10, CdRead2(200) resume, restores volume	2026-10-22T16:49:10Z
+ovl203	0x800718CC	name	vs_carried_obj_update	2026-10-22T16:49:10Z
+ovl203	0x800718CC	hint	64-byte object table at 0x801C40F0 riding a carrier (+0x2C): tests old/new box vs both versus ACs (func_80071638), pushes AC via func_800736CC, commits carried position	2026-10-22T16:49:10Z
