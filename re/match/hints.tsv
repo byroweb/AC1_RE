@@ -254,3 +254,39 @@ ovl201	0x800998B4	name	mail_cursor_update	2026-10-22T06:14:24Z
 ovl201	0x800998B4	hint	mail screen; update of the 0x800997C8 cursor: up/down (pad 0x1000/0x4000 new press) moves sel with wrap, moves cursor y by 24 or scrolls the row names/icons/labels via 0x80099868 and refills the new row (0x8009720C/0x800971AC), then handles the held-key repeat counters 0x800B8CC8/0x800B8CCC	2026-10-22T06:14:24Z
 ovl201	0x80098A58	name	letter_reply_update	2026-10-22T06:14:24Z
 ovl201	0x80098A58	hint	opening letter; update of the 0x80098550 object: scrolls line2[] up/down (unk4/unk5 step counters, history of offsets at +0x10), types the next line via 0x80098268 (fast while 0x40/0x1000/0x4000 held), up/down/advance keys page the letter and request message ids, 0x20 closes back to the list (kills/creates buttons), 0x8/0x4 page the reply TIMs via 0x800980E4	2026-10-22T06:14:24Z
+ovl201	0x80068828	name	memcard_wait_sw_event	2026-10-22T06:19:46Z
+ovl201	0x80068828	hint	Ran on every save/load slot screen; loops TestEvent over the 4 events at 0x8017E5B4..C0 and returns which fired (0..3); waited on after _card_info/_card_load.	2026-10-22T06:19:46Z
+ovl201	0x800688AC	name	memcard_wait_hw_event	2026-10-22T06:19:46Z
+ovl201	0x800688AC	hint	Twin of memcard_wait_sw_event over the 4 events at 0x8017E5C4..D0; waited on after _card_clear (PsyQ _card_event_x pattern), ran on slot 1.	2026-10-22T06:19:47Z
+ovl201	0x800703D0	name	emblem_spawn_marker	2026-10-22T06:19:47Z
+ovl201	0x800703D0	hint	Ran on edit emblem; allocates a kind-4 UiObj (update 0x8007046C) at the position of the object at o+0x98 and stores o in its +0x7C.	2026-10-22T06:19:47Z
+ovl201	0x8006C324	name	emblem_put_pixel	2026-10-22T06:19:47Z
+ovl201	0x8006C324	hint	Ran on draw red line; converts cursor screen pos (o+0x98 +0x7E/+0x80, minus 172/36, / zoom at +0x84) plus view origin into a pixel and writes the pen color (+0x86) as a 4bpp nibble into the 64-px-wide canvas at +0x88.	2026-10-22T06:19:47Z
+ovl201	0x800684A0	name	memcard_check_card	2026-10-22T06:19:48Z
+ovl201	0x800684A0	hint	Ran on slot 1/create/load; PsyQ card-check sequence: _card_info, on new card _card_clear + _card_load, returns 0..4 status from the event waits; arg = port (chan = port?16:0).	2026-10-22T06:19:48Z
+ovl201	0x8006B080	name	emblem_apply_confirm	2026-10-22T06:19:48Z
+ovl201	0x8006B080	hint	Ran on apply / yes apply; on answer 0 (+0xC4) restores VRAM rects, kills dialog objects 3/5/7/9, sets flag 0x20 in 0x801A2550 and moves on to 0x8006B1E8; answer 1 returns to the editor 0x80068FBC.	2026-10-22T06:19:48Z
+ovl201	0x8006A2C4	name	emblem_sample_draw_grid	2026-10-22T06:19:48Z
+ovl201	0x8006A2C4	hint	Ran on sample / sel purple cat; draws the 4x4 grid of sample emblems (table 0x800B7EE0, 12-byte entries) at 0x44 px spacing, scrolled by the u16 at +0xC8.	2026-10-22T06:19:48Z
+ovl201	0x80068C08	name	emblem_edit_update	2026-10-22T06:19:48Z
+ovl201	0x80068C08	hint	Ran on draw/edit/circle-menu screens; per-frame editor step: calls 0x8006D1D8, Circle edge (pad 0x20) opens the menu boxes and switches to 0x80068E14, pad 0x80 edge picks the pen color into 0x8017E618 and switches to 0x8006B250, then 0x8006BA08.	2026-10-22T06:19:49Z
+ovl201	0x8006ABA4	name	emblem_sample_load_confirm	2026-10-22T06:19:49Z
+ovl201	0x8006ABA4	hint	Ran on load yes / sel purple cat; on answer 0 copies the chosen sample (index col+page*4+row*4) image and CLUT from VRAM into the canvas (+0x88) and the 15-entry palette 0x8017E5D8 (5:5:5 to 8-bit, alpha 0x60), closes the dialogs.	2026-10-22T06:19:49Z
+ovl201	0x8006BF84	name	emblem_sync_palette	2026-10-22T06:19:49Z
+ovl201	0x8006BF84	hint	Ran on edit emblem; reads the canvas image and CLUT back from VRAM, rebuilds the 8-bit palette 0x8017E5D8 (entry 0 black, alpha 0x60), re-encodes it to 5:5:5 with the STP bit for pure black and uploads CLUT and image again, then 0x8006F55C.	2026-10-22T06:19:49Z
+ovl201	0x80066CB0	name	memcard_scan_saves	2026-10-22T06:19:49Z
+ovl201	0x80066CB0	hint	Ran on slot 1; firstfile/nextfile over "bu00:BASCUS-94182*" (or bu10), skips names with Z at [12], reads the first 0x280 bytes of each save into a 0xE80 buffer and fills up to 16 0x2C slot entries at 0x801F5098 (36-byte title, +0x24, +0x28), count into 0x801A257C.	2026-10-22T06:19:50Z
+ovl201	0x80066994	name	memcard_read_dir	2026-10-22T06:19:50Z
+ovl201	0x80066994	hint	Ran on slot 1 / yes create new data; for a port fills the 0x88C card directory at 0x801EF6D0[port]: this game's saves (BASCUS-94182*, skipping Z at [12]) and every file (bu00:*) with names and 8 KB block counts, plus the used-block total.	2026-10-22T06:19:50Z
+ovl201	0x80068FBC	name	emblem_menu_update	2026-10-22T06:19:50Z
+ovl201	0x80068FBC	hint	Ran on circle-to-see-menu/sample/apply; Up/Down (pad 0x1000/0x4000, with auto-repeat delays) move the menu cursor +0x90 over 6 items (ZOOM UNDO CLEAR SAMPLE APPLY CANCEL), Circle closes the menu, Cross runs the item (zoom box, undo 0x8006F590, clear canvas 0x800 bytes, sample list, apply/cancel confirm).	2026-10-22T06:19:50Z
+ovl201	0x80067CF0	name	memcard_load_save	2026-10-22T06:19:50Z
+ovl201	0x80067CF0	hint	Ran on yes load; checks the card, opens bu00:BASCUS-94182<letter> for the chosen slot with 3 retries, reads the 0xE80-byte save, verifies the checksum of +0x230.., copies the game state blocks to their RAM homes, uploads the emblem image/CLUT (+0x438/+0xC38) to VRAM and re-inits subsystems; returns 1 on success.	2026-10-22T06:19:51Z
+ovl201	0x8006A3EC	name	emblem_sample_update	2026-10-22T06:19:51Z
+ovl201	0x8006A3EC	hint	Ran on sample / sel purple cat; per-frame sample picker: redraws the 4x4 grid (emblem_sample_draw_grid), d-pad moves col +0xC6 / row +0xC7 / page +0xC5 with auto-repeat, pad 0x8/0x4 switch bank +0xCA, Cross asks to load (msg 0x8004B7C4 -> emblem_sample_load_confirm), Circle backs out.	2026-10-22T06:19:51Z
+ovl201	0x8006D6E8	name	emblem_edit_input	2026-10-22T06:19:51Z
+ovl201	0x8006D6E8	hint	Ran on draw/edit/menu screens; editor pad handling: Cross held at the canvas edge scrolls the view (+0x7C/+0x7E of view obj, limit 32/48 by zoom), Triangle picks the color under the pen (0x8006C4C0), pad 0x2/0x1 cycle color 0..15, Select cycles zoom 2/4/8 recentring the view, pad 0x8/0x4 cycle tool +0x8C 0..6.	2026-10-22T06:19:51Z
+ovl201	0x8006D1D8	name	emblem_pen_update	2026-10-22T06:19:51Z
+ovl201	0x8006D1D8	hint	Ran on draw/edit/menu screens; per-frame editor step: unless tool +0x8C is 6, moves the pen cursor with the d-pad (8 px outside the canvas, zoom-sized steps with a repeat counter 0x800B812C inside), clamps it to the 128x128 canvas at 172,36, spawns/kills edge arrows (0x8006FE58), then dispatches the tool handler and calls emblem_edit_input.	2026-10-22T06:19:52Z
+ovl201	0x80066F90	name	memcard_write_save	2026-10-22T06:19:52Z
+ovl201	0x80066F90	hint	Ran on yes create new data; builds the 0xE80-byte save (SC header, SJIS title with slot number, pilot name and a 3-digit counter, per-letter icon, game state blocks, emblem image/CLUT from VRAM, checksum), picks a free letter A..O for a new slot, creates/opens bu00:BASCUS-94182<letter>, writes with retries and reads it back to verify.	2026-10-22T06:19:52Z
