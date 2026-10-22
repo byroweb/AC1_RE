@@ -333,6 +333,11 @@ Output, merged with what is there:
   one `hint` row per function hit in this run, `play coverage: garage (3), shop (1)`,
   skipped when that function's newest play-coverage row already says the same.
 
+The script talks to `http://127.0.0.1:2346/mcp`, not `localhost`: on Windows `localhost`
+tries IPv6 first and every call then waits ~2 s for that to fail (2074 ms vs 33 ms per call
+measured here; arming 331 breakpoints takes 1.8 s at 33 ms).  Other MCP clients in this repo
+that use `localhost` pay the same 2 s per call.
+
 The MCP server has one session: starting the script ends any other client's session
 (another Claude session's trap script, for example), so check nobody else is driving
 DuckStation first.

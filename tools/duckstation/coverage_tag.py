@@ -48,7 +48,9 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 LOOP = os.path.join(REPO, "tools", "loop")
 sys.path.insert(0, LOOP)
 
-URL = "http://localhost:2346/mcp"
+# 127.0.0.1, not localhost: on Windows "localhost" tries ::1 first and every call then
+# waits ~2 s for that to fail before falling back to IPv4 (33 ms vs 2074 ms per call here).
+URL = "http://127.0.0.1:2346/mcp"
 COVERAGE = os.path.join(REPO, "re", "match", "coverage.tsv")
 HINTS = os.path.join(REPO, "re", "match", "hints.tsv")
 COV_COLS = ["unit", "vaddr", "context", "hits"]
@@ -410,10 +412,15 @@ class Session:
         return True
 
 
-def stdin_labels(q):
-    for line in sys.stdin:
-        q.put(line.strip())
-    q.put("q")
+def stdin_labels(q, quit_on_eof=True):
+    """Labels typed in the terminal; end of input quits unless a --minutes limit runs the show."""
+    try:
+        for line in sys.stdin:
+            q.put(line.strip())
+    except (OSError, ValueError):
+        pass
+    if quit_on_eof:
+        q.put("q")
 
 
 def main(argv=None):
@@ -452,7 +459,7 @@ def main(argv=None):
         return 0
 
     labels = queue.Queue()
-    threading.Thread(target=stdin_labels, args=(labels,), daemon=True).start()
+    threading.Thread(target=stdin_labels, args=(labels, args.minutes is None), daemon=True).start()
     sess.context = clean(args.context) or "unlabeled"
     print("context: %s   (type a label + Enter when the screen changes, ? = status, q = quit)" % sess.context)
     cov0 = read_coverage(args.out)
