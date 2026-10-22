@@ -57,6 +57,11 @@ Everything here runs under **Git Bash** (MSYS2); PowerShell/cmd are not supporte
       --disc ~/dev/ac1_dub.cue --capture out/dub.mp4 --take take.wav \
       --shutdown --boot-after "${AC1_BIN%.bin}.cue" --load-after 3 --delete-slot
   ```
+- **`coverage_tag.py`** — tags open functions with the screen they run on while you
+  play: execute breakpoints through the MCP server, overlay-aware, labels typed in the
+  terminal; writes `re/match/coverage.tsv` and `hint` rows in `re/match/hints.tsv`.
+  See `tools/match/README.md` (Coverage tagging from play). Test:
+  `python -m pytest tools/duckstation/test_coverage_tag.py`.
 - **`savestate.py`** — offline DUCCS reader (header, RAM by PS1 address, VRAM,
   thumbnail, frame counter); `docs/SAVESTATE_FORMAT.md`. Needs a zstd decoder:
   `pip install zstandard` or the `zstd` CLI (neither ships with Windows).
