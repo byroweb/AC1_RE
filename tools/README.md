@@ -84,6 +84,18 @@ python tools/plantview/poller.py --source states --open     # replay the state l
 python tools/plantview/poller.py --source live --open       # DuckStation, port 2346
 ```
 
+## `sceneview/` — AC1 levels in the browser, PS1-style, with knobs
+A WebGL2 page that draws a mission's level with its real texels, taken from a save
+state's VRAM and sampled like the PS1 GPU does. Walk a pilot through it with sliders
+for camera distance, an AC1-style camera that drops under low ceilings, texture
+density, texture LOD, floor subdivision and draw distance, plus toggles for the PS1
+quirks (320×240, affine UVs, vertex snap, 15-bit dither) and a texel-density map. It
+was built to judge how an on-foot mode would look at pilot scale. See
+[`sceneview/README.md`](sceneview/README.md).
+```
+python tools/sceneview/server.py      # http://127.0.0.1:8771/
+```
+
 ## `setup_re_tools.sh`
 Idempotent installer + health report. Sets up m2c, checks the mipsel toolchain,
 installs/verifies the Ghidra PSX loader + PSYQ signatures, and confirms the
