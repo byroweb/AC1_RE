@@ -68,6 +68,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, MATCH_DIR)
 import drive     # noqa: E402
 import ledger    # noqa: E402
+import levers    # noqa: E402
 import m2cfix    # noqa: E402
 import match_fn  # noqa: E402
 import permute   # noqa: E402
@@ -394,39 +395,17 @@ def fix_prompt(tgt, text, ev, max_prompt=MAX_PROMPT):
     return user
 
 
-LUI = re.compile(r"^lui (\w+),(0x[0-9a-f]+|\d+)$")
-LOW = re.compile(r"^(?:addiu|ori) (\w+),(\w+),(-?(?:0x[0-9a-f]+|\d+))$")
-LI = re.compile(r"^(?:addiu|ori) (\w+),zero,(-?(?:0x[0-9a-f]+|\d+))$")
-
-
-def constant_at(rows, i, side):
-    """The constant a lui (+ addiu/ori on the same register within 4 rows) or a li builds."""
-    ins = rows[i][2 + side]
-    m = LI.match(ins)
-    if m:
-        return int(m.group(2), 0)
-    m = LUI.match(ins)
-    if not m:
-        return None
-    val = int(m.group(2), 0) << 16
-    for r in rows[i + 1:i + 5]:
-        lo = LOW.match(r[2 + side])
-        if lo and lo.group(2) == m.group(1):
-            k = int(lo.group(3), 0)
-            return val + k if r[2 + side].startswith("addiu") else val | k
-    return val
-
-
 def hint(rows, size, ours_size):
     """One line on what the differences look like: drive.pick_hint's rules, and the two
     constants when a lui / li immediate is what differs."""
+    ret, ours = [r[2] for r in rows], [r[3] for r in rows]
     for i, (mark, _addr, a, b) in enumerate(rows):
-        if mark == "!" and a.split()[:1] == b.split()[:1] and (LUI.match(a) or LI.match(a)):
-            ca, cb = constant_at(rows, i, 0), constant_at(rows, i, 1)
-            if ca is not None and cb is not None and ca != cb:
-                return ("a constant differs: the target builds 0x%X (%d) where ours builds 0x%X (%d); "
-                        "spell it in the C the way the target has it." % (ca & 0xFFFFFFFF, ca,
-                                                                          cb & 0xFFFFFFFF, cb))
+        pa, pb = levers.ins_imm(a), levers.ins_imm(b)
+        if mark == "!" and pa and pb and pa[0] == pb[0] in ("lui", "li") and pa[2] != pb[2]:
+            ca = levers.lui_value(ret, i) if pa[0] == "lui" else pa[2]
+            cb = levers.lui_value(ours, i) if pa[0] == "lui" else pb[2]
+            return ("a constant differs: the target builds 0x%X (%d) where ours builds 0x%X (%d); "
+                    "spell it in the C the way the target has it." % (ca & 0xFFFFFFFF, ca, cb & 0xFFFFFFFF, cb))
     if any(r[0] in "-+" for r in rows):
         text = ""
     else:
