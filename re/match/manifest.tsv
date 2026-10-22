@@ -309,6 +309,7 @@
 0x8006F590	201	ovl201/func_8006F590.c	88	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800B813C=0x800B813C
 0x8006F5E8	201	ovl201/func_8006F5E8.c	136	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800B8144=0x800B8144
 0x8006F670	201	ovl201/func_8006F670.c	152	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800B8150=0x800B8150 --defsym func_8006F708=0x8006F708
+0x8006F708	201	ovl201/func_8006F708.c	148	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_8017E5D8=0x8017E5D8 --defsym D_8017E5D9=0x8017E5D9 --defsym D_8017E5DA=0x8017E5DA
 0x8006F964	201	ovl201/func_8006F964.c	136	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800B8168=0x800B8168
 0x8006F9EC	201	ovl201/func_8006F9EC.c	136	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800B8174=0x800B8174
 0x8006FA74	201	ovl201/func_8006FA74.c	172	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_800B7EBC=0x800B7EBC --defsym func_8006FB20=0x8006FB20
@@ -1894,6 +1895,7 @@
 0x8005AF60	204	ovl202/func_80058028.c	36	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x8005AF84	204	ovl202/func_8005911C.c	36	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x8005AFA8	204	ovl202/func_8005BE04.c	28	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x8005B7D4	204	ovl204/func_8005B7D4.c	224	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x8005C294	204	ovl202/func_8005D0F0.c	172	--defsym D_80090928=0x8008CA48 --defsym box_init_caller=0x8005B44C --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x8005D3A8	204	ovl204/func_8005D3A8.c	212	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_801ADCD8=0x801ADCD8 --defsym D_801AE2EC=0x801AE2EC --defsym D_801B4F9C=0x801B4F9C --defsym func_80013BE8=0x80013BE8 --defsym func_80059720=0x80059720
 0x8005D47C	204	ovl202/func_8005E300.c	308	--defsym D_801A5F30=0x801ADCD8 --defsym D_801A5F34=0x801ADCDC --defsym D_801A6544=0x801AE2EC --defsym D_801AD67C=0x801B4F9C --defsym func_8005A57C=0x80059720 --defsym farsi_gte_renderer_type6=0x80058CF4 --defsym g_ac_cur=0x801ADB64 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
