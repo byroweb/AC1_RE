@@ -621,3 +621,43 @@ ovl201	0x80061E58	name	frame_draw_divided	2026-10-22T12:02:25Z
 ovl201	0x80061E58	hint	Same frame family: fifteen func_800646AC quads (edges at y+56/+136 etc., texels 192..216,208) then frame_draw_corners (0x8006035C).	2026-10-22T12:02:25Z
 ovl201	0x8005F5E8	name	ui_box_render	2026-10-22T12:02:25Z
 ovl201	0x8005F5E8	hint	Render hook of the box objects: id 1 delegates to the tiled backdrop 0x80060168; else projects the box quad through o->mat (RTPT/RTPS), emits a textured FT4 (+0x8A == 0) or gouraud G4 panel between SetDrawArea clip/unclip and a SetTexWindow, then draws frame style +0x84 (0..11) via the frame_draw_* family.	2026-10-22T12:02:25Z
+ovl201	0x80088A18	name	garage_list_entry_reset	2026-10-22T12:03:33Z
+ovl201	0x80088A18	hint	Sets entry i (0x60 stride at list+0x5C) of the *0x801F5094 list work to colour 0x40/0x30/0x3E and clears its s32 fields; called per row by 0x80088DE4.	2026-10-22T12:03:33Z
+ovl201	0x80086E34	name	garage_list_load_done	2026-10-22T12:03:33Z
+ovl201	0x80086E34	hint	Load callback (passed to func_800513F0 by 0x80086E80): copies 0x620 bytes of the loaded buffer to 0x801F3814, clears the busy byte 0x801F37C8, frees the buffer.	2026-10-22T12:03:33Z
+ovl201	0x800892AC	name	ac_parts_incomplete	2026-10-22T12:03:33Z
+ovl201	0x800892AC	hint	Returns 1 if head/core/arms/legs/FCS/0x80031A60 slot is empty (255) or booster presence mismatches leg type (legs id >= 27 must have no booster).	2026-10-22T12:03:34Z
+ovl201	0x80087EB8	name	garage_list_draw_count	2026-10-22T12:03:34Z
+ovl201	0x80087EB8	hint	Formats D_801F4114[0][id]+[1][id] via 0x80087C94 ("------" for id 28) and draws it at x 960, y row*16+176.	2026-10-22T12:03:34Z
+ovl201	0x80087F58	name	garage_list_build_row	2026-10-22T12:03:34Z
+ovl201	0x80087F58	hint	Builds list row text: SJIS prefix (0x81A6 when flag bit 2 of 0x801F3788[id] set, else fullwidth space) then the '>'-terminated name 0x801F3914[id].	2026-10-22T12:03:34Z
+ovl201	0x800887B8	name	garage_list_load_text_done	2026-10-22T12:03:34Z
+ovl201	0x800887B8	hint	Load callback: copies a '>'/'/'-terminated string into list+0x2F0, frees the buffer, clears list+9 busy flag.	2026-10-22T12:03:34Z
+ovl201	0x800895D4	name	ac_energy_over	2026-10-22T12:03:34Z
+ovl201	0x800895D4	hint	Sums the +2 column (energy drain) of every equipped part table and returns generator(0x80031A60 table) value < total.	2026-10-22T12:03:34Z
+ovl201	0x8008935C	name	ac_weight_over	2026-10-22T12:03:35Z
+ovl201	0x8008935C	hint	Returns 1 when arm-weapon weight exceeds core arm load, else whether total AC weight exceeds legs max load (+0xA column).	2026-10-22T12:03:35Z
+ovl201	0x80088940	name	garage_list_load_image_done	2026-10-22T12:03:35Z
+ovl201	0x80088940	hint	Load callback: per list+0xA mode (1..3) uploads the image via 0x80088838 to VRAM (896/960,0/128, clut row 481..483), clears the mode, frees the buffer.	2026-10-22T12:03:35Z
+ovl201	0x80087AEC	name	garage_list_open	2026-10-22T12:03:35Z
+ovl201	0x80087AEC	hint	When id-3 object is gone and not busy: counts used order[] slots into list->count, rows=min(count,5), clamps cursor, opens box (0x8005BA2C), plays sound, update=0x80088040.	2026-10-22T12:03:35Z
+ovl201	0x80088040	name	garage_list_draw_rows	2026-10-22T12:03:35Z
+ovl201	0x80088040	hint	Waits for loads, rebuilds the row objects: count labels (0x80087EB8), names (0x80087F58 + text labels into list+0x28), markers; update=0x80088334.	2026-10-22T12:03:35Z
+ovl201	0x80087C94	name	garage_format_count	2026-10-22T12:03:36Z
+ovl201	0x80087C94	hint	Formats n as 5 digits + 'C' with leading-zero blanking; all-zero becomes " Parts" (0x8004CBC4).	2026-10-22T12:03:36Z
+ovl201	0x8008729C	name	garage_list_ctor	2026-10-22T12:03:36Z
+ovl201	0x8008729C	hint	Constructor (ctor key of its own UiObj): debug flag toggles, allocs list work 0x6F0 into 0x801F5094, selects cursor entry, builds 0x80088DE4 or waits via 0x80087AEC, copies 64 VRAM strips.	2026-10-22T12:03:36Z
+ovl201	0x80088DE4	name	garage_list_detail_ctor	2026-10-22T12:03:36Z
+ovl201	0x80088DE4	hint	Creates the detail object (update 0x800891BC): 5 entry labels, resets list fields, queues text load of tbl[order[cursor]][b7] (0x800887B8), clears VRAM areas.	2026-10-22T12:03:36Z
+ovl201	0x80086FFC	name	garage_list_build_order	2026-10-22T12:03:36Z
+ovl201	0x80086FFC	hint	Fills order[] 0x801F37D4 with entries of the 4-byte table 0x801F3814 whose rank range covers 0x801F3752 (special cases for ids 14/17/27, kind filter by 0x801F3778 sign at rank>=26, skips flag bit 2); retries next rank until non-empty.	2026-10-22T12:03:36Z
+ovl201	0x80088AC4	name	garage_text_step	2026-10-22T12:03:36Z
+ovl201	0x80088AC4	hint	Twin of letter-reader text step 0x80097A08: copies one control-coded char of the source into a LetterLine; '%'n loads page n (0x800513F0 + 0x80088940) and opens window 0x8008B778/B918/BAB8.	2026-10-22T12:03:37Z
+ovl201	0x80086838	name	garage_apply_result	2026-10-22T12:03:37Z
+ovl201	0x80086838	hint	Copies the 0x78-byte progress block 0x80041B10 into 0x801F3750, then for the finished id sets flag bits, counters (cap 999), credits 0x80049E70 and rank-based part unlocks in 0x80031A64[2][0xA0]; clears ids.	2026-10-22T12:03:37Z
+ovl201	0x80084AE4	name	opshop_update	2026-10-22T12:03:37Z
+ovl201	0x80084AE4	hint	Optional-parts shop input: up/down with key repeat (0x801A2550), circle toggles OP bit in 0x80039CA0 after core OP-capacity check (0x800B9482/0x800BB11C), cross tears the screen down.	2026-10-22T12:03:37Z
+ovl201	0x80085640	name	perf_check_draw	2026-10-22T12:03:37Z
+ovl201	0x80085640	hint	Wave-1 name kept: check-performance screen, AP/weight/price header, performance table and grade.	2026-10-22T12:03:37Z
+ovl201	0x800897D0	name	garage_detail_update	2026-10-22T12:03:37Z
+ovl201	0x800897D0	hint	Detail window update: steps text via 0x80088AC4, scrolls the 5 LetterLines up/down with history, page loads, circle runs AC checks 0x800892AC/0x8008935C/0x800895D4 before 0x8008A338, cross closes windows.	2026-10-22T12:03:38Z
