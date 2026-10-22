@@ -1,1 +1,142 @@
 unit	vaddr	kind	text	timestamp
+exe	0x80012048	hint	play coverage: ac test (1)	2026-10-22T05:46:34Z
+exe	0x800121AC	hint	play coverage: ac test (1)	2026-10-22T05:46:34Z
+exe	0x80015710	hint	play coverage: broad, 14 screens (e.g. ac test, change to Rusty Copper, edit emblem)	2026-10-22T05:46:34Z
+exe	0x8001594C	hint	play coverage: broad, 14 screens (e.g. ac test, change to Rusty Copper, edit emblem)	2026-10-22T05:46:34Z
+exe	0x80015A48	hint	play coverage: ac test (1)	2026-10-22T05:46:34Z
+exe	0x80015B78	hint	play coverage: broad, 13 screens (e.g. change to Rusty Copper, edit emblem, garage)	2026-10-22T05:46:34Z
+exe	0x80015C9C	hint	play coverage: broad, 13 screens (e.g. change to Rusty Copper, edit emblem, garage)	2026-10-22T05:46:34Z
+exe	0x80016328	hint	play coverage: ac test (1)	2026-10-22T05:46:34Z
+ovl201	0x8004E2BC	hint	play coverage: exiting to general menu (2), garage (1), mail (1), opening letter To All New Ravens (1), ranking (1), selecting rank 5 (1), system (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x800501BC	hint	play coverage: broad, 42 screens (e.g. exiting to general menu, slot 1, NEW)	2026-10-22T05:46:34Z
+ovl201	0x80050944	hint	play coverage: broad, 10 screens (e.g. change to Rusty Copper, edit emblem, garage)	2026-10-22T05:46:34Z
+ovl201	0x80051A74	hint	play coverage: slot 1 (1), system (1), yes create new data (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x80052134	hint	play coverage: system (1)	2026-10-22T05:46:34Z
+ovl201	0x8005252C	hint	play coverage: system (1), yes create new data (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x80052BD0	hint	play coverage: exiting to general menu (1), load data (1), save data (1), system (1), yes create new data (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x800531B8	hint	play coverage: slot 1 (2), load data (1), save data (1)	2026-10-22T05:46:34Z
+ovl201	0x80053AB4	hint	play coverage: slot 1 (2)	2026-10-22T05:46:34Z
+ovl201	0x80053DB4	hint	play coverage: slot 1 (2)	2026-10-22T05:46:34Z
+ovl201	0x80053E98	hint	play coverage: slot 1 (2)	2026-10-22T05:46:34Z
+ovl201	0x800542F0	hint	play coverage: slot 1 (2), NEW (1), selecting save slot 1 (1)	2026-10-22T05:46:34Z
+ovl201	0x80054AB0	hint	play coverage: NEW (1), yes create new data (1)	2026-10-22T05:46:34Z
+ovl201	0x80054D44	hint	play coverage: yes create new data (1)	2026-10-22T05:46:34Z
+ovl201	0x80054F1C	hint	play coverage: selecting save slot 1 (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x800551B0	hint	play coverage: yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x80057190	hint	play coverage: broad, 26 screens (e.g. exiting to general menu, ac name entry, ac test)	2026-10-22T05:46:34Z
+ovl201	0x800572C4	hint	play coverage: assembly (1)	2026-10-22T05:46:34Z
+ovl201	0x80057860	hint	play coverage: broad, 19 screens (e.g. ac name entry, ac test, assembly)	2026-10-22T05:46:34Z
+ovl201	0x80058100	hint	play coverage: assembly (1)	2026-10-22T05:46:34Z
+ovl201	0x80058808	hint	play coverage: broad, 19 screens (e.g. ac name entry, ac test, assembly)	2026-10-22T05:46:34Z
+ovl201	0x80059118	hint	play coverage: broad, 19 screens (e.g. ac name entry, ac test, assembly)	2026-10-22T05:46:34Z
+ovl201	0x80059374	hint	play coverage: broad, 19 screens (e.g. ac name entry, ac test, assembly)	2026-10-22T05:46:34Z
+ovl201	0x80059634	hint	play coverage: exiting to general menu (2), garage (1), mail (1), opening letter To All New Ravens (1), ranking (1), selecting rank 5 (1), system (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x80059B50	hint	play coverage: assembly (1), cancel head (1), sel hoarfrost (1), sel woodlandd (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x80059E44	hint	play coverage: assembly (1), cancel head (1), sel hoarfrost (1), sel woodlandd (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x8005A3A4	hint	play coverage: assembly (1), sel hoarfrost (1), sel woodlandd (1)	2026-10-22T05:46:34Z
+ovl201	0x8005A5F8	hint	play coverage: assembly (1), cancel head (1), sel hoarfrost (1), sel woodlandd (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x8005AAA0	hint	play coverage: assembly (1), cancel head (1), sel hoarfrost (1), sel woodlandd (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x8005B4B8	hint	play coverage: broad, 43 screens (e.g. exiting to general menu, slot 1, NEW)	2026-10-22T05:46:34Z
+ovl201	0x8005B648	hint	play coverage: broad, 37 screens (e.g. slot 1, NEW, ac name entry)	2026-10-22T05:46:34Z
+ovl201	0x8005BA2C	hint	play coverage: broad, 37 screens (e.g. slot 1, NEW, ac name entry)	2026-10-22T05:46:34Z
+ovl201	0x8005BF0C	hint	play coverage: broad, 37 screens (e.g. slot 1, NEW, ac name entry)	2026-10-22T05:46:34Z
+ovl201	0x8005C2D0	hint	play coverage: broad, 28 screens (e.g. slot 1, ac name entry, ac test)	2026-10-22T05:46:34Z
+ovl201	0x8005C6CC	hint	play coverage: broad, 28 screens (e.g. slot 1, ac name entry, ac test)	2026-10-22T05:46:34Z
+ovl201	0x8005CC48	hint	play coverage: exiting to general menu (1), garage (1), mail (1), opening letter To All New Ravens (1), ranking (1), selecting rank 5 (1), system (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x8005CDEC	hint	play coverage: broad, 43 screens (e.g. exiting to general menu, slot 1, NEW)	2026-10-22T05:46:34Z
+ovl201	0x8005EB80	hint	play coverage: yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x8005F5E8	hint	play coverage: broad, 43 screens (e.g. exiting to general menu, slot 1, NEW)	2026-10-22T05:46:34Z
+ovl201	0x8006035C	hint	play coverage: broad, 36 screens (e.g. slot 1, NEW, ac name entry)	2026-10-22T05:46:34Z
+ovl201	0x80061164	hint	play coverage: assembly (1), cancel head (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x80062D58	hint	play coverage: assembly (1), cancel head (1), check performance (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x800646AC	hint	play coverage: broad, 36 screens (e.g. slot 1, NEW, ac name entry)	2026-10-22T05:46:34Z
+ovl201	0x80064874	hint	play coverage: broad, 40 screens (e.g. slot 1, NEW, ac name entry)	2026-10-22T05:46:34Z
+ovl201	0x8006599C	hint	play coverage: broad, 27 screens (e.g. slot 1, NEW, ac name entry)	2026-10-22T05:46:34Z
+ovl201	0x800660C4	hint	play coverage: broad, 25 screens (e.g. slot 1, NEW, ac test)	2026-10-22T05:46:34Z
+ovl201	0x80066898	hint	play coverage: broad, 40 screens (e.g. slot 1, NEW, ac name entry)	2026-10-22T05:46:34Z
+ovl201	0x80066994	hint	play coverage: slot 1 (2), yes create new data (1)	2026-10-22T05:46:34Z
+ovl201	0x80066CB0	hint	play coverage: slot 1 (2)	2026-10-22T05:46:34Z
+ovl201	0x80066F90	hint	play coverage: yes create new data (1)	2026-10-22T05:46:34Z
+ovl201	0x80067CF0	hint	play coverage: yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x800684A0	hint	play coverage: slot 1 (2), yes create new data (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x80068828	hint	play coverage: slot 1 (2), NEW (1), load data (1), save data (1), selecting save slot 1 (1), yes create new data (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x800688AC	hint	play coverage: slot 1 (1)	2026-10-22T05:46:34Z
+ovl201	0x80068C08	hint	play coverage: circle to see menu (1), circle to see menu again (1), draw red line (1), edit emblem (1), load yes (1)	2026-10-22T05:46:34Z
+ovl201	0x80068FBC	hint	play coverage: apply (1), circle to see menu (1), circle to see menu again (1), sample (1)	2026-10-22T05:46:34Z
+ovl201	0x8006A2C4	hint	play coverage: sample (1), sel purple cat (1)	2026-10-22T05:46:34Z
+ovl201	0x8006A3EC	hint	play coverage: sample (1), sel purple cat (1)	2026-10-22T05:46:34Z
+ovl201	0x8006ABA4	hint	play coverage: load yes (1), sel purple cat (1)	2026-10-22T05:46:34Z
+ovl201	0x8006B080	hint	play coverage: apply (1), yes apply (1)	2026-10-22T05:46:34Z
+ovl201	0x8006BA08	hint	play coverage: broad, 9 screens (e.g. apply, circle to see menu, circle to see menu again)	2026-10-22T05:46:34Z
+ovl201	0x8006BF84	hint	play coverage: edit emblem (1)	2026-10-22T05:46:34Z
+ovl201	0x8006C324	hint	play coverage: draw red line (1)	2026-10-22T05:46:34Z
+ovl201	0x8006C4C0	hint	play coverage: broad, 9 screens (e.g. apply, circle to see menu, circle to see menu again)	2026-10-22T05:46:34Z
+ovl201	0x8006C934	hint	play coverage: broad, 9 screens (e.g. apply, circle to see menu, circle to see menu again)	2026-10-22T05:46:34Z
+ovl201	0x8006D1D8	hint	play coverage: circle to see menu (1), circle to see menu again (1), draw red line (1), edit emblem (1), load yes (1)	2026-10-22T05:46:34Z
+ovl201	0x8006D6E8	hint	play coverage: circle to see menu (1), circle to see menu again (1), draw red line (1), edit emblem (1), load yes (1)	2026-10-22T05:46:34Z
+ovl201	0x8006FB20	hint	play coverage: broad, 9 screens (e.g. apply, circle to see menu, circle to see menu again)	2026-10-22T05:46:34Z
+ovl201	0x8006FD24	hint	play coverage: broad, 9 screens (e.g. apply, circle to see menu, circle to see menu again)	2026-10-22T05:46:34Z
+ovl201	0x800703D0	hint	play coverage: edit emblem (1)	2026-10-22T05:46:34Z
+ovl201	0x8007046C	hint	play coverage: broad, 9 screens (e.g. apply, circle to see menu, circle to see menu again)	2026-10-22T05:46:34Z
+ovl201	0x8007053C	hint	play coverage: broad, 9 screens (e.g. apply, circle to see menu, circle to see menu again)	2026-10-22T05:46:34Z
+ovl201	0x80070A44	hint	play coverage: broad, 11 screens (e.g. ac name entry, ac test, assembly)	2026-10-22T05:46:34Z
+ovl201	0x800714FC	hint	play coverage: ac test (1)	2026-10-22T05:46:34Z
+ovl201	0x80071A18	hint	play coverage: ac test (1), assembly (1), cancel head (1), check performance (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x80072958	hint	play coverage: broad, 19 screens (e.g. ac name entry, ac test, assembly)	2026-10-22T05:46:34Z
+ovl201	0x80072C80	hint	play coverage: broad, 19 screens (e.g. ac name entry, ac test, assembly)	2026-10-22T05:46:34Z
+ovl201	0x80073904	hint	play coverage: yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x80073B7C	hint	play coverage: yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x800740AC	hint	play coverage: assembly (1), cancel head (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x800744A8	hint	play coverage: assembly (1)	2026-10-22T05:46:34Z
+ovl201	0x80074A18	hint	play coverage: assembly (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x8007509C	hint	play coverage: assembly (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x80075520	hint	play coverage: assembly (1), cancel head (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x80075898	hint	play coverage: assembly (1), cancel head (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x80078AAC	hint	play coverage: assembly (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x80078D84	hint	play coverage: assembly (1), cancel head (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x8007AD64	hint	play coverage: cancel head (1)	2026-10-22T05:46:34Z
+ovl201	0x8007BE0C	hint	play coverage: assembly (1), swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x8007C2F0	hint	play coverage: swap head (1)	2026-10-22T05:46:34Z
+ovl201	0x8007C7D8	hint	play coverage: change color (1), change pattern (1), edit color (1), exit color (1), exit paint (1), exit pattern (1)	2026-10-22T05:46:34Z
+ovl201	0x8007D254	hint	play coverage: change to Rusty Copper (1), edit color (1), exit color (1)	2026-10-22T05:46:34Z
+ovl201	0x800807CC	hint	play coverage: change pattern (1), exit pattern (1), sel hoarfrost (1), sel woodlandd (1)	2026-10-22T05:46:34Z
+ovl201	0x800810F0	hint	play coverage: ac name entry (1)	2026-10-22T05:46:34Z
+ovl201	0x80081C5C	hint	play coverage: ac name entry (1), type Byron (1)	2026-10-22T05:46:34Z
+ovl201	0x80083A58	hint	play coverage: assembly (1), garage (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x80085320	hint	play coverage: check performance (1)	2026-10-22T05:46:34Z
+ovl201	0x80085640	hint	play coverage: check performance (1)	2026-10-22T05:46:34Z
+ovl201	0x80086EC8	hint	play coverage: yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x8008CFD4	hint	play coverage: assembly (1), garage (1), swap head (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x80096684	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x800968EC	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x80096944	hint	play coverage: mail (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x80096FFC	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x800971AC	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x8009720C	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x800972A0	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x8009760C	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x8009795C	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x80097A08	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x80097B4C	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x80097D24	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x80097F30	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x80097FDC	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x800980E4	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x800981BC	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x80098268	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x80098550	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x80098A58	hint	play coverage: opening letter To All New Ravens (1)	2026-10-22T05:46:34Z
+ovl201	0x800997C8	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x800998B4	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x8009A3B8	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x8009A508	hint	play coverage: mail (1), opening letter To All New Ravens (1), unlabeled (1)	2026-10-22T05:46:34Z
+ovl201	0x8009C964	hint	play coverage: ac test (1), check performance (1)	2026-10-22T05:46:34Z
+ovl201	0x800B203C	hint	play coverage: system (1), yes create new data (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x800B20A4	hint	play coverage: ranking (1)	2026-10-22T05:46:34Z
+ovl201	0x800B2398	hint	play coverage: ranking (1), system (1), yes create new data (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x800B27A0	hint	play coverage: exiting rank 10 (1), ranking (1), selecting rank 10 (1), selecting rank 5 (1)	2026-10-22T05:46:34Z
+ovl201	0x800B2AC4	hint	play coverage: exiting rank 10 (1), ranking (1), selecting rank 10 (1), selecting rank 5 (1)	2026-10-22T05:46:34Z
+ovl201	0x800B32D4	hint	play coverage: selecting rank 10 (1), selecting rank 5 (1)	2026-10-22T05:46:34Z
+ovl201	0x800B3E98	hint	play coverage: exiting rank 10 (1), selecting rank 10 (1), selecting rank 5 (1)	2026-10-22T05:46:34Z
+ovl201	0x800B597C	hint	play coverage: swap head (1), yes load (1)	2026-10-22T05:46:34Z
+ovl201	0x800B5EEC	hint	play coverage: ac test (1), check performance (1)	2026-10-22T05:46:34Z
