@@ -453,15 +453,169 @@ def lever_args(text, fn):
     return out
 
 
+# ---------------------------------------------------------------------------
+# diff-driven levers: they read the retail / ours instructions (diff_facts) and put
+# retail's numbers and comparisons into the C
+# ---------------------------------------------------------------------------
+MEM_OPS = {"lw", "lh", "lhu", "lb", "lbu", "sw", "sh", "sb", "lwl", "lwr", "swl", "swr"}
+IMM_OPS = {"li", "addiu", "addi", "slti", "sltiu", "andi", "ori", "xori", "lui", "sll", "srl", "sra"}
+CMP_OPS = {"slt", "sltu", "slti", "sltiu", "beq", "bne", "beqz", "bnez", "blez", "bgtz", "bltz", "bgez"}
+ASM_NUM = r"-?(?:0x[0-9a-f]+|\d+)"
+
+
+def ins_imm(ins):
+    """`addiu v0,v1,16` -> ('addiu', ['v0', 'v1'], 16); `lw v1,776(v0)` -> ('lw', ['v1', 'v0'], 776);
+    None for an instruction without an immediate operand."""
+    m = re.match(r"^(\w+)\s+(.*)$", ins.strip())
+    if not m:
+        return None
+    mn, ops = m.group(1), [o.strip() for o in m.group(2).split(",")]
+    if mn in MEM_OPS:
+        mm = re.match(r"^(%s)\((\w+)\)$" % ASM_NUM, ops[-1])
+        return (mn, ops[:-1] + [mm.group(2)], int(mm.group(1), 0)) if mm else None
+    if mn in IMM_OPS and re.fullmatch(ASM_NUM, ops[-1]):
+        return mn, ops[:-1], int(ops[-1], 0)
+    return None
+
+
+def lui_value(rows, i):
+    """The constant a `lui` at rows[i] builds with the addiu/ori (or load/store offset)
+    on the same register within the next 4 rows."""
+    mn, ops, hi = ins_imm(rows[i])
+    reg, val = ops[0], hi << 16
+    for ins in rows[i + 1:i + 5]:
+        p = ins_imm(ins)
+        if not p:
+            continue
+        if p[0] in ("addiu", "ori") and len(p[1]) == 2 and p[1][1] == reg:
+            return val + p[2] if p[0] == "addiu" else val | p[2]
+        if p[0] in MEM_OPS and p[1][-1] == reg:
+            return val + p[2]
+    return val
+
+
+def aligned_pairs(retail, ours):
+    """Indices (i, j) of retail / ours instructions that stand for each other: position by
+    position when the sizes agree, else the equal-length replace blocks of difflib."""
+    import difflib
+    if len(retail) == len(ours):
+        return [(i, i) for i in range(len(retail))]
+    norm = [re.sub(r"0x8[0-9a-f]{7}$", "L", x) for x in retail], [re.sub(r"0x8[0-9a-f]{7}$", "L", x) for x in ours]
+    out = []
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, norm[0], norm[1], autojunk=False).get_opcodes():
+        if op == "equal" or (op == "replace" and i2 - i1 == j2 - j1):
+            out += [(i1 + k, j1 + k) for k in range(i2 - i1)]
+    return out
+
+
+def diff_facts(retail, ours, limit=8):
+    """Retail and ours disassembly (lists of instruction text) -> {pairs: [(ours value,
+    retail value)], cmp: bool}: the immediates that differ in otherwise equal
+    instructions (a lui as the whole constant it builds, a shift also as its power of
+    two), and whether a compare or branch differs."""
+    pairs, cmp = [], False
+    for i, j in aligned_pairs(retail, ours):
+        a, b = retail[i], ours[j]
+        if a == b:
+            continue
+        ma, mb = a.split()[0] if a.split() else "", b.split()[0] if b.split() else ""
+        if ma in CMP_OPS or mb in CMP_OPS:
+            cmp = True
+        pa, pb = ins_imm(a), ins_imm(b)
+        if not pa or not pb or pa[0] != pb[0] or pa[2] == pb[2]:
+            continue
+        if pa[0] == "lui":
+            if 0x8000 <= pa[2] <= 0x80FF or 0x8000 <= pb[2] <= 0x80FF:
+                continue                         # an address: a symbol, not a C constant
+            new = [(lui_value(ours, j), lui_value(retail, i))]
+        elif pa[0] in ("sll", "srl", "sra"):
+            new = [(pb[2], pa[2]), (1 << pb[2], 1 << pa[2])]
+        else:
+            new = [(pb[2], pa[2])]
+        for p in new:
+            if p[0] != p[1] and p not in pairs:
+                pairs.append(p)
+    return {"pairs": pairs[:limit], "cmp": cmp}
+
+
+def spell(n, hexy):
+    return ("0x%X" % n) if hexy else str(n)
+
+
+def lever_imm(text, fn, facts):
+    """A literal of the function equal to ours (or ours +- 1: `<=` compiles as `< v+1`) ->
+    retail's value, the same offset kept; `+ v` / `- v` turn into each other when the
+    sign changes."""
+    sp = fn_span(text, fn)
+    if not sp or not facts or not facts["pairs"]:
+        return []
+    body = text[sp[0]:sp[1]]
+    out, seen = [], set()
+    for m in LIT.finditer(body):
+        mag = int(m.group(2), 0)
+        binop = re.search(r"([\w)\]])\s*([+-])\s*$", body[:m.start() + len(m.group(1))])
+        if binop:                                # `x - 16`: the value is -16, the edit spans the operator
+            start, v = binop.start(2), (-mag if binop.group(2) == "-" else mag)
+        else:
+            start, v = m.start(), (-mag if m.group(1) else mag)
+        hexy = m.group(2).lower().startswith("0x")
+        for o, r in facts["pairs"]:
+            for d in (0, -1, 1):
+                if (v - (o + d)) & 0xFFFFFFFF:
+                    continue
+                n = r + d
+                if hexy and not binop and v >= 0 and n < 0:
+                    n &= 0xFFFFFFFF                 # an unsigned spelling stays unsigned
+                if binop:
+                    new = ("+ " if n >= 0 else "- ") + spell(abs(n), hexy)
+                else:
+                    new = spell(n, hexy) if n >= 0 else "-" + spell(-n, hexy)
+                nb = body[:start] + new + body[m.end():]
+                if nb in seen or nb == body:
+                    continue
+                seen.add(nb)
+                out.append(("imm %s->%s" % (body[start:m.end()].strip(), new), text[:sp[0]] + nb + text[sp[1]:]))
+    return out
+
+
+CMP = re.compile(r"(?<=\s)(<=|>=|==|!=|<|>)(?=\s)")
+CMP_ALT = {"<": ["<=", ">", ">="], "<=": ["<", ">=", ">"], ">": [">=", "<", "<="],
+           ">=": [">", "<=", "<"], "==": ["!="], "!=": ["=="]}
+
+
+def lever_cmp(text, fn, facts):
+    """When a compare or branch differs: every comparison of the function in the other
+    relational spellings (the constant next to it is the imm lever's)."""
+    sp = fn_span(text, fn)
+    if not sp or not facts or not facts["cmp"]:
+        return []
+    body = text[sp[0]:sp[1]]
+    out = []
+    for m in CMP.finditer(body):
+        for alt in CMP_ALT[m.group(1)]:
+            nb = body[:m.start()] + alt + body[m.end():]
+            out.append(("cmp %s->%s" % (m.group(1), alt), text[:sp[0]] + nb + text[sp[1]:]))
+    return out
+
+
 LEVERS = {"index": lever_index, "bytes": lever_bytes, "ptype": lever_ptype, "etype": lever_etype,
           "const": lever_const, "swap": lever_swap, "commute": lever_commute, "args": lever_args}
-DEFAULT_LEVERS = "index,bytes,args,ptype,etype,const,swap,commute"
+DIFF_LEVERS = {"imm": lever_imm, "cmp": lever_cmp}       # (text, fn, diff_facts) -> variants
+ALL_LEVERS = dict(LEVERS, **DIFF_LEVERS)
+DEFAULT_LEVERS = "imm,index,bytes,args,ptype,etype,const,swap,commute,cmp"
 
 
-def variants(text, fn, names=DEFAULT_LEVERS):
+def wants_facts(names):
+    return any(n.strip() in DIFF_LEVERS for n in (names or "").split(","))
+
+
+def variants(text, fn, names=DEFAULT_LEVERS, facts=None):
+    """facts: diff_facts() of this text's compiled code; the diff levers give nothing without."""
     out = []
     for n in names.split(","):
         n = n.strip()
-        if n:
+        if n in DIFF_LEVERS:
+            out += DIFF_LEVERS[n](text, fn, facts)
+        elif n:
             out += LEVERS[n](text, fn)
     return out

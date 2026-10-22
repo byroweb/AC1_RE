@@ -44,7 +44,8 @@ Where the variants come from (any mix, all applied to the input text):
                  lines deletes the old text.
   --replace OLD NEW   one more variant with one replacement (`\\n`, `\\t` unescaped).
   --levers LIST  tools/loop/levers.py rewrites of the function (index, bytes, args, ptype,
-                 etype, const, swap, commute; `all`), one variant per site.
+                 etype, const, swap, commute, and imm / cmp from the input's diff with
+                 retail; `all`), one variant per site.
   --pairs        then every pair of the --edits/--replace variants that improved on the
                  input (best --pair-top of them), both applied.
 
@@ -238,8 +239,9 @@ def make_meta(args, unit, tools):
             "defsyms": list(args.defsym or []), "tools": tools}
 
 
-def collect(args, base_text, fn):
-    """-> [(label, kind, hunks or None, text)] in input order (no scoring)."""
+def collect(args, base_text, fn, facts=None):
+    """-> [(label, kind, hunks or None, text)] in input order (no scoring).  facts: the
+    input's levers.diff_facts, for the diff levers (imm, cmp)."""
     out = []
     for path in args.edits or []:
         with open(path, encoding="utf-8") as fh:
@@ -251,11 +253,11 @@ def collect(args, base_text, fn):
     if args.levers:
         import levers
         names = levers.DEFAULT_LEVERS if args.levers == "all" else args.levers
-        unknown = [n for n in names.split(",") if n.strip() and n.strip() not in levers.LEVERS]
+        unknown = [n for n in names.split(",") if n.strip() and n.strip() not in levers.ALL_LEVERS]
         if unknown:
             raise SystemExit("variants.py: unknown lever(s) %s (have %s)" % (",".join(unknown),
                                                                              levers.DEFAULT_LEVERS))
-        for label, text in levers.variants(base_text, fn, names):
+        for label, text in levers.variants(base_text, fn, names, facts):
             out.append((label, "lever", None, text))
     return out
 
@@ -376,8 +378,14 @@ def main(argv=None):
     with open(args.cfile, encoding="utf-8") as fh:
         base_text = fh.read()
     inc_dirs = [os.path.dirname(os.path.abspath(args.cfile))]
+    facts = None
+    if args.levers:
+        import levers
+        if levers.wants_facts(levers.DEFAULT_LEVERS if args.levers == "all" else args.levers):
+            ours = build(meta, syms, base_text, inc_dirs)[0]
+            facts = permute.ins_facts(meta, ours, retail) if ours is not None else None
     try:
-        cands = collect(args, base_text, fn)
+        cands = collect(args, base_text, fn, facts)
     except (EditError, OSError) as e:
         sys.stderr.write("variants.py: %s\n" % e)
         return 2

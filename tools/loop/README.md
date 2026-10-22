@@ -954,7 +954,9 @@ and `func_`/`D_<ADDR>` names):
 1. **Levers** (`levers.py`): deterministic rewrites of the draft along the divergence
    rows of the match-function skill, beam search (`--beam` best texts per depth,
    `--lever-evals` compiles), scored by differing words + 2 x the size difference in
-   words; a rewrite whose compiled bytes were already seen is dropped.
+   words; a rewrite whose compiled bytes were already seen is dropped.  The diff-driven
+   levers (`imm`, `cmp`) read each beam node's own retail | ours disassembly
+   (`levers.diff_facts`), so a second constant shows up once the first is fixed.
 
    | lever | rewrite | retail symptom it fixes |
    |---|---|---|
@@ -966,6 +968,8 @@ and `func_`/`D_<ADDR>` names):
    | `swap` | two adjacent statements | register colouring by first use (p01/p02) |
    | `commute` | operands of a top-level `+ \| & ^ *` | commutative operand order (p20) |
    | `args` | at one call site, the caller's leading parameter(s) put in front (`f(x)` -> `f(arg0, x)`) or its next one(s) after; the callee's prototype in the file widened or made `T f();`, else an unprototyped cast | retail `li a1,18` vs ours `li a0,18` before a `jal`: m2c guesses arity from the argument registers set before the call, so an argument passed through in the caller's own register is dropped |
+   | `imm` | (diff-driven) a C literal equal to our differing immediate, or to it +- 1, becomes retail's: `li`/`addiu`/`slti`/`andi`/`ori` immediates, load/store offsets, a `lui` as the whole constant it builds with its addiu/ori (address `lui`s skipped), a shift amount and its power of two; `+ v` / `- v` flip with the sign | retail `lui v0,0xa0` vs ours `0x140`, `li a0,4` vs `6`, `addiu ...,-16` vs `16`: near-copies (`neighbour` drafts) whose constants differ |
+   | `cmp` | (diff-driven, only when a compare or branch differs) a comparison of the function in its other relational spellings (`<` -> `<=`, `>`, `>=`; `==` <-> `!=`) | `slt`/`bnez` vs `slt` with swapped operands / `beqz` |
 
    **`args` batch (2026-10-20)**: every open body of `closeness.tsv` at closeness >= 0.85 and
    <= 600 B (145 bodies, drafted again from their `best_variant`), one `tools/match/variants.py`
@@ -1100,9 +1104,18 @@ pass on what it left within 12 words (`GOLEM=1 bash tools/loop/overnight.sh`): G
 ~40 s per body, ~15-20 min for a night's leftovers, and the only tier so far that has
 closed constant/sign diffs in near-copies.  Do not use **fix** in the pipeline: the free
 rule-based repair compiles as many drafts (14 vs 13 and 9) and the results are not close enough to
-matter.  3/23 is a small sample; a deterministic lever for the same class (retail's
-`lui`/`li` constants and `+`/`-`, `<`/`>` flips put into the C, for any near miss rather
-than only `neighbour+imm`) would likely catch most of these without a model.  Ideas for
+matter.
+
+**Follow-up (2026-10-22): the `imm` / `cmp` levers.**  All three golem wins were constant/sign
+differences, so `levers.py` now has two diff-driven levers (permute.py table above).  On the same
+rows, `lever_search` with `imm,cmp` alone matched **4/23 of tier B in ~15 s of CPU** (the golem's
+3 plus ovl201 0x80087EB8, two constants `4 -> 2`, `2 -> 1`; ovl201 0x80051A74 went 8 -> 1 words),
+and the full default set (old levers + `imm,cmp`) keeps tier A at 9/20 and adds those 4.  They are
+in `DEFAULT_LEVERS`, so `permute.py`, `overnight.sh` and `variants.py --levers all` use them; a
+`permute.py run --levers imm,cmp --no-permuter` pass over the overnight sweep's 39 closest open
+drafts matched 0x80087EB8 (the wider pass over all ~445 compiling drafts was stopped early with
+nothing more).  With constants handled for free, the golem's remaining edge on this bench is zero:
+keep `GOLEM=1` off until a prompt change (below) shows wins the levers cannot reach.  Ideas for
 a better golem: map each differing instruction to its C line (cc1 line info) and ask for
 edits by line number; few-shot examples from the ledger's lever trails; a model
 fine-tuned on oracle-generated (broken C + diff -> repairing edit) pairs.

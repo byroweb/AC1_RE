@@ -176,6 +176,37 @@ def test_lever_args():
     assert levers.lever_args("void func_X(void) { func_80001000(1); }\n", "func_X") == []
 
 
+def test_diff_facts():
+    retail = ["lui v0,0xa0", "div zero,v0,v1", "addiu a0,s0,-16", "li a0,4", "sll v0,v0,0x2",
+              "lui a1,0x8017", "slt v0,a0,v1", "lw v1,8(v0)"]
+    ours = ["lui v0,0x140", "div zero,v0,v1", "addiu a0,s0,16", "li a0,6", "sll v0,v0,0x3",
+            "lui a1,0x8018", "slt v0,v1,a0", "lw v1,8(v0)"]
+    f = levers.diff_facts(retail, ours)
+    assert f["pairs"] == [(0x1400000, 0xA00000), (16, -16), (6, 4), (3, 2), (8, 4)]   # no address lui
+    assert f["cmp"]
+    assert levers.diff_facts(retail, retail) == {"pairs": [], "cmp": False}
+    # different sizes: only the equal-length replace blocks pair up
+    f = levers.diff_facts(["li a0,4", "jal 0x80012345", "nop"], ["li a0,6", "jal 0x80012345", "nop", "nop"])
+    assert (6, 4) in f["pairs"]
+
+
+def test_lever_imm_and_cmp():
+    t = ("void func_X(s32 *a) {\n    t = a[0] + 0x10;\n    if (t >= 6) {\n        f(6);\n    }\n"
+         "    k = 0x1400000 / t;\n    m = a[1] - 5;\n}\n")
+    facts = {"pairs": [(16, -16), (6, 4), (0x1400000, 0xA00000), (-5, -3)], "cmp": True}
+    got = dict(levers.lever_imm(t, "func_X", facts))
+    assert "    t = a[0] - 0x10;" in got["imm + 0x10->- 0x10"]
+    assert "k = 0xA00000 / t;" in got["imm 0x1400000->0xA00000"]
+    assert "m = a[1] - 3;" in got["imm - 5->- 3"]
+    assert "if (t >= 4)" in got["imm 6->4"] or "f(4);" in got["imm 6->4"]
+    off = dict(levers.lever_imm("void func_X(void) {\n    x = y < 7;\n}\n", "func_X", facts))
+    assert list(off) == ["imm 7->5"]                               # `< 7` is `slti 6`: keep the +1
+    cmp = dict(levers.lever_cmp(t, "func_X", facts))
+    assert "if (t <= 6)" in cmp["cmp >=-><="] and len(cmp) == 3
+    assert levers.lever_cmp(t, "func_X", {"pairs": [], "cmp": False}) == []
+    assert levers.variants(t, "func_X", "imm,cmp") == []          # no facts, no diff levers
+
+
 def test_cfile_candidate_specs(tmp_path):
     c = permute.cfile_candidate("ovl201:/c/x/func_80064C18.near-miss.c")
     assert (c["unit"], c["vaddr"], c["variant"]) == ("ovl201", "0x80064C18", "file")

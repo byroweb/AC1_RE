@@ -339,6 +339,28 @@ def cmd_setup(args):
 # ---------------------------------------------------------------------------
 # stage 1: lever beam search
 # ---------------------------------------------------------------------------
+_RETAIL_ASM = {}
+
+
+def disasm_list(meta, blob):
+    work = tempfile.mkdtemp(prefix="perm_dis_")
+    try:
+        va = int(meta["vaddr"], 16)
+        d = match_fn.disasm(meta["tools"].get("objdump"), blob, va, work, "fn")
+        return [d.get(va + i, "?") for i in range(0, len(blob) - 3, 4)]
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
+def ins_facts(meta, ours, retail):
+    """levers.diff_facts of our code against retail (the diff levers' input)."""
+    import levers
+    key = (meta["unit"], meta["vaddr"], retail)
+    if key not in _RETAIL_ASM:
+        _RETAIL_ASM[key] = disasm_list(meta, retail)
+    return levers.diff_facts(_RETAIL_ASM[key], disasm_list(meta, ours))
+
+
 def lever_search(meta, syms, draft_text, retail, inc_dir, names, max_evals, beam, log=None, tick=None):
     """-> dict(base, best, text, trail, evals).  Children whose compiled bytes were seen
     before (no-op rewrites) are dropped; equal scores are kept (plateau moves).
@@ -353,11 +375,12 @@ def lever_search(meta, syms, draft_text, retail, inc_dir, names, max_evals, beam
     tick(res["best"])
     seen_text = {hashlib.sha1(draft_text.encode()).digest()}
     seen_code = {first[0]}
-    frontier = [(res["best"], draft_text, [])]
+    facts = (lambda code: ins_facts(meta, code, retail)) if levers.wants_facts(names) else (lambda code: None)
+    frontier = [(res["best"], draft_text, [], first[0])]
     while frontier and res["evals"] < max_evals and res["best"] > 0:
         scored = []
-        for _sc, text, trail in frontier:
-            for label, nt in levers.variants(text, meta["fn"], names):
+        for _sc, text, trail, code in frontier:
+            for label, nt in levers.variants(text, meta["fn"], names, facts(code)):
                 h = hashlib.sha1(nt.encode()).digest()
                 if h in seen_text:
                     continue
@@ -373,7 +396,7 @@ def lever_search(meta, syms, draft_text, retail, inc_dir, names, max_evals, beam
                 s = word_score(out[0], retail)
                 if log:
                     log.write("%4d  %3d  %s\n" % (res["evals"], s, " + ".join(trail + [label])))
-                scored.append((s, nt, trail + [label]))
+                scored.append((s, nt, trail + [label], out[0]))
                 if s < res["best"] or (s == res["best"] and len(trail) + 1 < len(res["trail"])):
                     res.update(best=s, text=nt, trail=trail + [label])
                 tick(res["best"])
