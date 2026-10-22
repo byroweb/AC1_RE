@@ -479,3 +479,61 @@ ovl201	0x8007AD64	hint	(wave-1 name, still 2 words off) assembly screen: once th
 ovl201	0x800813A8	name	name_entry_grid_update	2026-10-22T11:56:14Z
 ovl201	0x80082E90	name	name_entry_char_list_update	2026-10-22T11:56:15Z
 ovl201	0x800813A8	hint	Correction from play (US build): the player typed the name 'Byron' with English letters, so this grid holds the alphabet, not kana. Its 11x5 column-major layout (key = row + col*5) matches the JP gojuon table, so the code keeps the Japanese layout.	2026-10-22T11:56:16Z
+ovl201	0x80093AE8	name	shop_desc_wait_scroll	2026-10-22T11:58:48Z
+ovl201	0x80093AE8	hint	New press of up (0x1000) or down (0x4000) sets update back to 0x80093A20 (redraw selected part's stats).	2026-10-22T11:58:48Z
+ovl201	0x80093E3C	name	shop_text_wait_scroll	2026-10-22T11:58:48Z
+ovl201	0x80093E3C	hint	New press of up/down sets update back to 0x80093C3C (rebuild the part description label).	2026-10-22T11:58:48Z
+ovl201	0x8008C348	name	shop_exit	2026-10-22T11:58:49Z
+ovl201	0x8008C348	hint	Copies 0xC31 bytes from the object to 0x8019C360 (func_800154D8), clears ShopState byte 0x8019C090 and frees the object (free2).	2026-10-22T11:58:49Z
+ovl201	0x8008F914	name	shop_cannot_afford	2026-10-22T11:58:49Z
+ovl201	0x8008F914	hint	Returns credits D_80039CA4 < price (func_8008F08C) of the selected list row's part.	2026-10-22T11:58:49Z
+ovl201	0x8008BEF8	name	shop_list_up_arrow_new	2026-10-22T11:58:50Z
+ovl201	0x8008BEF8	hint	Type-3 object (light 11, res 0x800B8B58) at x 288, y = list top + 92; ctor of the list's top arrow.	2026-10-22T11:58:50Z
+ovl201	0x8008BFB4	name	shop_list_down_arrow_new	2026-10-22T11:58:50Z
+ovl201	0x8008BFB4	hint	Type-3 object (res 0x800B8B64) at x 288 below the last visible row ((rows-1)*24 + top + 100).	2026-10-22T11:58:50Z
+ovl201	0x8008BDA8	name	shop_list_frame_new	2026-10-22T11:58:50Z
+ovl201	0x8008BDA8	hint	Type-3 object (light 14, res 0x800B8B4C) at x 232, y top+76; loads colour rows 0x800B8F84 (32/128/256); returns it.	2026-10-22T11:58:51Z
+ovl201	0x8008EC30	name	fmt_credits6	2026-10-22T11:58:51Z
+ovl201	0x8008EC30	hint	Formats n as 6 digits + 'C' with leading zeros blanked (at least one digit).	2026-10-22T11:58:51Z
+ovl201	0x80090D60	name	fmt_number6_inf	2026-10-22T11:58:51Z
+ovl201	0x80090D60	hint	Formats n right-aligned in 6 chars; 0xFFFF gives "INFINITY" (0x8004CD84), -1 gives "------".	2026-10-22T11:58:52Z
+ovl201	0x80093A20	name	shop_show_part_stats	2026-10-22T11:58:52Z
+ovl201	0x80093A20	hint	Picks (kind, part) of the selected row (buy list via start[]/ids[], sell via kinds[]/ids[]) and calls func_80090E88, then waits in 0x80093AE8.	2026-10-22T11:58:52Z
+ovl201	0x8008FA00	name	part_is_equipped	2026-10-22T11:58:52Z
+ovl201	0x8008FA00	hint	Maps shop category to equipped byte at 0x80031A58 (table 0x8004CD30) and compares with id; categories 6/8/9 answer 0.	2026-10-22T11:58:52Z
+ovl201	0x8008EED4	name	part_record_ptr	2026-10-22T11:58:52Z
+ovl201	0x8008EED4	hint	Switch on category 0..9 returning &table[idx] of the 11 part tables (twin of func_8008F08C which returns the +0x24 price).	2026-10-22T11:58:53Z
+ovl201	0x8008CD38	name	shop_menu_init	2026-10-22T11:58:53Z
+ovl201	0x8008CD38	hint	Draws BUY/SELL text, makes their labels and two cursors, sets colour rows 0x800B8F84[0,1,2,6], next update 0x8008D560.	2026-10-22T11:58:53Z
+ovl201	0x8008D060	name	shop_build_buy_list	2026-10-22T11:58:53Z
+ovl201	0x8008D060	hint	For part ids 0..159 with flag at 0x80031B34 fills ShopState kinds[]/ids[], per-category counts and start[].	2026-10-22T11:58:54Z
+ovl201	0x8008D2E0	name	shop_build_sell_list	2026-10-22T11:58:54Z
+ovl201	0x8008D2E0	hint	Same as shop_build_buy_list over owned counts 0x80031A94.	2026-10-22T11:58:54Z
+ovl201	0x8008DF6C	name	shop_category_list_init	2026-10-22T11:58:54Z
+ovl201	0x8008DF6C	hint	Wraps selected category, draws 4 category rows (func_8008DE30), labels+cursors, both DRAWENVs centred, two arrow objects.	2026-10-22T11:58:54Z
+ovl201	0x8008DE30	name	shop_draw_category_name	2026-10-22T11:58:54Z
+ovl201	0x8008DE30	hint	Draws one of HEAD/CORE/.../ARM WEAPON (rodata 0x8004CC40) into VRAM text area at row slot.	2026-10-22T11:58:55Z
+ovl201	0x80093C3C	name	shop_make_part_description	2026-10-22T11:58:55Z
+ovl201	0x80093C3C	hint	Copies selected part's 2-byte text row (78-byte rows at 0x8019C360, ended by 13) after "@0" into ShopState text and makes a text label.	2026-10-22T11:58:55Z
+ovl201	0x8008D560	name	shop_menu_input	2026-10-22T11:58:55Z
+ovl201	0x8008D560	hint	BUY/SELL menu: confirm (0x40) builds buy/sell list, empty sell list opens dialog; cancel (0x20) closes windows.	2026-10-22T11:58:55Z
+ovl201	0x80090668	name	shop_load_part_model	2026-10-22T11:58:56Z
+ovl201	0x80090668	hint	Waits for loader func_800517C8, loads model first[kind]+index (table 0x8004CD48) via func_80050AF4(29,..), refreshes viewer.	2026-10-22T11:58:56Z
+ovl201	0x8008D8AC	name	shop_unequip_unowned	2026-10-22T11:58:56Z
+ovl201	0x8008D8AC	hint	For each equipped slot byte 0x80031A58[] unequips (0xFF) parts with zero owned count; back-weapon pair needs 2.	2026-10-22T11:58:56Z
+ovl201	0x80090448	name	shop_place_part_viewer	2026-10-22T11:58:56Z
+ovl201	0x80090448	hint	Sets the part viewer (func_80090B90 object) scale and pos from model group table 0x800BCAC0 chosen by category (rodata 0x8004CD3C) and part index.	2026-10-22T11:58:57Z
+ovl201	0x8008E260	name	shop_category_list_input	2026-10-22T11:58:57Z
+ovl201	0x8008E260	hint	Confirm opens the selected category part list (restores per-category cursor/top at ShopState+0x78/+0x60) or a dialog if empty; cancel returns to BUY/SELL; arrows show more rows.	2026-10-22T11:58:57Z
+ovl201	0x8008E880	name	fmt_signed8	2026-10-22T11:58:57Z
+ovl201	0x8008E880	hint	Formats signed n as 8 digits with leading zeros blanked and a minus sign before the first digit.	2026-10-22T11:58:58Z
+ovl201	0x8008F3B4	name	shop_part_list_init	2026-10-22T11:58:58Z
+ovl201	0x8008F3B4	hint	Makes name/price label columns, clamps cursor/top to the list length, draws each visible row (func_8008F274/F2D0 names, func_8008F344 prices) and row cursors; next update 0x8008FA94.	2026-10-22T11:58:58Z
+ovl201	0x800908F8	name	shop_load_part_texture	2026-10-22T11:58:58Z
+ovl201	0x800908F8	hint	Calls func_80051450(base by category from 0x8004CD5C or 14 for kind 9 >=16, index, extra) where head/core/arms/legs add D_80039CA2 times a per-category stride (0x8004CD70).	2026-10-22T11:58:59Z
+ovl201	0x8008FA94	name	shop_part_list_input	2026-10-22T11:58:59Z
+ovl201	0x8008FA94	hint	Part list pad handling: arrows; confirm buys (dialog if func_8008F914 says too expensive) or sells (checks via func_800892AC/935C/95D4/8008FA00); cancel closes windows and returns to category list or BUY/SELL; 0x10 toggles stats/description windows.	2026-10-22T11:58:59Z
+ovl201	0x800940A4	name	shop_confirm_input	2026-10-22T11:58:59Z
+ovl201	0x800940A4	hint	Yes/no dialog of a buy or sell: YES updates owned (0x80031A94) / stock (0x80031B34) counts and credits D_80039CA4 (clamped -999999..99999999), closes windows and rebuilds the list; NO/cancel returns to the part list.	2026-10-22T11:59:00Z
+ovl201	0x8008C3EC	name	shop_ctrl_new	2026-10-22T11:59:00Z
+ovl201	0x8008C3EC	hint	Shop controller constructor: resets ShopState mode/selection/saved cursors, allocates the controller (update 0x8008CCA8, destroy 0x8008DD48), tiles the window frame in VRAM with 108 MoveImage calls, clears D_801A2574, returns the object.	2026-10-22T11:59:00Z
