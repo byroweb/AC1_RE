@@ -1407,3 +1407,57 @@ ovl204	0x80050888	name	hud_draw_vs_gauges	2026-10-22T21:43:35Z
 ovl204	0x80050888	hint	energy/heat bars (func_8005D784), blinking warning sprites + sounds (func_8004D0C8) for the side in D_80039D18	2026-10-22T21:43:35Z
 ovl203	0x80081358	name	ac_ground_tilt_step	2026-10-22T21:43:35Z
 ovl203	0x80081358	hint	engine sound, probes 4 foot points (func_800812B0 into D_8008A958..70), drops highest, tilts body (+0x108) toward plane of the other three (func_8001467C), eased by func_80013390	2026-10-22T21:43:35Z
+ovl204	0x8005CCB4	name	render_draw_model_part	2026-10-22T21:43:42Z
+ovl204	0x8005CCB4	hint	twin of ovl202 0x8005DB10: ApplyMatrix/RotMatrixYXZ/MulMatrix2 then draws part via func_8005C910	2026-10-22T21:43:42Z
+ovl204	0x80061698	name	world_draw_visible_structs	2026-10-22T21:43:42Z
+ovl204	0x80061698	hint	twin of ovl202 0x80062B04: current world struct + neighbours with vis bit set	2026-10-22T21:43:42Z
+ovl204	0x80062CB4	name	world_draw_part_list	2026-10-22T21:43:42Z
+ovl204	0x80062CB4	hint	twin of ovl202 0x800639D8: per-entry light/rot/trans matrices, fog 80	2026-10-22T21:43:42Z
+ovl204	0x8006176C	name	view_update_frame	2026-10-22T21:43:42Z
+ovl204	0x8006176C	hint	twin of ovl202 0x80062BD8: build view matrices, transform object table with RTV0, per-frame updaters	2026-10-22T21:43:42Z
+ovl204	0x8008156C	name	fx_reset	2026-10-22T21:43:42Z
+ovl204	0x8008156C	hint	sets D_80039D18->+0x398 state=0xFF, clears +8/+0x18, copies 8-byte block from 0x80039C78 to +0x2C	2026-10-22T21:43:42Z
+ovl204	0x800815DC	name	fx_set_params	2026-10-22T21:43:42Z
+ovl204	0x800815DC	hint	stores 8 args into D_80039D18->+0x398 fields (+A,+C,+10,+14,+E,+1,+2,+4)	2026-10-22T21:43:42Z
+ovl204	0x80077C30	name	pad_read_both	2026-10-22T21:43:42Z
+ovl204	0x80077C30	hint	func_80016A84(1) pad word: low half to rec[0] at 0x80040FA0, high half to rec[1] (stride 0x39C); now/old/x/xold, x cleared when 0x801AB684&0x400	2026-10-22T21:43:42Z
+ovl204	0x8008166C	name	cam_ease_view_offset	2026-10-22T21:43:42Z
+ovl204	0x8008166C	hint	twin of ovl202 0x80082D04 via player record D_80039D18 (+0x80 target, +0x254 flags, +0x398 cam)	2026-10-22T21:43:43Z
+ovl204	0x8008181C	name	cam_eye_target_from_angles	2026-10-22T21:43:43Z
+ovl204	0x8008181C	hint	twin of ovl202 0x80082E7C	2026-10-22T21:43:43Z
+ovl204	0x80081A00	name	cam_update_frame	2026-10-22T21:43:43Z
+ovl204	0x80081A00	hint	twin of ovl202 0x80083038 (player +0x394 entity, +0x220 pitch)	2026-10-22T21:43:43Z
+ovl204	0x8007C3F0	name	ac_take_hit_2p	2026-10-22T21:43:43Z
+ovl204	0x8007C3F0	hint	2-player twin of fdat000 0x801C91CC: picks player record (0x80040FA0/0x8004133C) by entity 0x801AB748, knock-back/stagger/fall	2026-10-22T21:43:43Z
+ovl204	0x800611D0	name	weapon_draw_current	2026-10-22T21:43:43Z
+ovl204	0x800611D0	hint	draws current weapon record D_80039D18->rec[cur] (+0x2DA stride 0x3C) by type 0/1/2, items[8] at +0x84	2026-10-22T21:43:43Z
+ovl204	0x8005F1E8	name	render_billboard_sprite	2026-10-22T21:43:43Z
+ovl204	0x8005F1E8	hint	RTPS world point, POLY_FT4 (code 0x2E) sized size*40/z, addPrim at ot[z>>1]	2026-10-22T21:43:43Z
+ovl204	0x8005CE20	name	render_place_model	2026-10-22T21:43:43Z
+ovl204	0x8005CE20	hint	mode 0: ApplyMatrix+RotMatrixYXZ+MulMatrix2 (far: cam2, shift 0; near: cam, t<<=2), else re-translate; then func_80056DF4(obj, model, z)	2026-10-22T21:43:43Z
+ovl204	0x8005D068	name	render_place_lit_model	2026-10-22T21:43:43Z
+ovl204	0x8005D068	hint	light set from world struct +0x30 (table 0x801B425C stride 0x68: colour, back colour, fog), place model, then func_80057CA8 or func_80064CC8 by func_80066D90	2026-10-22T21:43:43Z
+ovl204	0x8005E278	name	render_line_3d	2026-10-22T21:43:43Z
+ovl204	0x8005E278	hint	near (z<=160): split at midpoint and clip each half via func_8005DEE4; far: LINE_F2 (code 0x42) + DR_MODE (SetDrawMode 0x8002CEF4) at ot[(z0+z1)>>2]	2026-10-22T21:43:44Z
+ovl204	0x8005DEE4	name	render_line_clip_recursive	2026-10-22T21:43:44Z
+ovl204	0x8005DEE4	hint	recursive halving of a 3D line node (0x1C frames in scratchpad from 0x1F800014) until z>160 or depth 0, then LINE_F2 + DR_MODE	2026-10-22T21:43:44Z
+ovl204	0x8005F464	name	render_upright_sprite	2026-10-22T21:43:44Z
+ovl204	0x8005F464	hint	RotTrans world point into scratch matrix, RTPT/RTPS a w x h quad anchored at its bottom, POLY_FT4 code 0x2E, frees the prim when otz==0	2026-10-22T21:43:44Z
+ovl204	0x8005F7AC	name	render_rotated_panel	2026-10-22T21:43:44Z
+ovl204	0x8005F7AC	hint	rtv0 world point, RotMatrixYXZ*camera into scratch matrix, POLY_FT4 (0x2C) or POLY_FT3 (0x24) of half-size s via func_8005F770 per corner	2026-10-22T21:43:44Z
+ovl204	0x80066EBC	name	render_project_part_verts	2026-10-22T21:43:44Z
+ovl204	0x80066EBC	hint	GTE-pipelined RTPS of the current part vertices (D_801AE2EC) into D_801AE340[16 B]: sxy, otz, clip bits (1/2/4/8, 31 behind), lod 0/1/2 by otz 1000/80	2026-10-22T21:43:44Z
+ovl204	0x8005DAFC	name	render_backdrop_sky	2026-10-22T21:43:44Z
+ovl204	0x8005DAFC	hint	sky gradient above horizon (func_8005D784/func_8005D5B0), horizon sprite strip scrolled by ratan2 of view dir (func_8005D954, tables 0x80089F60/6C/7C), ground fill; flags 1/2/4/8	2026-10-22T21:43:44Z
+ovl204	0x800771D0	name	vs_pause	2026-10-22T21:43:44Z
+ovl204	0x800771D0	hint	2-player pause: on START from either pad draw the PAUSE plate (POLY_FT4), mute (SsSetMVol), pause CD, wait for release/press/release, resume CD (CdRead2) and restore volume; SELECT/0x890 and 0x860 combos toggle player flags / camera mode	2026-10-22T21:43:44Z
+ovl204	0x8005C340	name	render_place_model_part	2026-10-22T21:43:44Z
+ovl204	0x8005C340	hint	lit model placement like 0x8005D068 plus part mode (bit 0x80: stored rotation 0x801B50EC / halved G+0x7434), returns LOD shift; draws via func_8005379C+func_80057CA8/func_80064CC8 or per-part func_800571F0/func_8005833C/func_80063F18	2026-10-22T21:43:44Z
+ovl204	0x8005E588	name	render_ribbon_clip_recursive	2026-10-22T21:43:44Z
+ovl204	0x8005E588	hint	textured-ribbon twin of 0x8005DEE4: halves node (with texture v at both ends) until in front, emits POLY_FT4 strip (code 0x2E) width SCR->width*40/z, chained via SCR->prev	2026-10-22T21:43:45Z
+ovl204	0x8005EB3C	name	render_ribbon	2026-10-22T21:43:45Z
+ovl204	0x8005EB3C	hint	textured ribbon a->b of screen width (0 = also plain line via 0x8005E278): near halves through func_8005E588, far one POLY_FT4 (code 0x2E); OT slot 100/120 by camera height	2026-10-22T21:43:45Z
+ovl204	0x80060C54	name	render_billboards	2026-10-22T21:43:45Z
+ovl204	0x80060C54	hint	256-entry animated billboard table at 0x801B514C (16 B: pos, type, world struct, frame/anim), vis-bit + func_80060B08 cull, light set back colour/fog, RTPT/RTPS + NCDS POLY_FT4, frame tables 0x800896FC	2026-10-22T21:43:45Z
+ovl204	0x800602C8	name	vs_draw_scene	2026-10-22T21:43:45Z
+ovl204	0x800602C8	hint	2-player scene draw: 2 ACs (0x801AB748, + ground shadow), 512 world objects 0x801A4C68 (trigger boxes, sky, lit models), billboards, 256 effect slots 0x801B645C by kind 0..6 (jump table 0x8004B030)	2026-10-22T21:43:45Z
