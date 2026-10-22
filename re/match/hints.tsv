@@ -699,3 +699,29 @@ ovl201	0x8009A83C	name	ui_frames_init	2026-10-22T12:04:22Z
 ovl201	0x8009A83C	hint	Sets both frames' DRAWENV/DISPENV (draw/disp at y 0/240 swapped), background on, 10 per-frame layer DRAWENVs in Frame[2] at 0x801BCE18 centred by ofs, and each layer's 0x580-word buffer halves (0x80180868.. 0x80199470).	2026-10-22T12:04:22Z
 ovl201	0x8009B414	name	frontend_main	2026-10-22T12:04:22Z
 ovl201	0x8009B414	hint	Front-end entry and frame loop: display/view/pool setup, picks the first screen from game-state flags (ending, credits, new pilot via func_8009C5C0, movies), then until D_801A2560: flip frame, ClearOTagR the 10 layers, update used objects, build g_ui_active, retire killed/orphaned objects, Rot/TransMatrix views and objects, compose parent/attach, draw by render_type, present layers; then shutdown.	2026-10-22T12:04:22Z
+ovl201	0x8006AAC4	name	emblem_sample_scroll_up	2026-10-22T12:06:58Z
+ovl201	0x8006AAC4	hint	Update step set by the sample picker 0x8006A3EC: +0xC8 scroll -= 16 per frame until it reaches page*68 (+0xC5), then back to 0x8006A3EC; twin of 0x8006AB34 (scroll down).	2026-10-22T12:06:58Z
+ovl201	0x8006AFA0	name	emblem_exit_confirm_update	2026-10-22T12:06:58Z
+ovl201	0x8006AFA0	hint	Reads the dialog answer +0xC4 set by 0x80068FBC's confirm box: 0 closes objects 5/7/9 and the box (func_8005C2D0) and goes to 0x8006B1E8, 1 returns to the editor menu 0x80068FBC.	2026-10-22T12:06:58Z
+ovl201	0x800634C4	name	ui_frame_draw_top_trim	2026-10-22T12:06:58Z
+ovl201	0x800634C4	hint	Called from 0x80060108 (frame renderer): three func_800646AC tiles along the top edge of corners c[0..3] (tex windows 200/192/216,208), then func_8006035C(o, c).	2026-10-22T12:06:58Z
+ovl201	0x800646AC	name	ui_frame_draw_tile	2026-10-22T12:06:58Z
+ovl201	0x800646AC	hint	Called by every frame renderer (0x80060ABC.., 0x800634C4..): SetDrawMode with texture window tw, projects v[0] and v[3] with RTPS, queues a 0x3817-clut SPRT spanning them, NCCS-lit, at ot+1.	2026-10-22T12:06:59Z
+ovl201	0x80064874	name	ui_view_draw_outline	2026-10-22T12:06:59Z
+ovl201	0x80064874	hint	Render handler (jal at 0x8009C1B0 in the frame loop): outlines the view rect (w,h of view[k] for odd ids 1..19) with a LINE_F4 polyline + closing LINE_F2 in the object's matrix.	2026-10-22T12:06:59Z
+ovl201	0x80064EB0	name	ui_draw_mirrored_bars	2026-10-22T12:06:59Z
+ovl201	0x80064EB0	hint	Render handler (jal at 0x8009C244): two POLY_G4 bars of length (+0x7C)>>2 either side of the origin, alternating colours D_800B75B0/B4, NCCS-lit.	2026-10-22T12:06:59Z
+ovl201	0x8006599C	name	ui_draw_text	2026-10-22T12:06:59Z
+ovl201	0x8006599C	hint	Render handler (jal at 0x8009C1FC): walks the '>'-terminated string o->res with control codes (CR, ';', ' ', '{n', '}n', '^n' size, '~', '@n' palette); ASCII/kana via func_800660C4, SJIS via glyph-page table D_800B75B8 + func_80065DBC.	2026-10-22T12:06:59Z
+ovl201	0x800660C4	name	ui_draw_ascii_glyph	2026-10-22T12:06:59Z
+ovl201	0x800660C4	hint	Called only from ui_draw_text 0x8006599C: one 8x16 (or 8/6/4 x 8) font SPRT for char c at (x,y) in view[k], clut 0x3817/0x3C16 by palette, then func_80066898.	2026-10-22T12:06:59Z
+ovl201	0x80066898	name	ui_queue_draw_mode	2026-10-22T12:06:59Z
+ovl201	0x80066898	hint	Called from 0x80066434/0x800665D8 (end of the glyph drawers): queues a DR_MODE packet (SetDrawMode tpage 7) at the object's depth.	2026-10-22T12:06:59Z
+ovl201	0x80069D40	name	emblem_menu2_update	2026-10-22T12:06:59Z
+ovl201	0x80069D40	hint	Emblem editor 5-item menu (cursor +0x91), sibling of 0x80068FBC: up/down repeat, X closes object 11 and goes to 0x8006B194, O runs 0x8006F590 / canvas clear / sample picker / APPLY / CANCEL confirm.	2026-10-22T12:06:59Z
+ovl201	0x800695E8	name	emblem_zoom_picker_update	2026-10-22T12:06:59Z
+ovl201	0x800695E8	hint	Set by 0x8006957C: zoom x2/x4/x8 picker (+0x91), re-centres the canvas view (+0x9C obj +0x7C/+0x7E) on the pen cursor (+0x98 obj +0x7E/+0x80); X restores +0x85 and goes to 0x80069C80, O to 0x80069490.	2026-10-22T12:06:59Z
+ovl201	0x80067CF0	name	memcard_load_save	2026-10-22T12:06:59Z
+ovl201	0x80067CF0	hint	Ran on 'yes load' (wave-1 hint), called from 0x800551B0: opens bu00/bu10:BASCUS-94182<letter> with 3 retries, reads 0xE80 bytes, checks func_80066F68 checksum, copies the game-state blocks home, LoadImage of the emblem, re-inits subsystems.	2026-10-22T12:06:59Z
+ovl201	0x80066F90	name	memcard_write_save	2026-10-22T12:06:59Z
+ovl201	0x80066F90	hint	Ran on 'yes create new data' (wave-1 hint), called from 0x80054D44: builds the 0xE80-byte save (SC header, SJIS title, icons, state blocks, emblem via StoreImage, checksum), picks a free letter, writes with retries and reads back to verify.	2026-10-22T12:07:00Z
