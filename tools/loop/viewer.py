@@ -1109,6 +1109,22 @@ def make_handler(app):
     return Handler
 
 
+class Server(ThreadingHTTPServer):
+    # SO_REUSEADDR on Windows lets a second server bind a port that is in use
+    allow_reuse_address = os.name != "nt"
+    daemon_threads = True
+
+
+def already_running(url):
+    """True when a viewer already answers at url."""
+    import urllib.request
+    try:
+        with urllib.request.urlopen(url + "api/state?probe=1", timeout=1.5) as r:
+            return "mode" in json.load(r)
+    except (OSError, ValueError):
+        return False
+
+
 def default_work():
     root = os.environ.get("AC1_WORK_ROOT") or os.path.join(os.path.expanduser("~"), "dev", "ac1_work")
     try:
@@ -1137,9 +1153,18 @@ def main(argv=None):
         ap.error("no work dir (pass one, or run tools/loop/overnight.sh first)")
     if args.host not in ("127.0.0.1", "localhost", "::1"):
         ap.error("the viewer runs compiles on request: it listens on 127.0.0.1 only")
-    app = App(work, args.hints, args.replay, oracle=not args.no_oracle, actions_path=args.actions)
-    srv = ThreadingHTTPServer((args.host, args.port), make_handler(app))
     url = "http://%s:%d/" % ("localhost" if args.host in ("127.0.0.1", "0.0.0.0") else args.host, args.port)
+    if already_running(url):            # a second double-click: show the running one
+        print("viewer: already running on %s" % url)
+        if args.open:
+            import webbrowser
+            webbrowser.open(url)
+        return 0
+    app = App(work, args.hints, args.replay, oracle=not args.no_oracle, actions_path=args.actions)
+    try:
+        srv = Server((args.host, args.port), make_handler(app))
+    except OSError as e:
+        ap.error("port %d is taken (%s): pass --port N" % (args.port, e))
     print("viewer: %s %s on %s (Ctrl+C stops)" % ("replaying" if args.replay else "watching", work, url))
     sys.stdout.flush()
     if args.open:

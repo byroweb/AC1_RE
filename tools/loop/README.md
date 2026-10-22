@@ -1036,6 +1036,11 @@ python tools/loop/viewer.py                    # the newest overnight.sh work di
 python tools/loop/viewer.py WORK --replay      # play a finished work dir back
 ```
 
+On Windows, `tools\loop\viewer.cmd` is a double-click launcher (point a desktop shortcut
+at it, *Run: Minimized* keeps the console out of the way): it starts the viewer on the
+newest work dir and opens the page; launched again while one is running, it only opens
+the page.
+
 A stdlib-only local server (127.0.0.1) and one page (`viewer.html`) that polls it every
 1.5 s. It works in any browser and in the Claude desktop app's browser pane; the theme
 follows the system (light / dark) and the ◐ button pins either.
