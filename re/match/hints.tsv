@@ -1157,3 +1157,41 @@ ovl201	0x800A86D0	name	link_exchange_words	2026-10-22T21:42:35Z
 ovl201	0x800A86D0	hint	link-cable exchange of n word pairs: sends src pairs in R..C packets via write(), reads replies into dst; aborts on cancel flag or 7866-tick timeout	2026-10-22T21:42:35Z
 ovl201	0x8008A4BC	name	mission_brief_confirm	2026-10-22T21:42:35Z
 ovl201	0x8008A4BC	hint	briefing window update: O on accept takes highlighted mission (seen flag, fee into credits D_80039CA4, start) or commits pending one (random rewards add[15], counters, rank, part cost sum D_80048608, result windows); X returns to list	2026-10-22T21:42:35Z
+ovl202	0x80052350	name	msg_parse_decimal	2026-10-22T21:42:43Z
+ovl202	0x80052350	hint	parses ASCII digits at *pp into s32, advances *pp (atoi-style)	2026-10-22T21:42:43Z
+ovl202	0x800572A8	name	mis_init_work_buffers	2026-10-22T21:42:43Z
+ovl202	0x800572A8	hint	points buffer ptrs 0x801A5E1C..F20 into big buffers at 0x8014C7C8/0x801887C8/0x801907C8, sets 4 flags, inits heap 0x800A1228 size 0x10000 via func_8001604C (arena header)	2026-10-22T21:42:43Z
+ovl202	0x80050088	name	radar_draw_box_outline	2026-10-22T21:42:43Z
+ovl202	0x80050088	hint	twin of ovl203 0x80050998 (box corners relative to player AC, projected by func_8004FEAC, lines by func_8004FF48)	2026-10-22T21:42:43Z
+ovl202	0x80051150	name	hud_draw_text	2026-10-22T21:42:43Z
+ovl202	0x80051150	hint	ASCII string to POLY_FT4 glyphs (font table D_8008ED68 12-byte entries, glyph map s8 D_8008DA3C, colours D_8008DA1C, backslash-digit colour escape), returns width	2026-10-22T21:42:43Z
+ovl202	0x80057A00	name	model_draw_flat_quads	2026-10-22T21:42:43Z
+ovl202	0x80057A00	hint	packet list of model (+0x10 pkts, +0x14 count): code 0x28..0x2B -> POLY_F4 grey 10,10,10, z from vertex list 0x801A6A48 (func_80057F74), scratchpad work at 0x1F800000	2026-10-22T21:42:44Z
+ovl202	0x8005C710	name	box_corners_on_screen	2026-10-22T21:42:44Z
+ovl202	0x8005C710	hint	builds 8 corners of box min..max as SVECTOR[8] in scratchpad, ANDs func_8005C630 clip codes; 1 if any corner set may be visible, 0 if outcodes share a side or a corner is far behind	2026-10-22T21:42:44Z
+ovl202	0x80052440	name	scr_kill_lower_threads	2026-10-22T21:42:44Z
+ovl202	0x80052440	hint	mission script VM (threads 0x801ED7A0): zero threads with priority (+0xD) below caller, compact live threads, move ring head .last to first live thread and .cur to first free slot	2026-10-22T21:42:44Z
+ovl202	0x8005DC7C	name	model_place_and_draw	2026-10-22T21:42:44Z
+ovl202	0x8005DC7C	hint	sibling of func_8005DB10: camera-relative model matrix (near: cam rot, OT shift 2; far: cam2), mode!=0 only refreshes translation; draws via func_80057C44	2026-10-22T21:42:44Z
+ovl202	0x800563DC	name	model_draw_all_parts	2026-10-22T21:42:44Z
+ovl202	0x800563DC	hint	o==0 path of func_800564AC: skip RecSet header, sum nprim of n-1 records, reserve (func_80056304), load scratch matrix into GTE, draw parts 0..n-1 (func_800560F4)	2026-10-22T21:42:44Z
+ovl202	0x8005D76C	name	model_draw_part_textured	2026-10-22T21:42:44Z
+ovl202	0x8005D76C	hint	draws part `part` of current model (0x801A5F30): packet 0xA4 -> POLY_FT3 (z*0x1555 avg), 0xAC -> POLY_FT4, colour from *col, vertices via func_80057F74	2026-10-22T21:42:44Z
+ovl202	0x8005DEC4	name	model_place_lit_and_draw	2026-10-22T21:42:44Z
+ovl202	0x8005DEC4	hint	lit sibling of func_8005DC7C: light set from D_801D0B98[sel] (sets 0x68 at 0x801AC964: light/colour matrix, back colour, fog), draws via func_80058B04 or func_800659EC	2026-10-22T21:42:44Z
+ovl202	0x8005277C	name	msg_open_box_parse	2026-10-22T21:42:44Z
+ovl202	0x8005277C	hint	parses message box header (M lines, L x,y, W w,h, C, P; / none) via func_80052350, measures text (6px ASCII, 12px SJIS, 12px lines, F ends) and opens box centred (func_80052650)	2026-10-22T21:42:44Z
+ovl202	0x8005A364	name	vtx_transform_clip	2026-10-22T21:42:44Z
+ovl202	0x8005A364	hint	RotTransPers of n verts of D_801A6544 into D_801A6A48 {sxy, otz, clip code (1/2 x<0/>320, 4/8 y<0/>240), dp}, GTE pipelined one ahead	2026-10-22T21:42:44Z
+ovl202	0x80058E04	name	vtx_transform_lit	2026-10-22T21:42:45Z
+ovl202	0x80058E04	hint	transform model verts into 0x801A6A48 with per-vertex colour from fade ramps D_80090928 by light mask (SVECTOR.pad & mask), else object colour (+0x2C); clears dp when fog off; extra verts without colour	2026-10-22T21:42:45Z
+ovl202	0x80058B04	name	parts_draw_all	2026-10-22T21:42:45Z
+ovl202	0x80058B04	hint	draw each part (0x7C entries, model>=0) of object: part world matrix into camera space with D_800B1228 via GTE, select verts of model base+idx, draw by func_8005804C or func_80059198 (b!=0) with light bit 1<<model	2026-10-22T21:42:45Z
+ovl202	0x8005CE3C	name	world_draw_visible_sections	2026-10-22T21:42:45Z
+ovl202	0x8005CE3C	hint	draws current section and linked sections (0x801D0B68, 0x40 each) passing distance (flag 0x1000, Square0 of half delta >>18 < radius) and occluder (flag 0x100) tests; marks visibility bitmaps 0x801AC820/0x801AC860; func_8005C904 collects, func_8005AF90/func_800639D8 draw	2026-10-22T21:42:45Z
+ovl202	0x80055A24	name	model_transform_points	2026-10-22T21:42:45Z
+ovl202	0x80055A24	hint	transform n selected vertices (idx list, pair k) of model sub of slot through part world frame (o!=0) or free model matrix at pos/rot into SVECTOR out[]; returns 1	2026-10-22T21:42:45Z
+ovl202	0x80057C44	name	parts_draw_shadow	2026-10-22T21:42:45Z
+ovl202	0x80057C44	hint	sibling of func_80058B04: each part with y row/translation flattened, drawn as grey POLY_F4 shadow via func_80057A00, only when model flag bit0	2026-10-22T21:42:45Z
+ovl202	0x8005EB50	name	sky_draw_backdrop	2026-10-22T21:42:45Z
+ovl202	0x8005EB50	hint	horizon from camera pitch (ApplyMatrix D_801AD7EC x D_8008E4EC), upper band (flag1), heading-scrolled horizon sprites (flag2, tall flag8), gradient (flag1), ground band (flag4); colours from src (3 RGB)	2026-10-22T21:42:45Z
