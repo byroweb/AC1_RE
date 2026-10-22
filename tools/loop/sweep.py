@@ -69,6 +69,7 @@ import drive   # noqa: E402
 import ledger  # noqa: E402
 import units   # noqa: E402
 import ctx     # noqa: E402
+import heartbeat  # noqa: E402
 import m2cfix  # noqa: E402
 from m2cfix import knr_externs  # noqa: E402,F401  (kept importable from here)
 
@@ -461,14 +462,18 @@ def note_try(res, variant, clean, facts, size, text):
         res["best"] = {"variant": variant, "aligned": al, "positional": pos, "text": text}
 
 
-def work(row, workdir, variants, try_all=False, neighbours=None, nb_min=NEIGHBOUR_MIN, nb_tries=1):
+def work(row, workdir, variants, try_all=False, neighbours=None, nb_min=NEIGHBOUR_MIN, nb_tries=1, hb=None):
     """Try the variants in order on one body -> dict(result..., c_text, defsyms, variant).
     try_all: keep trying after the first clean one (to measure variants; the first wins).
     neighbours: a Neighbours index; the body's best neighbour goes to res["neighbour"]
     whether or not the `neighbour` variant is tried (it is only for similarity >= nb_min).
     res["best"] is the compiling draft with the highest aligned closeness, res["stats"]
-    one (variant, match|compiled|error|m2c_fail, positional, aligned) per try."""
+    one (variant, match|compiled|error|m2c_fail, positional, aligned) per try.
+    hb: a heartbeat.Heartbeat told the variant being tried and each oracle run."""
     unit, vaddr = row["unit"], int(row["vaddr"], 16)
+    hb = hb or heartbeat.Null()
+    heartbeat.wait_if_paused(workdir, hb)
+    hb.begin(unit, row["vaddr"], variants[0] if variants else "-", size=int(row["size"]))
     size = int(row["size"])
     u = units.resolve(unit)
     rodata = None
@@ -481,6 +486,7 @@ def work(row, workdir, variants, try_all=False, neighbours=None, nb_min=NEIGHBOU
     for variant in variants:
         if res["match"] and not try_all:
             break
+        hb.update(unit, row["vaddr"], phase=variant)
         if variant == NEIGHBOUR:
             for k, (sim, nb, body) in enumerate(res["neighbour"]):
                 if sim < nb_min:
@@ -497,6 +503,7 @@ def work(row, workdir, variants, try_all=False, neighbours=None, nb_min=NEIGHBOU
                 rod = rodata or nrod
                 diffs = []
                 clean, defsyms, summ, facts = oracle(u, vaddr, cpath, size, rod, defsyms, extra, diffs)
+                hb.add(compiles=1)
                 res["tries"].append((name, summ))
                 note_try(res, name, clean, facts, size, text)
                 fixed = None if clean else imm_fixup(text, diffs)
@@ -507,6 +514,7 @@ def work(row, workdir, variants, try_all=False, neighbours=None, nb_min=NEIGHBOU
                     with open(cpath, "w", encoding="utf-8", newline="\n") as fh:
                         fh.write(text)
                     clean, defsyms, summ, facts = oracle(u, vaddr, cpath, size, rod, defsyms, extra)
+                    hb.add(compiles=1)
                     res["tries"].append((name, summ))
                     note_try(res, name, clean, facts, size, text)
                 if clean and not res["match"]:
@@ -529,6 +537,7 @@ def work(row, workdir, variants, try_all=False, neighbours=None, nb_min=NEIGHBOU
         cpath = os.path.join(workdir, "%s_%08X_%s.c" % (unit, vaddr, variant))
         clean, defsyms, summ, facts, text, nfix = check(
             u, vaddr, cpath, text, size, rodata, VARIANTS[variant][3], drive.fn_name(row["vaddr"]))
+        hb.add(compiles=1 + nfix)
         res["tries"].append((variant, summ + ("+r%d" % nfix if nfix else "")))
         note_try(res, variant, clean, facts, size, text)
         if clean and not res["match"]:
@@ -581,6 +590,15 @@ def fmt_neighbour(ranked):
         return "-"
     sim, nb, _body = ranked[0]
     return "%.3f %s 0x%08X %s" % (sim, nb["unit"], nb["vaddr"], nb["src"])
+
+
+TRY_WORDS = re.compile(r"MISMATCH@0x[0-9a-f]+/(\d+)")
+
+
+def best_words(tries):
+    """Fewest differing words over the MISMATCH tries, or None."""
+    w = [int(m.group(1)) for _v, s in tries for m in [TRY_WORDS.search(s)] if m]
+    return min(w) if w else None
 
 
 REPORT_COLS = ["unit", "vaddr", "size", "group", "n_members", "status", "closeness", "positional",
@@ -687,9 +705,10 @@ def main(argv=None):
     os.makedirs(workdir, exist_ok=True)
     report = args.report or os.path.join(workdir, "sweep_report.tsv")
     results = []
+    hb = heartbeat.Heartbeat(workdir, "sweep", len(rows), label=",".join(variants))
     with cf.ThreadPoolExecutor(max_workers=args.jobs) as ex:
         futs = {ex.submit(work, r, workdir, row_variants(r), args.try_all, neighbours,
-                          args.neighbour_min, args.neighbour_tries): r for r in rows}
+                          args.neighbour_min, args.neighbour_tries, hb): r for r in rows}
         for i, f in enumerate(cf.as_completed(futs), 1):
             r = futs[f]
             try:
@@ -699,12 +718,17 @@ def main(argv=None):
                        "best": None, "stats": []}
             res["status"] = commit_match(res, args) if res["match"] else "no match"
             results.append(res)
+            b = res.get("best")
+            hb.end(r["unit"], r["vaddr"], res["status"], words=best_words(res["tries"]),
+                   variant=b["variant"] if b else None, closeness=round(b["aligned"], 3) if b else None,
+                   tries=len(res["tries"]))
             if not res["tries"]:
                 continue                            # nothing tried (no neighbour close enough)
             print("[%3d/%d] %-7s %s %4s B  %-8s %s" % (
                 i, len(rows), r["unit"], r["vaddr"], r["size"],
                 "MATCH" if res["status"] == "MATCH" else "-", " | ".join("%s %s" % t for t in res["tries"])))
             sys.stdout.flush()
+    hb.close()
     hits = [x for x in results if x["status"] == "MATCH"]
     credited = sum(int(x["row"].get("n_members") or 1) for x in hits)
     with open(report, "w", encoding="utf-8", newline="\n") as fh:

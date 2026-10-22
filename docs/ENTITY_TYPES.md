@@ -24,7 +24,7 @@ There are **two different "type" ids** per entity:
 
 `type_catalog.py` keeps the namespaces separate; the meaningful join (mission, logical
 type) is on **`hw3`**, not `hw7` (tool join is being updated). Anomaly: missions
-**20/24/28** have an INIT table but **no chunk-12** (script-spawned/transition).
+**20/24/28** have an INIT table but **no chunk-12**. Mission 20 is **not** script-spawned or a transition: its enemies come from the section-visibility streaming spawner `0x80078F00` (CONFIRMED live 2026-10-21, `LIVE_CHECKLIST.md` MIS-9). Mission 24 too. Mission 28 spawns from its own objobj code (`ra 0x801C7B20`/`0x801C7A3C`), on templates whose flags carry `0x40` (never auto-spawn).
 
 ## Behaviour binding: how `+0x58` think gets set (CONFIRMED)
 
@@ -111,7 +111,7 @@ the INIT-pointer column for all 59 missions into `disc_map/type_catalog_long.csv
 | ENTITY-ALIVE/STATE | entity `+0x40` (`0xFF`=dead) | entity array |
 | ENTITY-HP-THRESHOLD | entity `+0x160 < K` | entity array |
 | ENTITY-IDENT-BY-INIT | `*(*0x8019F51C+0x20+type*4) == INIT_k` | kind tag via INIT ptr |
-| DESTRUCTIBLE-COUNT | `*0x801D0B50` | world-struct counter |
+| DESTRUCTIBLE-COUNT | `*0x801D0B50` | world-struct counter — **REFUTED live 2026-10-21** (MIS-4: 2 structures destroyed in mission 28, 0 writes; it is the objectives state, `MISSION_SYSTEM.md` §5) |
 | TIMER | `*0x8019F52C` / per-objobj counters | mission timer |
 | PER-PHASE STEP | objobj-local "commit once" words | per-mission data |
 | COMMIT-PROGRESS | `FUN_8004C318(0x80)` | objective sub-step |
@@ -136,4 +136,4 @@ Three result sinks: the objective tick's `0x80` progress commits, the **secondar
   INIT bodies, or breakpoint `0x80078D50` live).
 - AUX_TBL `+0x120` per-mission bit→flag semantics; `0x80198808` row format.
 - M2 record-39–42 protect-vs-destroy sign; `0x801FD844` subsystem identity.
-- Missions 20/24/28 (no chunk-12): how their entities are introduced.
+- ~~Missions 20/24/28 (no chunk-12): how their entities are introduced.~~ Done 2026-10-21 (MIS-9): 20/24 streaming spawner `0x80078F00`, 28 objobj code.

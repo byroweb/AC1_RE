@@ -94,3 +94,7 @@ tools/ac1mod/recent_*.txt
 tools/ac1mod/*.log
 tools/ac1mod/core/libraster.*
 tools/ac1mod/core/libxa.*
+
+# objdiff workstation (tools/match/objdiff_prep.py): generated per machine
+/objdiff.json
+/build/objdiff/

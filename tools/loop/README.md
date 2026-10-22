@@ -56,6 +56,10 @@ Matches are written as they land, so an interrupted run keeps them. The knobs ar
 environment variables (top of the script); `LIMIT=8 QUICK=20 DEEP=40 DEEP_N=2 BRANCH=0
 COMMIT=0` is a quick smoke test.
 
+Watch it with `python tools/loop/viewer.py` (below: the stage, the active tool, each
+body's asm diff, and a place to leave hints that steer the next pass), or replay a
+finished work dir with `--replay`.
+
 ### Program sprint in four commands (2026-10-19)
 
 ```bash
@@ -1102,6 +1106,122 @@ than only `neighbour+imm`) would likely catch most of these without a model.  Id
 a better golem: map each differing instruction to its C line (cc1 line info) and ask for
 edits by line number; few-shot examples from the ledger's lever trails; a model
 fine-tuned on oracle-generated (broken C + diff -> repairing edit) pairs.
+
+## viewer.py (watch a run, leave hints)
+
+```bash
+python tools/loop/viewer.py                    # the newest overnight.sh work dir, http://localhost:8765/
+python tools/loop/viewer.py WORK --replay      # play a finished work dir back
+```
+
+On Windows, `tools\loop\viewer.cmd` is a double-click launcher (point a desktop shortcut
+at it, *Run: Minimized* keeps the console out of the way): it starts the viewer on the
+newest work dir and opens the page; launched again while one is running, it only opens
+the page.
+
+A stdlib-only local server (127.0.0.1) and one page (`viewer.html`) that polls it every
+1.5 s. It works in any browser and in the Claude desktop app's browser pane; the theme
+follows the system (light / dark) and the ◐ button pins either.
+
+**Top bar.** The overnight stage from `overnight.log` (queue › sweep › permuter quick ›
+permuter deep › twins › verify › end), the tool working right now (the sweep variant
+being drafted, `levers`, `permuter`, `twins`, `verify`, with how many bodies are in each),
+and counters: bodies tried, near misses, matches, compiles/s, elapsed.
+
+**Function list (left).** Every body of the run's queue (`all1.tsv`) in queue order:
+status (`open`, `tried` = drafted by the sweep, `near` = picked for the permuter,
+`MATCH`), the best differing-word count, a sparkline of the scores so far (sweep variants,
+then the lever search's best-so-far), its TU and systems from
+`tools/archaeology/tu_map.tsv`, and ★ / skip / give up and ✎ for your hints. Filter by
+text or status. A click pins a body; unpinned, the view follows the body the run started
+last.
+
+**Main view.** The C sources this run has for the body (each sweep draft, the lever
+text, the permuter's best spliced back into it, a score-0 result) as tabs, the newest
+permuter text (or the sweep draft with the fewest differing words) selected. Three
+columns: the retail asm, that C, and our compiled asm, from the oracle's own side-by-side
+(`match_fn.py` with the `drive.py try` auto `--defsym` rerun, once per distinct text, in a
+background thread). Differing words are red, the differing operands darker, masked
+(relocated) words amber; the two asm columns scroll together. Below: the score history
+(sweep words per variant, the lever best-so-far, the permuter's base and new bests).
+
+**Your insight.** Per function: a free-text hint ("draws the radar", "loops over the 8 AC
+parts"), a proposed `name` (an identifier, or a prototype `void radar_draw(UiObj *o)`, which
+also gives the C type) or `field` (`AcEntity +0x4C hp`), and a triage flag `priority`,
+`skip`, `give up` (`clear` removes it). They go to the tracked `re/match/hints.tsv`
+(`unit vaddr kind text timestamp`, append-only; the newest triage row wins; × deletes a
+row) through `POST /api/hints`, and are read back by:
+
+- `make_queues.py`: bodies flagged `skip` / `giveup` are dropped, `priority` ones go first
+  (`--bodies`, also with `--closeness`); a flag on any twin counts for the body;
+  `--no-hints` ignores them. The overnight pass builds its queue this way, so the sweep
+  and the permuter follow your triage on the next run.
+- the match-function skill: an agent runs `python tools/loop/hints.py show <unit>
+  0x<VADDR>` (and for the twins) before its first draft.
+- `python tools/loop/hints.py names`: every name proposal as the `include/ac1/symbols.tsv`
+  row it would become, with what blocks it (no C type yet, name or address already taken),
+  plus the field proposals to put into `include/ac1/*.h` by hand. Nothing is applied until
+  `hints.py names --apply NAME ...`, which appends those rows, runs `ctx.py gen` and
+  `ctx.py check`, and restores both files when check fails. Commit `symbols.tsv` +
+  `symbols.h` on their own.
+
+**Human controls** (`human.py`), for someone who knows the game but not MIPS or GCC:
+
+- *Try something.* The diff is sorted into plain-language symptoms (same instructions /
+  different registers, instructions in a different order, an extra or missing instruction, a
+  different constant or offset, a load of the wrong size or sign, a branch flipped, a
+  different function called), each with the moves worth a try: the `levers.py` families in
+  plain words (swap neighbouring statements, flip the sides of `+ & | ^ *`, pass a dropped
+  argument through, count pointer steps in bytes, change what a pointer points at, give a
+  global a byte or short type, write a constant the other way, name a raw address as an
+  array) and "let the permuter chew on it for N minutes". One click runs the move on the C
+  shown, in the background: every site of that lever is compiled with the oracle's own
+  pipeline (as `tools/match/variants.py` does, in process), the best one is kept as *your
+  try N* in `<work>/human/<unit>_<ADDR>/` when it scores better or the same with different
+  code, and the job line shows the score change in green or red. *Undo my last try* shelves
+  the newest try. A score of 0 is only called a MATCH after `match_fn.py` says so, and only
+  *Record your try N as a MATCH* writes `re/match`, the manifest row and a ledger row
+  (re-verified from there first); commit those like any match and run `twins.py replay`.
+- *Point and say.* Click an asm line and the C line it came from lights up (cc1's `.loc`
+  lines read back with `objdump -l` from the oracle's `fn.o`, the preprocessed body lined up
+  with the C); click two C line numbers and *Swap* tries them the other way round.
+- *Pipeline steering* next to the hints: Work on this next (`triage priority`), More
+  deep-pass time (`steer deep`: the next overnight deep pass takes it on top of the
+  `DEEP_N` closest), Skip for now (`triage skip`), Send to agent / golem (`steer agent` +
+  `triage priority`), Give up, Clear. ⏸ in the top bar writes `<work>/PAUSE`: sweep and
+  permute finish the bodies they are on and hold before the next (`heartbeat.wait_if_paused`);
+  ▶ removes it.
+- *What am I looking at?* One paragraph on the current diff, from the same classifier.
+
+Every try, undo, record, steer and pause is logged to `re/match/actions.tsv` (`timestamp
+unit vaddr action detail before after result`), so later passes can see which human moves
+worked. The try endpoints run compiles, so the server refuses any `--host` but 127.0.0.1.
+
+**Live data.** `sweep.py` and `permute.py` print only their last lines into `overnight.log`
+until a stage ends (`| tail`), so both keep `<work>/<stage>/current.json` (`heartbeat.py`):
+the bodies in flight with their phase (variant, levers, permuter, oracle), live lever /
+permuter scores and iterations, every finished body's status and words, and the compile
+count the compiles/s comes from. A heartbeat older than 30 s that never closed shows as
+STALE. Everything else (drafts, `levers.log`, `permuter.log`, `output-<score>-<n>/`, the
+reports) is read from the work dir directly.
+
+**Replay.** `--replay` puts a play / pause / speed (10×-600×) / scrub bar under the top
+bar and plays the work dir back on a virtual clock: every event has a file time (a sweep
+draft written, a permuter dir set up, the lever search done, a new permuter best found),
+the stage times come from `overnight.log`, and lever evaluations / permuter iterations are
+spread over their stage for the compiles/s.
+
+**Recording it as video.** Nothing in the viewer records; use a screen recorder on the
+browser window. On Windows, the Game Bar (Win+Alt+R starts and stops recording the active
+window; files land in `Videos\Captures`) is enough for one window. OBS Studio
+(obsproject.com) records a chosen window or region at a set frame rate: add a *Window
+Capture* (or *Browser* source pointed at `http://localhost:8765/`), then Start Recording. A
+replay at 60× fits a 30-minute overnight pass in half a minute.
+
+Tests: `python -m pytest tools/match/tests/test_viewer.py tools/match/tests/test_viewer_human.py`
+(parsers, the work-dir model at a replay time, the heartbeat and pause, `hints.tsv` round-trip
+through the HTTP endpoints, the queue triage, the symptom classifier, the line map, versions /
+undo / the action log; one lever try end to end when the toolchain is set up).
 
 ## check_all.sh
 

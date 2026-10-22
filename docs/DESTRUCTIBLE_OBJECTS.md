@@ -73,6 +73,10 @@ Pulse-rifle round damage ≥ 10 ⇒ one-shot (matches what we saw on screen).
 > 2050→1832→1614. So `+0x02` is only the *seed copy* of hw11 (the `+0x02 = +0x1A` fact
 > stands; the "current HP" role does not). World-structure objects (`0x801D0B68` array)
 > are still untested — ENT-9.
+> **Live 2026-10-21 (ENT-9 partial, mission 28):** the destroy/retire step is CONFIRMED —
+> records 108 (HP 200) and 112 (HP 50): stats `+0` → `0xFFFF`, bbox → `0x7FFF`, `+0x2C` → 0,
+> and record byte `+0x06` `0x30` → `0xFF` (not listed above). The per-hit HP decrement is
+> still not observed live.
 
 ## Destruction behaviour — MT event/script processor `FUN_8008B8xx`
 The per-frame processor that walks `0x8019FAB8` (refs at `0x8008B834`, `0x8008B900`)
