@@ -195,9 +195,20 @@ cc1 is never rebuilt for this.
 ### Our gcc patches (Windows build only)
 
 The Windows `cc1.exe` build applies every `tools/match/patches/gcc-*.patch` after the
-old-gcc recipe.  `setup.sh` records the patch set (names + sha256) in
-`vendor/cc1.exe.patches`; when that does not match the patches in the tree, a plain
-`tools/match/setup.sh` rebuilds `cc1.exe` (otherwise only `--force` does).  Currently one:
+old-gcc recipe and links with a 64 MB stack reserve.  `setup.sh` records both (patch
+names + sha256, the reserve) in `vendor/cc1.exe.build`; when that does not match the
+tree, a plain `tools/match/setup.sh` rebuilds `cc1.exe` (otherwise only `--force` does).
+
+- Stack reserve (`-Wl,--stack,67108864`): gcc 2.7.2 recurses over a function's insn
+  chain, so its stack use grows with the length of a basic block.  With MinGW's default
+  2 MB reserve, cc1.exe died with no message (a stack overflow) on long
+  straight-line code.  A 4000-call function reproduces it every time.  The shop
+  constructor ovl201 0x8008C3EC (108 `MoveImage` calls in a row) was reported crashing
+  in a matching run.  Its final C compiles with either reserve, so that report is not
+  reproduced; the 4000-call case is.
+  `tests/test_cc1_stack.py` and the build self-test compile the 4000-call function.
+
+Patches, currently one:
 
 - `gcc-const-double-slots.patch`: a `CONST_DOUBLE` keeps its value in rtx slots that
   are each an `rtunion`, i.e. pointer-sized.  gcc 2.7.2 moves a real value in and out
