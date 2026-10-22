@@ -276,7 +276,7 @@ The cost: `jal`/`lui` targets show as numbers, not symbol names.  Jump tables in
 1. Download `objdiff-windows-x86_64.exe` (GUI) from the objdiff releases page (3.8.2 is
    what this was tested with; `objdiff-cli` is optional) and put it anywhere.
 2. `python tools/match/objdiff_prep.py config --unit ovl201` (rerun after matches land or
-   to switch units; it is quick: ~30 s for ovl201).
+   to switch units; it is quick: ~10 s for ovl201, under a minute for all 972 open functions).
 3. Start objdiff, *File > Project* (or the project button), pick the repo root.  The
    sidebar lists the units by unit; click one.  The build command and the MIPS options
    (`o32`, `r3000gte`) come from `objdiff.json`.

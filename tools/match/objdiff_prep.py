@@ -35,6 +35,7 @@ manifest row) and commit.
 """
 import argparse
 import concurrent.futures
+import functools
 import json
 import os
 import re
@@ -65,6 +66,12 @@ WATCH = ["*.c", "*.h", "*.inc", "ac1_markup.tsv", "include/ac1/symbols.tsv"]
 
 class PrepError(Exception):
     pass
+
+
+@functools.lru_cache(maxsize=None)
+def resolve(unit):
+    """units.resolve, once per unit (it re-reads CODE_UNITS.tsv and the disc map each call)."""
+    return units.resolve(unit)
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +176,7 @@ def open_functions(rows, matched, only_units=None):
 def oracle_argv(unit, vaddr, rows, matched):
     """(match_fn argv without the toolchain-only switches, C path) for one function, the
     argv check_all (manifest row) or drive.py try (open function) would use."""
-    u = units.resolve(unit)
+    u = resolve(unit)
     v = int(vaddr, 16)
     r = matched.get((unit, vaddr))
     if r:
@@ -266,7 +273,7 @@ def ensure_source(unit, vaddr, cpath, rows):
     row["score"] = rank.score(row)
     draft = None
     try:
-        u = units.resolve(unit)
+        u = resolve(unit)
         gas, _err = drive.gas_text(u, int(vaddr, 16), int(row["size"]))
         draft, _err = drive.m2c_draft(gas)
     except SystemExit:
