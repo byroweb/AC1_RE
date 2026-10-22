@@ -31,17 +31,21 @@ overnight.sh  -> re/match/<unit>/func_<ADDR>.c
 ### Overnight machine pass (2026-10-21)
 
 ```bash
-bash tools/loop/overnight.sh     # from the repo root; ~45-90 min at -j 24, no LLM
+bash tools/loop/overnight.sh     # from the repo root; ~20-30 min at -j 24, no LLM
 ```
 
-It runs one branch off origin/main and a queue of every open twin group (`make_queues.py
---bodies -N 1`), in this order:
+It runs one branch off origin/main and a queue of every open twin group, programs then
+missions (`make_queues.py --bodies -N 1`, with `twins_programs.tsv` and `twins.tsv`), in
+this order:
 1. `sweep.py` with only `ctx-spframe,ctx-fix-frame,neighbour`. These are the drafts that
    new shared headers and new matched near-copies can change, and they gave nearly every
    sweep match in the 2026-10-20 runs.
 2. `permute.py` with `--max-ratio 0.2` (the lanes already ground everything within 0.1) for
-   `QUICK`=120 s per candidate, then `DEEP`=900 s
-   for the `DEEP_N`=50 closest, each starting from its lever text.
+   `QUICK`=120 s per candidate, then `DEEP`=300 s for up to `DEEP_N`=50 within
+   `DEEP_WORDS`=12 differing words, each starting from its lever text. On the first night
+   every deep-pass gain landed inside 300 s, and the candidates further out stayed hundreds
+   of permuter points off.
+   The 1-3 word near misses go to `$WORK/nearmiss.tsv`: they are the cheapest hand matches.
 3. `twins.py replay --scope all` and `drive.py verify`.
 4. A commit when verify says all matched. Steps 3-4 are skipped when no manifest row was
    added: they take ~8 min even with nothing new.
