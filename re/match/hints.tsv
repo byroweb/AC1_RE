@@ -1461,3 +1461,83 @@ ovl204	0x80060C54	name	render_billboards	2026-10-22T21:43:45Z
 ovl204	0x80060C54	hint	256-entry animated billboard table at 0x801B514C (16 B: pos, type, world struct, frame/anim), vis-bit + func_80060B08 cull, light set back colour/fog, RTPT/RTPS + NCDS POLY_FT4, frame tables 0x800896FC	2026-10-22T21:43:45Z
 ovl204	0x800602C8	name	vs_draw_scene	2026-10-22T21:43:45Z
 ovl204	0x800602C8	hint	2-player scene draw: 2 ACs (0x801AB748, + ground shadow), 512 world objects 0x801A4C68 (trigger boxes, sky, lit models), billboards, 256 effect slots 0x801B645C by kind 0..6 (jump table 0x8004B030)	2026-10-22T21:43:45Z
+fdat010	0x801C6540	name	mission_world_find_objective_bit	2026-10-22T21:44:00Z
+fdat010	0x801C6540	hint	scans world structs with s16 +6==-1 and u8 +0x3D index into g_objective_obj table +0x60==func_801C5B1C, then score -= 12000	2026-10-22T21:44:00Z
+fdat014	0x801C83C0	name	mission_score_tally_credits	2026-10-22T21:44:00Z
+fdat014	0x801C83C0	hint	adds D_801C8540 to *a, counts kinds 21/22 via func_801C830C, D_801C8544 -= sum, *b -= 1000*result	2026-10-22T21:44:00Z
+fdat008	0x801C6F10	name	mission_penalty_slot_kind13	2026-10-22T21:44:00Z
+fdat008	0x801C6F10	hint	loop 512 slots (0x34, kind +6, flags +0x1C bit15) whose kind table id==13: score -= 500 for slots 59/61 else 200	2026-10-22T21:44:01Z
+fdat004	0x801C6DC4	name	mission_spawn_entity1_init	2026-10-22T21:44:01Z
+fdat004	0x801C6DC4	hint	same shape as fdat012 func_801C7960: ent[1] init via func_80078B14(slot 4), dispatch D_8019F51C[pos.w+8], then func_80056C6C(1,507,1,1,2,13,1)	2026-10-22T21:44:01Z
+fdat016	0x801C7FA8	name	mission_spawn_entity1_clear_world_flags	2026-10-22T21:44:01Z
+fdat016	0x801C7FA8	hint	ent[1] init like 801C6DC4 then clears low 12 bits of world-struct +0x34 for slots 5..9 (slot +0x22 = world index)	2026-10-22T21:44:01Z
+fdat018	0x801C7804	name	mission_zone_toggle_faction2_ignore	2026-10-22T21:44:01Z
+fdat018	0x801C7804	hint	every 8 frames: if any slot in owner range has state==1 set ignore_mask bit0 on all live faction-2 entities else clear it	2026-10-22T21:44:01Z
+fdat018	0x801C800C	name	mission_phase_transition_audio	2026-10-22T21:44:01Z
+fdat018	0x801C800C	hint	phase 0/1 (if D_80041226&1 play sfx 131 | 129,130), phase 1 also re-inits three slots at 0x8019FB68; returns 1; guarded by D_8019F528==0	2026-10-22T21:44:01Z
+fdat006	0x801C6090	name	mission_event_handler_phase100_102	2026-10-22T21:44:01Z
+fdat006	0x801C6090	hint	switch on event 100/101 (counter D_801C6204++ ==2 -> func_801C6050 221,222 + sfx 119), 102 plays 270/128; returns 1	2026-10-22T21:44:01Z
+fdat014	0x801C5EEC	name	mission_turret_think_fire	2026-10-22T21:44:01Z
+fdat014	0x801C5EEC	hint	ai_mode!=0xFF: func_801C6880(e,tbl)->func_80078E1C; else 1967/32768 rand chance + checks -> two func_80077B78 shots (arg 0 and 2), muzzle flash bytes +0x14A..C	2026-10-22T21:44:01Z
+fdat014	0x801C5B8C	name	mission_turret_step_mode	2026-10-22T21:44:01Z
+fdat014	0x801C5B8C	hint	switch mover.mode 2/5 -> func_80076E20(e,3|6,1,tbl)+x72=0x100, 3/6 -> same call if func_8004EBF8(&mover)==0; returns 1 (needs per-case return 1)	2026-10-22T21:44:01Z
+fdat004	0x801C6770	name	mission_slot_proximity_burst	2026-10-22T21:44:02Z
+fdat004	0x801C6770	hint	every 8th tick (ctr+8), if slot idx bit set in D_801AC860 bitmap and within 12000 of player: spawn proj (func_80086F20 kind 41/80) plus second (func_80086854, kind 5, 400/400/100)	2026-10-22T21:44:02Z
+fdat016	0x801C5B7C	name	mission_turret2_think	2026-10-22T21:44:02Z
+fdat016	0x801C5B7C	hint	ai think: ai_mode!=0xFF -> func_800754D0/func_80078E1C + every 4th tick (D_801A5DC4&3) spawn func_80086F20 effect; else aim-gated shot (func_80077B78 snd 23), ai_sub/ai_sub2 timers, flash 180/160/140	2026-10-22T21:44:02Z
+fdat014	0x801C6008	name	mission_turret_event_handler	2026-10-22T21:44:02Z
+fdat014	0x801C6008	hint	varargs-style (e,msg,...) msg 5 toggles state 1<->2, 0x8100 ignored, else if unk42==0 pick func_801C5D58 mode by player distance (>6000:1, <1000:2, else rand)	2026-10-22T21:44:02Z
+fdat014	0x801C5520	name	mission_turret3_event_handler	2026-10-22T21:44:02Z
+fdat014	0x801C5520	hint	same as 801C6008 plus mid-range (1000..5000) branch: func_80073924(+0x44)>120 -> func_800759A4(e,4,tbl) and +0x44 = func_80073904()+(rand&0x7F)	2026-10-22T21:44:02Z
+fdat004	0x801C513C	name	mission_ai_aim_at_target	2026-10-22T21:44:02Z
+fdat004	0x801C513C	hint	func_800745D0+func_80073C2C hit query toward e->target (range 10000, +-1024/1400); jitters yaw/pitch if unk42==2; eases +0x76/+0x78 via func_800132CC step 16; else copies D_80039C78 8 bytes to +0x76	2026-10-22T21:44:02Z
+fdat010	0x801C4D30	name	mission_entity_state_change	2026-10-22T21:44:02Z
+fdat010	0x801C4D30	hint	fn_state-style: st (or +0x3C if faction&0x10) selects func_80076578 / func_800766E0 modes 1,2 / func_8007790C; stores st to +0x3C unless faction&0x10 (param is s32, no mask)	2026-10-22T21:44:02Z
+fdat014	0x801C6880	name	mission_fx_burst_tick	2026-10-22T21:44:02Z
+fdat014	0x801C6880	hint	per-tick effect burst for a world-object record: cnt==0 final explosion (func_80086AD8/800869F0/801C64E8/8004CC30/80086DDC) returns 1; else every other tick debris (func_80086854/800873F8) and sfx every 4th; cnt--	2026-10-22T21:44:02Z
+fdat012	0x801C79D4	name	mission_camera_drift_tick	2026-10-22T21:44:02Z
+fdat012	0x801C79D4	hint	random wander targets (D_801C7DE8/EC) for D_8019F52E/532 (+-1 per tick), func_8008A798(n) up to 4096, D_8019F52A 0xFFFE reset, state D_801C7DE4 1->2 (func_8008C2FC) then sfx at 10 (needs pointer locals for base-reg form)	2026-10-22T21:44:02Z
+fdat004	0x801C5B70	name	mission_turret4_think	2026-10-22T21:44:02Z
+fdat004	0x801C5B70	hint	ai think like 801C4EF0 plus: +0x60->+0x20 block bump (+0x274 += 0x40, +0x292 |= 1) and slot D_80198B08[+0xFE] position sync when ai_mode==0	2026-10-22T21:44:03Z
+fdat016	0x801C6080	name	mission_entity_hit_react	2026-10-22T21:44:03Z
+fdat016	0x801C6080	hint	hit handler (e,rec,a2,a3,dmg): if rec+4 set: knock via func_80075798, quadrant -> anim 2/4/1/3, func_801C5384; then func_80075418 / func_80075750 sets +0xD2	2026-10-22T21:44:03Z
+fdat016	0x801C59F8	name	mission_ai_aim_with_velocity	2026-10-22T21:44:03Z
+fdat016	0x801C59F8	hint	like 801C513C but also tracks previous hit point (+0x108 copy, delta via func_80015258 to produce yaw/pitch) range 10000, -128..1024/-1024..1024	2026-10-22T21:44:03Z
+fdat012	0x801C621C	name	mission_entity_hit_react_b	2026-10-22T21:44:03Z
+fdat012	0x801C621C	hint	variant of fdat016 801C6080: sets +0xFE=10, anims 3/6/4/5 via func_800775B8, damage func_80075418(e,rec,dmg,100,256)	2026-10-22T21:44:03Z
+fdat016	0x801C66DC	name	mission_turret_hit_probe_and_sfx	2026-10-22T21:44:03Z
+fdat016	0x801C66DC	hint	probes 625 units ahead (func_8006D5BC), func_800835E8 on hit, sfx 140/5/138 keyed by unk42 and +0x10C; retail has dead abs() of two uninit locals	2026-10-22T21:44:03Z
+fdat002	0x801C6994	name	mission_script_watch_objective	2026-10-22T21:44:03Z
+fdat002	0x801C6994	hint	per-frame mission monitor: slot D_8019FB68 linked entity checks (D_801C6DE8 latch), state 3 progress counter with sfx 104/128 at 10, state 1 low-AP latch D_801C6DE4; slot D_8019FE28 state 1 revives entity (ai_mode 20, ap 100)	2026-10-22T21:44:03Z
+fdat006	0x801C4CD8	name	mission_entity_state_change_b	2026-10-22T21:44:03Z
+fdat006	0x801C4CD8	hint	like fdat010 801C4D30 with states 0..4 (jump table at 0x801C4C60): 3/4 side-step moves (func_80076548/8004E98C, +0xCE/+0xD0 = +-20/+-110) or func_80076658; needs --rodata 0x801C4C60	2026-10-22T21:44:03Z
+fdat012	0x801C52B8	name	mission_turret5_think	2026-10-22T21:44:03Z
+fdat012	0x801C52B8	hint	ai think like fdat004 801C5B70 (slot sync, +0x60->+0x20 +0x1F8/+0x216) but aim via func_801C51B8 and burst shot func_80077B78 (11 args, alternating +0x3E)	2026-10-22T21:44:03Z
+fdat018	0x801C67F4	name	mission_ai_event_pick_behaviour	2026-10-22T21:44:03Z
+fdat018	0x801C67F4	hint	varargs (e,msg,...) handler: msg 4 resets ai_mode/faction bit, 1/2 or default pick func_801C66B4/6724/678C(e,n) by rand&0xF / rand&0x3F jump table (0x801C4DD8) unless player dist>7000; 0x8100/5 ignored; needs --rodata 0x801C4DD8	2026-10-22T21:44:03Z
+fdat010	0x801C4F60	name	mission_turret6_event_handler	2026-10-22T21:44:04Z
+fdat010	0x801C4F60	hint	varargs (e,msg,...): msg 5 toggles state 1<->2, 1/2/0x8100 ignored, else if unk42==1 pick func_801C4EFC mode by player distance (>2500:1, <1000:2, else func_80014D78(30) table 0x801C4C60); case-body source order 0x8100,5,1/2 gives retail tree; needs --rodata 0x801C4C60	2026-10-22T21:44:04Z
+fdat004	0x801C6E54	name	mission_camera_drift_tick_b	2026-10-22T21:44:04Z
+fdat004	0x801C6E54	hint	twin of fdat012 801C79D4 but completion test is four consecutive slots D_8019FBEC..FC70 all state 3 and linked	2026-10-22T21:44:04Z
+fdat006	0x801C5124	name	mission_turret7_event_handler	2026-10-22T21:44:04Z
+fdat006	0x801C5124	hint	varargs (e,msg,...) like 801C4F60 with 24-entry rand dispatch (jump table 0x801C4C78), func_801C50C0/80075A18/80075A54 behaviours; msg1/2 only 10814/32768 chance; needs --rodata 0x801C4C78	2026-10-22T21:44:04Z
+fdat016	0x801C5844	name	mission_entity_aim_state	2026-10-22T21:44:04Z
+fdat016	0x801C5844	hint	fn_state-style: state 0 turns to face func_80075BC0 target (yaw/pitch deltas wrapped at 2048, abs-compared) choosing func_801C5384 anim 0..4; state 0x81 passes mover.mode	2026-10-22T21:44:04Z
+fdat016	0x801C55C0	name	mission_hover_mover_step_b	2026-10-22T21:44:04Z
+fdat016	0x801C55C0	hint	hover mover think: sink/climb vel Y (clamp -2560..9600) by probe func_80075BC0, state 0 accelerates along yaw (+dir.x/z, cap 9600 via SquareRoot), flags bit 4 toggle, func_8004C98C smoke, func_8004F080 then fn_state; one var r for sq and sqrt result; copy-back of dir x/z through u16 temps	2026-10-22T21:44:04Z
+fdat016	0x801C5E88	name	mission_turret8_event_handler	2026-10-22T21:44:04Z
+fdat016	0x801C5E88	hint	varargs (e,msg,...): msg 4 resets ai_mode (and +0xA from +0x2C), 1/2 sets +0x42=0/+0x44=func_80073904 then rand&0xF; default probes world (func_800705D8) -> w=-500 else 0; rand dispatch (jump table 0x801C4C60) to func_801C5D24/5DA0/5E14(e,0,w); needs --rodata 0x801C4C60; body order 0x8100,4,1/2,default,5	2026-10-22T21:44:04Z
+fdat016	0x801C5384	name	mission_entity_move_toward	2026-10-22T21:44:04Z
+fdat016	0x801C5384	hint	(e,a,b,c,t,fn): func_80076548(e,192,fn), start move func_8004E98C(a,b,c) or +0x70=b, aim vector t scaled >>6 -> func_8004E06C step, func_80074CA0 clip, rescale t components step*64/r if |dv|>=7; then func_8004DFF8	2026-10-22T21:44:04Z
+fdat012	0x801C5FB4	name	mission_turret9_event_handler	2026-10-22T21:44:04Z
+fdat012	0x801C5FB4	hint	varargs (e,msg,...) phase-machine handler (unk42 0/1) with distance bands 15000/18000/1600, rand dispatch 0..34 jump table 0x801C4C80 to func_801C5F54(e,n); needs --rodata 0x801C4C80	2026-10-22T21:44:04Z
+fdat004	0x801C4D30	name	mission_hover_mover_step_c	2026-10-22T21:44:04Z
+fdat004	0x801C4D30	hint	sibling of fdat016 801C55C0: no ai_mode gate, sink -64 (min -1920), dir 2..5 accelerate along yaw/+0x800/+0x400/-0x400 (dir>>3, cap 5120) else func_800143B8 brake	2026-10-22T21:44:05Z
+fdat012	0x801C59E8	name	mission_entity_state_change_c	2026-10-22T21:44:05Z
+fdat012	0x801C59E8	hint	fn_state-style state machine states 0..10,0x81 (real case 0x81 keeps it a compare tree, no jump table): func_800765E8 for 0/7, func_800775B8(e,anim,1,512,e+0xCC,func_801C5600) for 1..6,8..10; 0x81 uses mover.mode	2026-10-22T21:44:05Z
+fdat018	0x801C6248	name	mission_hover_mover_step_d	2026-10-22T21:44:05Z
+fdat018	0x801C6248	hint	sibling of fdat004 801C4D30: sink -128 (min -1280), dir>>1, speed cap 960 (0xE1000), func_800143B8(vel,128,960,vel) brake	2026-10-22T21:44:05Z
+fdat022	0x801C4CFC	name	mission_hover_mover_step_e	2026-10-22T21:44:05Z
+fdat022	0x801C4CFC	hint	hover mover think: picks func_80078250 smoke by D_801A5DC4%3, dir 1..7 accelerate along yaw offsets (call per case then goto shared tail) cap 3200; dir 7 counts down +0xD2; needs --rodata 0x801C4C60	2026-10-22T21:44:05Z
+fdat010	0x801C5FD4	name	mission_slot_death_effect	2026-10-22T21:44:05Z
+fdat010	0x801C5FD4	hint	per-frame slot update: ctr (+0x14)->cnt countdown; at 0 spawns effect by type (+0x22) 0..6: func_80086598 projectile kinds 55/59, func_800889B4, func_80089628/800898A4/80089A80 (bitmap D_801AC860 gated), type 6 loops count (+0x26) random smoke func_80089C30; scale +0x24 /4096; --rodata 0x801C4C78	2026-10-22T21:44:05Z
