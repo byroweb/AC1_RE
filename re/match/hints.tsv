@@ -581,3 +581,43 @@ ovl201	0x800B0598	name	options_padcfg_init	2026-10-22T12:01:21Z
 ovl201	0x800B0598	hint	once the window object (func_8005BA2C) is gone: maps each D_80048630 button bit to a name index, creates the 12 button-name labels (D_8017F4D8) and 14 action labels (D_8017F508), lights clashes, inits the cursor (func_800B1980) and sets update func_800B0CF0.	2026-10-22T12:01:21Z
 ovl201	0x800B3748	name	assembly_part_obj_create	2026-10-22T12:01:21Z
 ovl201	0x800B3748	hint	allocs a part model UiObj (update func_800B3E7C) for model kind 3..14, finds its attach point from the core tables 0x800BC428/0x800BC440 (+arms 0x800BC638/0x800BC6B8, legs 0x800BC968) plus per-part offsets 0x800BCAC4[kind], mirrors x for flag bit 0, hides it when the slot is empty.	2026-10-22T12:01:21Z
+ovl201	0x8005B024	name	vram_stash_garage_pages	2026-10-22T12:02:23Z
+ovl201	0x8005B024	hint	MoveImage copies three VRAM rects (0x2C0,0x100 / 0x220,0x180 / 0,0x1E6) to spare areas plus two fixed RECTs, then DrawSync; mirror of 0x8005B12C.	2026-10-22T12:02:23Z
+ovl201	0x8005B12C	name	vram_restore_garage_pages	2026-10-22T12:02:23Z
+ovl201	0x8005B12C	hint	Inverse MoveImage set of 0x8005B024, then packs flag bytes 0x80031AE0..EA into a mask ANDed into D_80039CA0 and clears it/part slots when core (0x80031A58) or arms (0x80031A5B) are empty.	2026-10-22T12:02:23Z
+ovl201	0x8005B2CC	name	ac_reset_colours_and_names	2026-10-22T12:02:23Z
+ovl201	0x8005B2CC	hint	Copies default Rgb3[4][4] colour table 0x800B73A8 to 0x80031A64, two StoreImage saves, and struct-copies default names 0x800B7384 to the AC/pilot names at 0x80031BD4.	2026-10-22T12:02:23Z
+ovl201	0x8005B4B8	name	pad_poll_update	2026-10-22T12:02:23Z
+ovl201	0x8005B4B8	hint	Update of 0x8005B46C: counts down key-repeat timers at 0x801A2554..5E, reads pad 1 (func_80016A84), stirs seed D_80039D14, optional half-swap, and builds the new-press mask 0x801A2568 from latch 0x801A2550.	2026-10-22T12:02:23Z
+ovl201	0x8005CDEC	name	light_colour_pulse	2026-10-22T12:02:23Z
+ovl201	0x8005CDEC	hint	Update of 0x8005CC48: pulses the m[.][2] colour columns of light matrices 0x800B8F24/8F84/8FA4/9024 by 8/16 per frame, reversing direction (+0x7C) at 384/128.	2026-10-22T12:02:23Z
+ovl201	0x8005D544	name	sound_swap_music_bank	2026-10-22T12:02:24Z
+ovl201	0x8005D544	hint	Final step of the 0x8005D39C sequencer: stops/closes the playing SEQ+VAB slot and frees its buffers, opens/plays the other slot's SEQ at the master volume, flips SndBanks.which, kills itself.	2026-10-22T12:02:24Z
+ovl201	0x8005E3A4	name	ui_msgbox_wait_button	2026-10-22T12:02:24Z
+ovl201	0x8005E3A4	hint	Waits for a pad press in 0x600060, latches the pressed buttons into 0x801A2550, kills the child and id-1 object, opens the closing box (func_8005C2D0 20,104,280,32) and moves to 0x8005E4D4; twin of 0x8005E040 without the timeout.	2026-10-22T12:02:24Z
+ovl201	0x8005F260	name	text_draw_sjis_string	2026-10-22T12:02:24Z
+ovl201	0x8005F260	hint	Walks a '>'-terminated SJIS string, maps each code through the 16-entry glyph block table 0x800B7470 to a glyph cell, draws it with func_8005F49C every 4 px, then LoadImage's the 16x1 CLUT 0x800B74D0.	2026-10-22T12:02:24Z
+ovl201	0x80060ABC	name	frame_draw_edge_row_136	2026-10-22T12:02:24Z
+ovl201	0x80060ABC	hint	Draws three 8 px frame strips at y+136 (texels 200/192/216,208) via func_800646AC from the 4 corners, then func_8006035C; twin of 0x80061164.	2026-10-22T12:02:24Z
+ovl201	0x80060E10	name	frame_draw_edge_row_152	2026-10-22T12:02:24Z
+ovl201	0x80060E10	hint	Same as 0x80060ABC with y offset 152.	2026-10-22T12:02:24Z
+ovl201	0x800617A8	name	frame_draw_edge_row_24	2026-10-22T12:02:24Z
+ovl201	0x800617A8	hint	Same family with y offset 24 and a 3 px first strip.	2026-10-22T12:02:24Z
+ovl201	0x80061B00	name	frame_draw_edge_row_20	2026-10-22T12:02:24Z
+ovl201	0x80061B00	hint	Same family with y offset 20 and a 3 px first strip.	2026-10-22T12:02:24Z
+ovl201	0x8005BF0C	name	ui_box_open_update	2026-10-22T12:02:24Z
+ovl201	0x8005BF0C	hint	Grows box (+0x7C x,y,w,h) by 6*speed towards target (+0x8A), clamps to 320x240, sets both DRAWENV slots (0x801BCE88/0x801D62E0 stride 0x64) centred, on arrival kills itself and calls func_8005B648.	2026-10-22T12:02:24Z
+ovl201	0x8005C6CC	name	ui_box_close_update	2026-10-22T12:02:24Z
+ovl201	0x8005C6CC	hint	Twin of 0x8005BF0C: shrinks the box (+0x7C) towards its target (+0x8A) at 6*speed, updates both DRAWENV slots, kills itself on arrival.	2026-10-22T12:02:24Z
+ovl201	0x8005C2D0	name	ui_box_close_new	2026-10-22T12:02:25Z
+ovl201	0x8005C2D0	hint	Ctor (x,y,w,h,kind): allocs in pool kind, render_type 5, env slot (kind-1)/2 via switch, target = centre with size 0, sets both DRAWENVs, update 0x8005C6CC; called by msgbox closers (0x8005E3A4/E040).	2026-10-22T12:02:25Z
+ovl201	0x8005B648	name	ui_box_static_new	2026-10-22T12:02:25Z
+ovl201	0x8005B648	hint	Ctor (x,y,w,h,kind,a,b): pool-kind object with render_type 1 and update ui_obj_nop2, env slot from (kind-1)/2, sets both DRAWENVs for the box; the end state of the 0x8005BF0C open animation.	2026-10-22T12:02:25Z
+ovl201	0x8005BA2C	name	ui_box_open_new	2026-10-22T12:02:25Z
+ovl201	0x8005BA2C	hint	Ctor (x,y,w,h,kind,a,b): target = the given box, start = a centred sliver along the longer side, render_type 5, env slot by kind, update 0x8005BF0C which grows it.	2026-10-22T12:02:25Z
+ovl201	0x8006035C	name	frame_draw_corners	2026-10-22T12:02:25Z
+ovl201	0x8006035C	hint	Tail call of the frame_draw_edge_row_* family: eight func_800646AC quads (texels 192..216) built from the 4 corner points, the frame corners and connecting pieces.	2026-10-22T12:02:25Z
+ovl201	0x80061E58	name	frame_draw_divided	2026-10-22T12:02:25Z
+ovl201	0x80061E58	hint	Same frame family: fifteen func_800646AC quads (edges at y+56/+136 etc., texels 192..216,208) then frame_draw_corners (0x8006035C).	2026-10-22T12:02:25Z
+ovl201	0x8005F5E8	name	ui_box_render	2026-10-22T12:02:25Z
+ovl201	0x8005F5E8	hint	Render hook of the box objects: id 1 delegates to the tiled backdrop 0x80060168; else projects the box quad through o->mat (RTPT/RTPS), emits a textured FT4 (+0x8A == 0) or gouraud G4 panel between SetDrawArea clip/unclip and a SetTexWindow, then draws frame style +0x84 (0..11) via the frame_draw_* family.	2026-10-22T12:02:25Z
