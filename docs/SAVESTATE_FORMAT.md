@@ -141,7 +141,7 @@ library state:
 - the in-mission frame buffers sit at (0,0) and (0,240);
 - mission 30's 8bpp level pages (tpage `0x85..0x89`) decode through their CLUTs
   (VRAM rows 481–484) as the stage's stone, metal and grating textures
-  (`tools/sceneview/`).
+  (`browser-tools/sceneview/`).
 
 ## Save-state library
 

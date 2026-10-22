@@ -1,4 +1,4 @@
-# Scene viewer — AC1 levels in the browser, PS1-style, with knobs (`tools/sceneview/`)
+# Scene viewer — AC1 levels in the browser, PS1-style, with knobs (`browser-tools/sceneview/`)
 
 A local WebGL2 page that draws a mission's walkable level the way the PS1 draws it, using
 the level's real texels from a save state's VRAM. Walk a pilot through it and turn the
@@ -7,11 +7,11 @@ drops under low ceilings, texture density, texture LOD, floor subdivision, draw 
 the PS1 rendering quirks.
 
 ```bash
-python tools/sceneview/server.py --open   # http://127.0.0.1:8771/
-python tools/sceneview/scene_test.py      # synthetic tests, no disc needed
+python browser-tools/sceneview/server.py --open   # http://127.0.0.1:8771/
+python browser-tools/sceneview/scene_test.py      # synthetic tests, no disc needed
 ```
 
-On Windows, `tools\sceneview\sceneview.cmd` is a double-click launcher (point a desktop
+On Windows, `browser-tools\sceneview\sceneview.cmd` is a double-click launcher (point a desktop
 shortcut at it). A second launch just opens the page of the server that is already running.
 
 The disc image comes from `--bin` or `$AC1_BIN`, and save states from the library

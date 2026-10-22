@@ -1,5 +1,5 @@
 {
-  "$comment": "AC1 (SLUS-01323 v1.1) plant-view layout. Every address comes from docs/MISSION_STATE_MACHINE.md §3, docs/RUNTIME_RAM_MAP.md, docs/ENTITY_AI_FRAMEWORK.md or docs/REFERENCE.md; 'status' repeats the doc's CONFIRMED / HYPOTHESIS label. poller.py reads the 'fields' and 'arrays', computes 'derived' values, and index.html lays out 'stations' and 'transitions'. See tools/plantview/README.md to add a station.",
+  "$comment": "AC1 (SLUS-01323 v1.1) plant-view layout. Every address comes from docs/MISSION_STATE_MACHINE.md §3, docs/RUNTIME_RAM_MAP.md, docs/ENTITY_AI_FRAMEWORK.md or docs/REFERENCE.md; 'status' repeats the doc's CONFIRMED / HYPOTHESIS label. poller.py reads the 'fields' and 'arrays', computes 'derived' values, and index.html lays out 'stations' and 'transitions'. See browser-tools/plantview/README.md to add a station.",
   "target": "SLUS-01323 v1.1",
   "grid": { "cols": 12, "rows": 7, "cell_w": 150, "cell_h": 96 },
 

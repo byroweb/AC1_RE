@@ -18,6 +18,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(REPO, "tools", "match"))
 sys.path.insert(0, os.path.join(REPO, "tools", "loop"))
+sys.path.insert(0, os.path.join(REPO, "browser-tools", "match-viewer"))
 import heartbeat   # noqa: E402
 import hints       # noqa: E402
 import human       # noqa: E402

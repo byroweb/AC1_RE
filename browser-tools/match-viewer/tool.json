@@ -1,0 +1,14 @@
+{
+  "name": "Match viewer",
+  "summary": "Watch an overnight matching pass live or replayed: target asm, the C being tried and our asm per function, with hints, triage and plain-language Try buttons.",
+  "order": 20,
+  "port": 8767,
+  "start": ["viewer.py", "--port", "{port}"],
+  "variants": [
+    {"label": "newest overnight.sh work dir", "args": []},
+    {"label": "replay the newest work dir", "args": ["--replay"]}
+  ],
+  "needs": ["an overnight.sh work dir (~/dev/ac1_work)", "the match toolchain for asm columns"],
+  "launcher": "viewer.cmd",
+  "readme": "../../tools/loop/README.md"
+}

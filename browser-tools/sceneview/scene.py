@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-tools/sceneview/scene.py — scene data for the browser scene viewer (server.py).
+browser-tools/sceneview/scene.py — scene data for the browser scene viewer (server.py).
 
 Decodes a mission's walkable level the way tools/ac1mod/core/level.py does
 (FDAT entry 2N+1: chunk-0 PA blocks, chunk-7 translation-only placement, world =

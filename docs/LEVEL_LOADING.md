@@ -190,4 +190,4 @@ the shared pack. e200's internal layout differs (geometry from +0x28; lighting a
   byte for byte on mission 30's level pages (x 320–640, tpage `0x85..0x89`) and their CLUT
   rows 480–485. The page at x 640 and CLUT rows 486+ differ: object/AC art the game uploads
   later from elsewhere. The level face's UV/TPAGE/CLUT words then sample it as usual.
-  `tools/sceneview/` renders every level textured this way.
+  `browser-tools/sceneview/` renders every level textured this way.

@@ -1,6 +1,6 @@
 """heartbeat.py - <work>/current.json: what sweep.py / permute.py are doing right now.
 
-tools/loop/viewer.py polls it; nothing else reads it.  One JSON object, rewritten whole
+browser-tools/match-viewer/viewer.py polls it; nothing else reads it.  One JSON object, rewritten whole
 (at most every --interval s, and on close) through a temp file + os.replace:
 
   tool       sweep | permute

@@ -1,4 +1,4 @@
-"""tools/loop/viewer.py, hints.py and heartbeat.py: the parsers, the work-dir model at a
+"""browser-tools/match-viewer/viewer.py, hints.py and heartbeat.py: the parsers, the work-dir model at a
 replay time, and the hints round-trip through the HTTP endpoints.
 
     python -m pytest tools/match/tests/test_viewer.py
@@ -19,6 +19,7 @@ import pytest
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 sys.path.insert(0, os.path.join(REPO, "tools", "loop"))
+sys.path.insert(0, os.path.join(REPO, "browser-tools", "match-viewer"))
 import heartbeat   # noqa: E402
 import hints       # noqa: E402
 import make_queues  # noqa: E402
