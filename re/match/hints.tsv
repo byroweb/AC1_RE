@@ -879,3 +879,31 @@ ovl203	0x8007738C	name	vs_pause	2026-10-22T16:49:09Z
 ovl203	0x8007738C	hint	START (pad 0x800) on either VsPlayer: draws PAUSE POLY_FT4 over the frame, SsSetMVol(0,0), CdControl(9) pause, waits press/release via VSync+func_80077E10, CdRead2(200) resume, restores volume	2026-10-22T16:49:10Z
 ovl203	0x800718CC	name	vs_carried_obj_update	2026-10-22T16:49:10Z
 ovl203	0x800718CC	hint	64-byte object table at 0x801C40F0 riding a carrier (+0x2C): tests old/new box vs both versus ACs (func_80071638), pushes AC via func_800736CC, commits carried position	2026-10-22T16:49:10Z
+ovl204	0x80055BA0	name	fx_pool_push	2026-10-22T16:49:21Z
+ovl204	0x80055BA0	hint	twin of ovl202 0x80056B54 (bitmask-gated push into 16-entry 0x30 FxEnt pool at 0x801B4118)	2026-10-22T16:49:21Z
+ovl204	0x8005625C	name	gfx4_present_frame	2026-10-22T16:49:21Z
+ovl204	0x8005625C	hint	same shape as ovl202 0x800571F0: DrawSync, vsync wait on rcnt, PutDispEnv/PutDrawEnv/DrawOTag	2026-10-22T16:49:21Z
+ovl204	0x800561A8	name	gfx4_flip_frame	2026-10-22T16:49:21Z
+ovl204	0x800561A8	hint	same shape as ovl202 0x8005715C: toggles flip, ClearOTagR both OTs, resets prim buffer, zeroes counters	2026-10-22T16:49:21Z
+ovl204	0x8005631C	name	gfx4_init_frames	2026-10-22T16:49:21Z
+ovl204	0x8005631C	hint	sets both display buffers: prim heap 0x8013E960 split, OTs 0x80184960.., dtd/isbg of three DRAWENVs, then func_8001604C(0x8009D348,0x10000)	2026-10-22T16:49:21Z
+ovl204	0x80052244	name	hud_draw_target_marker	2026-10-22T16:49:21Z
+ovl204	0x80052244	hint	port of ovl203 0x80052BF4: RotTrans marker pos, project at 160, draw sprite if on screen (half-size viewport, split screen?)	2026-10-22T16:49:21Z
+ovl204	0x80050344	name	hud_draw_clipped_line	2026-10-22T16:49:21Z
+ovl204	0x80050344	hint	like ovl202 0x8004FF48: clip line via func_8004FE38 (484), LINE_F2 at x+D_800AD958+43, y+192 into ot[3]	2026-10-22T16:49:21Z
+ovl204	0x8005145C	name	hud_draw_text	2026-10-22T16:49:22Z
+ovl204	0x8005145C	hint	draws string with POLY_FT4 glyphs (glyph map 0x800894E0, Glyph[12B] 0x8008A884 + font, colours 0x800894C0, backslash-digit colour escape), returns pixel width	2026-10-22T16:49:22Z
+ovl204	0x8005A134	name	render_draw_model_list	2026-10-22T16:49:22Z
+ovl204	0x8005A134	hint	port of ovl202 0x8005AF90 (DrawEnt list: light/colour matrix per set, fog, GTE rot/trans, draw part via func_8005A374)	2026-10-22T16:49:22Z
+ovl203	0x8008196C	name	cam_ease_view_offset	2026-10-22T16:49:22Z
+ovl203	0x8008196C	hint	port of ovl202 0x80082D04 (eases camera ox/oy toward locked target aim)	2026-10-22T16:49:22Z
+ovl204	0x800505E8	name	radar_draw_projectile_blip	2026-10-22T16:49:22Z
+ovl204	0x800505E8	hint	port of ovl202 0x800501DC (LINE_F3 radar arrow, colour blend by height difference)	2026-10-22T16:49:22Z
+ovl203	0x8007F9D8	name	mover_ground_step	2026-10-22T16:49:22Z
+ovl203	0x8007F9D8	hint	cf. fdat000 0x801C59EC: 8-direction accelerate/brake, lean, footstep sounds; tuning in *D_80039D18 +0x210..	2026-10-22T16:49:22Z
+ovl203	0x80081C9C	name	cam_update_view	2026-10-22T16:49:22Z
+ovl203	0x80081C9C	hint	port of ovl202 0x80083038 (per-frame view camera eye/target with collision push)	2026-10-22T16:49:22Z
+ovl203	0x8007C740	name	vs_obj_take_hit	2026-10-22T16:49:22Z
+ovl203	0x8007C740	hint	cf. fdat000 0x801C91CC take-hit; swaps D_80039D18 to the owning side (D_80039D30/D_80039D34) for the duration	2026-10-22T16:49:22Z
+ovl204	0x8004CCC0	name	snd_distance_volume	2026-10-22T16:49:22Z
+ovl204	0x8004CCC0	hint	GTE sqr distance from ear, volume scaled by (len-dist)/len, 0 if out of range or <30 (cf ovl202 0x8004CC30 body)	2026-10-22T16:49:22Z
