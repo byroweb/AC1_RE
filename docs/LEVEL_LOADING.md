@@ -182,5 +182,12 @@ the shared pack. e200's internal layout differs (geometry from +0x28; lighting a
 - Static source of the render orientation variant k per section.
 - Chunk 1 (large geometry sibling) and chunk 7's post-table tail (PVS/portals).
 - e200's internal header layout (geometry at +0x28, multi-descriptor blocks).
-- Texturing: UV/CLUT decode exists for objects (`PA_FORMAT.md`) but levels render
-  untextured in the viewer so far.
+- ~~Texturing~~ **RESOLVED 2026-10-22:** level texels are `GG/COM/RTIM.T` entry *N*, uploaded
+  after the common entry 100 (the `read_T_entry(1, 100)` / `read_T_entry(1, missionNum)`
+  pair in `MISSION_SYSTEM.md`). Each entry is a run of standard TIMs carrying their own VRAM
+  rects. RTIM has an entry for exactly the missions that have a level (0–49 except 16/29/39,
+  60, 70, 80–84, 90–94) plus 100–103. Rebuilt from 100 + 30, VRAM matches `M30-mid-01`
+  byte for byte on mission 30's level pages (x 320–640, tpage `0x85..0x89`) and their CLUT
+  rows 480–485. The page at x 640 and CLUT rows 486+ differ: object/AC art the game uploads
+  later from elsewhere. The level face's UV/TPAGE/CLUT words then sample it as usual.
+  `tools/sceneview/` renders every level textured this way.

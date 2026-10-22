@@ -13,13 +13,14 @@ your save states; nothing is written to disk):
     /api/states?m=N         [{id, mission}] library save states (all if m is omitted)
     /api/state?id=ID        player slot 0 of a state (pos, yaw, extents)
     /api/vram?id=ID         that state's 1 MB VRAM (raw 1024x512 16bpp, little endian)
+    /api/vram?disc=N        mission N's level textures from the disc (RTIM.T 100 + N)
 
 Disc image: --bin, else $AC1_BIN.  Save states: $AC1_STATES_DIR or ~/dev/ac1_states
 (tools/duckstation/states.py).  Stdlib only, plus what tools/duckstation needs to
 decompress a state (the zstandard package or the zstd CLI).
 """
 from __future__ import annotations
-import argparse, json, os, sys, threading
+import argparse, json, os, sys, threading, webbrowser
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -97,6 +98,11 @@ class Handler(BaseHTTPRequestHandler):
                 m = int(q["m"]) if "m" in q else None
                 return self.json([dict(id=s["id"], mission=s["mission"]) for s in scene.list_states()
                                   if m is None or s["mission"] == m])
+            if u.path == "/api/vram" and "disc" in q:
+                n = int(q["disc"])
+                ents = cached("rtim", scene.rtim_entries)
+                return self.send(200, cached(("rtim", n), lambda: scene.vram_from_rtim(n, ents)),
+                                 "application/octet-stream")
             if u.path in ("/api/state", "/api/vram"):
                 sid = q["id"]
                 vram, player = cached(("state", sid),
@@ -114,14 +120,25 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--port", type=int, default=8771)
+    ap.add_argument("--open", action="store_true", help="open the page in the default browser")
     ap.add_argument("--bin", default=os.environ.get("AC1_BIN"),
                     help="SLUS-01323 v1.1 disc image (default $AC1_BIN)")
     a = ap.parse_args()
     if not a.bin or not os.path.exists(a.bin):
         sys.exit("disc image not found: pass --bin or set AC1_BIN")
     Handler.bin_path = a.bin
-    srv = ThreadingHTTPServer(("127.0.0.1", a.port), Handler)
-    print(f"AC1 scene viewer: http://127.0.0.1:{a.port}/  (Ctrl+C to stop)")
+    os.environ["AC1_BIN"] = a.bin              # pa_obj.load_container reads the disc from it
+    url = f"http://127.0.0.1:{a.port}/"
+    try:
+        srv = ThreadingHTTPServer(("127.0.0.1", a.port), Handler)
+    except OSError:                            # already running: just show it
+        if a.open:
+            webbrowser.open(url)
+            return
+        raise
+    print(f"AC1 scene viewer: {url}  (Ctrl+C to stop)")
+    if a.open:
+        threading.Timer(0.5, webbrowser.open, (url,)).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

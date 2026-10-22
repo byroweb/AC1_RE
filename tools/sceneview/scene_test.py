@@ -97,6 +97,25 @@ def main() -> int:
     check(scene.vram_from_blob(blob) == vram, "scene.vram_from_blob uses the marker")
     check(SS.vram_offset(b"\x03\0\0\0GPU" + vram) is None, "no marker -> None")
 
+    # RTIM: an 8bpp TIM (CLUT block + image block) followed by a 15bpp TIM, then padding
+    def tim(flags, blocks):
+        out = struct.pack("<II", 0x10, flags)
+        for (x, y, w, h, word) in blocks:
+            out += struct.pack("<IHHHH", 12 + w * h * 2, x, y, w, h) + struct.pack("<H", word) * (w * h)
+        return out
+    ent = (tim(9, [(0, 480, 256, 1, 0x7fff), (320, 0, 64, 4, 0x0201)]) +
+           tim(2, [(1020, 510, 8, 2, 0x1234)]) + b"\0" * 64)
+    rects = scene.tim_rects(ent)
+    check([(r[0], r[1], r[2], r[3]) for r in rects] == [(0, 480, 256, 1), (320, 0, 64, 4), (1020, 510, 8, 2)],
+          "TIM blocks parse in upload order, padding ends the run")
+    common = tim(2, [(320, 0, 64, 4, 0x1111)]) + tim(2, [(900, 100, 4, 1, 0x2222)])
+    v = scene.vram_from_rtim(1, entries=[b"", ent] + [b""] * 98 + [common])
+    px = lambda x, y: struct.unpack_from("<H", v, (y * 1024 + x) * 2)[0]
+    check(px(320, 0) == 0x0201 and px(900, 100) == 0x2222,
+          "RTIM 100 uploads first, the mission entry overwrites it")
+    check(px(0, 480) == 0x7fff and px(1023, 511) == 0x1234 and px(1020, 512 % 512) == 0,
+          "CLUT row lands at its rect; a block past the right edge is clipped")
+
     with tempfile.TemporaryDirectory() as d:
         for f in ("M30-mid-01__20261018__v87.sav", "GAR-main-01__20261017__v87.sav",
                   "M30-mid-01__20261018__v87.json", "notes.txt"):

@@ -167,6 +167,62 @@ def vram_from_blob(blob):
     return blob[o: o + VRAM_SIZE]
 
 
+# Level texels on disc: GG/COM/RTIM.T. The mission loader reads RTIM entry 100 (common)
+# then entry missionNum into VRAM (docs/MISSION_SYSTEM.md). Each entry is a run of
+# standard TIMs, each block carrying its own VRAM rect. Verified 2026-10-22: RTIM 100 + 30
+# rebuild mission 30's level pages (x 320..640, tpage 0x85..0x89) and their CLUT rows
+# 480..485 byte for byte against M30-mid-01's VRAM; what differs (the page at x 640, CLUT
+# rows 486+) is object/AC art the game uploads later from elsewhere.
+RTIM_PATH = "GG/COM/RTIM.T"
+RTIM_COMMON = 100
+
+
+def tim_rects(entry):
+    """[(x, y, w, h, data)] of every TIM block (CLUT, then image) in an RTIM entry, in
+    upload order; w is in 16-bit VRAM pixels. Stops at the first non-TIM word."""
+    o, out = 0, []
+    while o + 8 <= len(entry):
+        tid, flags = struct.unpack_from("<II", entry, o)
+        if tid != 0x10:
+            break
+        p = o + 8
+        for _ in range(2 if flags & 8 else 1):
+            if p + 12 > len(entry):
+                return out
+            ln, x, y, w, h = struct.unpack_from("<IHHHH", entry, p)
+            if ln < 12 or p + ln > len(entry):
+                return out
+            out.append((x, y, w, h, entry[p + 12:p + 12 + w * h * 2]))
+            p += ln
+        o = p
+    return out
+
+
+def upload(vram, rects):
+    """Copy TIM blocks into a bytearray VRAM like LoadImage (clipped to 1024x512)."""
+    for (x, y, w, h, data) in rects:
+        for r in range(h):
+            if y + r >= 512:
+                break
+            row = data[r * w * 2:(r + 1) * w * 2][:(1024 - x) * 2]
+            o = ((y + r) * 1024 + x) * 2
+            vram[o:o + len(row)] = row
+
+
+def rtim_entries():
+    return pa_obj.load_container(RTIM_PATH)     # reads the disc from $AC1_BIN
+
+
+def vram_from_rtim(n, entries=None):
+    """VRAM as mission N's load leaves the level textures: RTIM 100, then RTIM N."""
+    ents = entries or rtim_entries()
+    vram = bytearray(VRAM_SIZE)
+    for i in (RTIM_COMMON, n):
+        if 0 <= i < len(ents) and ents[i]:
+            upload(vram, tim_rects(ents[i]))
+    return bytes(vram)
+
+
 def states_dir():
     return os.environ.get("AC1_STATES_DIR") or os.path.join(os.path.expanduser("~"), "dev", "ac1_states")
 
