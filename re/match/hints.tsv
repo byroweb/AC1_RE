@@ -1637,3 +1637,27 @@ fdat096	0x801C5DE8	name	fx_debris_bounce	2026-10-22T21:44:24Z
 fdat096	0x801C5DE8	hint	per axis: pos(+0x10)+=vel(def+6), clamp to +-lim(def+0); copies 8 bytes to +8 (or D_80039C78 if func_80072a00==0); flips vel when pos leaves [lo,hi] (+0x18/+0x1E)	2026-10-22T21:44:25Z
 fdat040	0x801C5E5C	name	mis_mover_update	2026-10-22T21:44:25Z
 fdat040	0x801C5E5C	hint	door/mover step: speed/accel clamp toward range (range +0x18, acc +0x14, vmax +0x16), sets speed +0xA, plays loop sound via func_8004CC30 or stops (func_8004CE44), cnt +0x1A timeout -> func_801C5CE0	2026-10-22T21:44:25Z
+ovl201	0x8008C3EC	name	shop_ctrl_new	2026-10-22T21:44:45Z
+ovl201	0x8008C3EC	hint	w2c07: shop controller ctor, 108 MoveImage tiles	2026-10-22T21:44:45Z
+ovl202	0x8004C25C	name	link_wait_ready	2026-10-22T21:44:45Z
+ovl202	0x8004C25C	hint	waits until link status buf [0]==R or [7]==C (1); after 300 ticks of timer func_80016278 sets D_8008D920 and returns 0	2026-10-22T21:44:45Z
+ovl201	0x800ADB40	name	ui_row_label_create	2026-10-22T21:44:46Z
+ovl201	0x800ADB40	hint	w2c10: render-type-3 UiObj, update func_800ADC20	2026-10-22T21:44:46Z
+ovl202	0x8004C854	name	snd_vab_pack_open	2026-10-22T21:44:46Z
+ovl202	0x8004C854	hint	parses pack {s32 n; n VAB headers {size,data}; n bodies {size,slot,data}} and opens each via func_8004C7A8(slot, head, body) (SsVabOpenHead/TransBody); returns body start	2026-10-22T21:44:46Z
+ovl202	0x8004E06C	name	vec_clamp_step	2026-10-22T21:44:46Z
+ovl202	0x8004E06C	hint	scales SVECTOR step by min(lim/|vx|,lim/|vz|,limy/|vy|,max); factor 0 copies and clamps axes to +-limit, returns factor	2026-10-22T21:44:46Z
+ovl202	0x8004D044	name	snd_chan_alloc	2026-10-22T21:44:46Z
+ovl202	0x8004D044	hint	sound channel pick for id: free (voice -1), else channel already playing id (stopped via func_8004CF0C), else idle lowest-priority; called by func_8004D178	2026-10-22T21:44:46Z
+ovl202	0x8004EDAC	name	snd_seq_step	2026-10-22T21:44:46Z
+ovl202	0x8004EDAC	hint	steps a per-object sound event list (+0x54 n, +0x55 idx, +0x56 {key,id,vol,d}[]); n==0xFF plays bank effect from D_801A5DC0+0x1000+key*256; else on frame==key plays func_8004CE44/func_8004CC30 and advances	2026-10-22T21:44:46Z
+ovl202	0x8004F1A8	name	ac_model_build	2026-10-22T21:44:46Z
+ovl202	0x8004F1A8	hint	writes level digits into label D_8008D928, then loads each fitted part (bytes 0x8004121D..24, 0xFF none) into model buffer cursor D_8019F520 via func_800537FC slot n+0x80; back slot skipped for kinds 8..15	2026-10-22T21:44:46Z
+ovl202	0x8004C340	name	mission_main	2026-10-22T21:44:46Z
+ovl202	0x8004C340	hint	mission entry: inits subsystems, heap at 0x801BCB40, frame loop with alarm/objective messages and end-timer volume fade, shutdown; result D_80048610 from mission flags 0x100/0x200; returns 1 on first clear (0x800411F8 0->1)	2026-10-22T21:44:46Z
+ovl202	0x8004E22C	name	mover_clip_step	2026-10-22T21:44:46Z
+ovl202	0x8004E22C	hint	motion-clip key interpolation for a mover (AcEntity+0x64): clip idx in bank +0x1C, frame +0xA, dir +0xC; delta to next key clamped to limits +6/+8, rotated by facing into out (/4), rot delta to drot; returns frames to next key	2026-10-22T21:44:46Z
+ovl201	0x800A86D0	name	link_exchange_words	2026-10-22T21:44:47Z
+ovl201	0x800A86D0	hint	link-cable exchange of n word pairs: sends src pairs in R..C packets via write(), reads replies into dst; aborts on cancel flag or 7866-tick timeout	2026-10-22T21:44:47Z
+ovl201	0x8008A4BC	name	mission_brief_confirm	2026-10-22T21:44:47Z
+ovl201	0x8008A4BC	hint	briefing window update: O on accept takes highlighted mission (seen flag, fee into credits D_80039CA4, start) or commits pending one (random rewards add[15], counters, rank, part cost sum D_80048608, result windows); X returns to list	2026-10-22T21:44:47Z
