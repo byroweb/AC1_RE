@@ -805,3 +805,9 @@ ovl201	0x800ADB40	name	ui_row_label_create	2026-10-22T16:48:38Z
 ovl201	0x800ADB40	hint	w2c10: render-type-3 UiObj, update func_800ADC20	2026-10-22T16:48:38Z
 ovl202	0x8004C854	name	snd_vab_pack_open	2026-10-22T16:48:38Z
 ovl202	0x8004C854	hint	parses pack {s32 n; n VAB headers {size,data}; n bodies {size,slot,data}} and opens each via func_8004C7A8(slot, head, body) (SsVabOpenHead/TransBody); returns body start	2026-10-22T16:48:38Z
+ovl202	0x80052350	name	msg_parse_decimal	2026-10-22T16:48:41Z
+ovl202	0x80052350	hint	parses ASCII digits at *pp into s32, advances *pp (atoi-style)	2026-10-22T16:48:41Z
+ovl202	0x800572A8	name	mis_init_work_buffers	2026-10-22T16:48:41Z
+ovl202	0x800572A8	hint	points buffer ptrs 0x801A5E1C..F20 into big buffers at 0x8014C7C8/0x801887C8/0x801907C8, sets 4 flags, inits heap 0x800A1228 size 0x10000 via func_8001604C (arena header)	2026-10-22T16:48:41Z
+ovl202	0x80050088	name	radar_draw_box_outline	2026-10-22T16:48:41Z
+ovl202	0x80050088	hint	twin of ovl203 0x80050998 (box corners relative to player AC, projected by func_8004FEAC, lines by func_8004FF48)	2026-10-22T16:48:42Z
