@@ -537,3 +537,47 @@ ovl201	0x800940A4	name	shop_confirm_input	2026-10-22T11:58:59Z
 ovl201	0x800940A4	hint	Yes/no dialog of a buy or sell: YES updates owned (0x80031A94) / stock (0x80031B34) counts and credits D_80039CA4 (clamped -999999..99999999), closes windows and rebuilds the list; NO/cancel returns to the part list.	2026-10-22T11:59:00Z
 ovl201	0x8008C3EC	name	shop_ctrl_new	2026-10-22T11:59:00Z
 ovl201	0x8008C3EC	hint	Shop controller constructor: resets ShopState mode/selection/saved cursors, allocates the controller (update 0x8008CCA8, destroy 0x8008DD48), tiles the window frame in VRAM with 108 MoveImage calls, clears D_801A2574, returns the object.	2026-10-22T11:59:00Z
+ovl201	0x800B55E4	name	libpress_DecDCTvlcSize2	2026-10-22T12:01:18Z
+ovl201	0x800B55E4	hint	hand-written asm: stores the max-size word kept at 0x800B55E4 (0xFFFFFF default) and returns the old one; PsyQ libpress DecDCTvlcSize.	2026-10-22T12:01:18Z
+ovl201	0x800B5618	name	libpress_DecDCTvlc2	2026-10-22T12:01:18Z
+ovl201	0x800B5618	hint	hand-written asm MDEC VLC decoder using tables at 0x800BEB58/0x800CEB58, saves state at 0x800B5958; PsyQ libpress DecDCTvlc.	2026-10-22T12:01:18Z
+ovl201	0x800AE184	name	config_swap_pad_map	2026-10-22T12:01:18Z
+ovl201	0x800AE184	hint	swaps the 12 u16 pad-mapping words at 0x80041230 with the alternate set at 0x800415CC (0x80041230 is the active map written by func_800AE838).	2026-10-22T12:01:18Z
+ovl201	0x800ADC4C	name	ui_yesno_box_create	2026-10-22T12:01:18Z
+ovl201	0x800ADC4C	hint	allocs a UiObj (update func_800ADD70), stores owner/target/n/mode/initial choice, marks target used=2, draws a 0x90x0x30 window and plays SE 7.	2026-10-22T12:01:18Z
+ovl201	0x800ADE38	name	ui_yesno_box_update	2026-10-22T12:01:18Z
+ovl201	0x800ADE38	hint	left/right (or alt pad bits when mode 0) moves a 0/1 choice and the cursor x (sel*69+4); confirm/cancel set result +0x96, close the window and kill the three labels.	2026-10-22T12:01:18Z
+ovl201	0x800ADB40	name	ui_row_label_create	2026-10-22T12:01:18Z
+ovl201	0x800ADB40	hint	allocs a render-type-3 UiObj with update func_800ADC20 (pos.vy = y + *src*0x18); stores src/x/y/kind at +0x7C..+0x84.	2026-10-22T12:01:18Z
+ovl201	0x800B498C	name	emblem_load_from_card	2026-10-22T12:01:18Z
+ovl201	0x800B498C	hint	opens the port's BASCUS-94182Z save, reads 0x3B00 bytes with 3 retries, checks the 0x38E2-byte sum at +0x200 and LoadImages emblem idx (CLUT + 64x64 4bpp) to VRAM.	2026-10-22T12:01:18Z
+ovl201	0x800B4BD4	name	emblem_load_all_from_card	2026-10-22T12:01:18Z
+ovl201	0x800B4BD4	hint	same card read/sum check as 0x800B498C, then uploads all 7 emblems (CLUT rows from y=0x80, images tiled at x 0x380..0x3C0).	2026-10-22T12:01:19Z
+ovl201	0x800B4054	name	card_scan_emblem_files	2026-10-22T12:01:19Z
+ovl201	0x800B4054	hint	twin of 0x80066994 with the BASCUS-94182* pattern counting only 'Z' files: fills CardDir[port] saves/files and used block total.	2026-10-22T12:01:19Z
+ovl201	0x800AEF2C	name	options_menu_update	2026-10-22T12:01:19Z
+ovl201	0x800AEF2C	hint	options top menu: up/down over 6 rows (+0x88), confirm opens volume ('M'/'B' via func_800AFEB4), pad config, other sub-pages; cancel applies config (func_800AE838).	2026-10-22T12:01:19Z
+ovl201	0x800AF740	name	options_toggle_update	2026-10-22T12:01:19Z
+ovl201	0x800AF740	hint	options 2-way choice: up/down toggles +0x89, confirm stores (sel != 1) to config byte 0x80048660, both exits close the window and return to func_800AFA00.	2026-10-22T12:01:19Z
+ovl201	0x800AFBFC	name	options_choice3_update	2026-10-22T12:01:19Z
+ovl201	0x800AFBFC	hint	options 3-way choice (+0x89 0..2) stored to config byte 0x80048663 on confirm; closes window id 7.	2026-10-22T12:01:19Z
+ovl201	0x800B1C18	name	options_choice3b_update	2026-10-22T12:01:19Z
+ovl201	0x800B1C18	hint	twin of 0x800AFBFC for config byte 0x80048664 (window at y 0x70).	2026-10-22T12:01:19Z
+ovl201	0x800B0048	name	options_volume_update	2026-10-22T12:01:19Z
+ovl201	0x800B0048	hint	left/right changes volume +0x85 (0..63) and applies it live (SsSetMVol for 'M', SsSeqSetVol on the current SEQ otherwise); confirm stores it to 0x80048661/0x80048662.	2026-10-22T12:01:20Z
+ovl201	0x800B3414	name	assembly_build_ac_model	2026-10-22T12:01:20Z
+ovl201	0x800B3414	hint	builds the AC preview model objects (func_800B3748 kinds 3..14) from the equipped part bytes at 0x80031A58 (core, arms 0x5B, weapons 0x5E/0x5F).	2026-10-22T12:01:20Z
+ovl201	0x800B2AC4	name	rank_list_update	2026-10-22T12:01:20Z
+ovl201	0x800B2AC4	hint	ranking list input: up/down scroll page/row with key repeat, confirm opens the selected RankEnt (message kind+11), cancel closes the list.	2026-10-22T12:01:20Z
+ovl201	0x800B5EEC	name	softfloat_divdf3	2026-10-22T12:01:20Z
+ovl201	0x800B5EEC	hint	soft-float double divide: restoring division one bit per step with the 64-bit helpers 0x800B5D74 (add), 0x800B5E24 (shift), 0x800B61D0 (compare), 0x800B6214.	2026-10-22T12:01:20Z
+ovl201	0x800B146C	name	options_padcfg_assign	2026-10-22T12:01:20Z
+ovl201	0x800B146C	hint	pad config: the pressed button becomes D_80048630[row+col*8] and its name label text (12-char names at 0x800BDE18); then relights all 12 rows, clashing mappings at light 13; returns to func_800B0CF0.	2026-10-22T12:01:20Z
+ovl201	0x800B4398	name	emblem_save_to_card	2026-10-22T12:01:20Z
+ovl201	0x800B4398	hint	builds the 0x3B00 BASCUS-94182Z save (SC header, SJIS title 0x800BE114, icon 0x800BE154/0x800BE174, 7 emblems StoreImaged from VRAM, slot idx from the edit buffer, sum at +0x200), creates/writes it with retries and verifies by reading back.	2026-10-22T12:01:20Z
+ovl201	0x800B0CF0	name	options_padcfg_update	2026-10-22T12:01:20Z
+ovl201	0x800B0CF0	hint	pad config screen: up/down/left/right move col/row (+0x7C/+0x7D, rows 4,5 absent in col 1), confirm selects an action (-> func_800B146C), row 6 col 1 restores the default map 0x800BDDA0, exit/cancel refuse (func_8005DED8 message) while two actions share a button.	2026-10-22T12:01:21Z
+ovl201	0x800B0598	name	options_padcfg_init	2026-10-22T12:01:21Z
+ovl201	0x800B0598	hint	once the window object (func_8005BA2C) is gone: maps each D_80048630 button bit to a name index, creates the 12 button-name labels (D_8017F4D8) and 14 action labels (D_8017F508), lights clashes, inits the cursor (func_800B1980) and sets update func_800B0CF0.	2026-10-22T12:01:21Z
+ovl201	0x800B3748	name	assembly_part_obj_create	2026-10-22T12:01:21Z
+ovl201	0x800B3748	hint	allocs a part model UiObj (update func_800B3E7C) for model kind 3..14, finds its attach point from the core tables 0x800BC428/0x800BC440 (+arms 0x800BC638/0x800BC6B8, legs 0x800BC968) plus per-part offsets 0x800BCAC4[kind], mirrors x for flag bit 0, hides it when the slot is empty.	2026-10-22T12:01:21Z
