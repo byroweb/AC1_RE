@@ -418,3 +418,35 @@ ovl201	0x800501BC	name	ui_obj_alloc	2026-10-22T11:49:20Z
 ovl201	0x800501BC	hint	Already named in symbols.tsv; retail takes s16 kind (sll/sra on entry): per kind 0..21 picks the slot run in g_ui_pool, view g_ui_views[n] and OT pair, returns the first free slot initialised (identity matrix 0x800B6ECC) or &g_ui_none.	2026-10-22T11:49:20Z
 ovl201	0x8004E2BC	name	garage_menu_ring_idle	2026-10-22T11:49:20Z
 ovl201	0x8004E2BC	hint	Wave-1 C header: garage main menu ring idle step: confirm opens the front item (per-item setup), left/right start a ring turn (0x8004E894).	2026-10-22T11:49:20Z
+ovl201	0x800A8618	name	link_handshake	2026-10-22T11:54:00Z
+ovl201	0x800A8618	hint	_comb_control(0x800309A8) serial link: sets CTS, polls status bit until partner ready (returns 1) or cancel bit 0x80 (returns 0)	2026-10-22T11:54:00Z
+ovl201	0x800A70EC	name	link_send_checksum	2026-10-22T11:54:00Z
+ovl201	0x800A70EC	hint	if link ready, writes 8-byte packet D_8017F4B8 to sio fd D_8004A288 with byte0 = sum 1..7	2026-10-22T11:54:00Z
+ovl201	0x800A6EA0	name	vs_link_shutdown	2026-10-22T11:54:00Z
+ovl201	0x800A6EA0	hint	kills front-end panels and UiObj ids 1..11, frees TMD models D_801F36D0[3..14], clears flags, calls 0x800A2D0C(1)	2026-10-22T11:54:00Z
+ovl201	0x800A737C	name	link_wait_partner	2026-10-22T11:54:00Z
+ovl201	0x800A737C	hint	link-cable connect loop (0x800309A8 cmds 1..3); on cancel shows panel 11 and goes to 0x800A7818, else 0x800A74A4	2026-10-22T11:54:00Z
+ovl201	0x800AA61C	name	vs_check_p2_equipment	2026-10-22T11:54:00Z
+ovl201	0x800AA61C	hint	copies player 2 AC parts (D_8004083C) and colours into the current AC, validates with 0x800714FC, else message 0x8004D430	2026-10-22T11:54:01Z
+ovl201	0x800AA520	name	vs_check_p1_equipment	2026-10-22T11:54:01Z
+ovl201	0x800AA520	hint	player 1 version of 0x800AA61C (parts D_80040830, colours D_80040E38, message 0x8004D40C)	2026-10-22T11:54:01Z
+ovl201	0x800A7160	name	link_recv_packet	2026-10-22T11:54:01Z
+ovl201	0x800A7160	hint	TestEvent on sio read event; verifies byte0 checksum of D_8017F4B0 and re-arms read(D_8004A284); returns 1 on good packet	2026-10-22T11:54:01Z
+ovl201	0x800A75A0	name	link_exchange_ac_select	2026-10-22T11:54:01Z
+ovl201	0x800A75A0	hint	sends local selection bytes via 0x800A86D0, on success copies partner bytes into D_800411F8/D_80048663; on failure shows panel 11	2026-10-22T11:54:01Z
+ovl201	0x800A86D0	name	link_exchange_words	2026-10-22T11:54:01Z
+ovl201	0x800A86D0	hint	exchanges n u16 pairs over sio in 8-byte 'R'..'C' packets (read/write/GetRCnt timeout 7866); returns 1 on success	2026-10-22T11:54:01Z
+ovl201	0x800AA710	name	vs_compare_ac_stats	2026-10-22T11:54:01Z
+ovl201	0x800AA710	hint	calcs performance (0x8009C964) for AC set A then B, MoveImage when parts slot 6/7 >= 31, restores A, opens 3 panels	2026-10-22T11:54:01Z
+ovl201	0x800AAC20	name	vs_load_ac_slot	2026-10-22T11:54:01Z
+ovl201	0x800AAC20	hint	(u8 slot, UiObj*) loads AC slot (0/1) parts, palette, 160-byte block, model table and colours into the current AC	2026-10-22T11:54:01Z
+ovl201	0x800AC0B8	name	vs_store_ac_slot	2026-10-22T11:54:01Z
+ovl201	0x800AC0B8	hint	reverse of 0x800AAC20: stores current AC (parts, palette, models, names D_80031BD4) into slot (o+0x7C==2), next 0x800A9AFC	2026-10-22T11:54:01Z
+ovl201	0x800ABB10	name	vs_setup_menu_input	2026-10-22T11:54:02Z
+ovl201	0x800ABB10	hint	5-item menu cursor (o+0x7D) with pad repeat; items check CORE/OPTIONAL/equipment-incomplete messages (0x8004D4A4..E8) before opening sub-screens; cross saves via 0x800AC0B8	2026-10-22T11:54:02Z
+ovl201	0x800A89C0	name	vs_setup_init	2026-10-22T11:54:02Z
+ovl201	0x800A89C0	hint	creates panel item[3], picks D_80039CAE from D_80039D14 thresholds, and on first entry copies the current AC into both player slots (parts, palette, names, models)	2026-10-22T11:54:02Z
+ovl201	0x800A9AFC	name	vs_player_select_input	2026-10-22T11:54:02Z
+ovl201	0x800A9AFC	hint	4-item cursor (o+0x7C) driven by both pads (pad2 repeat at +0xC/+0xE); items load player 1/2 AC (0x800AAC20), compare, or open 0x800ADC4C dialog	2026-10-22T11:54:02Z
+ovl201	0x800A7A68	name	link_exchange_ac	2026-10-22T11:54:02Z
+ovl201	0x800A7A68	hint	packs current AC (parts, colours, emblem image via StoreImage) into a 700-word buffer, swaps it with the partner over the link (0x800A869C), loads partner AC/emblem and applies parts	2026-10-22T11:54:02Z
