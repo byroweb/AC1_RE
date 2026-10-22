@@ -226,6 +226,20 @@ def exe_anchor_from_disc(disc_bin: str, n: int = 256):
     return payload[:n], t_addr
 
 
+VRAM_MARKER = b"\x08\x00\x00\x00GPU-VRAM"   # StateWrapper section marker
+
+
+def vram_offset(blob: bytes):
+    """Offset of VRAM in a decompressed state: right after the "\\x08\\0\\0\\0GPU-VRAM"
+    marker inside the GPU component (followed by "GPUTextureCache"). The GPU
+    registers before it vary in length (0x2bb vs 0x303 bytes after the "GPU" marker
+    in the v87 states), so a fixed offset is wrong. None if there is no marker."""
+    i = blob.find(VRAM_MARKER)
+    if i < 0 or i + len(VRAM_MARKER) + VRAM_SIZE > len(blob):
+        return None
+    return i + len(VRAM_MARKER)
+
+
 def bus_marker_offset(blob: bytes) -> int:
     """Offset of the "Bus" component marker (RAM follows a few bytes later), or -1."""
     return blob.find(b"\x03\x00\x00\x00Bus", 0, 0x10000)
@@ -256,15 +270,13 @@ class SaveState:
 
     # --- VRAM ----------------------------------------------------------------
     def vram(self) -> bytes:
-        """Locate the 1 MB VRAM block. GPU is serialized after RAM; VRAM is the
-        first 1 MB-aligned region whose 16bpp framebuffer is plausible. Heuristic:
-        scan for a 1 MB window after RAM end that is not all-zero and not the SPU
-        RAM signature; caller can override via vram_at()."""
-        # Coarse default: many DuckStation v82 states place VRAM shortly after the
-        # 2 MB RAM. Provide the raw blob via vram_at() if this guess is wrong.
-        guess = self.ram_base + RAM_SIZE
-        # skip small CPU/cache component(s): search next 256 KB for a non-flat block
-        return self.blob[guess: guess + VRAM_SIZE]
+        """The 1 MB VRAM block (1024x512 16bpp), found by its "GPU-VRAM" marker
+        (vram_offset). Falls back to the old guess just past RAM, which is wrong
+        for v87 states, only when the marker is missing."""
+        o = vram_offset(self.blob)
+        if o is None:
+            o = self.ram_base + RAM_SIZE
+        return self.blob[o: o + VRAM_SIZE]
 
     def vram_at(self, off: int) -> bytes:
         return self.blob[off: off + VRAM_SIZE]

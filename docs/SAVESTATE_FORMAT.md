@@ -128,14 +128,20 @@ menu/garage, but with the `0xe6c`-low RAM base described above, so that finding 
 unverified and those files are not on this PC. (`mods/farsi/docs/screens/vram_full_slot2.png`
 is a garage VRAM — parts/UI pages, not stage texture pages.)
 
-## Caveat — VRAM offset
+## VRAM offset (RESOLVED 2026-10-22)
 
-`SaveState.vram()` returns a 1 MB window guessed just past the 2 MB RAM; that guess is
-**wrong by at least the GPU register block**: in the v87 states the `"GPU"` marker sits at
-`0x201b20` (RAM ends at `0x201a62`, then DMA/InterruptController), and VRAM is somewhere
-inside the GPU component after its registers. The exact VRAM offset is **not yet pinned**;
-LVL-1 is now a one-liner against `M30-ctrl-01` (`blob.find(b"\x03\0\0\0GPU")`, then compare
-with DuckStation's own VRAM dump of the staged state). Use `vram_at(off)` once confirmed.
+VRAM has its own StateWrapper marker inside the GPU component: **`08 00 00 00 "GPU-VRAM"`**,
+then the 1 MB (1024×512 16bpp), then `0f 00 00 00 "GPUTextureCache"`.
+`savestate.vram_offset(blob)` returns the byte after the marker, and `SaveState.vram()`
+uses it. The GPU registers before the marker vary in length: VRAM is `0x2bb` bytes after
+the `"GPU"` marker in six of the seven archived v87 states and `0x303` in `M30-mid-01`. So
+neither the old "just past RAM" guess nor any fixed offset is right. Checked on every
+library state:
+- the bytes after the 1 MB are the `GPUTextureCache` marker;
+- the in-mission frame buffers sit at (0,0) and (0,240);
+- mission 30's 8bpp level pages (tpage `0x85..0x89`) decode through their CLUTs
+  (VRAM rows 481–484) as the stage's stone, metal and grating textures
+  (`tools/sceneview/`).
 
 ## Save-state library
 
