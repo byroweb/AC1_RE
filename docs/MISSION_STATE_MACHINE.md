@@ -216,7 +216,7 @@ chunk 12 record (40 B, 20×int16)          ── FUN_80073B74 ──►  templa
                                                                          installs +0x50..+0x5C (think)
 ```
 
-The streaming path is CONFIRMED live in mission 20 (`LIVE_CHECKLIST.md` MIS-9: templates 5 and 14 spawned ~80 s after load from `ra 0x8007908C`). The flag-bit meanings are read from its byte-matched C (HYPOTHESIS until a zone-mode or `0x40` record is seen live).
+The streaming path is CONFIRMED live in mission 20 (`LIVE_CHECKLIST.md` MIS-9: templates 5 and 14 spawned ~80 s after load from `ra 0x8007908C`). The flag-bit meanings are read from its byte-matched C Live 2026-10-21: every `0x40` template seen (mission 28: records 6/7/8/12) was spawned only by objobj code, never by the streamer; zone mode (bit 0) not yet seen live. Mission 28's waves respawn the same templates after kills.
 
 Despawn: `despawn_group N` → `FUN_80078D78`; death: on-hit/death method `+0x5C`;
 *objobj* **FREE** hook (`+0x10`) adjusts kill tallies. World-structure objects

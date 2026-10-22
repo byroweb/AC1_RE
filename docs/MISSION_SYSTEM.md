@@ -255,7 +255,8 @@ skill). Ghidra names below are in the **isolated `Mission202` project** — see
    fires. This does **NOT** set success or end the mission — verified:
    `0x8019F524`, `0x80048610` and the objective object all stayed `0` across the
    kill. (Open: reconcile `0x801D0B50` with the objective step counter
-   `0x8009079C` — likely distinct fields.)
+   `0x8009079C` — likely distinct fields. Live 2026-10-21, mission 28: neither is written when
+   world structures are destroyed, so neither is a destruction tally — `LIVE_CHECKLIST.md` MIS-4.)
 2. **Cross the level-exit border** (gated on the objectives-complete state) → the
    objective object's per-frame update runs script **cmd 5** (`0x8008A1E8`) →
    **`FUN_8004C318(0x80)`** writes `0x8019F524` and arms `0x8019F528 = 100`, the
