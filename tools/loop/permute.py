@@ -64,6 +64,7 @@ MATCH_DIR = os.path.join(REPO, "tools", "match")
 sys.path.insert(0, HERE)
 sys.path.insert(0, MATCH_DIR)
 import match_fn  # noqa: E402  (stdlib only: keeps `cc` start-up cheap)
+import heartbeat  # noqa: E402
 
 SYMS_TABLES = ["include/ac1/symbols.tsv", "ac1_markup.tsv"]
 AUTO_SYM = re.compile(r"^(func|D)_([0-9A-Fa-f]{8})$")
@@ -338,15 +339,18 @@ def cmd_setup(args):
 # ---------------------------------------------------------------------------
 # stage 1: lever beam search
 # ---------------------------------------------------------------------------
-def lever_search(meta, syms, draft_text, retail, inc_dir, names, max_evals, beam, log=None):
+def lever_search(meta, syms, draft_text, retail, inc_dir, names, max_evals, beam, log=None, tick=None):
     """-> dict(base, best, text, trail, evals).  Children whose compiled bytes were seen
-    before (no-op rewrites) are dropped; equal scores are kept (plateau moves)."""
+    before (no-op rewrites) are dropped; equal scores are kept (plateau moves).
+    tick(best) is called after every compile (the heartbeat)."""
+    tick = tick or (lambda best: None)
     import levers
     first = text_bytes(meta, syms, draft_text, inc_dir)
     res = {"base": None, "best": None, "text": draft_text, "trail": [], "evals": 1}
     if first is None:
         return res
     res["base"] = res["best"] = word_score(first[0], retail)
+    tick(res["best"])
     seen_text = {hashlib.sha1(draft_text.encode()).digest()}
     seen_code = {first[0]}
     frontier = [(res["best"], draft_text, [])]
@@ -363,6 +367,7 @@ def lever_search(meta, syms, draft_text, retail, inc_dir, names, max_evals, beam
                 out = text_bytes(meta, syms, nt, inc_dir)
                 res["evals"] += 1
                 if out is None or out[0] in seen_code:
+                    tick(res["best"])
                     continue
                 seen_code.add(out[0])
                 s = word_score(out[0], retail)
@@ -371,6 +376,7 @@ def lever_search(meta, syms, draft_text, retail, inc_dir, names, max_evals, beam
                 scored.append((s, nt, trail + [label]))
                 if s < res["best"] or (s == res["best"] and len(trail) + 1 < len(res["trail"])):
                     res.update(best=s, text=nt, trail=trail + [label])
+                tick(res["best"])
                 if s == 0:
                     return res
         scored.sort(key=lambda x: (x[0], len(x[2])))
@@ -538,11 +544,14 @@ def splice(draft_text, perm_text, fn):
 
 STATUS = re.compile(r"iteration (\d+), (\d+) errors, score = (\d+)")
 BASE = re.compile(r"base score = (\d+)")
+NEW_BEST = re.compile(r"new best score! \((\d+) vs")
 
 
-def run_permuter(d, budget, log_path):
+def run_permuter(d, budget, log_path, tick=None):
     """One single-threaded permuter on dir d until score 0 or budget s.
-    -> dict(base, best, iterations, seconds, zero_dir, failed)."""
+    -> dict(base, best, iterations, seconds, zero_dir, failed).
+    tick(iterations=, best=) on its status and new-best lines (the heartbeat)."""
+    tick = tick or (lambda **kw: None)
     pd = permuter_dir()
     cmd = [permuter_python(pd), os.path.join(HERE, "permuter_main.py"), pd, d, "--stop-on-zero",
            "--stack-diffs", "--best-only", "-j", "1"]
@@ -575,12 +584,15 @@ def run_permuter(d, budget, log_path):
                     m = STATUS.search(line)
                     if m:
                         out["iterations"], out["errors"] = int(m.group(1)), int(m.group(2))
+                        tick(iterations=out["iterations"])
                         continue
                     log.write(line + "\n")
                     tail = (tail + [line])[-3:]
-                    m = BASE.search(line)
-                    if m:
+                    m = BASE.search(line) or NEW_BEST.search(line)
+                    if m and m.re is BASE:
                         out["base"] = int(m.group(1))
+                    if m:
+                        tick(best=int(m.group(1)))
         finally:
             p.wait()
             timed_out = not killer.is_alive() and p.returncode != 0
@@ -648,9 +660,27 @@ def commit(c, meta, text, defsyms, how, args):
     return "MATCH"
 
 
-def job(c, args, workdir):
-    """levers, then the permuter, then the oracle on the result.  No repo writes."""
+def job(c, args, workdir, hb=None):
+    """levers, then the permuter, then the oracle on the result.  No repo writes.
+    hb: a heartbeat.Heartbeat told the stage, the scores and the compiles."""
+    hb = hb or heartbeat.Null()
+    heartbeat.wait_if_paused(workdir, hb)
     tag = "%s_%s" % (c["unit"], c["vaddr"][2:])
+    key = (c["unit"], c["vaddr"])
+    hb.begin(*key, phase="levers", size=c["size"], variant=c["variant"])
+
+    def lever_tick(best):
+        hb.add(compiles=1)
+        hb.update(*key, lever=best)
+    seen = [0]
+
+    def perm_tick(iterations=None, best=None):
+        if iterations is not None:
+            hb.add(compiles=iterations - seen[0])
+            seen[0] = iterations
+            hb.update(*key, iterations=iterations)
+        if best is not None:
+            hb.update(*key, perm_best=best)
     d = os.path.join(workdir, tag)
     res = {"c": c, "status": "no match", "base": None, "lever": None, "trail": [], "evals": 0,
            "pbase": None, "best": None, "iterations": 0, "lever_s": 0.0, "perm_s": 0.0,
@@ -668,7 +698,8 @@ def job(c, args, workdir):
         text = draft
         if args.levers and args.lever_evals > 0:
             with open(os.path.join(d, "levers.log"), "w", encoding="utf-8", newline="\n") as lg:
-                lv = lever_search(meta, syms, draft, retail, inc, args.levers, args.lever_evals, args.beam, lg)
+                lv = lever_search(meta, syms, draft, retail, inc, args.levers, args.lever_evals, args.beam, lg,
+                                  lever_tick)
             res.update(base=lv["base"], lever=lv["best"], trail=lv["trail"], evals=lv["evals"])
             text = lv["text"]
             if lv["base"] is None:
@@ -683,7 +714,8 @@ def job(c, args, workdir):
                 with open(os.path.join(d, "lever.c"), "w", encoding="utf-8", newline="\n") as fh:
                     fh.write(text)
                 preprocess(meta["tools"], os.path.join(d, "lever.c"), os.path.join(d, "base.c"), [inc])
-            r = run_permuter(d, args.budget - res["lever_s"], os.path.join(d, "permuter.log"))
+            hb.update(*key, phase="permuter")
+            r = run_permuter(d, args.budget - res["lever_s"], os.path.join(d, "permuter.log"), perm_tick)
             res.update(pbase=r["base"], best=r["best"], iterations=r["iterations"], perm_s=r["seconds"])
             if r["failed"]:
                 res["status"] = "permuter failed"
@@ -696,6 +728,7 @@ def job(c, args, workdir):
                 if candidate is None:
                     res["note"] = "splice failed"
         if candidate is not None:
+            hb.update(*key, phase="oracle")
             chk = os.path.join(d, "result.c")
             with open(chk, "w", encoding="utf-8", newline="\n") as fh:
                 fh.write(candidate)
@@ -736,20 +769,24 @@ def cmd_run(args):
     report = os.path.join(workdir, "permute_report.tsv")
     t0 = time.time()
     results = []
+    hb = heartbeat.Heartbeat(workdir, "permute", len(cands), label="%.0f s each" % args.budget)
     with cf.ThreadPoolExecutor(max_workers=args.jobs) as ex:
-        futs = [ex.submit(job, c, args, workdir) for c in cands]
+        futs = [ex.submit(job, c, args, workdir, hb) for c in cands]
         for i, f in enumerate(cf.as_completed(futs), 1):
             res = f.result()
             c = res["c"]
             if res["status"] == "zero":
                 res["status"] = commit(c, res["meta"], res["text"], res["defsyms"], res["how"], args)
             results.append(res)
+            hb.end(c["unit"], c["vaddr"], res["status"], words=res["lever"], base=res["base"],
+                   perm_best=res["best"], how=res["how"])
             print("[%3d/%d] %-7s %s %4s B  words %-3s base %-4s lever %-4s (%3d ev %3.0f s)  "
                   "perm %-5s best %-5s %5d it %4.0f s  %s %s %s" % (
                       i, len(cands), c["unit"], c["vaddr"], c["size"], c["words"], res["base"], res["lever"],
                       res["evals"], res["lever_s"], res["pbase"], res["best"], res["iterations"],
                       res["perm_s"], res["status"], res["how"], res["note"]))
             sys.stdout.flush()
+    hb.close()
     wall = time.time() - t0
     hits = [r for r in results if r["status"] == "MATCH"]
     its = sum(r["iterations"] for r in results)

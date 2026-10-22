@@ -60,6 +60,8 @@ python tools/loop/permute.py run --report "$WORK/sweep/sweep_report.tsv" --max-r
 step "permuter, deep pass (${DEEP}s each for the $DEEP_N closest)"
 python - "$WORK" "$DEEP_N" <<'EOF'
 import csv, os, shutil, sys
+sys.path.insert(0, "tools/loop")
+import hints
 work, n = sys.argv[1], int(sys.argv[2])
 rep = os.path.join(work, "perm1", "permute_report.tsv")
 rows = list(csv.DictReader(open(rep), delimiter="\t")) if os.path.exists(rep) else []
@@ -79,7 +81,22 @@ for r in left[:n]:
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     shutil.copyfile(src, dst)
     picked += 1
-print("%d deep candidate(s)" % picked)
+# bodies the viewer's "more deep-pass time" asked for (steer deep), on top of the closest
+asked = 0
+for unit, vaddr in hints.steer(hints.load(), "deep"):
+    dst = os.path.join(work, "deep", unit, "func_%s.c" % vaddr[2:])
+    d = os.path.join(work, "perm1", "%s_%s" % (unit, vaddr[2:]))
+    src = next((os.path.join(d, f) for f in ("lever.c", "draft.c") if os.path.exists(os.path.join(d, f))), None)
+    if not src:
+        sd = os.path.join(work, "sweep")
+        pre = "%s_%s_" % (unit, vaddr[2:])
+        drafts = sorted(f for f in os.listdir(sd) if f.startswith(pre) and f.endswith(".c")) if os.path.isdir(sd) else []
+        src = os.path.join(sd, drafts[0]) if drafts else None
+    if src and not os.path.exists(dst) and not os.path.exists(os.path.join("re", "match", unit, "func_%s.c" % vaddr[2:])):
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.copyfile(src, dst)
+        asked += 1
+print("%d deep candidate(s), %d of them asked for in the viewer" % (picked + asked, asked))
 EOF
 deep=$(find "$WORK/deep" -name 'func_*.c' 2>/dev/null)
 if [ -n "$deep" ]; then

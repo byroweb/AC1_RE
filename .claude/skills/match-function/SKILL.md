@@ -29,7 +29,31 @@ only; resolve the symbols (`--defsym`) before calling it done.
 - the toolchain: `tools/match/vendor/toolchain.json` must exist, else run
   `tools/match/setup.sh` once (minutes; builds cc1 on Windows).
 
-## Shared types and names
+## Read the human hints first
+
+The person running the loop knows the game and leaves notes per function in
+`re/match/hints.tsv` (through `tools/loop/viewer.py`). Before the first draft, read the
+hints for your function **and its twins** (same body, other address or unit):
+
+```bash
+python tools/loop/hints.py show <unit> 0x<VADDR>       # e.g. ovl201 0x8007CECC
+```
+
+- `hint`: what the function does ("draws the radar", "loops over the 8 AC parts").
+  Use it to pick the struct type, the loop shape and the local names.
+- `name` / `field`: a proposed name for the function or a struct field. Use it in
+  your C as a comment or local name; a proposal becomes a real `symbols.tsv` name
+  only through `python tools/loop/hints.py names` and review (see below), never by
+  editing `symbols.tsv` on its own say-so.
+- `steer agent`: the person handed this body to an agent lane on purpose; their
+  tries are in the overnight work dir's `human/<unit>_<ADDR>/` (`versions.tsv` says what
+  each move did) and `re/match/actions.tsv`, worth reading before you start.
+- `triage`: `priority` (do it first), `skip` or `giveup` (the person does not want
+  machine time spent on it: stop and report rather than grind). The queues from
+  `make_queues.py` already apply these.
+
+Hints are claims about behaviour, not about bytes: the oracle still decides.
+
 
 Matched code shares one set of struct headers and one name table (details and
 the field-level evidence: `include/ac1/README.md`):

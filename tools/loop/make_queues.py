@@ -45,6 +45,11 @@ without a compiling draft counts as closeness 0) and dealt into -N queues.  Rows
 `sweep.py --queue Q --variants <best_variant> --best-dir DIR`.
 Rows carry `group n_members payoff tier` in front of the usual columns, so
 `drive.py next --queue` and tools/loop/sweep.py read them as they are.
+
+Human triage (re/match/hints.tsv, tools/loop/hints.py; --hints FILE, --no-hints): in
+every mode a function whose newest triage hint is `skip` or `giveup` is dropped, and in
+--bodies mode bodies flagged `priority` go ahead of the rest (each group keeps its own
+order).  A body counts as flagged when any of its twins is.
 """
 import argparse
 import os
@@ -52,6 +57,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import hints   # noqa: E402
 import ledger  # noqa: E402
 import rank    # noqa: E402
 
@@ -62,15 +68,31 @@ TWINS_PROGRAMS = os.path.join(HERE, "twins_programs.tsv")
 
 
 def body_candidates(rows, done, twins_path, max_size=1000, min_instructions=rank.MIN_INSTRUCTIONS,
-                    tier2=True):
-    """Open bodies, tier 1 then tier 2, each by payoff (members / (1 + score)) descending."""
+                    tier2=True, flags=None):
+    """Open bodies, tier 1 then tier 2, each by payoff (members / (1 + score)) descending.
+    flags: hints.triage() -> skip/giveup bodies dropped, priority ones first."""
     groups = rank.load_twins(twins_path)
     cands, _n_done = rank.mission_candidates(rows, done, groups, None, min_instructions)
     for c in cands:
         c["tier"] = 1 if c["gte_ops"] == 0 and c["size"] <= max_size else 2
     cands = [c for c in cands if tier2 or c["tier"] == 1]
     cands.sort(key=lambda c: (c["tier"], -c["payoff"], c["score"], c["unit"], c["vaddr"]))
-    return cands
+    return apply_triage(cands, flags or {}, groups)
+
+
+def apply_triage(cands, flags, groups=None):
+    """Drop skip/giveup candidates, move priority ones to the front (stable).  A candidate's
+    flag is its body's (any twin in groups[c["group"]]) or, without a group, its own."""
+    if not flags:
+        return cands
+    pri, rest = [], []
+    for c in cands:
+        members = (groups or {}).get(c.get("group")) or [(c["unit"], c["vaddr"])]
+        f = hints.body_triage(members, flags)
+        if f in ("skip", "giveup"):
+            continue
+        (pri if f == "priority" else rest).append(c)
+    return pri + rest
 
 
 CLOSE_COLS = BODY_COLS + ["closeness", "best_variant"]
@@ -125,11 +147,13 @@ def render_bodies(rows, cols=BODY_COLS):
 def main_bodies(args):
     rows = rank.load_functions(args.functions)
     done = ledger.load(args.ledger)
+    flags = load_flags(args)
     cands = body_candidates(rows, done, args.twins, args.max_size, args.min_instructions,
-                            not args.no_tier2)
+                            not args.no_tier2, flags)
     cols = BODY_COLS
     if args.closeness:
-        cands = by_closeness(cands, load_closeness(args.closeness), args.min_size)
+        cands = apply_triage(by_closeness(cands, load_closeness(args.closeness), args.min_size), flags,
+                             rank.load_twins(args.twins))
         cols = CLOSE_COLS
         have = [c for c in cands if c["closeness"] is not None]
         print("closeness: %d bod(ies) >= %d B, %d with a compiling draft (mean %.3f)"
@@ -159,6 +183,19 @@ def main_bodies(args):
             fh.write(render_bodies(q, cols))
         print("wrote %s (%d rows)" % (p, len(q)))
     return 0
+
+
+def load_flags(args):
+    """{(unit, vaddr): priority|skip|giveup} from --hints, or {} with --no-hints."""
+    if args.no_hints:
+        return {}
+    flags = hints.triage(hints.load(args.hints))
+    if flags:
+        n = {}
+        for f in flags.values():
+            n[f] = n.get(f, 0) + 1
+        print("hints: %s" % ", ".join("%d %s" % (v, k) for k, v in sorted(n.items())))
+    return flags
 
 
 def spaced(n, k):
@@ -201,6 +238,8 @@ def main():
     ap.add_argument("--ledger", default=None, help="ledger to exclude matched/given-up rows (default tools/loop/ledger.tsv)")
     ap.add_argument("--functions", default=rank.FUNCTIONS)
     ap.add_argument("--force", action="store_true", help="allow overwriting tools/loop/queue-*.tsv")
+    ap.add_argument("--hints", default=hints.HINTS, help="triage hints (default re/match/hints.tsv)")
+    ap.add_argument("--no-hints", action="store_true", help="ignore the triage hints")
     g = ap.add_argument_group("credit-per-effort body queues (--bodies)")
     g.add_argument("--bodies", action="store_true", help="rank open twin groups by members / (1 + score)")
     g.add_argument("-N", dest="n", type=int, default=6, help="number of disjoint queues (default 6)")
@@ -226,6 +265,9 @@ def main():
     rows = rank.load_functions(args.functions)
     done = ledger.load(args.ledger)
     cands = [r for r in rank.candidates(rows, done) if r["unit"] in units]
+    flags = load_flags(args)
+    if flags:       # band picks stay spaced by score: skip/giveup leave, priority does not jump
+        cands = [r for r in cands if hints.body_triage([(r["unit"], r["vaddr"])], flags) not in ("skip", "giveup")]
     qa, qb = build(cands, bands, picks)
 
     if not args.out_dir:
