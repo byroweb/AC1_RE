@@ -176,3 +176,29 @@ ovl201	0x800B5EEC	name	sf_double_div	2026-10-22T06:09:00Z
 ovl201	0x800B5EEC	hint	Ran on AC test / check performance; soft-float a / b on two doubles: exponent difference + 1022, restoring division of 53-bit mantissas with func_800B61D0 compare, func_800B6850 negate and shifts, rounding, overflow error 34/15; sibling of the matched add (0x800B59F4) and multiply (0x800B68C4).	2026-10-22T06:09:00Z
 ovl201	0x8009C964	name	ac_calc_performance	2026-10-22T06:09:00Z
 ovl201	0x8009C964	hint	Ran on AC test / check performance; for AC record arg0 (0x800411F4 + arg0*0x39C) sums weights/stats of the equipped parts (part ids at 0x80031A58..0x80031A63, per-type tables at 0x800B9xxx/0x800BAxxx), caps by the legs' max load and derives figures with the soft-float double helpers (add/mul/div, __fixunsdfsi); not attempted (25504 bytes).	2026-10-22T06:09:00Z
+ovl201	0x80051A74	name	ui_format_int8	2026-10-22T06:10:00Z
+ovl201	0x80051A74	hint	ran on slot 1/system/create/load; writes n clamped to +-9999999 right-aligned in 8 chars with blanks and a leading minus (8-digit twin of 0x80074E44).	2026-10-22T06:10:00Z
+ovl201	0x80053DB4	name	saveload_slot_screen_enter	2026-10-22T06:10:00Z
+ovl201	0x80053DB4	hint	ran on slot 1; once func_8005BA2C box is gone prints the save (kind S) or load header and slot texts, calls 80051C44 for L/R arrows, 80053E98, then update=800542F0.	2026-10-22T06:10:00Z
+ovl201	0x80054AB0	name	saveload_save_confirm_step	2026-10-22T06:10:00Z
+ovl201	0x80054AB0	hint	kind S confirm box set by 800542F0; ran on NEW / yes create new data; card check 800685A8(slot) aborts with error box, else mode 0 opens three option boxes and goes to 80054C34, mode 1 back to 800542F0.	2026-10-22T06:10:00Z
+ovl201	0x80054F1C	name	saveload_load_confirm_step	2026-10-22T06:10:00Z
+ovl201	0x80054F1C	hint	ran on selecting save slot 1 / yes load; same body as 80054AB0 but next state 800550A0.	2026-10-22T06:10:00Z
+ovl201	0x80054D44	name	saveload_create_data	2026-10-22T06:10:00Z
+ovl201	0x80054D44	hint	ran on yes create new data; stores 800684A0(slot) in status[slot], on error shows message + key-on sound, else 80066F90(slot, entry) and shows done/fail message, update=ui_obj_nop2.	2026-10-22T06:10:01Z
+ovl201	0x80052134	name	saveload_menu_create	2026-10-22T06:10:01Z
+ovl201	0x80052134	hint	ran on system; ui_obj_alloc(0) ctor/destroy setup, kind S when owner ctor is 8004FDF4, L for 800A2D0C or a non-null 2nd arg, else error box; sets D_801A2574=2, returns the object.	2026-10-22T06:10:01Z
+ovl201	0x80053AB4	name	saveload_slot_open	2026-10-22T06:10:01Z
+ovl201	0x80053AB4	hint	ran on slot 1; checks the card (800684A0), reloads its directory (80066994, 80066CB0), flags +0xA7 when saving with fewer than 15 used blocks in D_801EF6D0[slot], resets cursor/top and picks the next state from used/+0x08.	2026-10-22T06:10:01Z
+ovl201	0x80053E98	name	saveload_draw_entry_list	2026-10-22T06:10:01Z
+ovl201	0x80053E98	hint	ran on slot 1; draws up to 5 row frames, then per visible card entry (0x2C records at 0x801F5098 from top +0xA6) the number, name, an s16 value and an 8-digit value (func_80051A74), plus the NEW DATA row when +0xA7 is set.	2026-10-22T06:10:01Z
+ovl201	0x800551B0	name	saveload_load_data	2026-10-22T06:10:01Z
+ovl201	0x800551B0	hint	ran on yes load; card check, then 80067CF0(slot, entry) reads the save, copies the 0xA0-byte block 0x80031A94 to 0x80042AA8, rebuilds state (80083A58, 80074A18, 8005EB80, 80073B7C), waits on 800517C8, fixes VRAM with MoveImage, and shows the loaded/failed message.	2026-10-22T06:10:01Z
+ovl201	0x8005252C	name	system_draw_pilot_status	2026-10-22T06:10:01Z
+ovl201	0x8005252C	hint	ran on system / yes create / yes load; prints the pilot and AC names from 0x80031BD4, credits (D_80039CA4, 8 digits), rank (800B203C), missions/successes/failures from 0x80041B3C/40/44 with success and failure percentages, and a completion percentage from 11 part flags in the two 0xA0 blocks at 0x80031A94; update=80052BD0.	2026-10-22T06:10:01Z
+ovl201	0x80052BD0	name	system_menu_update	2026-10-22T06:10:01Z
+ovl201	0x80052BD0	hint	ran on system / save data / load data / exiting to general menu; pad up/down (0x1000/0x4000, with repeat delay/rate from D_801A2574) moves the 5-entry cursor +0xA1, cancel 0x20 closes the boxes (update 80055C2C), confirm 0x40 sets kind S/L and D/E then update 80052F68, entry 4 exits via 8005700C.	2026-10-22T06:10:01Z
+ovl201	0x800542F0	name	saveload_entry_list_update	2026-10-22T06:10:01Z
+ovl201	0x800542F0	hint	ran on NEW / selecting save slot 1 / slot 1; creates the up/down scroll arrows (+0x90/+0x94), shows them by top +0xA6 vs the entry count, moves the row cursor +0xA2 with pad repeat and scrolls via 80053E98, cancel goes to 8005489C, confirm opens the save (S: 80054AB0) or load (80054F1C) / new-data (80055580) confirm box.	2026-10-22T06:10:02Z
+ovl201	0x800531B8	name	saveload_slot_select_update	2026-10-22T06:10:02Z
+ovl201	0x800531B8	hint	ran on load data / save data / slot 1; polls card slot 0/1 on alternate frames (800685A8) to light the slot icons, up/down moves +0xA0, confirm checks the card (800684A0, 3 retries) and opens the slot (80053924) or a card error box, cancel returns to the caller menu.	2026-10-22T06:10:02Z
