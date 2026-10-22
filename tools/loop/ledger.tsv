@@ -4953,3 +4953,11 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T15:01:39Z	ovl201	0x800AE838	match	1	
 2026-10-22T03:04:43Z	ovl204	0x8005B7D4	match	0	zero-agent sweep (neighbour+imm of ovl202 0x8005C630, similarity 0.964)
 2026-10-22T03:07:09Z	ovl201	0x8006F708	match	0	permuter (decomp-permuter after levers index D_8017E5D8 u8[] + index D_8017E5D9 u8[] + index D_8017E5DA u8[], ctx-spframe draft)
+2026-10-22T06:04:06Z	ovl201	0x800968EC	match	1	
+2026-10-22T06:04:08Z	ovl201	0x800971AC	match	1	
+2026-10-22T06:04:09Z	ovl201	0x8009720C	match	1	
+2026-10-22T06:04:10Z	ovl201	0x80096944	match	1	
+2026-10-22T06:04:11Z	ovl201	0x80096684	match	1	
+2026-10-22T06:04:12Z	ovl201	0x8009760C	match	1	
+2026-10-22T06:04:13Z	ovl201	0x80096FFC	match	1	
+2026-10-22T06:04:14Z	ovl201	0x800972A0	match	1	

@@ -140,3 +140,19 @@ ovl201	0x800B32D4	hint	play coverage: selecting rank 10 (1), selecting rank 5 (1
 ovl201	0x800B3E98	hint	play coverage: exiting rank 10 (1), selecting rank 10 (1), selecting rank 5 (1)	2026-10-22T05:46:34Z
 ovl201	0x800B597C	hint	play coverage: swap head (1), yes load (1)	2026-10-22T05:46:34Z
 ovl201	0x800B5EEC	hint	play coverage: ac test (1), check performance (1)	2026-10-22T05:46:34Z
+ovl201	0x800968EC	name	mail_build_order	2026-10-22T06:04:24Z
+ovl201	0x800968EC	hint	Mail screen + opening letter: for each of 64 mails with the received bit (flags&1) it writes order[count-1-(flags>>2)] = mail index, i.e. rebuilds the newest-first list order from the receive sequence number stored in flags bits 2..7.	2026-10-22T06:04:24Z
+ovl201	0x800971AC	name	mail_set_row_read_mark	2026-10-22T06:04:24Z
+ovl201	0x800971AC	hint	Mail list: sets view->items[slot]->+2 to 1 or 0 from the read bit (flags&2) of the given mail; called per list row.	2026-10-22T06:04:24Z
+ovl201	0x8009720C	name	mail_copy_subject_to_row	2026-10-22T06:04:24Z
+ovl201	0x8009720C	hint	Mail list: copies the 32-byte subject string of a mail (table at 0x8017F860, terminated by >) into list row slot of the view (stride 34 at view+0x447) with x=0x40, y=0x30 header bytes.	2026-10-22T06:04:24Z
+ovl201	0x80096944	name	mail_screen_ctor	2026-10-22T06:04:24Z
+ovl201	0x80096944	hint	Mail screen constructor: allocates the 0x96C view (D_80180860), allocates a kind-0 UiObj whose ctor/update/destroy are 0x80096944/0x80096FFC/0x80097930, then copies 64 VRAM tiles with MoveImage to 960..1022 x 128/152 and DrawSync.	2026-10-22T06:04:24Z
+ovl201	0x80096684	name	mail_check_new_arrivals	2026-10-22T06:04:25Z
+ovl201	0x80096684	hint	Mail screen + opening letter: for each unreceived mail tests its (type,arg) condition (rank >= arg, story flag bits at 0x801F3788, or mail 18 special case) and marks it received with sequence number count++; mode 1 with pad 0xC delivers all.	2026-10-22T06:04:25Z
+ovl201	0x8009760C	name	mail_list_input	2026-10-22T06:04:25Z
+ovl201	0x8009760C	hint	Mail list update: on button 0x40 marks the selected mail read and opens it (letter reader), on 0x20 plays the cancel sound and closes; both retire the five list objects and kill obj id 3.	2026-10-22T06:04:25Z
+ovl201	0x80096FFC	name	mail_list_open	2026-10-22T06:04:25Z
+ovl201	0x80096FFC	hint	Mail screen update after ctor (set by 0x80096944): once obj id 3 is gone and the busy byte is clear, runs mail_check_new_arrivals + 0x800968C4 + mail_build_order, counts list entries into view->n, clamps rows to 5 and the selection, draws the frame (0x8005BA2C), plays a sound and moves to 0x800972A0.	2026-10-22T06:04:25Z
+ovl201	0x800972A0	name	mail_list_build_rows	2026-10-22T06:04:25Z
+ovl201	0x800972A0	hint	Mail list update after mail_list_open: waits for the frame drawer (0x8005BA2C) and 0x800517C8, sets two 9-entry s16 tables, then per visible row creates the read mark (0x8005CAE0, mail_set_row_read_mark), the subject text object (mail_copy_subject_to_row + 0x8005CB94, light 20 read / 12 unread) and a row frame; then hands over to mail_list_input.	2026-10-22T06:04:25Z
