@@ -111,8 +111,8 @@ slot is `FUN_80078B14` (`+0x0A` = block index → 44-byte record table
   `0x8019F52A < 16` and `0x8019F52C != 0`. The "MISSION TIMER" label string is at
   `0x8004ADB0`. CONFIRMED.
 - Set by mission-script **command 4** (`0x8008A178`) and helper
-  `FUN_8008A778` (`0x8008A778`): `timer = 22 * param` (HYPOTHESIS on the ×22 /
-  unit); helper also writes `0x801D0B46`/`0x801D0B44` (a timer-display struct).
+  `FUN_8008A778` (`0x8008A778`): `timer = 22 * param` (CONFIRMED live 2026-10-21, `LIVE_CHECKLIST.md` MIS-2: the
+  countdown runs at 22 ticks per real second, so **param is seconds**); helper also writes `0x801D0B46`/`0x801D0B44` (a timer-display struct).
 - Zeroed at mission start (`0x8004F9FC`) and on map change (`0x800788AC`).
 
 ### Timer struct `0x801D0B40` + countdown handler (`~0x8004C4F0`)  CONFIRMED
@@ -262,7 +262,8 @@ skill). Ghidra names below are in the **isolated `Mission202` project** — see
    **`FUN_8004C318(0x80)`** writes `0x8019F524` and arms `0x8019F528 = 100`, the
    ~100-frame countdown that transitions to the **debrief / "Income and expense
    report"** screen. Live-observed `0x8019F524 = 0x480` at the exit = `0x80`
-   (cmd 5) + the `0x400` bit already noted in §5. **Setter pinned (static, 2026-10-19):**
+   (cmd 5) + the `0x400` bit already noted in §5. Also `0x480` (result word 0) on the report
+   screen after mission 28's **timed-survival success**, live 2026-10-21 (MIS-16). **Setter pinned (static, 2026-10-19):**
    the chunk-4 VM tail, bit `0x80000` (opcode `0x0013`), at `0x8008C05C..0x8008C074`:
    `0x8019F524 |= 0x400; 0x800796F4()`. Effects: the pad sampler `0x80079524` zeroes the
    gameplay buttons `0x80040FA8` while it's set, `acquire 0x80073714` skips the player, and
@@ -317,7 +318,7 @@ objective overlay — see **`docs/INTERACTIONS.md`**.
 **HYPOTHESIS / open**
 - Spawn `hw8/hw9/hw12/hw15` semantics (flags / row-index / sub-stat / area). `hw11`=HP
   and `hw3`=dispatch type are resolved (`spawn_marshal`); HP needs a live watchpoint to seal.
-- The cmd4 `×22` timer scale / exact frame unit.
+- ~~The cmd4 `×22` timer scale / exact frame unit.~~ Done: 22 ticks/s, param = seconds (MIS-2).
 - The objective-TYPE distinction (survive / reach / defend / destroy) is encoded
   in the per-mission objective object's CODE (`ENTITY_TYPES.md`) and/or the secondary
   actor-thread VM (`MISSION_SCRIPT_VM.md`). **NOW ENUMERATED** (2026-06-15): the
