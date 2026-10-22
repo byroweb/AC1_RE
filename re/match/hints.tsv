@@ -202,3 +202,29 @@ ovl201	0x800542F0	name	saveload_entry_list_update	2026-10-22T06:10:01Z
 ovl201	0x800542F0	hint	ran on NEW / selecting save slot 1 / slot 1; creates the up/down scroll arrows (+0x90/+0x94), shows them by top +0xA6 vs the entry count, moves the row cursor +0xA2 with pad repeat and scrolls via 80053E98, cancel goes to 8005489C, confirm opens the save (S: 80054AB0) or load (80054F1C) / new-data (80055580) confirm box.	2026-10-22T06:10:02Z
 ovl201	0x800531B8	name	saveload_slot_select_update	2026-10-22T06:10:02Z
 ovl201	0x800531B8	hint	ran on load data / save data / slot 1; polls card slot 0/1 on alternate frames (800685A8) to light the slot icons, up/down moves +0xA0, confirm checks the card (800684A0, 3 retries) and opens the slot (80053924) or a card error box, cancel returns to the caller menu.	2026-10-22T06:10:02Z
+ovl201	0x8005CC48	name	ui_light_fade_create	2026-10-22T06:12:40Z
+ovl201	0x8005CC48	hint	Runs on every garage/menu screen; singleton UiObj (ctor=self) that resets four light MATRIX globals 0x800B8F24/84/A4/9024 and installs update 0x8005CDEC which ramps the light colour up to 0x180.	2026-10-22T06:12:40Z
+ovl201	0x80061164	name	asm_draw_frame_edges	2026-10-22T06:12:40Z
+ovl201	0x80061164	hint	Assembly (swap/cancel head); copies a 4-corner quad, insets it by 8 px and draws six 8-px edge strips from texture u=192..216 v=208 via func_800646AC, then calls func_8006035C.	2026-10-22T06:12:40Z
+ovl201	0x80062D58	name	asm_draw_frame_corners	2026-10-22T06:12:40Z
+ovl201	0x80062D58	hint	Assembly (swap/cancel head, check performance); same 4-corner quad as 0x80061164, draws eight 8x8 tiles (u/v 192..216) of a 9-slice window frame via func_800646AC.	2026-10-22T06:12:40Z
+ovl201	0x8005EB80	name	garage_reload_part_resources	2026-10-22T06:12:40Z
+ovl201	0x8005EB80	hint	Ran on yes-load; for each part slot whose byte in D_80031A58[] is 0xFF asks func_8007AA04(slot) for an id and loads it with func_80050AF4/func_80051450 (offset by D_80039CA2), optional func_80074A18 when flag set.	2026-10-22T06:12:40Z
+ovl201	0x80059B50	name	tmd_draw_object	2026-10-22T06:12:40Z
+ovl201	0x80059B50	hint	Assembly/paint screens; takes TMD model D_801F36D0[mi] object oi (0x1C entry), sets rot/trans matrix, RTPS all vertices into sxy/sz tables, then dispatches each primitive packet through handler table D_800B7048[type].	2026-10-22T06:12:40Z
+ovl201	0x80059E44	name	tmd_prim_line_tri	2026-10-22T06:12:40Z
+ovl201	0x80059E44	hint	TMD primitive handler from table D_800B7048 (assembly/paint screens); per packet builds a closed flat polyline (code 0x4C, 4 points + 0x55555555) from the 3 projected vertices, NCCS colour, AVSZ3 depth, addPrim into the OT.	2026-10-22T06:12:40Z
+ovl201	0x8005A3A4	name	tmd_prim_line_quad	2026-10-22T06:12:40Z
+ovl201	0x8005A3A4	hint	TMD primitive handler (table D_800B7048), 20-byte quad packets; draws a quad wireframe as a closed LINE polyline (0x4C) plus a LINE_F2 (0x40) diagonal, NCCS colour, AVSZ3 depth.	2026-10-22T06:12:40Z
+ovl201	0x8005A5F8	name	tmd_prim_line_quad_b	2026-10-22T06:12:41Z
+ovl201	0x8005A5F8	hint	Same body as 0x8005A3A4 for 32-byte quad packets (vertex indices at +0x16..+0x1C); wireframe quad handler.	2026-10-22T06:12:41Z
+ovl201	0x8005AAA0	name	tmd_prim_line_quad_c	2026-10-22T06:12:41Z
+ovl201	0x8005AAA0	hint	Same body as 0x8005A3A4 for 36-byte quad packets (vertex indices at +0x16 stride 4, i.e. gouraud normal/vertex pairs); wireframe quad handler.	2026-10-22T06:12:41Z
+ovl201	0x800572C4	name	tmd_prim_flat_tri	2026-10-22T06:12:41Z
+ovl201	0x800572C4	hint	Assembly screen; TMD primitive handler over 16-byte packets at D_8017E500: NCLIP backface cull, NCCS-lit flat triangle (POLY_F3, tag 0x04FFFFFF), AVSZ3 depth, addPrim into the OT.	2026-10-22T06:12:41Z
+ovl201	0x80058100	name	tmd_prim_gt3	2026-10-22T06:12:41Z
+ovl201	0x80058100	hint	Assembly screen; TMD primitive handler over 28-byte packets at D_8017E500: NCLIP cull, NCCT lighting of 3 normals into a gouraud textured triangle (POLY_GT3, uv/clut/tpage copied), AVSZ3 depth, addPrim.	2026-10-22T06:12:41Z
+ovl201	0x80059634	name	tmd_prim_ft4	2026-10-22T06:12:41Z
+ovl201	0x80059634	hint	TMD primitive handler over 32-byte packets at D_8017E500 (ran on garage/mail/ranking screens): NCLIP cull, NCCS-lit flat textured quad (POLY_FT4, tag 0x09533900, uv/clut/tpage copied), AVSZ3 depth, addPrim.	2026-10-22T06:12:41Z
+ovl201	0x8004E2BC	name	garage_ring_idle	2026-10-22T06:12:41Z
+ovl201	0x8004E2BC	hint	Garage main menu (6-item ring, ran on garage/mail/ranking/system screens): on confirm runs the front item setup (switch on ring.front, e.g. AC data copy for item 0), then ranks the other panels and switches to func_8004EC24; left/right start a turn via func_8004E894 and reset the light matrices.	2026-10-22T06:12:41Z
