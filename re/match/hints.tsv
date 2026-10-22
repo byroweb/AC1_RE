@@ -228,3 +228,29 @@ ovl201	0x80059634	name	tmd_prim_ft4	2026-10-22T06:12:41Z
 ovl201	0x80059634	hint	TMD primitive handler over 32-byte packets at D_8017E500 (ran on garage/mail/ranking screens): NCLIP cull, NCCS-lit flat textured quad (POLY_FT4, tag 0x09533900, uv/clut/tpage copied), AVSZ3 depth, addPrim.	2026-10-22T06:12:41Z
 ovl201	0x8004E2BC	name	garage_ring_idle	2026-10-22T06:12:41Z
 ovl201	0x8004E2BC	hint	Garage main menu (6-item ring, ran on garage/mail/ranking/system screens): on confirm runs the front item setup (switch on ring.front, e.g. AC data copy for item 0), then ranks the other panels and switches to func_8004EC24; left/right start a turn via func_8004E894 and reset the light matrices.	2026-10-22T06:12:41Z
+ovl201	0x8009795C	name	letter_line_reset	2026-10-22T06:14:22Z
+ovl201	0x8009795C	hint	ran on opening letter; resets work->line[i] (text "@0>" colour codes, read pos/len/flags)	2026-10-22T06:14:22Z
+ovl201	0x800981BC	name	letter_line2_reset	2026-10-22T06:14:23Z
+ovl201	0x800981BC	hint	twin of 0x8009795C for the second line array at work+0x264	2026-10-22T06:14:23Z
+ovl201	0x800997C8	name	mail_cursor_ctor	2026-10-22T06:14:23Z
+ovl201	0x800997C8	hint	mail/opening letter; allocs a kind-4 UiObj (render_type 3, res 0x800B8CDC) at y=(D_8017F795-D_8017F796)*24, update 0x800998B4	2026-10-22T06:14:23Z
+ovl201	0x80097B4C	name	letter_lines_ctor	2026-10-22T06:14:23Z
+ovl201	0x80097B4C	hint	opening letter; allocs kind-6 UiObj, builds 2 text labels (func_8005CB94) from work->line[i].text at y=i*16+5 and resets each line	2026-10-22T06:14:23Z
+ovl201	0x80097F30	name	letter_copy_text	2026-10-22T06:14:23Z
+ovl201	0x80097F30	hint	opening letter; copies src text up to > or / into work+0x520, frees src (free2), clears work+0x0A	2026-10-22T06:14:23Z
+ovl201	0x800980E4	name	letter_upload_tim	2026-10-22T06:14:23Z
+ovl201	0x800980E4	hint	opening letter; switch on volatile work->tim_slot (+0x0B, 1..3) loads the TIM via 0x80097FDC to VRAM 896/960 with CLUT row 481..483, clears the slot, DrawSync(0), free2	2026-10-22T06:14:23Z
+ovl201	0x80097FDC	name	letter_load_tim	2026-10-22T06:14:23Z
+ovl201	0x80097FDC	hint	TIM chain loader: while word==0x10, LoadImage the CLUT (flag bit 3) at (cx,cy) and the image at (x,y); called only by 0x800980E4	2026-10-22T06:14:23Z
+ovl201	0x80097D24	name	letter_lines_update	2026-10-22T06:14:23Z
+ovl201	0x80097D24	hint	opening letter; update of the 0x80097B4C object: src = work text + sum of line[].next, unless a dialog (0x8005BA2C) is up types the first unfinished line via 0x80097A08 (fast while pad 0x40/0x1000/0x4000 held), on new 0x20 press closes (kills obj id 11, opens 0x8005C2D0) and switches update to 0x80097EE8	2026-10-22T06:14:23Z
+ovl201	0x80097A08	name	letter_type_line	2026-10-22T06:14:23Z
+ovl201	0x80097A08	hint	opening letter; copies one source char (two for @ ^ { escapes) into line->text and appends ">" cursor; "	2026-10-22T06:14:23Z
+ovl201	0x80098550	name	letter_reply_ctor	2026-10-22T06:14:24Z
+ovl201	0x80098550	hint	opening letter; allocs kind-6 UiObj, 5 labels from work->line2[i] (y=i*16+5), resets letter state, clears work text buffers, requests the letter body message (row[order[sel]].id[...] + 819) through 0x800513F0 with callback 0x80097F30, clears VRAM 896/960 pages and CLUT rows 481..483	2026-10-22T06:14:24Z
+ovl201	0x80098268	name	letter_type_reply_line	2026-10-22T06:14:24Z
+ovl201	0x80098268	hint	opening letter; line2 twin of 0x80097A08 plus %N escapes (advance work->unk9, request reply message row[order[sel]].reply[unk9]+819 via 0x800513F0 after waiting on volatile tim_slot, mark seen[N%3] and store 0x8009A218() at work+0x80); plays SsUtKeyOn click after each typed step	2026-10-22T06:14:24Z
+ovl201	0x800998B4	name	mail_cursor_update	2026-10-22T06:14:24Z
+ovl201	0x800998B4	hint	mail screen; update of the 0x800997C8 cursor: up/down (pad 0x1000/0x4000 new press) moves sel with wrap, moves cursor y by 24 or scrolls the row names/icons/labels via 0x80099868 and refills the new row (0x8009720C/0x800971AC), then handles the held-key repeat counters 0x800B8CC8/0x800B8CCC	2026-10-22T06:14:24Z
+ovl201	0x80098A58	name	letter_reply_update	2026-10-22T06:14:24Z
+ovl201	0x80098A58	hint	opening letter; update of the 0x80098550 object: scrolls line2[] up/down (unk4/unk5 step counters, history of offsets at +0x10), types the next line via 0x80098268 (fast while 0x40/0x1000/0x4000 held), up/down/advance keys page the letter and request message ids, 0x20 closes back to the list (kills/creates buttons), 0x8/0x4 page the reply TIMs via 0x800980E4	2026-10-22T06:14:24Z
