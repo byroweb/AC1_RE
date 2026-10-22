@@ -24,7 +24,31 @@ sweep.py      -> re/match/<unit>/func_<ADDR>.c
 permute.py    -> re/match/<unit>/func_<ADDR>.c
                                  permuter tier: levers.py rewrites + decomp-permuter on near misses, no LLM
 m2cfix.py     (library)          sweep.py's draft fix-ups: stack locals, frame union, casts, cc1-driven repair
+overnight.sh  -> re/match/<unit>/func_<ADDR>.c
+                                 unattended machine pass: queue, sweep, two-pass permuter, replay, verify, commit
 ```
+
+### Overnight machine pass (2026-10-21)
+
+```bash
+bash tools/loop/overnight.sh     # from the repo root; ~45-90 min at -j 24, no LLM
+```
+
+It runs one branch off origin/main and a queue of every open twin group (`make_queues.py
+--bodies -N 1`), in this order:
+1. `sweep.py` with only `ctx-spframe,ctx-fix-frame,neighbour`. These are the drafts that
+   new shared headers and new matched near-copies can change, and they gave nearly every
+   sweep match in the 2026-10-20 runs.
+2. `permute.py` with `--max-ratio 0.2` (the lanes already ground everything within 0.1) for
+   `QUICK`=120 s per candidate, then `DEEP`=900 s
+   for the `DEEP_N`=50 closest, each starting from its lever text.
+3. `twins.py replay --scope all` and `drive.py verify`.
+4. A commit when verify says all matched. Steps 3-4 are skipped when no manifest row was
+   added: they take ~8 min even with nothing new.
+
+Matches are written as they land, so an interrupted run keeps them. The knobs are
+environment variables (top of the script); `LIMIT=8 QUICK=20 DEEP=40 DEEP_N=2 BRANCH=0
+COMMIT=0` is a quick smoke test.
 
 ### Program sprint in four commands (2026-10-19)
 
