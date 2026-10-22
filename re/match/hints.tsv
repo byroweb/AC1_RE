@@ -857,3 +857,13 @@ ovl202	0x80080DA0	name	actor_ground_move_step	2026-10-22T16:48:59Z
 ovl202	0x80080DA0	hint	port of fdat000 0x801C59EC with def in globals 0x800411B0 (accel,max_speed) and sounds 0x8004124F	2026-10-22T16:48:59Z
 ovl202	0x8007DB98	name	actor_take_hit	2026-10-22T16:48:59Z
 ovl202	0x8007DB98	hint	port of fdat000 0x801C91CC (ap adjust under mission flag 0x400, alarm 0x800411F0=40, knock-back/fall)	2026-10-22T16:48:59Z
+ovl203	0x8005D500	name	mdl_draw_part_at	2026-10-22T16:49:04Z
+ovl203	0x8005D500	hint	twin-shape of ovl202 0x8005DB10: camera-relative pos, RotMatrixYXZ+scale, sets model part verts, calls part draw	2026-10-22T16:49:04Z
+ovl203	0x8005A980	name	mdl_draw_list_lit	2026-10-22T16:49:04Z
+ovl203	0x8005A980	hint	twin-shape of ovl202 0x8005AF90: walks DrawEnt list, sets light/colour/fog per LightSet, GTE rot/trans, draws model	2026-10-22T16:49:04Z
+ovl203	0x80050AF0	name	radar_draw_blip_tri	2026-10-22T16:49:04Z
+ovl203	0x80050AF0	hint	twin of ovl202 0x800501DC: range check vs pilot body (D_80039D18), LINE_F3 marker coloured by height via LoadAverageCol	2026-10-22T16:49:04Z
+ovl203	0x8004F3C4	name	link_exchange_words	2026-10-22T16:49:04Z
+ovl203	0x8004F3C4	hint	sends u16 pairs over the link cable (R..C 8-byte packets, read/write on fds at 0x80049F90+0x2F4/0x2F8), stores the received pair; stops on D_800895C8 or func_8004BEB0()==0	2026-10-22T16:49:04Z
+ovl203	0x8004FD18	name	mdl_walk_prims	2026-10-22T16:49:04Z
+ovl203	0x8004FD18	hint	walks a TMD-like model (n_obj at +8, 0x1C objects from +0xC), dispatches each primitive by (mode & 0xBC): tri kinds 0x24/34/A4/B4 -> func_8004FBDC, quad kinds 0x2C/3C/AC/BC -> func_8004FC6C	2026-10-22T16:49:04Z
