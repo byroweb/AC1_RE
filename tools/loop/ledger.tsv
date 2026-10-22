@@ -4953,3 +4953,7 @@ when	unit	vaddr	status	attempts	reason
 2026-10-21T15:01:39Z	ovl201	0x800AE838	match	1	
 2026-10-22T03:04:43Z	ovl204	0x8005B7D4	match	0	zero-agent sweep (neighbour+imm of ovl202 0x8005C630, similarity 0.964)
 2026-10-22T03:07:09Z	ovl201	0x8006F708	match	0	permuter (decomp-permuter after levers index D_8017E5D8 u8[] + index D_8017E5D9 u8[] + index D_8017E5DA u8[], ctx-spframe draft)
+2026-10-22T06:14:58Z	ovl201	0x8006AAC4	match	0	golem (qwen2.5-coder-7b-instruct, tweak)
+2026-10-22T06:15:00Z	ovl201	0x8008AFA8	match	0	golem (qwen2.5-coder-7b-instruct, tweak)
+2026-10-22T06:15:01Z	ovl204	0x80060B08	match	0	golem (qwen2.5-coder-7b-instruct, tweak)
+2026-10-22T06:18:25Z	ovl201	0x800997C8	match	0	twin of ovl201 0x8008AFA8 (ovl201/func_8008AFA8.c)

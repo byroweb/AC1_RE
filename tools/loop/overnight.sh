@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# overnight.sh - unattended machine pass over every open body: no LLM, CPU only.
+# overnight.sh - unattended machine pass over every open body: CPU only (no LLM unless GOLEM=1).
 #
 #   bash tools/loop/overnight.sh            # from the repo root, in Git Bash; ~20-30 min at -j 24
 #
@@ -12,6 +12,8 @@
 #    already ground everything within 0.1), then DEEP s for up to DEEP_N within DEEP_WORDS
 #    words (on the first night every gain landed inside 300 s, and those further out stayed
 #    hundreds of words off); near misses of 1-3 words are listed in $WORK/nearmiss.tsv for hand matching
+#    GOLEM=1: then golem.py tweak (a local LLM, LM Studio at GOLEM_URL) on what the deep pass left
+#    within DEEP_WORDS words; ~40 s per body on the GPU, skipped when no server answers
 # 5. twins.py replay --scope all, drive.py verify, and a commit when verify says all matched;
 #    skipped when no manifest row was added (they cost ~8 min even with nothing new)
 #
@@ -19,6 +21,7 @@
 # step 5 by hand: twins.py replay, drive.py verify, commit).  Knobs (environment variables):
 #   J=24 VARIANTS=ctx-spframe,ctx-fix-frame,neighbour MAX_RATIO=0.2 QUICK=120 DEEP=300
 #   DEEP_N=50 DEEP_WORDS=12 LIMIT= (rows of the queue, for a test) WORK=~/dev/ac1_work/<stamp> BRANCH=1 COMMIT=1
+#   GOLEM=0 GOLEM_MODEL=qwen2.5-coder-7b-instruct GOLEM_URL=http://localhost:1234/v1
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 export PYTHONIOENCODING=utf-8       # progress.py prints block characters; the console is cp1252
@@ -30,6 +33,9 @@ QUICK=${QUICK:-120}
 DEEP=${DEEP:-300}
 DEEP_N=${DEEP_N:-50}
 DEEP_WORDS=${DEEP_WORDS:-12}
+GOLEM=${GOLEM:-0}
+GOLEM_MODEL=${GOLEM_MODEL:-qwen2.5-coder-7b-instruct}
+GOLEM_URL=${GOLEM_URL:-http://localhost:1234/v1}
 LIMIT=${LIMIT:-}
 STAMP=$(date +%Y%m%d-%H%M)
 WORK=${WORK:-$HOME/dev/ac1_work/$STAMP}
@@ -99,6 +105,16 @@ deep=$(find "$WORK/deep" -name 'func_*.c' 2>/dev/null)
 if [ -n "$deep" ]; then
   args=(); for f in $deep; do args+=(--cfile "$f"); done
   python tools/loop/permute.py run "${args[@]}" -j "$J" --budget "$DEEP" --work "$WORK/perm2" --no-replay | tail -3
+fi
+
+if [ "$GOLEM" = 1 ] && [ -f "$WORK/perm2/permute_report.tsv" ]; then
+  step "golem: $GOLEM_MODEL tweaks the deep pass's leftovers within $DEEP_WORDS words"
+  if curl -sf -m 5 "$GOLEM_URL/models" >/dev/null; then
+    python tools/loop/golem.py run --report "$WORK/perm2/permute_report.tsv" --job tweak --max-words "$DEEP_WORDS" \
+      --model "$GOLEM_MODEL" --url "$GOLEM_URL" --log "$WORK/golem_log.tsv" | tail -3
+  else
+    echo "no model server at $GOLEM_URL: skipped"
+  fi
 fi
 
 new=$(( $(rows) - rows0 ))

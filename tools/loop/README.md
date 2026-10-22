@@ -24,6 +24,8 @@ sweep.py      -> re/match/<unit>/func_<ADDR>.c
 permute.py    -> re/match/<unit>/func_<ADDR>.c
                                  permuter tier: levers.py rewrites + decomp-permuter on near misses, no LLM
 m2cfix.py     (library)          sweep.py's draft fix-ups: stack locals, frame union, casts, cc1-driven repair
+golem.py      -> re/match/<unit>/func_<ADDR>.c
+                                 local-LLM tier: compile fixes and near-miss edits from a model in LM Studio
 overnight.sh  -> re/match/<unit>/func_<ADDR>.c
                                  unattended machine pass: queue, sweep, two-pass permuter, replay, verify, commit
 ```
@@ -1024,6 +1026,82 @@ reach in 300 s (`a0`/`a1` for a call m2c gave one argument too few, e.g. `Vector
 for a two-argument call), an argument m2c dropped (`li a0,24` in a delay slot), and drafts
 whose word count hid a size difference (`ovl201 0x800B6D4C`: ours 8 bytes for 56; the
 sweep's diff words only count the common length).  Those are agent work packages.
+
+## golem.py (local LLM tier)
+
+```
+golem.py fix   UNIT VADDR FILE.c [--model M] [--attempts 3] [--out F] [--dump DIR]
+golem.py tweak UNIT VADDR FILE.c [--model M] [--rounds 3] [-n 6] [--out F] [--dump DIR]
+golem.py run   (--report sweep_report.tsv|permute_report.tsv ... | --cfile [UNIT:]F ...)
+               [--job auto|fix|tweak] [--max-words 12] [--max-size 800] [--no-commit]
+golem.py bench BENCH.tsv --models A,B --out DIR
+```
+
+A small model served by LM Studio (`--url`/`$GOLEM_URL`, default `http://localhost:1234/v1`,
+any OpenAI-compatible `/chat/completions`; `--model`/`$GOLEM_MODEL`) in a closed loop with
+the oracle.  Each answer is scored with the oracle's own compile (permute.py's in-process
+pipeline, variants.py's batch: differing words + 2 per word of size difference), and a
+score-0 text goes through `match_fn.py`; only a clean MATCH is written to `re/match`
+(header names the job and model), re-verified there, and gets its manifest and ledger
+rows (`golem (<model>, <job>)`).
+
+- **fix**: a draft cc1 rejects.  The prompt has the cc1 errors under the draft lines they
+  are about (`m2cfix.map_errors`), the header prototypes of the names the code uses, the
+  target assembly when it fits, and the code after the `#include`s; the answer is the
+  whole code in one ```` ```c ```` block.  Up to `--attempts`, each from the last answer's errors.
+- **tweak**: a draft within `--max-words`.  The prompt has the retail | ours listing
+  (positional when the sizes agree, difflib-aligned otherwise; the whole listing up to 64
+  instructions, else the differing regions), one hint line (`drive.pick_hint`'s rules, and
+  the two constants when a `lui`/`li` immediate is what differs), the C, and the edits
+  already tried; the answer is up to `-n` `## label` / `-old` / `+new` blocks (the
+  `variants.py --edits` format).  Blocks whose `-` lines are assembly are dropped.  All
+  blocks, and pairs of the improving ones, are compiled in one `variants.run_batch`; the
+  best improvement is the next round's input.
+
+Prompts stay under `--max-prompt` characters (~4K tokens).  Qwen3 gets `/no_think` and
+`<think>` blocks are stripped.  Every call is a row of `--log` (job, model, tokens, seconds,
+score before/after; default `~/dev/ac1_work/golem_log.tsv`); `--dump DIR` keeps every
+prompt and answer.  `overnight.sh` runs `golem.py run --job tweak` on the deep pass's
+`permute_report.tsv` when `GOLEM=1` and the server answers.  Tests:
+`tools/match/tests/test_golem.py` (a mocked endpoint: answer parsing, tweak and fix
+reaching a MATCH on the worked example, the server being down).
+
+**Bake-off (2026-10-21)**: Intel Arc A750, LM Studio 0.4 with the Vulkan llama.cpp runtime,
+Q4 GGUF models; prompts of 1-4K tokens are answered at roughly 25-40 tokens/s (a 2K-token
+prompt plus 300 tokens of answer: 9 s for qwen2.5-coder-7b, 17 s for qwen3-8b).  Fixed
+budget: tweak 3 rounds of up to 6 edits, fix 3 answers.  63 rows:
+A = 20 matched functions whose m2c draft (ctx-spframe / ctx-fix-frame) is 1-12 words off
+(the known answer is never shown); B = the 23 open bodies within 11 words that the
+overnight permuter left (120 s quick + 300-900 s deep pass, levers included); C = 20 open
+`ctx-spframe` drafts cc1 rejects (60-500 B, spread over error kinds).
+
+| | A: matched (1-12 words) | B: open near misses (1-11 words) | C: compile failures | wall |
+|---|---|---|---|---|
+| permute.py (levers + decomp-permuter) | **11/20** in 120 s each (10 by levers) | 0/23 (that is how they were picked) | n/a (needs a build) | CPU, -j 24 |
+| `ctx-fix-frame` rule-based repair | - | - | 14/20 compile (2 within 12 words) | seconds |
+| qwen2.5-coder-7b-instruct | 0/20, 1 better | **3/23 matched**, 4 better | 9/20 compile (3 of the rules' 6 failures, 67-88 words off) | 48 min (40-54 s/row) |
+| qwen3-8b (`/no_think`) | 0/20, 0 better | 1/23 matched (one of the 3), 3 better | 13/20 compile (1 of the rules' failures; beats the rules on 2: 86 -> 39, 91 -> 41 words) | 45 min (35-55 s/row) |
+
+The 3 matches (ovl201 0x8006AAC4, ovl201 0x8008AFA8, ovl204 0x80060B08; with the twin
+replay 4 functions) are all `neighbour` drafts whose remaining difference was a constant
+or a sign: `+ 0x10` / `>=` -> `- 0x10` / `<=`, `ui_obj_alloc(6)` -> `(4)`, `0x1400000` ->
+`0xA00000` (a `lui` immediate, which `neighbour+imm` does not rewrite).  On register
+allocation, statement order and type/lever diffs neither model found anything; qwen2.5
+often proposes edits to the assembly (dropped).  Compile fixes are no near misses: the
+LLM-fixed drafts are about as far off as the rule-based ones (median 55-80 words; the
+same 2 rows within 12), out of reach of tweak and of the permuter.
+
+**Recommendation**: run **tweak** with qwen2.5-coder-7b-instruct after the deep permuter
+pass on what it left within 12 words (`GOLEM=1 bash tools/loop/overnight.sh`): GPU only,
+~40 s per body, ~15-20 min for a night's leftovers, and the only tier so far that has
+closed constant/sign diffs in near-copies.  Do not use **fix** in the pipeline: the free
+rule-based repair compiles as many drafts (14 vs 13 and 9) and the results are not close enough to
+matter.  3/23 is a small sample; a deterministic lever for the same class (retail's
+`lui`/`li` constants and `+`/`-`, `<`/`>` flips put into the C, for any near miss rather
+than only `neighbour+imm`) would likely catch most of these without a model.  Ideas for
+a better golem: map each differing instruction to its C line (cc1 line info) and ask for
+edits by line number; few-shot examples from the ledger's lever trails; a model
+fine-tuned on oracle-generated (broken C + diff -> repairing edit) pairs.
 
 ## check_all.sh
 
