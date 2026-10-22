@@ -2211,3 +2211,55 @@ ovl204	0x8004BF3C	name	vs_battle_main	2026-10-22T22:21:23Z
 ovl204	0x8004BF3C	hint	saves both player records, inits VS mode, frame loop (phase/clock at 0x801AB684, KO/draw detection, round wins 0x80039D08..0E), restores records; returns 1 on double KO	2026-10-22T22:21:23Z
 ovl203	0x8008001C	name	ac_move_state_machine	2026-10-22T22:21:23Z
 ovl203	0x8008001C	hint	fn_move of a player AC in VS (AC counterpart of fdat000 0x801C981C): events 0..10 walk/turn, 32/33 boost/jump, 64..75 hover, 96/97 land, 128/129 fall; probes 50 above via func_80073CD0	2026-10-22T22:21:23Z
+ovl203	0x8005D500	name	mdl_draw_part_at	2026-10-22T22:21:28Z
+ovl203	0x8005D500	hint	twin-shape of ovl202 0x8005DB10: camera-relative pos, RotMatrixYXZ+scale, sets model part verts, calls part draw	2026-10-22T22:21:28Z
+ovl203	0x8005A980	name	mdl_draw_list_lit	2026-10-22T22:21:28Z
+ovl203	0x8005A980	hint	twin-shape of ovl202 0x8005AF90: walks DrawEnt list, sets light/colour/fog per LightSet, GTE rot/trans, draws model	2026-10-22T22:21:28Z
+ovl203	0x80050AF0	name	radar_draw_blip_tri	2026-10-22T22:21:28Z
+ovl203	0x80050AF0	hint	twin of ovl202 0x800501DC: range check vs pilot body (D_80039D18), LINE_F3 marker coloured by height via LoadAverageCol	2026-10-22T22:21:28Z
+ovl203	0x8004F3C4	name	link_exchange_words	2026-10-22T22:21:28Z
+ovl203	0x8004F3C4	hint	sends u16 pairs over the link cable (R..C 8-byte packets, read/write on fds at 0x80049F90+0x2F4/0x2F8), stores the received pair; stops on D_800895C8 or func_8004BEB0()==0	2026-10-22T22:21:28Z
+ovl203	0x8004FD18	name	mdl_walk_prims	2026-10-22T22:21:28Z
+ovl203	0x8004FD18	hint	walks a TMD-like model (n_obj at +8, 0x1C objects from +0xC), dispatches each primitive by (mode & 0xBC): tri kinds 0x24/34/A4/B4 -> func_8004FBDC, quad kinds 0x2C/3C/AC/BC -> func_8004FC6C	2026-10-22T22:21:28Z
+ovl203	0x80061A44	name	hud_draw_frame	2026-10-22T22:21:28Z
+ovl203	0x80061A44	hint	fade overlay (rgb+alpha at 0x801A3E28), func_80051B84, then if HUD on: camera matrices and per-mode lock-on drawing over the 8 target slots (pilot +0x84), marker, func_80052238	2026-10-22T22:21:28Z
+ovl203	0x8004F4E0	name	link_handshake	2026-10-22T22:21:28Z
+ovl203	0x8004F4E0	hint	link-cable master/slave handshake (S/M packets, 1800-tick timeout sets D_800895C8), picks which of the two 0x39C pilot blocks at 0x80040FA0 is local/remote, exchanges 0x4F words via func_8004F3C4	2026-10-22T22:21:28Z
+ovl203	0x800573FC	name	mdl_draw_flat_quads	2026-10-22T22:21:28Z
+ovl203	0x800573FC	hint	transforms a model object (func_80057964) then emits POLY_F4 (mode&0xFC==0x28) prims with grey 10/10/10 into the OT, z = sum of 4 sz >> shift; scratchpad state at 0x1F800000	2026-10-22T22:21:29Z
+ovl203	0x8005D66C	name	mdl_place_and_draw	2026-10-22T22:21:29Z
+ovl203	0x8005D66C	hint	twin of ovl204 0x8005CE20: place model at pos/rot (mode 0, near/far precision switch) or re-translate, then draw via func_80057640	2026-10-22T22:21:29Z
+ovl203	0x8004F7C8	name	ac_load_model_parts	2026-10-22T22:21:29Z
+ovl203	0x8004F7C8	hint	builds the AC file name digits from pilot +0x27B, loads it, then appends core + up to 8 part meshes (pilot +0x27D.., 0xFF = none; arm slot skipped for leg types 8..15) into the model buffer for model id n+0x80, marks the model loaded	2026-10-22T22:21:29Z
+ovl203	0x8005D15C	name	mdl_draw_part_textured	2026-10-22T22:21:29Z
+ovl203	0x8005D15C	hint	draws model part idx (obj = model->obj[idx]) as POLY_FT3 (0xA4, z*0x1555>>far) / POLY_FT4 (0xAC, z>>shift) with tint col, transforms verts via func_80057964 first	2026-10-22T22:21:29Z
+ovl203	0x80051B84	name	hud_draw_status_overlays	2026-10-22T22:21:29Z
+ovl203	0x80051B84	hint	by D_8019B48C flags: full-screen tint + one of three 3-line banners (0x100/0x200/0x300), pilot-mode icon (pilot +0x10 & 0x30), and warning text (0x1000 by D_8019B492 < 23, 0x40, 0x80) via func_80060374	2026-10-22T22:21:29Z
+ovl203	0x8005D8B4	name	mdl_place_and_draw_lit	2026-10-22T22:21:29Z
+ovl203	0x8005D8B4	hint	near-twin of ovl204 0x8005D068: lit model placement (light set from world struct +0x30, fog by distance), then draws via func_800584F4 or clipped func_80064E8C	2026-10-22T22:21:29Z
+ovl203	0x80060020	name	fx_draw_billboard	2026-10-22T22:21:29Z
+ovl203	0x80060020	hint	camera-facing textured sprite at pos (GTE RTV0 of pos into the matrix t, RotMatrixYXZ rot): POLY_FT4 when tex+0xA == 0 else POLY_FT3 of half-size `size`, OT slot +100	2026-10-22T22:21:29Z
+ovl203	0x8005FCD8	name	fx_draw_sprite_upright	2026-10-22T22:21:29Z
+ovl203	0x8005FCD8	hint	camera-facing POLY_FT4 sprite w x h standing on pos (RotTrans into the scratch matrix, billboard rot matrix 0x801A4D54), uv rect from tex, OT slot ot	2026-10-22T22:21:29Z
+ovl203	0x80057640	name	ac_draw_shadow	2026-10-22T22:21:30Z
+ovl203	0x80057640	hint	draws every part of an AC flattened onto the ground (world matrix middle row and ty zeroed, GTE matrix multiply into scratch) with flat grey quads via func_800573FC	2026-10-22T22:21:30Z
+ovl203	0x8004FE84	name	vs_mode_init	2026-10-22T22:21:30Z
+ovl203	0x8004FE84	hint	2-player (link) mode start: link handshake, loads stage + mode archives (chunk walk: [len][data]), sets up both pilots/ACs (pilot blocks 0x80040FA0[2], entities at 0x8019B550), camera range, then mode def start hook	2026-10-22T22:21:30Z
+ovl203	0x8005C2F4	name	ws_draw_struct	2026-10-22T22:21:30Z
+ovl203	0x8005C2F4	hint	draws one world struct (WorldStruct 0x40): visibility by bbox, LOD by distance, lights/fog per light set, near (+-1300) drawn directly via func_8006735C/800681B8, others queued into near/far DrawEnt lists or drawn via func_8005B810/80063B24	2026-10-22T22:21:30Z
+ovl203	0x8005CB8C	name	mdl_place_and_draw_ex	2026-10-22T22:21:30Z
+ovl203	0x8005CB8C	hint	extended func_8005D8B4: lit model placement with a precomputed-rotation mode (lod & 0x80), per-model obj index, collision/visibility via func_8005414C, returns the precision shift used	2026-10-22T22:21:30Z
+ovl203	0x800614C8	name	fx_draw_sprite_objs	2026-10-22T22:21:30Z
+ovl203	0x800614C8	hint	draws the 256 animated world sprites (16-byte records at 0x801A4DB4: pos, kind, world struct, set/frames/rate/frame) as lit POLY_FT4 billboards via GTE (RTPT/NCDS), advancing animation frames	2026-10-22T22:21:30Z
+ovl203	0x8005B810	name	mdl_draw_part_lit	2026-10-22T22:21:30Z
+ovl203	0x8005B810	hint	draws model part idx with per-vertex lighting: flat POLY_FT3/FT4 (0x24/0x2C/0x6C, nclip via func_8005B7AC) or gouraud GT3/GT4 when any vertex is depth-cued (clip byte), GTE NCDS colours via func_8005B7D0/B7F4	2026-10-22T22:21:30Z
+ovl203	0x80059F6C	name	mdl_draw_part_ncs	2026-10-22T22:21:30Z
+ovl203	0x80059F6C	hint	draws model part idx with GTE normal-colour lighting (NCS/NCT, grey 64 base): F3/F4 lit flat, G3/G4 lit gouraud and pre-coloured FT3/FT4 (0xA4/0xAC) prims, nclip via func_80057A18	2026-10-22T22:21:30Z
+ovl203	0x80057A3C	name	mdl_draw_part_ncd	2026-10-22T22:21:30Z
+ovl203	0x80057A3C	hint	draws model part idx with depth-cued GTE lighting (NCDS/NCDT using each vertex dq at +0xC): F3/F4/G3/G4 lit and pre-coloured FT3/FT4, z culled by zmin; full=1 also covers the extra vertices/prims	2026-10-22T22:21:30Z
+ovl203	0x8005ABC0	name	mdl_draw_part_pal	2026-10-22T22:21:31Z
+ovl203	0x8005ABC0	hint	draws a model part (called per DrawEnt from func_8005A980) with depth-cued lighting; GT3/GT4 kinds take per-vertex colours from palette D_8008C990[kind] indexed by the source vertex +6 field	2026-10-22T22:21:31Z
+ovl203	0x80060B3C	name	vs_draw_world	2026-10-22T22:21:31Z
+ovl203	0x80060B3C	hint	per-frame 2-player world draw: both ACs (+shadows via func_8005D66C), the 512 world objects (0x34 records at 0x80194A70, box-culled or vis-culled, various draw paths), sprites (func_800614C8), then the 256 effects/projectiles (0xE0 at 0x801A60C4) by kind 0..6	2026-10-22T22:21:31Z
+ovl203	0x80050D78	name	vs_draw_hud	2026-10-22T22:21:31Z
+ovl203	0x80050D78	hint	2-player HUD: energy bars and heat warnings, timer (D_8019B494), radar (rsin/rcos, func_80050AF0/800506A4/80050998), weapon list from pilot +0x2DA records, compass strip	2026-10-22T22:21:31Z
