@@ -2321,3 +2321,59 @@ ovl202	0x8005B1D0	name	model_draw_rec_palette	2026-10-22T22:21:38Z
 ovl202	0x8005B1D0	hint	draw a model record with GTE lighting: flat-lit 0x24/0x2C (culled) and two-sided 0x6C with grey 64, palette-coloured gouraud 0x25/0x2D (colour index in source vertex pad, palette pal*128 of D_80090A28)	2026-10-22T22:21:38Z
 ovl202	0x80050468	name	hud_draw	2026-10-22T22:21:38Z
 ovl202	0x80050468	hint	mission HUD gated by g_mission_end_seq: target gauge, AP readout + low-AP warning, mission timer, alerts, area countdown, radar (range box, blips, area boxes), weapon/ammo list, compass tape; HudState at 0x80040FB0	2026-10-22T22:21:38Z
+ovl201	0x8008C3EC	name	shop_ctrl_new	2026-10-22T22:35:47Z
+ovl201	0x8008C3EC	hint	w2c07: shop controller ctor, 108 MoveImage tiles	2026-10-22T22:35:47Z
+ovl202	0x8004C25C	name	link_wait_ready	2026-10-22T22:35:47Z
+ovl202	0x8004C25C	hint	waits until link status buf [0]==R or [7]==C (1); after 300 ticks of timer func_80016278 sets D_8008D920 and returns 0	2026-10-22T22:35:47Z
+ovl201	0x800ADB40	name	ui_row_label_create	2026-10-22T22:35:47Z
+ovl201	0x800ADB40	hint	w2c10: render-type-3 UiObj, update func_800ADC20	2026-10-22T22:35:47Z
+ovl202	0x8004C854	name	snd_vab_pack_open	2026-10-22T22:35:47Z
+ovl202	0x8004C854	hint	parses pack {s32 n; n VAB headers {size,data}; n bodies {size,slot,data}} and opens each via func_8004C7A8(slot, head, body) (SsVabOpenHead/TransBody); returns body start	2026-10-22T22:35:47Z
+ovl202	0x8004E06C	name	vec_clamp_step	2026-10-22T22:35:47Z
+ovl202	0x8004E06C	hint	scales SVECTOR step by min(lim/|vx|,lim/|vz|,limy/|vy|,max); factor 0 copies and clamps axes to +-limit, returns factor	2026-10-22T22:35:47Z
+ovl202	0x8004D044	name	snd_chan_alloc	2026-10-22T22:35:47Z
+ovl202	0x8004D044	hint	sound channel pick for id: free (voice -1), else channel already playing id (stopped via func_8004CF0C), else idle lowest-priority; called by func_8004D178	2026-10-22T22:35:47Z
+ovl202	0x8004EDAC	name	snd_seq_step	2026-10-22T22:35:47Z
+ovl202	0x8004EDAC	hint	steps a per-object sound event list (+0x54 n, +0x55 idx, +0x56 {key,id,vol,d}[]); n==0xFF plays bank effect from D_801A5DC0+0x1000+key*256; else on frame==key plays func_8004CE44/func_8004CC30 and advances	2026-10-22T22:35:47Z
+ovl202	0x8004F1A8	name	ac_model_build	2026-10-22T22:35:47Z
+ovl202	0x8004F1A8	hint	writes level digits into label D_8008D928, then loads each fitted part (bytes 0x8004121D..24, 0xFF none) into model buffer cursor D_8019F520 via func_800537FC slot n+0x80; back slot skipped for kinds 8..15	2026-10-22T22:35:47Z
+ovl202	0x8004C340	name	mission_main	2026-10-22T22:35:48Z
+ovl202	0x8004C340	hint	mission entry: inits subsystems, heap at 0x801BCB40, frame loop with alarm/objective messages and end-timer volume fade, shutdown; result D_80048610 from mission flags 0x100/0x200; returns 1 on first clear (0x800411F8 0->1)	2026-10-22T22:35:48Z
+ovl202	0x8004E22C	name	mover_clip_step	2026-10-22T22:35:48Z
+ovl202	0x8004E22C	hint	motion-clip key interpolation for a mover (AcEntity+0x64): clip idx in bank +0x1C, frame +0xA, dir +0xC; delta to next key clamped to limits +6/+8, rotated by facing into out (/4), rot delta to drot; returns frames to next key	2026-10-22T22:35:48Z
+ovl201	0x800A86D0	name	link_exchange_words	2026-10-22T22:35:48Z
+ovl201	0x800A86D0	hint	link-cable exchange of n word pairs: sends src pairs in R..C packets via write(), reads replies into dst; aborts on cancel flag or 7866-tick timeout	2026-10-22T22:35:48Z
+ovl201	0x8008A4BC	name	mission_brief_confirm	2026-10-22T22:35:48Z
+ovl201	0x8008A4BC	hint	briefing window update: O on accept takes highlighted mission (seen flag, fee into credits D_80039CA4, start) or commits pending one (random rewards add[15], counters, rank, part cost sum D_80048608, result windows); X returns to list	2026-10-22T22:35:48Z
+ovl201	0x80088DE4	name	garage_msglist_create	2026-10-22T22:35:48Z
+ovl201	0x80088DE4	hint	creates the mission message list window object: 5 line labels, resets list state, loads first text page via func_800513F0, clears VRAM work rects	2026-10-22T22:35:48Z
+ovl201	0x800897D0	name	garage_msglist_update	2026-10-22T22:35:48Z
+ovl201	0x800897D0	hint	mission message list window update: scroll down/up animation, text streaming via func_80088AC4, page/history navigation with pad, O on last page opens confirm or briefing message boxes (D_801A2309..), X closes windows	2026-10-22T22:35:48Z
+ovl201	0x80095824	name	shop_list_cursor_update	2026-10-22T22:35:48Z
+ovl201	0x80095824	hint	part-shop list cursor: up/down moves sel with wrap for short lists, refreshes info panes, scrolls VRAM columns/labels at list edge and draws the new row; key-repeat counters	2026-10-22T22:35:48Z
+ovl201	0x800A7A68	name	vs_link_exchange_ac	2026-10-22T22:35:48Z
+ovl201	0x800A7A68	hint	VS link: packs own AC (parts, options, colours, emblem VRAM) into 700-word buffer, exchanges with func_800A869C, loads opponent AC parts/colours/emblem, builds both models; on failure shows error boxes	2026-10-22T22:35:48Z
+ovl201	0x800A9AFC	name	vs_menu_update	2026-10-22T22:35:49Z
+ovl201	0x800A9AFC	hint	2-player VS menu cursor (4 entries, both pads): O/X selects: load preset/swap player AC data blocks (parts, colours, names, emblems), opens sub-windows	2026-10-22T22:35:49Z
+ovl201	0x800B4398	name	emblem_save_write	2026-10-22T22:35:49Z
+ovl201	0x800B4398	hint	writes emblem save file Z to card port and verifies by read-back checksum	2026-10-22T22:35:49Z
+ovl201	0x800B3748	name	ac_part_obj_place	2026-10-22T22:35:49Z
+ovl201	0x800B3748	hint	positions an AC part UiObj from attach-point tables by slot/kind	2026-10-22T22:35:49Z
+ovl201	0x80086FFC	name	mission_list_build	2026-10-22T22:35:49Z
+ovl201	0x80086FFC	hint	builds visible mission order list for current rank with special-case filters; wraps rank until non-empty	2026-10-22T22:35:49Z
+ovl201	0x800A4A74	name	movie_frame_upload	2026-10-22T22:35:49Z
+ovl201	0x800A4A74	hint	movie player per-frame decode buffer swap + LoadImage slice	2026-10-22T22:35:49Z
+ovl201	0x800A75A0	name	vs_link_sync	2026-10-22T22:35:49Z
+ovl201	0x800A75A0	hint	VS link: exchanges selection bytes; on failure closes link and shows error box	2026-10-22T22:35:49Z
+ovl201	0x800B0CF0	name	padcfg_update	2026-10-22T22:35:49Z
+ovl201	0x800B0CF0	hint	button-config screen cursor/select/default/exit with duplicate check	2026-10-22T22:35:49Z
+ovl201	0x80088AC4	name	letter_line_stream	2026-10-22T22:35:49Z
+ovl201	0x80088AC4	hint	streams control-coded text into a list line (/ > % codes)	2026-10-22T22:35:49Z
+ovl201	0x8009C6DC	name	pilot_name_new	2026-10-22T22:35:50Z
+ovl201	0x8009C6DC	hint	new pilot: random SJIS digit suffix on template name, plays movie 6	2026-10-22T22:35:50Z
+ovl201	0x800B5EEC	name	softfp_ddiv	2026-10-22T22:35:50Z
+ovl201	0x800B5EEC	hint	soft-float double divide (restoring)	2026-10-22T22:35:50Z
+ovl201	0x800B55E4	name	libpress_DecDCTvlcSize2	2026-10-22T22:35:50Z
+ovl201	0x800B55E4	hint	PsyQ libpress hand asm	2026-10-22T22:35:50Z
+ovl201	0x800B5618	name	libpress_DecDCTvlc2	2026-10-22T22:35:50Z
+ovl201	0x800B5618	hint	PsyQ libpress hand asm	2026-10-22T22:35:50Z
