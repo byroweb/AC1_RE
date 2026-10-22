@@ -93,8 +93,9 @@ button.primary { background: var(--accent); color: var(--accent-ink); border-col
       <div class="toggles">
         <label><input type="checkbox" id="heat"> texel-density map</label>
         <label><input type="checkbox" id="light" checked> simple lighting</label>
+        <label><input type="checkbox" id="tessAll"> tessellate walls too</label>
       </div>
-      <div class="note">Density tiles each face's own texel rectangle N times (same texture, smaller texels). Texture LOD merges 2<sup>n</sup>×2<sup>n</sup> texels. Map: red = 1 texel covers several screen pixels (blocky), green ≈ 1:1, blue = shimmer.</div>
+      <div class="note">Density tiles each face's own texel rectangle N times (same texture, smaller texels). Tessellate splits floor triangles (and walls, if ticked) until no edge is longer than N units; it takes the affine warp out but adds triangles. Texture LOD merges 2<sup>n</sup>×2<sup>n</sup> texels. Map: red = 1 texel covers several screen pixels (blocky), green ≈ 1:1, blue = shimmer.</div>
     </details>
 
     <details open><summary>LOD &amp; distance</summary>
@@ -112,7 +113,11 @@ button.primary { background: var(--accent); color: var(--accent-ink); border-col
         <label><input type="checkbox" id="ceil" checked> ceilings</label>
         <label><input type="checkbox" id="wire"> wireframe</label>
         <label><input type="checkbox" id="cull"> backface cull</label>
+        <label><input type="checkbox" id="nearDrop"> PS1 near drop</label>
       </div>
+      <div id="k-ps1"></div>
+      <div class="note">Affine UVs warp hardest on big polygons close to the camera: on foot that is the floor under the pilot.
+        PS1 games either split near polygons smaller (<em>Tessellate</em>) or dropped any polygon with a vertex closer than a limit (<em>PS1 near drop</em>), which opens holes instead.</div>
       <div class="btns"><button id="modern">Modern look</button><button id="ps1">PS1 look</button></div>
     </details>
 
@@ -152,11 +157,13 @@ slider("k-cam", "fov", "Field of view", 30, 100, 1, 60, v => v + "°");
 slider("k-cam", "clear", "Ceiling clearance", 2, 120, 1, 20, v => v + " u");
 slider("k-tex", "tile", "Density ×", 1, 8, 1, 1, v => v + "×");
 slider("k-tex", "lodBias", "Texture LOD", 0, 4, 1, 0, v => v ? "1/" + (1 << v) : "full");
-slider("k-tex", "subdiv", "Floor subdivide", 0, 2, 1, 0, v => v ? (4 ** v) + "× tris" : "off", () => { needRebuild = true; });
+const TESS = [0, 512, 256, 128, 64, 32, 16];
+slider("k-tex", "tess", "Tessellate ≤", 0, 6, 1, 0, v => v ? TESS[v] + " u" : "off", () => { needRebuild = true; });
 slider("k-lod", "lodDist", "Detail LOD dist", 0, 40000, 100, 40000, v => v >= 40000 ? "∞" : v + " u");
 slider("k-lod", "drawDist", "Section draw dist", 500, 60000, 100, 60000, v => v >= 60000 ? "∞" : v + " u");
 slider("k-lod", "fogStart", "Fog start", 0, 40000, 100, 6000, v => v + " u");
 slider("k-lod", "fogEnd", "Fog end", 100, 60000, 100, 30000, v => v + " u");
+slider("k-ps1", "nearDrop", "Near drop at", 1, 300, 1, 24, v => v + " u");
 slider("k-units", "acMetres", "AC height", 4, 20, 0.5, 10, v => v + " m");
 
 const $ = id => document.getElementById(id);
@@ -165,7 +172,8 @@ document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => {
   if (b.dataset.preset === "ac") { setSlider("pilotH", 212); setSlider("speed", 1200); }
   else { setSlider("pilotH", Math.round(1.8 * unitsPerM())); setSlider("speed", 300); }
 });
-$("modern").onclick = () => { $("res").value = "0"; ["affine", "snap", "dither"].forEach(i => $(i).checked = false); };
+$("modern").onclick = () => { $("res").value = "0"; ["affine", "snap", "dither", "nearDrop"].forEach(i => $(i).checked = false); };
+$("tessAll").onchange = () => { needRebuild = true; };
 $("ps1").onclick = () => { $("res").value = "320"; ["affine", "snap", "dither"].forEach(i => $(i).checked = true); };
 $("theme").onclick = () => {
   const r = document.documentElement, dark = matchMedia("(prefers-color-scheme: dark)").matches;
@@ -183,13 +191,18 @@ precision highp float;
 layout(location=0) in vec3 a_pos; layout(location=1) in vec2 a_uv; layout(location=2) in vec4 a_uvr;
 layout(location=3) in vec4 a_mat; layout(location=4) in vec3 a_rgb; layout(location=5) in vec3 a_nrm;
 layout(location=6) in vec3 a_bary; layout(location=7) in vec3 a_smin; layout(location=8) in vec3 a_smax;
-uniform mat4 u_vp; uniform vec3 u_eye, u_pilot; uniform float u_ceil, u_lodDist, u_drawDist, u_snap; uniform vec2 u_res;
+layout(location=9) in vec3 a_o1; layout(location=10) in vec3 a_o2;
+uniform mat4 u_vp; uniform vec3 u_eye, u_pilot; uniform float u_ceil, u_lodDist, u_drawDist, u_snap, u_nearDrop; uniform vec2 u_res;
 out vec2 v_uvp; out vec3 v_uva; flat out vec4 v_uvr; flat out vec4 v_mat; out vec3 v_rgb;
 flat out vec3 v_nrm; out vec3 v_bary; out float v_dist;
 void main() {
   int f = int(a_mat.z + 0.5); int cls = (f >> 2) & 3;
   float sd = length(max(max(a_smin - u_pilot, u_pilot - a_smax), 0.0));
   bool hide = (cls == 2 && u_ceil < 0.5) || ((f & 2) != 0 && sd > u_lodDist) || sd > u_drawDist;
+  if (u_nearDrop > 0.0) {   // PS1: no clipping; a triangle with a corner too close is not drawn at all
+    float w0 = (u_vp * vec4(a_pos, 1.0)).w, w1 = (u_vp * vec4(a_o1, 1.0)).w, w2 = (u_vp * vec4(a_o2, 1.0)).w;
+    if (min(w0, min(w1, w2)) < u_nearDrop) hide = true;
+  }
   vec4 c = u_vp * vec4(a_pos, 1.0);
   if (u_snap > 0.5 && c.w > 0.0) { vec2 h = u_res * 0.5; c.xy = floor(c.xy / c.w * h + 0.5) / h * c.w; }
   gl_Position = hide ? vec4(2.0, 2.0, 2.0, 1.0) : c;
@@ -299,33 +312,34 @@ function mmul(a, b) {
 }
 
 // ------------------------------------------------------------ scene --------
-let ready = false, S = null, mesh = null, vramTex = null, hasVram = 0, grid = null, playerInfo = null;
-const STRIDE = 28;
+let ready = false, S = null, mesh = null, vramTex = null, hasVram = 0, grid = null, playerInfo = null, spawnState = null;
+const STRIDE = 34, MAX_TRIS = 2000000;
 function buildMesh() {
-  const n = S.tris, lvl = P.subdiv | 0;
-  const floors = []; for (let i = 0; i < n; i++) if (((S.flags[i] >> 2) & 3) === 0) floors.push(i);
-  const total = n + floors.length * (4 ** lvl - 1);
-  const buf = new Float32Array(total * 3 * STRIDE);
-  let w = 0;
+  const n = S.tris, L = TESS[P.tess | 0], all = chk("tessAll");
+  const out = [];            // chunks of Float32Array
+  let cur = new Float32Array(65536 * 3 * STRIDE), w = 0, tris = 0, capped = false;
   const secB = S.sections.map(s => { const b = s.bbox; return [[b[0], -b[4], b[2]], [b[3], -b[1], b[5]]]; });
+  const bary = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
   function emit(p, uv, i, uvr, nrm, sb) {
-    const bary = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    if (w + 3 * STRIDE > cur.length) { out.push(cur.subarray(0, w)); cur = new Float32Array(cur.length); w = 0; }
     for (let k = 0; k < 3; k++) {
-      buf.set(p[k], w); buf.set(uv[k], w + 3); buf.set(uvr, w + 5);
-      buf[w + 9] = S.tpage[i]; buf[w + 10] = S.clut[i]; buf[w + 11] = S.flags[i]; buf[w + 12] = S.sec[i];
-      buf[w + 13] = S.rgb[3 * i]; buf[w + 14] = S.rgb[3 * i + 1]; buf[w + 15] = S.rgb[3 * i + 2];
-      buf.set(nrm, w + 16); buf.set(bary[k], w + 19); buf.set(sb[0], w + 22); buf.set(sb[1], w + 25);
+      cur.set(p[k], w); cur.set(uv[k], w + 3); cur.set(uvr, w + 5);
+      cur[w + 9] = S.tpage[i]; cur[w + 10] = S.clut[i]; cur[w + 11] = S.flags[i]; cur[w + 12] = S.sec[i];
+      cur[w + 13] = S.rgb[3 * i]; cur[w + 14] = S.rgb[3 * i + 1]; cur[w + 15] = S.rgb[3 * i + 2];
+      cur.set(nrm, w + 16); cur.set(bary[k], w + 19); cur.set(sb[0], w + 22); cur.set(sb[1], w + 25);
+      cur.set(p[(k + 1) % 3], w + 28); cur.set(p[(k + 2) % 3], w + 31);
       w += STRIDE;
     }
+    tris++;
   }
-  function split(p, uv, d, i, uvr, nrm, sb) {
-    if (d === 0) return emit(p, uv, i, uvr, nrm, sb);
-    const mp = (a, b) => V.lerp(p[a], p[b], 0.5), mu = (a, b) => [(uv[a][0] + uv[b][0]) / 2, (uv[a][1] + uv[b][1]) / 2];
-    const p01 = mp(0, 1), p12 = mp(1, 2), p20 = mp(2, 0), u01 = mu(0, 1), u12 = mu(1, 2), u20 = mu(2, 0);
-    split([p[0], p01, p20], [uv[0], u01, u20], d - 1, i, uvr, nrm, sb);
-    split([p01, p[1], p12], [u01, uv[1], u12], d - 1, i, uvr, nrm, sb);
-    split([p20, p12, p[2]], [u20, u12, uv[2]], d - 1, i, uvr, nrm, sb);
-    split([p01, p12, p20], [u01, u12, u20], d - 1, i, uvr, nrm, sb);
+  function split(p, uv, i, uvr, nrm, sb) {   // halve the longest edge until every edge <= L
+    const e = [V.len(V.sub(p[0], p[1])), V.len(V.sub(p[1], p[2])), V.len(V.sub(p[2], p[0]))];
+    const k = e.indexOf(Math.max(...e));
+    if (!L || e[k] <= L || tris > MAX_TRIS) { if (tris > MAX_TRIS) capped = true; return emit(p, uv, i, uvr, nrm, sb); }
+    const a = k, b = (k + 1) % 3, c = (k + 2) % 3;
+    const pm = V.lerp(p[a], p[b], 0.5), um = [(uv[a][0] + uv[b][0]) / 2, (uv[a][1] + uv[b][1]) / 2];
+    split([p[a], pm, p[c]], [uv[a], um, uv[c]], i, uvr, nrm, sb);
+    split([pm, p[b], p[c]], [um, uv[b], uv[c]], i, uvr, nrm, sb);
   }
   for (let i = 0; i < n; i++) {
     const q = S.pos, p = [0, 1, 2].map(k => [q[9 * i + 3 * k], -q[9 * i + 3 * k + 1], q[9 * i + 3 * k + 2]]);
@@ -334,15 +348,20 @@ function buildMesh() {
                  Math.max(uv[0][0], uv[1][0], uv[2][0]) + 1, Math.max(uv[0][1], uv[1][1], uv[2][1]) + 1];
     const nrm = V.norm(V.cross(V.sub(p[1], p[0]), V.sub(p[2], p[0])));
     const cls = (S.flags[i] >> 2) & 3;
-    split(p, uv, cls === 0 ? lvl : 0, i, uvr, nrm, secB[S.sec[i]]);
+    if (L && (cls === 0 || all)) split(p, uv, i, uvr, nrm, secB[S.sec[i]]);
+    else emit(p, uv, i, uvr, nrm, secB[S.sec[i]]);
   }
+  out.push(cur.subarray(0, w));
+  const total = out.reduce((a, c) => a + c.length, 0), buf = new Float32Array(total);
+  let o = 0; for (const c of out) { buf.set(c, o); o += c.length; }
+  info.capped = capped;
   if (mesh) { gl.deleteBuffer(mesh.vbo); gl.deleteVertexArray(mesh.vao); }
   const vao = gl.createVertexArray(), vbo = gl.createBuffer();
   gl.bindVertexArray(vao); gl.bindBuffer(gl.ARRAY_BUFFER, vbo); gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
-  const lay = [[0, 3, 0], [1, 2, 3], [2, 4, 5], [3, 4, 9], [4, 3, 13], [5, 3, 16], [6, 3, 19], [7, 3, 22], [8, 3, 25]];
+  const lay = [[0, 3, 0], [1, 2, 3], [2, 4, 5], [3, 4, 9], [4, 3, 13], [5, 3, 16], [6, 3, 19], [7, 3, 22], [8, 3, 25], [9, 3, 28], [10, 3, 31]];
   for (const [loc, sz, off] of lay) { gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, sz, gl.FLOAT, false, STRIDE * 4, off * 4); }
   gl.bindVertexArray(null);
-  mesh = { vao, vbo, count: total * 3, tris: total };
+  mesh = { vao, vbo, count: tris * 3, tris };
   needRebuild = false;
 }
 
@@ -432,10 +451,12 @@ async function loadMission(n) {
   $("lodnote").innerHTML = det ? `${det.toLocaleString()} faces exist only in the detail LOD; they hide past the detail distance.`
     : `<span class="warn">This level has no detail-LOD faces</span>, so only draw distance and fog change with range (the AC and object models carry the two LODs).`;
   const st = await getJSON("/api/states?m=" + n), all = await getJSON("/api/states");
-  const opts = st.map(s => `<option value="${s.id}">VRAM of ${s.id}</option>`)
+  spawnState = st.length ? st[0].id : null;
+  const opts = [`<option value="disc:${n}">disc textures (RTIM 100 + ${n})</option>`]
+    .concat(st.map(s => `<option value="${s.id}">VRAM of ${s.id}</option>`))
     .concat(all.filter(s => s.mission !== n).map(s => `<option value="${s.id}">VRAM of ${s.id} (other mission)</option>`));
-  $("texsrc").innerHTML = opts.join("") + `<option value="">stand-in texels (no state)</option>`;
-  $("texsrc").value = st.length ? st[0].id : "";
+  $("texsrc").innerHTML = opts.join("") + `<option value="">stand-in texels</option>`;
+  $("texsrc").value = "disc:" + n;
   buildGrid(); buildMesh();
   await loadTexels($("texsrc").value);
   ready = true; $("msg").textContent = "";
@@ -443,20 +464,26 @@ async function loadMission(n) {
 }
 async function loadTexels(id) {
   hasVram = 0; playerInfo = null;
+  const disc = id && id.startsWith("disc:");
   if (id) {
-    $("msg").textContent = "reading VRAM of " + id + "…";
-    const [buf, pl] = await Promise.all([fetch("/api/vram?id=" + id).then(r => r.arrayBuffer()), getJSON("/api/state?id=" + id)]);
+    $("msg").textContent = disc ? "reading the level's textures from the disc…" : "reading VRAM of " + id + "…";
+    const stateId = disc ? spawnState : id;    // a state of this mission still gives the start position
+    const [buf, pl] = await Promise.all([
+      fetch(disc ? "/api/vram?disc=" + id.slice(5) : "/api/vram?id=" + id).then(r => r.arrayBuffer()),
+      stateId ? getJSON("/api/state?id=" + stateId) : Promise.resolve(null)]);
     if (!vramTex) vramTex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, vramTex); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, 1024, 512, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, new Uint16Array(buf));
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     hasVram = 1; playerInfo = pl;
-    $("scenenote").textContent = pl.mission === S.mission
-      ? `Texels and start position from ${id}.` : `Texels from ${id}, which is mission ${pl.mission}: pages may not match this level.`;
+    $("scenenote").textContent = disc
+      ? `Level textures from the disc (RTIM.T entries 100 and ${S.mission}, uploaded as the mission load does).` + (pl ? ` Start position from ${stateId}.` : "")
+      : pl.mission === S.mission ? `Texels and start position from ${id} (includes run-time uploads: AC and object art).`
+      : `Texels from ${id}, which is mission ${pl.mission}: pages may not match this level.`;
   } else {
     if (!vramTex) { vramTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, vramTex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16UI, 1, 1, 0, gl.RED_INTEGER, gl.UNSIGNED_SHORT, new Uint16Array(1)); }
-    $("scenenote").textContent = "No save state: stand-in noise at the real texel grid (grain size is honest, colours are not).";
+    $("scenenote").textContent = "Stand-in noise at the real texel grid (grain size is honest, colours are not).";
   }
   placePilot(); $("msg").textContent = "";
 }
@@ -566,6 +593,7 @@ function render() {
   gl.uniformMatrix4fv(u.u_vp, false, vp); gl.uniform3fv(u.u_eye, cam.p); gl.uniform3fv(u.u_pilot, pilot.p);
   gl.uniform1f(u.u_ceil, chk("ceil") ? 1 : 0); gl.uniform1f(u.u_lodDist, P.lodDist >= 40000 ? 1e9 : P.lodDist);
   gl.uniform1f(u.u_drawDist, P.drawDist >= 60000 ? 1e9 : P.drawDist); gl.uniform1f(u.u_snap, chk("snap") ? 1 : 0);
+  gl.uniform1f(u.u_nearDrop, chk("nearDrop") ? P.nearDrop : 0);
   gl.uniform2f(u.u_res, iw, ih);
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, vramTex); gl.uniform1i(u.u_vram, 0); gl.uniform1i(u.u_hasVram, hasVram);
   gl.uniform1f(u.u_tile, P.tile); gl.uniform1f(u.u_lodBias, P.lodBias); gl.uniform1f(u.u_affine, chk("affine") ? 1 : 0);
@@ -604,7 +632,8 @@ function hud() {
   $("hud").textContent =
     `mission ${S.mission} · ${mesh.tris.toLocaleString()} tris · ${info.res} · ${fps.toFixed(0)} fps\n` +
     `pilot ${m(P.pilotH)} tall · camera ${camAbove} above the floor · ceiling ${ceil === Infinity ? "open" : m(ceil)} over the pilot` +
-    (info.lowered > 1 ? ` · camera lowered ${m(info.lowered)} by the ceiling` : "");
+    (info.lowered > 1 ? ` · camera lowered ${m(info.lowered)} by the ceiling` : "") +
+    (info.capped ? ` · tessellation capped at ${MAX_TRIS.toLocaleString()} tris` : "");
 }
 function frame(t) {
   const dt = Math.min(0.05, (t - lastT) / 1000); lastT = t; fps = fps * 0.95 + (dt > 0 ? 1 / dt : 0) * 0.05;

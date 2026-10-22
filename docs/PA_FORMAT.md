@@ -186,6 +186,12 @@ with its own VRAM dest rect) — supplies UI/effect/AC pages (tx 5/8/9/13/15, e.
 (704/768,256); a separate **per-stage** texture bank does. The PA loader `FUN_8004F1A8`
 has **no** `LoadImage`/GPU-DMA call — geometry load and texture upload are decoupled.
 
+> **UPDATE (2026-10-22):** "63 TIMs" was only the start of the file. RTIM.T is a `.T`
+> container of 104 entries: entry 100 is the common set and entry *N* is mission *N*'s
+> **level** textures, which the mission loader uploads in that order. Mission levels (FDAT 2N+1
+> chunk 0, not PA files) therefore *are* textured from RTIM; see `LEVEL_LOADING.md` §7. The
+> negative above still holds for PA00's pages (704/768,256), which belong to object/AC art.
+
 **Per-stage texture bank — claim RETRACTED (see RECONCILIATION below; original 2026-06-15 text kept):** the bank is **embedded in
 the PA container itself**, not in a sibling file (the `P0..P3` dirs hold only `PA##.T`).
 In `PA00.T` the two **non-geometry** entries carry it:

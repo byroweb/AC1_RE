@@ -85,15 +85,16 @@ python tools/plantview/poller.py --source live --open       # DuckStation, port 
 ```
 
 ## `sceneview/` — AC1 levels in the browser, PS1-style, with knobs
-A WebGL2 page that draws a mission's level with its real texels, taken from a save
-state's VRAM and sampled like the PS1 GPU does. Walk a pilot through it with sliders
-for camera distance, an AC1-style camera that drops under low ceilings, texture
-density, texture LOD, floor subdivision and draw distance, plus toggles for the PS1
-quirks (320×240, affine UVs, vertex snap, 15-bit dither) and a texel-density map. It
-was built to judge how an on-foot mode would look at pilot scale. See
+A WebGL2 page that draws any mission's level with its real texels, sampled like the PS1
+GPU does. The texels come from the disc (RTIM.T entries 100 and N, as the mission load
+uploads them) or from a save state's VRAM. Walk a pilot through it with sliders for
+camera distance, an AC1-style camera that drops under low ceilings, texture density,
+texture LOD, tessellation and draw distance, plus toggles for the PS1 quirks (320×240,
+affine UVs, vertex snap, 15-bit dither, near-polygon drop) and a texel-density map.
+It was built to judge how an on-foot mode would look at pilot scale. See
 [`sceneview/README.md`](sceneview/README.md).
 ```
-python tools/sceneview/server.py      # http://127.0.0.1:8771/
+python tools/sceneview/server.py --open    # http://127.0.0.1:8771/ (or double-click sceneview.cmd)
 ```
 
 ## `setup_re_tools.sh`
