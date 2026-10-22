@@ -1327,3 +1327,33 @@ ovl203	0x8005C2F4	name	ws_draw_struct	2026-10-22T21:43:22Z
 ovl203	0x8005C2F4	hint	draws one world struct (WorldStruct 0x40): visibility by bbox, LOD by distance, lights/fog per light set, near (+-1300) drawn directly via func_8006735C/800681B8, others queued into near/far DrawEnt lists or drawn via func_8005B810/80063B24	2026-10-22T21:43:22Z
 ovl203	0x8005CB8C	name	mdl_place_and_draw_ex	2026-10-22T21:43:22Z
 ovl203	0x8005CB8C	hint	extended func_8005D8B4: lit model placement with a precomputed-rotation mode (lod & 0x80), per-model obj index, collision/visibility via func_8005414C, returns the precision shift used	2026-10-22T21:43:22Z
+ovl203	0x80062E78	name	render_draw_struct_part_list	2026-10-22T21:43:26Z
+ovl203	0x80062E78	hint	port of ovl202 func_800639D8 (light-set switch + GTE matrices per part, calls 8006252C/80063088)	2026-10-22T21:43:26Z
+ovl203	0x80062020	name	view_frame_update	2026-10-22T21:43:26Z
+ovl203	0x80062020	hint	port of ovl202 func_80062BD8 (camera pose -> view matrices, object table to view space, per-frame updaters; 203 runs func_8005414C for 2 AcEntity slots)	2026-10-22T21:43:27Z
+ovl203	0x8007A09C	name	vs_hover_mover_step	2026-10-22T21:43:27Z
+ovl203	0x8007A09C	hint	port of fdat000 func_801C5CB8 hover mover; sink on player buttons +0x29A, accel/max from VsPlayer +0x20C/+0x20E	2026-10-22T21:43:27Z
+ovl203	0x80077E10	name	vs_link_exchange_pads	2026-10-22T21:43:27Z
+ovl203	0x80077E10	hint	sends R..C 8-byte packet with pad word/random/checksum via write(), reads peer packet via read(); sets link error flags 0x100/0x200/0x300 + 80-frame timer; latches both VsPlayer pads	2026-10-22T21:43:27Z
+ovl203	0x8007738C	name	vs_pause	2026-10-22T21:43:27Z
+ovl203	0x8007738C	hint	START (pad 0x800) on either VsPlayer: draws PAUSE POLY_FT4 over the frame, SsSetMVol(0,0), CdControl(9) pause, waits press/release via VSync+func_80077E10, CdRead2(200) resume, restores volume	2026-10-22T21:43:27Z
+ovl203	0x800718CC	name	vs_carried_obj_update	2026-10-22T21:43:27Z
+ovl203	0x800718CC	hint	64-byte object table at 0x801C40F0 riding a carrier (+0x2C): tests old/new box vs both versus ACs (func_80071638), pushes AC via func_800736CC, commits carried position	2026-10-22T21:43:27Z
+ovl203	0x800797D0	name	vs_hover_mover_step_locked	2026-10-22T21:43:27Z
+ovl203	0x800797D0	hint	hover mover with lock target (VsPlayer +0x84): leads target via func_80015258, turns with func_800132CC, steers velocity clamped to +0x20E; state +0x6E aim/effect side paths	2026-10-22T21:43:27Z
+ovl203	0x80079144	name	vs_walker_mover_step	2026-10-22T21:43:27Z
+ovl203	0x80079144	hint	ground/walker mover: faces lock target, per-state (+0x6E) helpers, fires pattern by VsPlayer +0x285 via func_80087E08 (yaw-128/yaw/yaw+128) when +0x29A held and latch +0x48 armed	2026-10-22T21:43:27Z
+ovl203	0x80072C98	name	vs_target_scan	2026-10-22T21:43:27Z
+ovl203	0x80072C98	hint	fills TargetSlot (0x30) entries for the 2 versus ACs inside range cube/circle not on team/masked; flags 1, |2 inside pitch/yaw window (func_80014AE4); returns count	2026-10-22T21:43:27Z
+ovl203	0x800768F8	name	vs_weapon_fire_dispatch	2026-10-22T21:43:27Z
+ovl203	0x800768F8	hint	K&R-style variadic: n weapon records, per-record extra stack ints; muzzle via func_800732FC, spawns by flags&0x7000 / &0xF00 (func_80084B44/84D98/84F94/850F4/86A98/87660/87E08/870B8)	2026-10-22T21:43:27Z
+ovl203	0x8007B318	name	vs_weapon_fire	2026-10-22T21:43:28Z
+ovl203	0x8007B318	hint	versus AC fires weapon record: aim via func_8007A5EC, burst of 1/2/4 shots (rec +9&3) from muzzle pairs, spawn by kind class (0-19 table D_8008A220, 20/40/60/70), reload +0x3F, muzzle flash 180/160/140	2026-10-22T21:43:28Z
+ovl203	0x8007A5EC	name	vs_lockon_aim	2026-10-22T21:43:28Z
+ovl203	0x8007A5EC	hint	versus lock-on: scan (func_80072C98) from muzzle, pick target (func_80015440/func_800730CC), track TargetSlot at VsPlayer +0x84 (head +0x80), lead via func_80015258, lock tones 42/46, aim AC +0x76..+0x7A	2026-10-22T21:43:28Z
+ovl203	0x80071D84	name	vs_lift_obj_update	2026-10-22T21:43:28Z
+ovl203	0x80071D84	hint	like func_800718CC for a lift that carries ACs: try carried box first, push ACs (func_800736CC), refuse move (return 0) when push < half the carry; commits pushed AC positions	2026-10-22T21:43:28Z
+ovl203	0x80063B24	name	render_draw_model_rec_gt	2026-10-22T21:43:28Z
+ovl203	0x80063B24	hint	draws model record idx (D_8019D968 model RecSet) as lit POLY_GT3/GT4 (packet codes 0x24/0x2C/0x6C) into OT D_8019D960+otofs, scratchpad state at 0x1F800000	2026-10-22T21:43:28Z
+ovl203	0x8007AB4C	name	vs_multilock_aim	2026-10-22T21:43:28Z
+ovl203	0x8007AB4C	hint	multi-lock (missile) aim: 8 TargetSlots at VsPlayer +0x84, refresh/drop/add locks, random lock loss on jamming ACs (+0x38 bit 3), lock cursor +0x28/+0x2A via func_800132CC, tones 43/44/47	2026-10-22T21:43:28Z
