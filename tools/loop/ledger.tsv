@@ -5247,3 +5247,7 @@ when	unit	vaddr	status	attempts	reason
 2026-10-22T12:10:15Z	ovl201	0x8006C934	match	1	
 2026-10-22T12:10:17Z	ovl201	0x80072C80	match	1	
 2026-10-22T12:10:18Z	ovl201	0x80070A44	match	1	
+2026-10-22T06:14:58Z	ovl201	0x8006AAC4	match	0	golem (qwen2.5-coder-7b-instruct, tweak)
+2026-10-22T06:15:00Z	ovl201	0x8008AFA8	match	0	golem (qwen2.5-coder-7b-instruct, tweak)
+2026-10-22T06:15:01Z	ovl204	0x80060B08	match	0	golem (qwen2.5-coder-7b-instruct, tweak)
+2026-10-22T06:18:25Z	ovl201	0x800997C8	match	0	twin of ovl201 0x8008AFA8 (ovl201/func_8008AFA8.c)
