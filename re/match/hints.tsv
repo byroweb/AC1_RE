@@ -841,3 +841,19 @@ ovl202	0x800731E8	name	mis_nodes_load	2026-10-22T16:48:52Z
 ovl202	0x800731E8	hint	fills 512 0x34-byte nodes at D_80198B08 from 0x20-byte source records, clears runtime fields, copies 3 u16 from type table D_80198808[type] (stride 0x18) or 0xC000, calls g_objective_obj+0xA0 per-type init; then func_80073170	2026-10-22T16:48:52Z
 ovl202	0x8007790C	name	ai_move_state_80	2026-10-22T16:48:52Z
 ovl202	0x8007790C	hint	-: sets +0xCC vel from arg, vy=0, shrinks horizontal speed by 0x80 (SquareRoot0), func_80076548(e,0x80,fn), mover setup, optional limit at +0xD2 from func_8004ED1C, then the 0x80077170 ballistic probe	2026-10-22T16:48:53Z
+ovl202	0x8008ACE4	name	fmt_int_to_digits10	2026-10-22T16:48:59Z
+ovl202	0x8008ACE4	hint	signed int -> 10-digit code string, 0xA minus sign, twin of exe 0x800125D0	2026-10-22T16:48:59Z
+ovl202	0x80084A98	name	vec_split_steps	2026-10-22T16:48:59Z
+ovl202	0x80084A98	hint	n = max(max(|x|,|z|)/2/sxz, |y|/sy)+1 stored in out->pad, out = v/n (uses abs builtin)	2026-10-22T16:48:59Z
+ovl202	0x8008ABF4	name	hud_draw_fullscreen_pair	2026-10-22T16:48:59Z
+ovl202	0x8008ABF4	hint	draws two 255x240 sprites (tpage 0x85 at x0, 0x87 64 wide at x255) via sprite emitter 0x80060B54	2026-10-22T16:48:59Z
+ovl202	0x8008AA90	name	mission_end_step	2026-10-22T16:48:59Z
+ovl202	0x8008AA90	hint	called from 0x8008AB68 while g_mission_end_timer!=0; sets flag 0x400, clears 0x10000 in 0x800411F4, rotates angle 0x800411C0, advances timer at 24	2026-10-22T16:48:59Z
+ovl202	0x8008AD80	name	hud_draw_number	2026-10-22T16:48:59Z
+ovl202	0x8008AD80	hint	formats n with 0x8008ACE4, right-aligns in 9 cells (8 px) and draws digit sprites from table 0x800907A0	2026-10-22T16:48:59Z
+ovl202	0x800835E8	name	mission_deliver_hit	2026-10-22T16:48:59Z
+ovl202	0x800835E8	hint	twin of ovl203 0x80082284: dispatches hit to AC entity (0x80075350), object pool 0x80198B08 handler, or world struct on_hit	2026-10-22T16:48:59Z
+ovl202	0x80080DA0	name	actor_ground_move_step	2026-10-22T16:48:59Z
+ovl202	0x80080DA0	hint	port of fdat000 0x801C59EC with def in globals 0x800411B0 (accel,max_speed) and sounds 0x8004124F	2026-10-22T16:48:59Z
+ovl202	0x8007DB98	name	actor_take_hit	2026-10-22T16:48:59Z
+ovl202	0x8007DB98	hint	port of fdat000 0x801C91CC (ap adjust under mission flag 0x400, alarm 0x800411F0=40, knock-back/fall)	2026-10-22T16:48:59Z
