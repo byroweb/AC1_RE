@@ -56,6 +56,7 @@ HINTS = os.path.join(REPO, "re", "match", "hints.tsv")
 COV_COLS = ["unit", "vaddr", "context", "hits"]
 HINT_COLS = ["unit", "vaddr", "kind", "text", "timestamp"]
 HINT_PREFIX = "play coverage: "
+BROAD = 8                  # more labels than this: summarised as "broad"
 PROBE = 64
 PROGRAM_OVERLAYS = ("ovl201", "ovl202", "ovl203", "ovl204")
 
@@ -280,6 +281,9 @@ def summary(cov, unit, vaddr):
     """'play coverage: garage (3), shop (1)' over every context of one function, most hits first."""
     ctx = [(c, n) for (u, v, c), n in cov.items() if u == unit and v == vaddr]
     ctx.sort(key=lambda cn: (-cn[1], cn[0]))
+    if len(ctx) > BROAD:
+        # on most screens: a frame loop or shared UI code; the list itself says little
+        return HINT_PREFIX + "broad, %d screens (e.g. %s)" % (len(ctx), ", ".join(c for c, _n in ctx[:3]))
     return HINT_PREFIX + ", ".join("%s (%d)" % cn for cn in ctx)
 
 

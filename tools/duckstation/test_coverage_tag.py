@@ -147,3 +147,9 @@ def test_cleanup_retakes_a_lost_session_and_resumes():
     assert s.armed == {}
     assert [c[1]["action"] for c in m.calls if c[0] == "breakpoint"] == ["remove", "remove"]
     assert m.calls[-1][0] == "continue"                    # it was paused on one of ours
+
+
+def test_summary_collapses_broad_functions():
+    cov = {("ovl201", "0x8004E2BC", "screen%02d" % i): 1 for i in range(12)}
+    cov[("ovl201", "0x8004E2BC", "garage")] = 5
+    assert C.summary(cov, "ovl201", "0x8004E2BC") ==         "play coverage: broad, 13 screens (e.g. garage, screen00, screen01)"
