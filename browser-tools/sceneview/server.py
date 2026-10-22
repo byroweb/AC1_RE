@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-tools/sceneview/server.py — local server for the AC1 scene viewer (index.html).
+browser-tools/sceneview/server.py — local server for the AC1 scene viewer (index.html).
 
-    python tools/sceneview/server.py [--port 8771] [--bin DISC.bin]
+    python browser-tools/sceneview/server.py [--port 8771] [--bin DISC.bin]
     then open http://127.0.0.1:8771/
 
 Serves, on 127.0.0.1 only (the geometry and texels are game data from your disc and
@@ -20,12 +20,13 @@ Disc image: --bin, else $AC1_BIN.  Save states: $AC1_STATES_DIR or ~/dev/ac1_sta
 decompress a state (the zstandard package or the zstd CLI).
 """
 from __future__ import annotations
-import argparse, json, os, sys, threading, webbrowser
-from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+import argparse, json, os, sys, threading
 from urllib.parse import urlparse, parse_qs
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "_shared"))
+import btserve  # noqa: E402
 import scene  # noqa: E402
 
 _lock = threading.Lock()
@@ -62,22 +63,8 @@ def state_by_id(sid):
     raise KeyError(sid)
 
 
-class Handler(BaseHTTPRequestHandler):
+class Handler(btserve.Handler):
     bin_path = None
-
-    def log_message(self, fmt, *args):          # quiet
-        pass
-
-    def send(self, code, body, ctype):
-        self.send_response(code)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(body)
-
-    def json(self, obj, code=200):
-        self.send(code, json.dumps(obj, separators=(",", ":")).encode(), "application/json")
 
     def do_GET(self):
         u = urlparse(self.path)
@@ -85,8 +72,7 @@ class Handler(BaseHTTPRequestHandler):
         b = self.bin_path
         try:
             if u.path in ("/", "/index.html"):
-                with open(os.path.join(HERE, "index.html"), "rb") as fh:
-                    return self.send(200, fh.read(), "text/html; charset=utf-8")
+                return self.file(os.path.join(HERE, "index.html"))
             if u.path == "/api/missions":
                 return self.json(cached("missions", lambda: missions(b)))
             if u.path == "/api/level":
@@ -128,21 +114,7 @@ def main():
         sys.exit("disc image not found: pass --bin or set AC1_BIN")
     Handler.bin_path = a.bin
     os.environ["AC1_BIN"] = a.bin              # pa_obj.load_container reads the disc from it
-    url = f"http://127.0.0.1:{a.port}/"
-    try:
-        srv = ThreadingHTTPServer(("127.0.0.1", a.port), Handler)
-    except OSError:                            # already running: just show it
-        if a.open:
-            webbrowser.open(url)
-            return
-        raise
-    print(f"AC1 scene viewer: {url}  (Ctrl+C to stop)")
-    if a.open:
-        threading.Timer(0.5, webbrowser.open, (url,)).start()
-    try:
-        srv.serve_forever()
-    except KeyboardInterrupt:
-        pass
+    btserve.run(Handler, a.port, name="AC1 scene viewer", open_browser=a.open)
 
 
 if __name__ == "__main__":

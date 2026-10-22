@@ -32,7 +32,7 @@ only; resolve the symbols (`--defsym`) before calling it done.
 ## Read the human hints first
 
 The person running the loop knows the game and leaves notes per function in
-`re/match/hints.tsv` (through `tools/loop/viewer.py`). Before the first draft, read the
+`re/match/hints.tsv` (through `browser-tools/match-viewer/viewer.py`). Before the first draft, read the
 hints for your function **and its twins** (same body, other address or unit):
 
 ```bash

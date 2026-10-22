@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tool Name</title>
+<style>
+:root { --bg: #f4f4f1; --panel: #ffffff; --ink: #1d1f22; --muted: #63676d; --line: #dcdcd6; --accent: #2f6fdb; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #121315; --panel: #1b1c1f; --ink: #e8e8e6; --muted: #9a9ea5; --line: #2c2e33; --accent: #6c9cff; }
+}
+:root[data-theme="dark"] { --bg: #121315; --panel: #1b1c1f; --ink: #e8e8e6; --muted: #9a9ea5; --line: #2c2e33; --accent: #6c9cff; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+#app { display: grid; grid-template-columns: 1fr 300px; height: 100vh; }
+#view { position: relative; min-width: 0; }
+canvas { width: 100%; height: 100%; display: block; }
+aside { background: var(--panel); border-left: 1px solid var(--line); padding: 12px; overflow-y: auto; }
+.row { display: grid; grid-template-columns: 100px 1fr 44px; gap: 6px; align-items: center; margin: 6px 0; }
+.row label { color: var(--muted); }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+@media (max-width: 760px) { #app { grid-template-columns: 1fr; grid-template-rows: 55vh 1fr; } aside { border-left: 0; border-top: 1px solid var(--line); padding: 12px 16px; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="view"><canvas id="cv"></canvas></div>
+  <aside>
+    <h3>Tool name</h3>
+    <div class="row"><label for="n">Points</label><input type="range" id="n" min="2" max="64" value="16"><output id="n-o"></output></div>
+  </aside>
+</div>
+<script>
+"use strict";
+// Knobs -> fetch -> draw. Keep state in the URL hash or localStorage (wrapped in try) if it should survive reloads.
+const cv = document.getElementById("cv"), g = cv.getContext("2d");
+async function draw() {
+  const n = document.getElementById("n").value; document.getElementById("n-o").textContent = n;
+  const d = await (await fetch("/api/data?n=" + n)).json();
+  const W = cv.width = cv.clientWidth * devicePixelRatio, H = cv.height = cv.clientHeight * devicePixelRatio;
+  const css = getComputedStyle(document.documentElement);
+  g.clearRect(0, 0, W, H); g.fillStyle = css.getPropertyValue("--accent");
+  for (const [x, y] of d.points) g.fillRect(x / n * W, H - (y + 1) / 24 * H, W / n * 0.8, (y + 1) / 24 * H);
+}
+document.getElementById("n").addEventListener("input", draw);
+addEventListener("resize", draw); draw();
+</script>
+</body>
+</html>

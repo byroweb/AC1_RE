@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """viewer.py - watch an overnight pass live in the browser and leave hints for it.
 
-    viewer.py [WORK] [--port 8765] [--replay] [--hints FILE] [--open]
+    viewer.py [WORK] [--port 8767] [--replay] [--hints FILE] [--open]
 
 WORK is an overnight.sh work dir (default: the one whose overnight.log changed last,
 under $AC1_WORK_ROOT or
 ~/dev/ac1_work).  The server is stdlib only, listens on 127.0.0.1 and serves one
-page (tools/loop/viewer.html) that polls it every 1.5 s:
+page (browser-tools/match-viewer/viewer.html) that polls it every 1.5 s:
 
   GET  /api/state[?t=EPOCH]        stage, active tool, counters, the function list
   GET  /api/func?k=UNIT+VADDR[&src=ID][&t=EPOCH]
@@ -53,6 +53,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(REPO, "tools", "loop"))     # hints.py, human.py
 sys.path.insert(0, os.path.join(REPO, "tools", "match"))
 import hints as hintsmod  # noqa: E402
 import human  # noqa: E402
@@ -1030,7 +1031,7 @@ class App:
         p = os.path.join(self.wd.path, "PAUSE")
         if body.get("on"):
             with open(p, "w", encoding="utf-8") as fh:
-                fh.write("paused from tools/loop/viewer.py %s\n" % human.now())
+                fh.write("paused from browser-tools/match-viewer/viewer.py %s\n" % human.now())
         elif os.path.exists(p):
             os.unlink(p)
         human.log_action("", "", "pause" if body.get("on") else "resume", self.wd.name, "", "", "",
@@ -1140,7 +1141,7 @@ def main(argv=None):
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("work", nargs="?", help="overnight.sh work dir (default: the one under ~/dev/ac1_work "
                     "whose overnight.log changed last)")
-    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--port", type=int, default=8767)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--replay", action="store_true", help="play a finished work dir back on a virtual clock")
     ap.add_argument("--hints", default=hintsmod.HINTS, help="hints file (default re/match/hints.tsv)")

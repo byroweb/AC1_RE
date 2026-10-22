@@ -1,4 +1,4 @@
-# Plant view — a live "factory floor" of the AC1 mission loop (`tools/plantview/`)
+# Plant view — a live "factory floor" of the AC1 mission loop (`browser-tools/plantview/`)
 
 A dashboard that draws the mission lifecycle, the entity table and the per-frame
 pipeline of **SLUS-01323 v1.1** as stations with pipes between them, colours the
@@ -17,15 +17,15 @@ index.html      single self-contained canvas page (no build, no CDN); scrubber f
 ## Run
 
 ```bash
-python tools/plantview/poller.py --source synthetic --open      # no emulator, no game data: a scripted walk through the lifecycle
+python browser-tools/plantview/poller.py --source synthetic --open      # no emulator, no game data: a scripted walk through the lifecycle
 ```
 
 ```bash
-python tools/plantview/poller.py --source states --open         # replay: one sample per .sav in $AC1_STATES_DIR, ordered by frame
+python browser-tools/plantview/poller.py --source states --open         # replay: one sample per .sav in $AC1_STATES_DIR, ordered by frame
 ```
 
 ```bash
-python tools/plantview/poller.py --source live --open           # DuckStation (sadnescity MCP fork, port 2346) read_memory
+python browser-tools/plantview/poller.py --source live --open           # DuckStation (sadnescity MCP fork, port 2346) read_memory
 ```
 
 Then open <http://127.0.0.1:8765/> (or pass `--open`). Options: `--rate` (samples/s
@@ -88,7 +88,7 @@ emulator session samples in well under a second. `--status-every N` reduces the
    `diffAndAnimate()`.
 4. **New derived value**: compute it in `decode_sample()` and describe it under
    `"derived"` in `stations.json` so the page can label its status.
-5. Check with `python tools/plantview/poller.py --source synthetic --once` (decodes
+5. Check with `python browser-tools/plantview/poller.py --source synthetic --once` (decodes
    without an emulator) and reload the page — it fetches `stations.json` on load.
 
 To give a per-frame station a live field, add the field and list it under that

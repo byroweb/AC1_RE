@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-tools/plantview/poller.py — sample the AC1 mission-loop state and serve it to
-tools/plantview/index.html as JSON (HTTP + server-sent events, localhost only).
+browser-tools/plantview/poller.py — sample the AC1 mission-loop state and serve it to
+browser-tools/plantview/index.html as JSON (HTTP + server-sent events, localhost only).
 
 Sources
 -------
@@ -15,7 +15,7 @@ Sources
   --source synthetic   a scripted walk through the whole lifecycle, no emulator or
                        game data needed (used to exercise the page).
 
-What is read is driven entirely by tools/plantview/stations.json ("fields" and
+What is read is driven entirely by browser-tools/plantview/stations.json ("fields" and
 "arrays"); the addresses are coalesced into few `read_memory` regions (max 16 KB
 each — larger reads time out on the fork). decode_sample() turns the bytes into
 the JSON the page draws: raw field values, the 15 entity slots, template counts
@@ -29,10 +29,10 @@ Endpoints (bind 127.0.0.1 only)
   /info             source, rate, counts
 
 Examples
-  python tools/plantview/poller.py --source synthetic
-  python tools/plantview/poller.py --source states                # the whole library
-  python tools/plantview/poller.py --source states --state ~/dev/ac1_states/M30-mid-01__20261018__v87.sav
-  python tools/plantview/poller.py --source live --rate 4 --record out/run.jsonl
+  python browser-tools/plantview/poller.py --source synthetic
+  python browser-tools/plantview/poller.py --source states                # the whole library
+  python browser-tools/plantview/poller.py --source states --state ~/dev/ac1_states/M30-mid-01__20261018__v87.sav
+  python browser-tools/plantview/poller.py --source live --rate 4 --record out/run.jsonl
 """
 from __future__ import annotations
 import argparse, glob, json, os, queue, struct, sys, threading, time, webbrowser
@@ -43,6 +43,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 DS_DIR = os.path.join(REPO, "tools", "duckstation")
 sys.path.insert(0, DS_DIR)
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "_shared"))
+import btserve  # noqa: E402  (Server: exclusive port on Windows)
 import savestate as SS   # noqa: E402
 
 LAYOUT_DEFAULT = os.path.join(HERE, "stations.json")
@@ -574,11 +576,15 @@ def main(argv=None):
         print(json.dumps(s, indent=1))
         return
 
+    url = f"http://127.0.0.1:{a.port}/"
+    if btserve.is_running(a.port):          # a second launch: show the running one
+        print(f"plant view: already running on {url}")
+        if a.open:
+            webbrowser.open(url)
+        return
     rec = open(a.record, "a", encoding="utf-8") if a.record else None
     threading.Thread(target=sampler, args=(src, layout, hub, a.rate, rec, a.loop, False), daemon=True).start()
-    srv = ThreadingHTTPServer(("127.0.0.1", a.port), make_handler(hub, a.layout))
-    srv.daemon_threads = True
-    url = f"http://127.0.0.1:{a.port}/"
+    srv = btserve.Server(("127.0.0.1", a.port), make_handler(hub, a.layout))
     print(f"plant view: {url}  (source={a.source}, ctrl-c to stop)", flush=True)
     if a.open:
         webbrowser.open(url)

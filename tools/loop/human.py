@@ -1,4 +1,4 @@
-"""human.py - the viewer's human controls (tools/loop/viewer.py).
+"""human.py - the viewer's human controls (browser-tools/match-viewer/viewer.py).
 
 For someone who knows the game but not MIPS or GCC 2.7.2:
 
@@ -494,7 +494,7 @@ def record_match(unit, vaddr, size, text, label, actions=None):
     cpath = drive.c_path(drive.RE_MATCH, unit, vaddr)
     if os.path.exists(cpath):
         return "re/match already has %s" % drive.rel(cpath)
-    header = "/* %s %s  size %s  matched in tools/loop/viewer.py: %s, %s */\n" % (
+    header = "/* %s %s  size %s  matched in browser-tools/match-viewer/viewer.py: %s, %s */\n" % (
         unit, vaddr, size, label, datetime.date.today().isoformat())
     os.makedirs(os.path.dirname(cpath), exist_ok=True)
     with open(cpath, "w", encoding="utf-8", newline="\n") as fh:

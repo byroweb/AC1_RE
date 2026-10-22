@@ -70,31 +70,12 @@ Everything here runs under **Git Bash** (MSYS2); PowerShell/cmd are not supporte
   `AC1_DS_EXE` (emulator exe, for the build string). `AC1_BIN` supplies the EXE
   anchor + disc identity.
 
-## `plantview/` — live "plant view" of the mission loop
-A factory-floor style dashboard of the mission lifecycle (LOAD → RUNNING →
-OBJECTIVES_COMPLETE → ENDING → EXIT), the entity table (spawn / update / collision /
-destroy with per-station counts) and the per-frame pipeline, drawn from
-`tools/plantview/stations.json` (every address with its CONFIRMED / HYPOTHESIS label
-from the docs). `poller.py` samples RAM live through the DuckStation MCP `read_memory`
-path or offline from save states via `savestate.py`, and serves JSON + SSE on
-127.0.0.1; `index.html` is a single self-contained canvas page with a replay scrubber.
-See [`plantview/README.md`](plantview/README.md) for running it and adding a station.
+## Browser tools (moved to [`browser-tools/`](../browser-tools/README.md))
+The interactive explorers (plant view of the mission loop, the match viewer, the PS1 scene
+viewer) live in `browser-tools/` with a shared server helper, a manifest per tool and a
+launchpad that lists, starts and opens them:
 ```
-python tools/plantview/poller.py --source states --open     # replay the state library
-python tools/plantview/poller.py --source live --open       # DuckStation, port 2346
-```
-
-## `sceneview/` — AC1 levels in the browser, PS1-style, with knobs
-A WebGL2 page that draws any mission's level with its real texels, sampled like the PS1
-GPU does. The texels come from the disc (RTIM.T entries 100 and N, as the mission load
-uploads them) or from a save state's VRAM. Walk a pilot through it with sliders for
-camera distance, an AC1-style camera that drops under low ceilings, texture density,
-texture LOD, tessellation and draw distance, plus toggles for the PS1 quirks (320×240,
-affine UVs, vertex snap, 15-bit dither, near-polygon drop) and a texel-density map.
-It was built to judge how an on-foot mode would look at pilot scale. See
-[`sceneview/README.md`](sceneview/README.md).
-```
-python tools/sceneview/server.py --open    # http://127.0.0.1:8771/ (or double-click sceneview.cmd)
+python browser-tools/launchpad/server.py --open     # http://127.0.0.1:8760/ (or double-click browser-tools\launch.cmd)
 ```
 
 ## `setup_re_tools.sh`

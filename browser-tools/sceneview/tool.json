@@ -1,0 +1,13 @@
+{
+  "name": "Scene viewer",
+  "summary": "Any mission's level drawn the PS1 way with its real disc textures; walk a pilot through it and turn the knobs for camera, texture density, tessellation, LOD and PS1 quirks.",
+  "order": 30,
+  "port": 8771,
+  "start": ["server.py", "--port", "{port}"],
+  "variants": [
+    {"label": "default", "args": []}
+  ],
+  "needs": ["disc image ($AC1_BIN)", "save states optional"],
+  "launcher": "sceneview.cmd",
+  "readme": "README.md"
+}

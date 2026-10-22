@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-scene_test.py — tests for tools/sceneview/scene.py on SYNTHETIC data.
+scene_test.py — tests for browser-tools/sceneview/scene.py on SYNTHETIC data.
 
 No disc or save state is needed: the test builds one PA geometry block by hand (a
 textured quad in the base LOD and a flat triangle in the detail range, laid out as

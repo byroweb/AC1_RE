@@ -17,7 +17,7 @@ re/match/hints.tsv is append-only, one row per note, columns
           | agent (hand it to an agent lane / the local-LLM golem; the viewer also
           writes a priority row) | none
 
-tools/loop/viewer.py writes it (POST /api/hints); make_queues.py puts priority bodies
+browser-tools/match-viewer/viewer.py writes it (POST /api/hints); make_queues.py puts priority bodies
 first and drops skip / giveup ones; the match-function skill tells agents to read a
 function's hints before the first draft; a twin's hint counts for the whole body.
 

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AC1 Browser Tools</title>
+<style>
+:root {
+  --bg: #f4f4f1; --card: #ffffff; --ink: #1d1f22; --muted: #63676d; --line: #dcdcd6;
+  --accent: #2f6fdb; --accent-ink: #ffffff; --chip: #eef1f6; --ok: #1f8a4c; --off: #9aa0a6; --bad: #c0392b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121315; --card: #1b1c1f; --ink: #e8e8e6; --muted: #9a9ea5; --line: #2c2e33;
+    --accent: #6c9cff; --accent-ink: #0d1020; --chip: #23262c; --ok: #4cc27f; --off: #6b7077; --bad: #ef6b5c;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121315; --card: #1b1c1f; --ink: #e8e8e6; --muted: #9a9ea5; --line: #2c2e33;
+  --accent: #6c9cff; --accent-ink: #0d1020; --chip: #23262c; --ok: #4cc27f; --off: #6b7077; --bad: #ef6b5c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { max-width: 1100px; margin: 0 auto; padding: 22px 16px 6px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+h1 { font-size: 20px; margin: 0; }
+header p { margin: 4px 0 0; color: var(--muted); }
+main { max-width: 1100px; margin: 0 auto; padding: 10px 16px 40px; display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); }
+.card { min-width: 0; }
+code { overflow-wrap: anywhere; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+h2 { font-size: 16px; margin: 0; }
+.status { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--off); margin-right: 5px; vertical-align: 1px; }
+.dot.on { background: var(--ok); }
+.summary { margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { background: var(--chip); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; font-size: 12px; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: auto; }
+select, button, a.btn { font: inherit; color: var(--ink); background: var(--chip); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; text-decoration: none; }
+select { min-width: 0; flex: 1 1 160px; }
+button, a.btn { cursor: pointer; }
+.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.err { color: var(--bad); font-size: 12px; white-space: pre-wrap; max-height: 140px; overflow: auto; margin: 0; }
+.muted { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>AC1 Browser Tools</h1><p>Every explorer in <code>browser-tools/</code>. Start one, then open it. Tools started here stop with the launchpad.</p></div>
+  <button id="theme" title="theme">◐</button>
+</header>
+<main id="grid"><p class="muted">loading…</p></main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const errors = {};
+$("theme").onclick = () => {
+  const r = document.documentElement, dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = (r.dataset.theme || (dark ? "dark" : "light")) === "dark" ? "light" : "dark";
+  try { localStorage.setItem("bt-theme", r.dataset.theme); } catch (e) {}
+};
+try { const t = localStorage.getItem("bt-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+
+async function post(path, body) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  return r.json();
+}
+function card(t) {
+  const sel = t.variants.length > 1
+    ? `<select id="v-${t.id}" aria-label="variant">${t.variants.map((v, i) => `<option value="${i}">${esc(v)}</option>`).join("")}</select>` : "";
+  const state = t.running ? `<span class="dot on"></span>running on :${t.port}` : `<span class="dot"></span>stopped`;
+  return `<section class="card" id="c-${t.id}">
+    <div class="top"><h2>${esc(t.name)}</h2><span class="status">${state}</span></div>
+    <p class="summary">${esc(t.summary)}</p>
+    <div class="chips">${t.needs.map(n => `<span class="chip">${esc(n)}</span>`).join("")}</div>
+    <div class="row">
+      ${t.running ? `<a class="btn primary" href="${t.url}" target="_blank" rel="noopener">Open</a>` : `${sel}<button class="primary" data-start="${t.id}">Start</button>`}
+      ${t.started_here ? `<button data-stop="${t.id}">Stop</button>` : ""}
+      <a class="btn" href="/readme?id=${t.id}" target="_blank" rel="noopener">README</a>
+    </div>
+    ${t.launcher ? `<span class="muted">double-click: browser-tools/${esc(t.id)}/${esc(t.launcher)}</span>` : ""}
+    ${errors[t.id] ? `<pre class="err">${esc(errors[t.id])}</pre>` : ""}
+  </section>`;
+}
+let busy = false;
+async function refresh() {
+  if (busy) return;
+  try {
+    const ts = await (await fetch("/api/tools")).json();
+    $("grid").innerHTML = ts.map(card).join("");
+    ts.forEach(t => { const s = document.getElementById("v-" + t.id); if (s && sel[t.id] != null) s.value = sel[t.id]; });
+  } catch (e) { $("grid").innerHTML = `<p class="err">launchpad server not reachable: ${esc(e.message)}</p>`; }
+}
+const sel = {};
+document.addEventListener("change", e => { if (e.target.id && e.target.id.startsWith("v-")) sel[e.target.id.slice(2)] = e.target.value; });
+document.addEventListener("click", async e => {
+  const s = e.target.dataset.start, x = e.target.dataset.stop;
+  if (!s && !x) return;
+  busy = true; e.target.disabled = true; e.target.textContent = s ? "Starting…" : "Stopping…";
+  try {
+    if (s) {
+      const v = document.getElementById("v-" + s);
+      const r = await post("/api/start", { id: s, variant: v ? +v.value : 0 });
+      if (r.ok) { delete errors[s]; window.open(r.url, "_blank", "noopener"); }
+      else errors[s] = (r.error || "failed") + (r.log ? "\n\n" + r.log : "");
+    } else {
+      const r = await post("/api/stop", { id: x });
+      if (!r.ok) errors[x] = r.error;
+    }
+  } finally { busy = false; refresh(); }
+});
+refresh(); setInterval(refresh, 2000);
+</script>
+</body>
+</html>

@@ -56,7 +56,7 @@ Matches are written as they land, so an interrupted run keeps them. The knobs ar
 environment variables (top of the script); `LIMIT=8 QUICK=20 DEEP=40 DEEP_N=2 BRANCH=0
 COMMIT=0` is a quick smoke test.
 
-Watch it with `python tools/loop/viewer.py` (below: the stage, the active tool, each
+Watch it with `python browser-tools/match-viewer/viewer.py` (below: the stage, the active tool, each
 body's asm diff, and a place to leave hints that steer the next pass), or replay a
 finished work dir with `--replay`.
 
@@ -1123,11 +1123,11 @@ fine-tuned on oracle-generated (broken C + diff -> repairing edit) pairs.
 ## viewer.py (watch a run, leave hints)
 
 ```bash
-python tools/loop/viewer.py                    # the newest overnight.sh work dir, http://localhost:8765/
-python tools/loop/viewer.py WORK --replay      # play a finished work dir back
+python browser-tools/match-viewer/viewer.py                    # the newest overnight.sh work dir, http://localhost:8767/
+python browser-tools/match-viewer/viewer.py WORK --replay      # play a finished work dir back
 ```
 
-On Windows, `tools\loop\viewer.cmd` is a double-click launcher (point a desktop shortcut
+On Windows, `browser-tools\match-viewer\viewer.cmd` is a double-click launcher (point a desktop shortcut
 at it, *Run: Minimized* keeps the console out of the way): it starts the viewer on the
 newest work dir and opens the page; launched again while one is running, it only opens
 the page.
@@ -1228,7 +1228,7 @@ spread over their stage for the compiles/s.
 browser window. On Windows, the Game Bar (Win+Alt+R starts and stops recording the active
 window; files land in `Videos\Captures`) is enough for one window. OBS Studio
 (obsproject.com) records a chosen window or region at a set frame rate: add a *Window
-Capture* (or *Browser* source pointed at `http://localhost:8765/`), then Start Recording. A
+Capture* (or *Browser* source pointed at `http://localhost:8767/`), then Start Recording. A
 replay at 60× fits a 30-minute overnight pass in half a minute.
 
 Tests: `python -m pytest tools/match/tests/test_viewer.py tools/match/tests/test_viewer_human.py`

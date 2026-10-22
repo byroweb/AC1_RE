@@ -1,0 +1,14 @@
+{
+  "name": "Plant view",
+  "summary": "The mission loop as a factory floor: lifecycle stations, the entity table and the per-frame pipeline, lit up from live RAM or save states.",
+  "order": 10,
+  "port": 8765,
+  "start": ["poller.py", "--port", "{port}"],
+  "variants": [
+    {"label": "synthetic walk (no game data)", "args": ["--source", "synthetic"]},
+    {"label": "replay the save-state library", "args": ["--source", "states", "--rate", "0.5", "--loop"]},
+    {"label": "live DuckStation (MCP, port 2346)", "args": ["--source", "live", "--status-every", "5"]}
+  ],
+  "needs": ["save states or DuckStation (synthetic needs nothing)"],
+  "readme": "README.md"
+}

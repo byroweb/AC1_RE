@@ -1,0 +1,13 @@
+{
+  "name": "Tool name",
+  "summary": "One sentence: what you can explore and turn with it.",
+  "order": 100,
+  "port": 8790,
+  "start": ["server.py", "--port", "{port}"],
+  "variants": [
+    {"label": "default", "args": []}
+  ],
+  "needs": ["what it reads (disc image, save states, a work dir, nothing)"],
+  "launcher": "tool.cmd",
+  "readme": "README.md"
+}
