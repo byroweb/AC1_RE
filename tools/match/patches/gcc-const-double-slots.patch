@@ -1,0 +1,97 @@
+--- a/real.h
++++ b/real.h
+@@ -418,9 +418,23 @@
+ 
+ #define REAL_VALUE_FROM_CONST_DOUBLE(to, from)		\
+ do { union real_extract u;				\
+-     bcopy ((char *) &CONST_DOUBLE_LOW ((from)), (char *) &u, sizeof u); \
++     CONST_DOUBLE_TO_EXTRACT (u, (from));		\
+      to = u.d; } while (0)
+ 
++/* Move the ints of union real_extract U out of / into CONST_DOUBLE R one
++   HOST_WIDE_INT slot at a time.  A slot is an rtunion, which is as wide as a
++   pointer: on a 64-bit host with a 32-bit HOST_WIDE_INT (MinGW-w64) a bcopy
++   to &CONST_DOUBLE_LOW (r) would pack both ints into the first slot, where
++   CONST_DOUBLE_LOW/HIGH and immed_double_const do not put them.  */
++#define CONST_DOUBLE_TO_EXTRACT(u, r)				\
++do { int i_;							\
++     for (i_ = 0; i_ < sizeof (u).i / sizeof (u).i[0]; i_++)	\
++       (u).i[i_] = XWINT ((r), 2 + i_); } while (0)
++#define CONST_DOUBLE_FROM_EXTRACT(r, u)				\
++do { int i_;							\
++     for (i_ = 0; i_ < sizeof (u).i / sizeof (u).i[0]; i_++)	\
++       XWINT ((r), 2 + i_) = (u).i[i_]; } while (0)
++
+ /* Return a CONST_DOUBLE with value R and mode M.  */
+ 
+ #define CONST_DOUBLE_FROM_REAL_VALUE(r, m) immed_real_const_1 (r,  m)
+--- a/varasm.c
++++ b/varasm.c
+@@ -1998,9 +1998,14 @@
+      If one is found, return it.  */
+ 
+   for (r = const_double_chain; r; r = CONST_DOUBLE_CHAIN (r))
+-    if (! bcmp ((char *) &CONST_DOUBLE_LOW (r), (char *) &u, sizeof u)
+-	&& GET_MODE (r) == mode)
+-      return r;
++    {
++      union real_extract ur;
++
++      CONST_DOUBLE_TO_EXTRACT (ur, r);
++      if (! bcmp ((char *) &ur, (char *) &u, sizeof u)
++	  && GET_MODE (r) == mode)
++	return r;
++    }
+ 
+   /* No; make a new one and add it to the chain.
+ 
+@@ -2014,7 +2019,7 @@
+   rtl_in_saveable_obstack ();
+   r = rtx_alloc (CONST_DOUBLE);
+   PUT_MODE (r, mode);
+-  bcopy ((char *) &u, (char *) &CONST_DOUBLE_LOW (r), sizeof u);
++  CONST_DOUBLE_FROM_EXTRACT (r, u);
+   pop_obstacks ();
+ 
+   /* Don't touch const_double_chain in nested function; see force_const_mem.
+@@ -2987,8 +2992,7 @@
+       if (GET_MODE (x) != VOIDmode)
+ 	{
+ 	  value->mode = GET_MODE (x);
+-	  bcopy ((char *) &CONST_DOUBLE_LOW (x),
+-		 (char *) &value->un.du, sizeof value->un.du);
++	  CONST_DOUBLE_TO_EXTRACT (value->un.du, x);
+ 	}
+       else
+ 	{
+@@ -3388,7 +3392,7 @@
+ 	  if (GET_CODE (x) != CONST_DOUBLE)
+ 	    abort ();
+ 
+-	  bcopy ((char *) &CONST_DOUBLE_LOW (x), (char *) &u, sizeof u);
++	  CONST_DOUBLE_TO_EXTRACT (u, x);
+ 	  assemble_real (u.d, pool->mode);
+ 	  break;
+ 
+--- a/emit-rtl.c
++++ b/emit-rtl.c
+@@ -3352,7 +3352,7 @@
+ 	  bzero ((char *) &u, sizeof u);  /* Zero any holes in a structure.  */
+ 	  u.d = i == 0 ? dconst0 : i == 1 ? dconst1 : dconst2;
+ 
+-	  bcopy ((char *) &u, (char *) &CONST_DOUBLE_LOW (tem), sizeof u);
++	  CONST_DOUBLE_FROM_EXTRACT (tem, u);
+ 	  CONST_DOUBLE_MEM (tem) = cc0_rtx;
+ 	  PUT_MODE (tem, mode);
+ 
+--- a/rtl.c
++++ b/rtl.c
+@@ -795,7 +795,7 @@
+      since tree.h is not included.  But the default dfn as `double'
+      would do no harm.  */
+ #ifdef REAL_VALUE_TYPE
+-  i = sizeof (REAL_VALUE_TYPE) / sizeof (rtunion) + 2;
++  i = sizeof (REAL_VALUE_TYPE) / sizeof (HOST_WIDE_INT) + 2;
+   if (rtx_length[(int) CONST_DOUBLE] < i)
+     {
+       char *s = (char *) xmalloc (i + 1);
