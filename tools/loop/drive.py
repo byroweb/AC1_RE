@@ -3,7 +3,8 @@
 
     drive.py next   [--unit U] [--queue FILE] [--shard k/n] [--max-score S] [--no-m2c]
                     [--dry-run] [--re-dir DIR]
-    drive.py try    <unit> <vaddr> [--defsym NAME=ADDR]... [--rodata VA] [--no-auto-defsym]
+    drive.py try    <unit> <vaddr> [--defsym NAME=ADDR]... [--rodata VA] [--no-rodata-align-fix]
+                    [--no-auto-defsym]
                     [--commit] [--keep] [--re-dir DIR]
     drive.py giveup <unit> <vaddr> <reason...>
     drive.py status [--queue FILE]
@@ -19,7 +20,8 @@ next    prints a work package for the next open function (exit 3 when nothing is
         optionally sharded by --shard k/n (int(vaddr,16)//4 % n == k).
 try     runs the oracle on re/match/<unit>/func_<ADDR>.c with the unit's flags
         and --expect-size from functions.tsv (+ --rodata from jt_addrs when the
-        function has a jump table and you pass none).  Unresolved symbols named
+        function has a jump table and you pass none; --no-rodata-align-fix is passed
+        through to the oracle and kept in the manifest row).  Unresolved symbols named
         func_<ADDR> / D_<ADDR> are their own address: they are added as
         --defsym automatically and the oracle is rerun once.  Every try appends
         one line to re/match/<unit>/func_<ADDR>.attempts (gitignored).  Prints
@@ -298,8 +300,8 @@ def drop_table_defsyms(defsyms, syms):
     return keep
 
 
-def oracle_argv(u, vaddr, cpath, size, rodata=None, defsyms=(), keep=None, row=None):
-    argv = ["0x%08X" % vaddr, rel(cpath)] + list(u.oracle_flags)
+def oracle_argv(u, vaddr, cpath, size, rodata=None, defsyms=(), keep=None, row=None, flags=()):
+    argv = ["0x%08X" % vaddr, rel(cpath)] + list(u.oracle_flags) + list(flags)
     if size:
         argv += ["--expect-size", str(size)]
     if rodata:
@@ -629,11 +631,12 @@ def cmd_try(args):
         rodata = row["jt_addrs"].split(",")[0].strip()
         print("note: --rodata %s taken from functions.tsv jt_addrs (verify it is the object's .rodata start)" % rodata)
     defsyms = list(args.defsym or [])
+    flags = ["--no-rodata-align-fix"] if args.no_rodata_align_fix else []
     keep = None
     if args.keep:
         keep = os.path.join(tempfile.gettempdir(), "m_%s_%s" % (unit, vaddr_s[2:]))
 
-    argv = oracle_argv(u, vaddr, cpath, size, rodata, defsyms, keep)
+    argv = oracle_argv(u, vaddr, cpath, size, rodata, defsyms, keep, flags=flags)
     print("$ " + oracle_cmdline(argv))
     rc, facts, text, err = run_oracle(argv)
     other = []
@@ -648,7 +651,7 @@ def cmd_try(args):
         if auto:
             defsyms += auto
             print("auto --defsym: " + " ".join(auto))
-            argv = oracle_argv(u, vaddr, cpath, size, rodata, defsyms, keep)
+            argv = oracle_argv(u, vaddr, cpath, size, rodata, defsyms, keep, flags=flags)
             print("$ " + oracle_cmdline(argv))
             rc, facts, text, err = run_oracle(argv)
     elif facts and facts.get("unresolved_symbols"):
@@ -689,6 +692,7 @@ def cmd_try(args):
         extra += ["--base", u.oracle_flags[u.oracle_flags.index("--base") + 1]]
     if rodata:
         extra += ["--rodata", rodata]
+    extra += flags
     syms = syms_args(cpath)
     extra += syms
     for d in (drop_table_defsyms(defsyms, table_syms()) if syms else defsyms):
@@ -843,6 +847,8 @@ def main(argv=None):
     p.add_argument("vaddr")
     p.add_argument("--defsym", action="append", metavar="NAME=ADDR")
     p.add_argument("--rodata", metavar="VA")
+    p.add_argument("--no-rodata-align-fix", action="store_true",
+                   help="keep cc1's `.align 3` before jump tables (match_fn.py flag)")
     p.add_argument("--no-auto-defsym", action="store_true")
     p.add_argument("--commit", action="store_true", help="run the commit command on a clean MATCH")
     p.add_argument("--keep", action="store_true", help="keep the oracle work dir (printed)")

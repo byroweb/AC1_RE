@@ -5701,3 +5701,12 @@ when	unit	vaddr	status	attempts	reason
 2026-10-22T22:35:46Z	ovl201	0x800A9AFC	match	1	
 2026-10-22T22:52:07Z	ovl202	0x8004C854	match	1	
 2026-10-22T22:52:07Z	ovl202	0x80052350	match	1	
+2026-10-23T05:34:48Z	ovl203	0x800587F4	match	0	twin of ovl202 0x80058E04 (ovl202/func_80058E04.c)
+2026-10-23T05:34:48Z	ovl204	0x80057FA8	match	0	twin of ovl202 0x80058E04 (ovl202/func_80058E04.c)
+2026-10-23T05:34:48Z	ovl203	0x80061F4C	match	0	twin of ovl202 0x80062B04 (ovl202/func_80062B04.c)
+2026-10-23T05:34:48Z	ovl204	0x80088D34	match	0	twin of ovl202 0x8008A344 (ovl202/func_8008A344.c)
+2026-10-23T05:34:48Z	fdat160	0x801C8580	match	0	twin of fdat008 0x801C674C (fdat008/func_801C674C.c)
+2026-10-23T05:34:48Z	ovl203	0x8004CA5C	match	0	twin of ovl202 0x8004C854 (ovl202/func_8004C854.c)
+2026-10-23T05:34:48Z	ovl204	0x8004C8EC	match	0	twin of ovl202 0x8004C854 (ovl202/func_8004C854.c)
+2026-10-23T05:34:48Z	ovl201	0x800B55E4	giveup	0	hand-written assembly (PsyQ libpress DecDCTvlcSize), not compiler output: cannot be matched from C
+2026-10-23T05:34:48Z	ovl201	0x800B5618	giveup	0	hand-written assembly (PsyQ libpress DecDCTvlc MDEC VLC decoder), not compiler output: cannot be matched from C
