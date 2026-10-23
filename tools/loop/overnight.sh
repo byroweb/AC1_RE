@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # overnight.sh - unattended machine pass over every open body: CPU only (no LLM unless GOLEM=1).
 #
-#   bash tools/loop/overnight.sh            # from the repo root, in Git Bash; ~20-30 min at -j 24
+#   bash tools/loop/overnight.sh            # from the repo root, in Git Bash; a few hours at -j 4
+#                                           # (~20-30 min at J=24, but that leaves the PC unusable)
 #
 # 1. a branch off origin/main (BRANCH=0: stay on the current branch)
 # 2. one queue of every open twin group, programs then missions, best credit per effort first
@@ -19,14 +20,14 @@
 #
 # Every match is written as it lands, so an interrupted run keeps what it found (rerun from
 # step 5 by hand: twins.py replay, drive.py verify, commit).  Knobs (environment variables):
-#   J=24 VARIANTS=ctx-spframe,ctx-fix-frame,neighbour MAX_RATIO=0.2 QUICK=120 DEEP=300
+#   J=4 VARIANTS=ctx-spframe,ctx-fix-frame,neighbour MAX_RATIO=0.2 QUICK=120 DEEP=300
 #   DEEP_N=50 DEEP_WORDS=12 LIMIT= (rows of the queue, for a test) WORK=~/dev/ac1_work/<stamp> BRANCH=1 COMMIT=1
 #   GOLEM=0 GOLEM_MODEL=qwen2.5-coder-7b-instruct GOLEM_URL=http://localhost:1234/v1
 set -uo pipefail
 cd "$(dirname "$0")/../.."
 export PYTHONIOENCODING=utf-8       # progress.py prints block characters; the console is cp1252
 
-J=${J:-24}
+J=${J:-4}                           # the permuter stages also pass memgate.py's memory gate
 VARIANTS=${VARIANTS:-ctx-spframe,ctx-fix-frame,neighbour}
 MAX_RATIO=${MAX_RATIO:-0.2}
 QUICK=${QUICK:-120}
