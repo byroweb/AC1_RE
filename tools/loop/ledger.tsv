@@ -5721,3 +5721,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-23T06:21:59Z	ovl202	0x8007863C	match	0	permuter (decomp-permuter, file draft)
 2026-10-23T06:31:30Z	ovl204	0x8004F964	match	0	permuter (levers swap D_80039D34 = &D_80040FA0 / D_80040FA0[0].aux = D_80, file draft)
 2026-10-23T06:43:05Z	ovl201	0x800531B8	match	0	permuter (decomp-permuter, file draft)
+2026-10-23T18:18:01Z	ovl202	0x80068D18	match	0	permuter (decomp-permuter, file draft)

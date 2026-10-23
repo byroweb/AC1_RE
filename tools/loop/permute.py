@@ -570,10 +570,11 @@ BASE = re.compile(r"base score = (\d+)")
 NEW_BEST = re.compile(r"new best score! \((\d+) vs")
 
 
-def run_permuter(d, budget, log_path, tick=None):
+def run_permuter(d, budget, log_path, tick=None, on_start=None):
     """One single-threaded permuter on dir d until score 0 or budget s.
     -> dict(base, best, iterations, seconds, zero_dir, failed).
-    tick(iterations=, best=) on its status and new-best lines (the heartbeat)."""
+    tick(iterations=, best=) on its status and new-best lines (the heartbeat);
+    on_start(pid) once the permuter process exists (the memory gate watches it)."""
     tick = tick or (lambda **kw: None)
     pd = permuter_dir()
     cmd = [permuter_python(pd), os.path.join(HERE, "permuter_main.py"), pd, d, "--stop-on-zero",
@@ -591,6 +592,8 @@ def run_permuter(d, budget, log_path, tick=None):
                              stderr=subprocess.STDOUT, env=env)
         killer = threading.Timer(budget, p.kill)
         killer.start()
+        if on_start:
+            on_start(p.pid)
         buf = b""
         try:
             while True:
@@ -683,11 +686,34 @@ def commit(c, meta, text, defsyms, how, args):
     return "MATCH"
 
 
-def job(c, args, workdir, hb=None):
+def job(c, args, workdir, hb=None, gate=None, quote=None):
     """levers, then the permuter, then the oracle on the result.  No repo writes.
-    hb: a heartbeat.Heartbeat told the stage, the scores and the compiles."""
+    hb: a heartbeat.Heartbeat told the stage, the scores and the compiles.
+    gate/quote: a memgate.Gate and memgate.Quote; the job waits until its quote fits
+    above the headroom, and the watchdog may stop it (status "memgate stop")."""
     hb = hb or heartbeat.Null()
     heartbeat.wait_if_paused(workdir, hb)
+    if gate is None:
+        return _job(c, args, workdir, hb, None)
+    gkey = "%s %s" % (c["unit"], c["vaddr"])
+    gate.admit(gkey, quote.bytes(int(c["size"]), args.budget))
+    try:
+        res = _job(c, args, workdir, hb, lambda pid: gate.attach(gkey, pid))
+    finally:
+        stopped, peak = gate.release(gkey)
+    if stopped:
+        res["status"] = "memgate stop"
+        res["note"] = ("stopped by the memory watchdog at %.0f MB; " % (peak / 2 ** 20)) + res["note"]
+    elif peak and res["iterations"]:
+        import memgate
+        memgate.append_log({"tool": "permute", "unit": c["unit"], "vaddr": c["vaddr"], "size": c["size"],
+                            "budget_s": "%.0f" % args.budget, "seconds": "%.0f" % res["perm_s"],
+                            "peak_mb": "%.0f" % (peak / 2 ** 20)})
+    res["peak_mb"] = round(peak / 2 ** 20) if peak else None
+    return res
+
+
+def _job(c, args, workdir, hb, on_start):
     tag = "%s_%s" % (c["unit"], c["vaddr"][2:])
     key = (c["unit"], c["vaddr"])
     hb.begin(*key, phase="levers", size=c["size"], variant=c["variant"])
@@ -738,7 +764,8 @@ def job(c, args, workdir, hb=None):
                     fh.write(text)
                 preprocess(meta["tools"], os.path.join(d, "lever.c"), os.path.join(d, "base.c"), [inc])
             hb.update(*key, phase="permuter")
-            r = run_permuter(d, args.budget - res["lever_s"], os.path.join(d, "permuter.log"), perm_tick)
+            r = run_permuter(d, args.budget - res["lever_s"], os.path.join(d, "permuter.log"), perm_tick,
+                             on_start)
             res.update(pbase=r["base"], best=r["best"], iterations=r["iterations"], perm_s=r["seconds"])
             if r["failed"]:
                 res["status"] = "permuter failed"
@@ -767,14 +794,14 @@ def job(c, args, workdir, hb=None):
 
 
 REPORT_COLS = ["unit", "vaddr", "size", "variant", "words", "base", "lever", "lever_evals", "lever_s",
-               "perm_base", "perm_best", "iterations", "perm_s", "status", "how", "note"]
+               "perm_base", "perm_best", "iterations", "perm_s", "peak_mb", "status", "how", "note"]
 
 
 def report_row(r):
     c = r["c"]
     return [c["unit"], c["vaddr"], c["size"], c["variant"], c["words"], r["base"], r["lever"], r["evals"],
             "%.0f" % r["lever_s"], r["pbase"], r["best"], r["iterations"], "%.0f" % r["perm_s"],
-            r["status"], r["how"], r["note"].strip()]
+            r.get("peak_mb"), r["status"], r["how"], r["note"].strip()]
 
 
 def cmd_run(args):
@@ -793,22 +820,42 @@ def cmd_run(args):
     t0 = time.time()
     results = []
     hb = heartbeat.Heartbeat(workdir, "permute", len(cands), label="%.0f s each" % args.budget)
+    gate = quote = None
+    if not args.no_memgate:
+        import memgate
+        quote = memgate.Quote("permute")
+        gate = memgate.Gate(headroom=args.headroom_gb * memgate.GB, log=lambda m: (print(m), sys.stdout.flush()))
+        print("memgate: headroom %.1f GB, free commit %.1f GB; quote %s"
+              % (args.headroom_gb, memgate.free_commit() / memgate.GB, quote.describe()))
+    i = 0
     with cf.ThreadPoolExecutor(max_workers=args.jobs) as ex:
-        futs = [ex.submit(job, c, args, workdir, hb) for c in cands]
-        for i, f in enumerate(cf.as_completed(futs), 1):
-            res = f.result()
-            c = res["c"]
-            if res["status"] == "zero":
-                res["status"] = commit(c, res["meta"], res["text"], res["defsyms"], res["how"], args)
-            results.append(res)
-            hb.end(c["unit"], c["vaddr"], res["status"], words=res["lever"], base=res["base"],
-                   perm_best=res["best"], how=res["how"])
-            print("[%3d/%d] %-7s %s %4s B  words %-3s base %-4s lever %-4s (%3d ev %3.0f s)  "
-                  "perm %-5s best %-5s %5d it %4.0f s  %s %s %s" % (
-                      i, len(cands), c["unit"], c["vaddr"], c["size"], c["words"], res["base"], res["lever"],
-                      res["evals"], res["lever_s"], res["pbase"], res["best"], res["iterations"],
-                      res["perm_s"], res["status"], res["how"], res["note"]))
-            sys.stdout.flush()
+        pending = {ex.submit(job, c, args, workdir, hb, gate, quote) for c in cands}
+        while pending:
+            done, pending = cf.wait(pending, return_when=cf.FIRST_COMPLETED)
+            for f in done:
+                res = f.result()
+                c = res["c"]
+                if res["status"] == "memgate stop" and not c.get("memgate_retry"):
+                    c["memgate_retry"] = True              # once more, at the back of the queue
+                    pending.add(ex.submit(job, c, args, workdir, hb, gate, quote))
+                    print("memgate: requeued %s %s" % (c["unit"], c["vaddr"]))
+                    sys.stdout.flush()
+                    continue
+                if res["status"] == "zero":
+                    res["status"] = commit(c, res["meta"], res["text"], res["defsyms"], res["how"], args)
+                results.append(res)
+                i += 1
+                hb.end(c["unit"], c["vaddr"], res["status"], words=res["lever"], base=res["base"],
+                       perm_best=res["best"], how=res["how"])
+                print("[%3d/%d] %-7s %s %4s B  words %-3s base %-4s lever %-4s (%3d ev %3.0f s)  "
+                      "perm %-5s best %-5s %5d it %4.0f s  peak %s MB  %s %s %s" % (
+                          i, len(cands), c["unit"], c["vaddr"], c["size"], c["words"], res["base"],
+                          res["lever"], res["evals"], res["lever_s"], res["pbase"], res["best"],
+                          res["iterations"], res["perm_s"], res.get("peak_mb") or "-", res["status"], res["how"],
+                          res["note"]))
+                sys.stdout.flush()
+    if gate:
+        gate.close()
     hb.close()
     wall = time.time() - t0
     hits = [r for r in results if r["status"] == "MATCH"]
@@ -860,7 +907,11 @@ def main(argv=None):
     add_pick_args(p)
     p = sub.add_parser("run")
     add_pick_args(p)
-    p.add_argument("-j", "--jobs", type=int, default=max(1, (os.cpu_count() or 4)))
+    p.add_argument("-j", "--jobs", type=int, default=min(4, os.cpu_count() or 4),
+                   help="functions at once (default %(default)s; the memory gate may run fewer)")
+    p.add_argument("--headroom-gb", type=float, default=float(os.environ.get("AC1_MEM_HEADROOM_GB", "4")),
+                   help="free commit the memory gate keeps (default %(default)s GB, $AC1_MEM_HEADROOM_GB)")
+    p.add_argument("--no-memgate", action="store_true", help="no memory gate / watchdog")
     p.add_argument("--budget", type=float, default=300, help="seconds per function, both stages (default %(default)s)")
     p.add_argument("--levers", default=levers.DEFAULT_LEVERS, help="lever names, comma-separated ('' = none)")
     p.add_argument("--lever-evals", type=int, default=150, help="compiles for the lever stage (default %(default)s)")

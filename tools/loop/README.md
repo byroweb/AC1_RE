@@ -23,6 +23,8 @@ sweep.py      -> re/match/<unit>/func_<ADDR>.c
                                  zero-agent sweep: m2c drafts straight into the oracle, no LLM
 permute.py    -> re/match/<unit>/func_<ADDR>.c
                                  permuter tier: levers.py rewrites + decomp-permuter on near misses, no LLM
+memgate.py    (library + CLI)    memory gate: quote a job's commit, admit it only above a headroom,
+                                 stop the newest job if free commit runs low (used by permute.py run)
 m2cfix.py     (library)          sweep.py's draft fix-ups: stack locals, frame union, casts, cc1-driven repair
 golem.py      -> re/match/<unit>/func_<ADDR>.c
                                  local-LLM tier: compile fixes and near-miss edits from a model in LM Studio
@@ -36,7 +38,7 @@ router.py     -> router_labels.tsv, router_features.tsv, queue-router.tsv
 ### Overnight machine pass (2026-10-21)
 
 ```bash
-bash tools/loop/overnight.sh     # from the repo root; ~20-30 min at -j 24, no LLM
+bash tools/loop/overnight.sh     # from the repo root; a few hours at the default -j 4, no LLM
 ```
 
 It runs one branch off origin/main and a queue of every open twin group, programs then
@@ -936,7 +938,8 @@ otherwise a port: the 9 open bodies at 0.9+ today were 1 to 46 words off).
 ```
 permute.py pick (--report sweep_report.tsv ... | --cfile [UNIT:]FILE.c ...) [--max-words N] [--max-ratio R]
                 [--max-size N] [--limit N] [--drafts DIR ...]
-permute.py run  (same picking options) [-j 24] [--budget 300] [--levers index,bytes,...]
+permute.py run  (same picking options) [-j 4] [--headroom-gb 4] [--no-memgate] [--budget 300]
+                [--levers index,bytes,...]
                 [--lever-evals 150] [--beam 4] [--no-permuter] [--work DIR] [--no-ledger] [--no-replay]
 permute.py setup <unit> <vaddr> <draft.c> <dir>     # one decomp-permuter dir, for a manual run
 permute.py cc    <dir> <in.c> -o <out.o>            # its compile.sh backend
@@ -1037,6 +1040,57 @@ reach in 300 s (`a0`/`a1` for a call m2c gave one argument too few, e.g. `Vector
 for a two-argument call), an argument m2c dropped (`li a0,24` in a delay slot), and drafts
 whose word count hid a size difference (`ovl201 0x800B6D4C`: ours 8 bytes for 56; the
 sweep's diff words only count the common length).  Those are agent work packages.
+
+## memgate.py (memory gate)
+
+```
+memgate.py status                # free commit, headroom, the quote model
+memgate.py quote SIZE [BUDGET]   # the quote for one body
+```
+
+Two permuter runs at `-j 20` and `-j 12` on 1.5-3 KB bodies (2026-10-23) ran Windows
+out of commit (WinError 1450, then `MemoryError`) and took the PC down. The worker count
+alone does not protect a machine someone is also using, because one job's memory grows
+with the body's size and with how long it runs. `permute.py run` therefore goes through
+a memory gate (off with `--no-memgate`):
+
+- **Quote.** Each job's expected peak commit is the worst peak in the calibration log
+  x 1.25 (at least 256 MB). With fewer than 4 calibration rows, a deliberately
+  pessimistic default by size applies: 1 GB + 1 GB per KB of body.
+- **Admission.** A job starts only when
+  `free commit - (unused part of every running job's quote) - its quote >= headroom`
+  (`--headroom-gb`, default 4, or `$AC1_MEM_HEADROOM_GB`); otherwise it waits. `-j` (now
+  default 4) still caps the number of jobs on top.
+- **Watchdog.** Every 2 s it reads free commit and each job's process tree (private
+  bytes of the permuter and its children). Below the headroom it stops the newest job
+  (`taskkill /T`); `run` requeues that body once at the back of the queue, and a second
+  stop is reported as `memgate stop`. Each finished job's peak goes to the calibration
+  log and to the report's `peak_mb` column.
+
+It watches free **commit**, not free RAM: Windows refuses allocations once the commit
+charge reaches the commit limit (RAM + page file), even with physical memory free. On a
+PC with a small page file, that limit is only a little above the RAM.
+
+The calibration log (`$AC1_MEMQUOTE`, default `~/dev/ac1_work/memquote.tsv`: tool, unit,
+vaddr, size, budget_s, seconds, peak_mb) is per-machine data and stays out of the repo.
+The quote improves as runs add rows to it.
+
+**Calibration (2026-10-23).** Ten permuter jobs, one at a time, on open near misses
+of 368 B - 3.4 KB with 90-1200 s budgets:
+
+| Peak commit per job | Jobs | Bodies |
+|---|---:|---|
+| 31-64 MB | 7 | 368 B - 2.9 KB, 600-1200 s |
+| 138 MB | 1 | 696 B |
+| 552-633 MB | 2 | 620 B (90 s), 1.9 KB (1200 s) |
+
+Peak memory follows neither body size nor run time; it spikes on some bodies. So
+the quote is the worst case seen: 633 MB x 1.25 = 791 MB per job. At the default
+`-j 4` that is about 3.2 GB in the worst case.
+
+The same runs show what parallel jobs buy. One job alone ran ~27 permuter
+iterations/s. At `-j 20` each job ran ~5.5/s, about 110/s in all: 20 jobs for
+4x the throughput, at the cost of the whole machine.
 
 ## golem.py (local LLM tier)
 
