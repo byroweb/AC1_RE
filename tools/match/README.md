@@ -207,8 +207,23 @@ tree, a plain `tools/match/setup.sh` rebuilds `cc1.exe` (otherwise only `--force
   in a matching run.  Its final C compiles with either reserve, so that report is not
   reproduced; the 4000-call case is.
   `tests/test_cc1_stack.py` and the build self-test compile the 4000-call function.
+- No ASLR (`-Wl,--disable-high-entropy-va -Wl,--disable-dynamicbase`): gcc 2.7.2 calls
+  some pointer-returning functions with no declaration in scope (K&R implicit `int`).
+  On the 64-bit host that truncates the pointer to 32 bits.  A scan of cc1's sources
+  with `-Wimplicit-function-declaration` finds `negate_rtx` (reorg.c), `alter_subreg`,
+  `emit`, `emit_line_note`, `expand_expr`, `label_rtx`, `remove_death`,
+  `replace_regs`, `reorder_blocks`, `bc_xstrdup`, plus `malloc`/`realloc` (stmt.c,
+  toplev.c) and `index` (c-common.c).  With high-entropy ASLR the heap sits above
+  4 GB and the truncated pointer crashes; without it, image and heap stay below 4 GB
+  and the truncation is harmless.  The build self-test checks the PE header bits.
 
-Patches, currently one:
+Patches, currently two:
+
+- `gcc-reorg-negate-rtx.patch`: declares `negate_rtx` in reorg.c.  It is the one
+  implicit call seen crashing: `fill_slots_from_thread` (delay-slot filling) segfaulted
+  on loops whose delay slot gets an increment plus its inverse fix-up.  The wave-3
+  matching run hit it on ovl202 0x8004C854, 0x80052350 and 0x80067AB4 (the first two
+  then matched with an ASLR-off cc1 copy, and match with the patched build).
 
 - `gcc-const-double-slots.patch`: a `CONST_DOUBLE` keeps its value in rtx slots that
   are each an `rtunion`, i.e. pointer-sized.  gcc 2.7.2 moves a real value in and out
