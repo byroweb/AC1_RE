@@ -28,6 +28,9 @@ golem.py      -> re/match/<unit>/func_<ADDR>.c
                                  local-LLM tier: compile fixes and near-miss edits from a model in LM Studio
 overnight.sh  -> re/match/<unit>/func_<ADDR>.c
                                  unattended machine pass: queue, sweep, two-pass permuter, replay, verify, commit
+router.py     -> router_labels.tsv, router_features.tsv, queue-router.tsv
+                                 tier router: which tier closed each match (labels), static + draft features,
+                                 held-out eval by body, and the tier to try next per open function (rank)
 ```
 
 ### Overnight machine pass (2026-10-21)
@@ -1119,6 +1122,27 @@ keep `GOLEM=1` off until a prompt change (below) shows wins the levers cannot re
 a better golem: map each differing instruction to its C line (cc1 line info) and ask for
 edits by line number; few-shot examples from the ledger's lever trails; a model
 fine-tuned on oracle-generated (broken C + diff -> repairing edit) pairs.
+
+### router.py (tier router, 2026-10-22)
+
+```bash
+python tools/loop/router.py labels      # router_labels.tsv: tier that closed each ledger row + label_source
+python tools/loop/router.py features    # router_features.tsv: functions.tsv + image-derived + draft closeness
+python tools/loop/router.py eval        # holdout + 5-fold CV split by twin group; accuracy, regret, windows
+python tools/loop/router.py rank --report WORK/sweep/sweep_report.tsv --permute-report WORK/perm2/permute_report.tsv
+```
+
+Tiers: 1 sweep / levers, 2 decomp-permuter, 3 golem, 4 Claude short (<= 2 tries),
+5 Claude long, 6 open.  Labels come from the ledger `reason`, the `matched func_<ADDR> N`
+commit subjects and the `.attempts` sidecars; batch-promoted rows (`matched N ... functions`,
+wave 2/3) have an unknown try count and say so.  Twin rows are never trained on and a twin
+group never straddles train and test.  Pure Python (a binned CART tree and a small boosted
+ensemble).  Results and the wiring recommendation: docs/ROUTER_SCOPE.md.  Short version:
+"a machine tier closes it" vs "Claude" is learnable (0.85 accuracy before any CPU is spent,
+0.95 once a draft's closeness is known); short vs long Claude is not (0.6-0.7); the open set
+is a residue the machine tiers have already failed on, so routing alone saves no windows
+there, and the actionable rows are the 33 agent near misses (`near_misses.tsv`, permuter
+input) and the 16 giants (block-region splitting).
 
 ## viewer.py (watch a run, leave hints)
 

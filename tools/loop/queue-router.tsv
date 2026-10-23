@@ -1,0 +1,228 @@
+# router.py rank: open functions with the tier to try next (1 sweep, 2 permuter, 3 golem, 4 Claude short, 5 Claude long); tier_model / p_* from the boosted model, tier from the model plus what is already spent
+tier	unit	vaddr	name	size	group	n_members	instructions	score	tier_model	p_machine	p_short	p_long	closeness	closeness_src	tried_sweep	permuter_best	permuter_status	near_words	near_source	why
+1	ovl204	0x80088D34	func_80088D34	108	p0313	3	27	5.491	1	0.521	0.434	0.045			0					no draft on file and P(machine) 0.52: sweep first
+1	ovl201	0x800B55E4	func_800B55E4	52	p1663	1	13	3.332	1	0.738	0.228	0.034		closeness.tsv	0					no draft on file and P(machine) 0.74: sweep first
+2	fdat010	0x801C5FD4	func_801C5FD4	1240	g0099	7	310	10.775	4	0.018	0.717	0.266			0			8	wave-3 w3m01	agent near miss 8 words: permuter on the agent's C, then golem
+2	ovl202	0x8004EDAC	func_8004EDAC	456	p0125	3	114	9.053	5	0.022	0.387	0.590	0.772	sweep/sweep_report.tsv	1			6	wave-3 w3p02	agent near miss 6 words: permuter on the agent's C, then golem
+2	fdat096	0x801C605C	func_801C605C	480	g0133	3	120	9.152	5	0.030	0.455	0.515	0.858	sweep/sweep_report.tsv	1			5	wave-3 w3m02	agent near miss 5 words: permuter on the agent's C, then golem
+2	ovl202	0x8007790C	func_8007790C	620	p0102	3	155	9.039	5	0.016	0.145	0.840	0.819	sweep/sweep_report.tsv	1			2	wave-3 w3p05	agent near miss 2 words: permuter on the agent's C, then golem
+2	ovl202	0x80071E14	func_80071E14	780	p0078	3	195	10.623	5	0.003	0.123	0.874	0.421	closeness.tsv	1			9	wave-3 w3p05	agent near miss 9 words: permuter on the agent's C, then golem
+2	fdat060	0x801C6528	func_801C6528	352	g0191	2	88	9.181	4	0.003	0.902	0.095	0.591	sweep/sweep_report.tsv	1			9	wave-3 w3m02	agent near miss 9 words: permuter on the agent's C, then golem
+2	ovl203	0x8007D704	func_8007D704	792	p0452	2	198	9.662	4	0.003	0.933	0.064	0.808	sweep/sweep_report.tsv	1			2	wave-3 w3p09	agent near miss 2 words: permuter on the agent's C, then golem
+2	ovl203	0x800797D0	func_800797D0	1220	p0441	2	305	11.054	4	0.016	0.855	0.129	0.839	sweep/sweep_report.tsv	1			4	wave-3 w3p08	agent near miss 4 words: permuter on the agent's C, then golem
+2	ovl203	0x8007AB4C	func_8007AB4C	1840	p0430	2	460	12.768	5	0.018	0.287	0.694	0.576	sweep/sweep_report.tsv	1			3	wave-3 w3p08	agent near miss 3 words: permuter on the agent's C, then golem
+2	ovl203	0x80064268	func_80064268	2800	p0423	2	700	15.729	4	0.004	0.500	0.496	0.251	sweep/sweep_report.tsv	1			2	wave-3 w3p08	agent near miss 2 words: permuter on the agent's C, then golem
+2	ovl202	0x8008AD80	func_8008AD80	196	p1246	1	49	7.784	4	0.005	0.746	0.249	0.735	sweep/sweep_report.tsv	1			6	wave-3 w3p06	agent near miss 6 words: permuter on the agent's C, then golem
+2	exe	0x80013430	func_80013430	224	p1174	1	56	6.598	4	0.126	0.763	0.112	0.821	sweep/sweep_report.tsv	1	10	no match	8	wave-3 w3p01	agent near miss 8 words: permuter on the agent's C, then golem
+2	ovl201	0x800ADB40	func_800ADB40	224	p1176	1	56	6.598	4	0.008	0.503	0.489	0.661	sweep/sweep_report.tsv	1			2	wave-3 w3p02	agent near miss 2 words: permuter on the agent's C, then golem
+2	exe	0x80014C40	func_80014C40	240	p1141	1	60	8.668	4	0.002	0.928	0.069	0.483	sweep/sweep_report.tsv	1			5	wave-3 w3p01	agent near miss 5 words: permuter on the agent's C, then golem
+2	ovl203	0x8004F3C4	func_8004F3C4	284	p1097	1	71	8.034	4	0.008	0.612	0.380	0.366	sweep/sweep_report.tsv	1			7	wave-3 w3p07	agent near miss 7 words: permuter on the agent's C, then golem
+2	fdat094	0x801C5D48	func_801C5D48	304	g0271	1	76	8.518	4	0.076	0.703	0.221	0.882	sweep/sweep_report.tsv	1			6	wave-3 w3m02	agent near miss 6 words: permuter on the agent's C, then golem
+2	fdat072	0x801C539C	func_801C539C	368	g0259	1	92	8.870	4	0.005	0.800	0.195	0.554	sweep/sweep_report.tsv	1			2	wave-3 w3m02	agent near miss 2 words: permuter on the agent's C, then golem
+2	ovl201	0x800A75A0	func_800A75A0	380	p1004	1	95	7.796	4	0.020	0.790	0.190	0.632	sweep/sweep_report.tsv	1			8	wave-3 w3p02	agent near miss 8 words: permuter on the agent's C, then golem
+2	fdat072	0x801C4D28	func_801C4D28	448	g0255	1	112	9.727	4	0.010	0.704	0.286	0.768	sweep/sweep_report.tsv	1			12	wave-3 w3m02	agent near miss 12 words: permuter on the agent's C, then golem
+2	exe	0x80014F78	func_80014F78	468	p0946	1	117	9.371	5	0.023	0.264	0.713	0.684	sweep/sweep_report.tsv	1			3	wave-3 w3p01	agent near miss 3 words: permuter on the agent's C, then golem
+2	fdat074	0x801C6FA0	func_801C6FA0	496	g0253	1	124	9.581	4	0.004	0.866	0.131	0.645	sweep/sweep_report.tsv	1			3	wave-3 w3m02	agent near miss 3 words: permuter on the agent's C, then golem
+2	ovl202	0x80052440	func_80052440	528	p0915	1	132	9.397	5	0.001	0.081	0.918	0.674	sweep/sweep_report.tsv	1			5	wave-3 w3p03	agent near miss 5 words: permuter on the agent's C, then golem
+2	fdat036	0x801C5F98	func_801C5F98	532	g0249	1	133	9.392	4	0.006	0.592	0.402	0.602	sweep/sweep_report.tsv	1			11	wave-3 w3m02	agent near miss 11 words: permuter on the agent's C, then golem
+2	fdat056	0x801C78B0	func_801C78B0	660	g0240	1	165	9.770	4	0.009	0.901	0.091	0.891	sweep/sweep_report.tsv	1			2	wave-3 w3m02	agent near miss 2 words: permuter on the agent's C, then golem
+2	ovl204	0x8005F7AC	func_8005F7AC	852	p0783	1	213	10.880	4	0.097	0.559	0.344	0.347	sweep/sweep_report.tsv	1			6	wave-3 w3p10	agent near miss 6 words: permuter on the agent's C, then golem
+2	ovl201	0x800744A8	func_800744A8	1392	p0686	1	348	9.866	4	0.012	0.897	0.091	0.632	sweep/sweep_report.tsv	1			4	wave-3 w3p01	agent near miss 4 words: permuter on the agent's C, then golem
+2	ovl201	0x8004E2BC	func_8004E2BC	1496	p0668	1	374	11.002	5	0.004	0.407	0.589	0.465	sweep/sweep_report.tsv	1			7	wave-3 w3p01	agent near miss 7 words: permuter on the agent's C, then golem
+2	ovl201	0x800531B8	func_800531B8	1576	p0663	1	394	11.289	5	0.010	0.424	0.566	0.787	sweep/sweep_report.tsv	1			2	wave-3 w3p01	agent near miss 2 words: permuter on the agent's C, then golem
+2	ovl201	0x80084AE4	func_80084AE4	1816	p0651	1	454	10.845	5	0.008	0.378	0.614	0.729	sweep/sweep_report.tsv	1			7	wave-3 w3p01	agent near miss 7 words: permuter on the agent's C, then golem
+2	ovl201	0x800B0CF0	func_800B0CF0	1916	p0641	1	479	11.939	5	0.020	0.240	0.740	0.599	sweep/sweep_report.tsv	1			12	wave-3 w3p02	agent near miss 12 words: permuter on the agent's C, then golem
+2	ovl203	0x80060B3C	func_80060B3C	2044	p0636	1	511	12.107	4	0.015	0.519	0.466	0.403	sweep/sweep_report.tsv	1			6	wave-3 w3p07	agent near miss 6 words: permuter on the agent's C, then golem
+2	ovl204	0x80061AD4	func_80061AD4	2052	p0635	1	513	10.616	4	0.028	0.548	0.424	0.628	sweep/sweep_report.tsv	1			2	wave-3 w3p10	agent near miss 2 words: permuter on the agent's C, then golem
+2	ovl201	0x8007AD64	func_8007AD64	2796	p0619	1	699	11.594	4	0.014	0.690	0.296	0.824	sweep/sweep_report.tsv	1			2	wave-3 w3p01	agent near miss 2 words: permuter on the agent's C, then golem
+4	fdat014	0x801C7A70	func_801C7A70	1240	g0099	7	310	10.775	4	0.018	0.717	0.266			0					no draft on file, P(machine) 0.02: Claude
+4	fdat028	0x801C6568	func_801C6568	1240	g0099	7	310	10.775	4	0.018	0.717	0.266			0					no draft on file, P(machine) 0.02: Claude
+4	fdat050	0x801C70C0	func_801C70C0	1240	g0099	7	310	10.775	4	0.018	0.717	0.266			0					no draft on file, P(machine) 0.02: Claude
+4	fdat064	0x801C6A2C	func_801C6A2C	1240	g0099	7	310	10.775	4	0.018	0.717	0.266			0					no draft on file, P(machine) 0.02: Claude
+4	fdat088	0x801C6028	func_801C6028	1240	g0099	7	310	10.775	4	0.018	0.717	0.266			0					no draft on file, P(machine) 0.02: Claude
+4	fdat090	0x801C6EE0	func_801C6EE0	1240	g0099	7	310	10.775	4	0.018	0.717	0.266			0					no draft on file, P(machine) 0.02: Claude
+4	fdat004	0x801C5EA8	func_801C5EA8	1540	g0104	6	385	11.706	4	0.010	0.824	0.167	0.795	sweep/sweep_report.tsv	1			19	wave-3 w3m01	machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat012	0x801C6454	func_801C6454	1540	g0104	6	385	11.706	4	0.010	0.824	0.167	0.795	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat016	0x801C6B10	func_801C6B10	1540	g0104	6	385	11.706	4	0.010	0.824	0.167	0.795	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat042	0x801C65CC	func_801C65CC	1540	g0104	6	385	11.706	4	0.010	0.824	0.167	0.795	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat052	0x801C5948	func_801C5948	1540	g0104	6	385	11.706	4	0.010	0.824	0.167	0.795	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat072	0x801C5600	func_801C5600	1540	g0104	6	385	11.706	4	0.010	0.824	0.167	0.795	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat040	0x801C5DE4	func_801C5DE4	120	g0158	3	30	6.979	4	0.005	0.900	0.094	0.600	sweep/sweep_report.tsv	1			18	wave-3 w3m02	machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat048	0x801C5444	func_801C5444	120	g0158	3	30	6.979	4	0.005	0.900	0.094	0.600	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat096	0x801C5AD4	func_801C5AD4	120	g0158	3	30	6.979	4	0.005	0.900	0.094	0.600	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	ovl202	0x80064CB8	func_80064CB8	172	p0238	3	43	7.655	4	0.002	0.859	0.139	0.512	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl203	0x80064158	func_80064158	172	p0238	3	43	7.655	4	0.002	0.960	0.037	0.512	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl204	0x80063F94	func_80063F94	172	p0238	3	43	7.655	4	0.004	0.959	0.037	0.512	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl203	0x8004CA5C	func_8004CA5C	200	p0219	3	50	8.542	4	0.037	0.747	0.216		closeness.tsv	0					no draft on file, P(machine) 0.04: Claude
+4	ovl204	0x8004C8EC	func_8004C8EC	200	p0219	3	50	8.542	4	0.060	0.642	0.298		closeness.tsv	0					no draft on file, P(machine) 0.06: Claude
+4	ovl202	0x80067AB4	func_80067AB4	248	p0187	3	62	8.203	4	0.001	0.694	0.305	0.323	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl203	0x80066F54	func_80066F54	248	p0187	3	62	8.203	4	0.001	0.946	0.053	0.323	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl204	0x80066D90	func_80066D90	248	p0187	3	62	8.203	4	0.003	0.914	0.083	0.323	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl203	0x8004ECF8	func_8004ECF8	284	p0173	3	71	9.182	4	0.014	0.618	0.368			0					no draft on file, P(machine) 0.01: Claude
+4	ovl203	0x8004D260	func_8004D260	308	p0163	3	77	9.060	4	0.002	0.808	0.190	0.169	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl204	0x8004D144	func_8004D144	308	p0163	3	77	9.060	4	0.003	0.794	0.203	0.169	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl203	0x8004EFC8	func_8004EFC8	456	p0125	3	114	9.053	4	0.023	0.515	0.463	0.772	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.02): Claude
+4	ovl203	0x8007668C	func_8007668C	620	p0102	3	155	9.039	4	0.032	0.563	0.405	0.819	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.03): Claude
+4	ovl203	0x80082FC0	func_80082FC0	1924	p0051	3	481	11.914	4	0.006	0.500	0.494	0.578	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat008	0x801CB03C	func_801CB03C	3468	g0128	3	867	15.394	4	0.003	0.788	0.209	0.570	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	fdat052	0x801CCA78	func_801CCA78	3468	g0128	3	867	15.394	4	0.003	0.788	0.209	0.570	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	fdat054	0x801C9668	func_801C9668	3468	g0128	3	867	15.394	4	0.003	0.788	0.209	0.570	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl203	0x80061F4C	func_80061F4C	212	p0510	2	53	7.910	4	0.003	0.882	0.115	0.321	closeness.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	fdat068	0x801C52E0	func_801C52E0	352	g0191	2	88	9.181	4	0.003	0.902	0.095	0.591	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	fdat024	0x801C6498	func_801C6498	692	g0172	2	173	10.616	4	0.002	0.845	0.153	0.543	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	fdat050	0x801C6DB8	func_801C6DB8	692	g0172	2	173	10.616	4	0.002	0.845	0.153	0.543	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl204	0x8007D3B0	func_8007D3B0	792	p0452	2	198	9.662	4	0.007	0.894	0.100	0.808	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	ovl203	0x8005E370	func_8005E370	1000	p0444	2	250	10.967	4	0.017	0.508	0.475	0.552	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.02): Claude
+4	ovl204	0x80079480	func_80079480	1220	p0441	2	305	11.054	4	0.025	0.767	0.208	0.839	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.03): Claude
+4	ovl203	0x80081358	func_80081358	1236	p0440	2	309	11.132	4	0.002	0.676	0.322	0.369	sweep/sweep_report.tsv	1			75	wave-3 w3p09	machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl204	0x80081004	func_80081004	1236	p0440	2	309	11.132	4	0.005	0.537	0.458	0.369	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	ovl203	0x80071D84	func_80071D84	1756	p0431	2	439	12.387	4	0.002	0.693	0.305	0.187	sweep/sweep_report.tsv	1			40	wave-3 w3p08	machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl204	0x80071BC0	func_80071BC0	1756	p0431	2	439	12.387	4	0.004	0.674	0.322	0.187	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl203	0x8006735C	func_8006735C	2900	p0422	2	725	19.109	4	0.006	0.558	0.436	0.313	sweep/sweep_report.tsv	1			169	wave-3 w3p08	machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	ovl203	0x8007CB90	func_8007CB90	2932	p0421	2	733	13.740	4	0.007	0.686	0.307	0.737	sweep/sweep_report.tsv	1			30	wave-3 w3p09	machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	ovl204	0x8007C83C	func_8007C83C	2932	p0421	2	733	13.740	4	0.013	0.548	0.439	0.737	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	exe	0x8001606C	func_8001606C	168	p1293	1	42	7.752	4	0.003	0.901	0.096	0.619	sweep/sweep_report.tsv	1			24	wave-3 w3p01	machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl201	0x80066898	func_80066898	220	p1179	1	55	6.580	4	0.006	0.713	0.281	0.455	sweep/sweep_report.tsv	1			33	wave-3 w3p01	machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat034	0x801C6B44	func_801C6B44	280	g0276	1	70	9.140	4	0.002	0.789	0.209	0.400	sweep/sweep_report.tsv	1			37	wave-3 w3m02	machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl201	0x800A4A74	func_800A4A74	372	p1011	1	93	7.895	4	0.006	0.597	0.396	0.624	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	ovl201	0x80055950	func_80055950	492	p0933	1	123	8.697	4	0.009	0.741	0.250	0.626	sweep/sweep_report.tsv	1			16	wave-3 w3p01	machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat016	0x801C66DC	func_801C66DC	520	g0252	1	130	9.387	4	0.003	0.814	0.183	0.569	sweep/sweep_report.tsv	1			122	wave-3 w3m01	machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl201	0x800A86D0	func_800A86D0	552	p0906	1	138	8.983	4	0.046	0.543	0.412	0.449	sweep/sweep_report.tsv	1			36	wave-3 w3p02	machine tiers spent or unlikely (P(machine) 0.05): Claude
+4	fdat040	0x801C67F8	func_801C67F8	556	g0248	1	139	9.324	4	0.003	0.587	0.410	0.734	sweep/sweep_report.tsv	1			13	wave-3 w3m02	machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	fdat072	0x801C5158	func_801C5158	580	g0245	1	145	9.856	4	0.011	0.509	0.480	0.821	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat056	0x801C7544	func_801C7544	600	g0243	1	150	6.405	4	0.173	0.692	0.135	0.873	sweep/sweep_report.tsv	1			47	wave-3 w3m02	machine tiers spent or unlikely (P(machine) 0.17): Claude
+4	fdat044	0x801C67A0	func_801C67A0	608	g0242	1	152	9.354	4	0.004	0.682	0.314	0.651	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl201	0x80086FFC	func_80086FFC	672	p0849	1	168	11.519	4	0.008	0.545	0.447	0.238	sweep/sweep_report.tsv	1			102	wave-3 w3p02	machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat034	0x801C532C	func_801C532C	716	g0238	1	179	10.442	4	0.004	0.569	0.427	0.497	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	fdat080	0x801C52FC	func_801C52FC	716	g0239	1	179	10.442	4	0.004	0.569	0.427	0.497	sweep/sweep_report.tsv	1			18	wave-3 w3m02	machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	fdat004	0x801C5534	func_801C5534	888	g0234	1	222	10.722	4	0.028	0.611	0.360			0					no draft on file, P(machine) 0.03: Claude
+4	fdat074	0x801C4D48	func_801C4D48	1008	fdat074:0x801C4D48	1	252	10.890	4	0.035	0.629	0.336			0					no draft on file, P(machine) 0.04: Claude
+4	fdat016	0x801C62CC	func_801C62CC	1040	g0233	1	260	10.792	4	0.002	0.821	0.176	0.658	sweep/sweep_report.tsv	1			36	wave-3 w3m01	machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl202	0x8007ACC0	func_8007ACC0	1184	p0712	1	296	11.025	4	0.005	0.607	0.389	0.787	sweep/sweep_report.tsv	1			102	wave-3 w3p05	machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl204	0x8004F964	func_8004F964	1236	p0706	1	309	8.045	4	0.014	0.864	0.121	0.780	sweep/sweep_report.tsv	1			20	wave-3 w3p09	machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	ovl203	0x8005C2F4	func_8005C2F4	1336	p0695	1	334	10.972	4	0.021	0.551	0.429	0.428	sweep/sweep_report.tsv	1			102	wave-3 w3p07	machine tiers spent or unlikely (P(machine) 0.02): Claude
+4	ovl204	0x80050E60	func_80050E60	1364	p0691	1	341	10.342	4	0.008	0.773	0.219	0.660	sweep/sweep_report.tsv	1			42	wave-3 w3p09	machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	ovl201	0x8006BA08	func_8006BA08	1404	p0681	1	351	11.792	4	0.006	0.541	0.453	0.450	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	fdat016	0x801C804C	func_801C804C	1456	g0231	1	364	11.242	4	0.004	0.705	0.291	0.788	sweep/sweep_report.tsv	1			19	wave-3 w3m01	machine tiers spent or unlikely (P(machine) 0.00): Claude
+4	ovl203	0x8004BF94	func_8004BF94	2468	p0626	1	617	11.760	4	0.023	0.579	0.398		closeness.tsv	0					no draft on file, P(machine) 0.02: Claude
+4	ovl201	0x800A7A68	func_800A7A68	2808	p0617	1	702	10.908	4	0.006	0.606	0.388	0.524	sweep/sweep_report.tsv	1			548	wave-3 w3p02	machine tiers spent or unlikely (P(machine) 0.01): Claude
+4	ovl203	0x80050D78	func_80050D78	3596	p0602	1	899	12.319	4	0.034	0.531	0.435	0.760	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.03): Claude
+5	fdat160	0x801C8580	func_801C8580	292	g0080	11	73	7.828	4	0.234	0.475	0.291			0					no draft on file, P(machine) 0.23: Claude
+5	ovl202	0x80067BE0	func_80067BE0	628	p0035	4	157	12.705	5	0.002	0.241	0.758	0.197	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl202	0x80068A44	func_80068A44	628	p0035	4	157	12.705	5	0.002	0.241	0.758	0.197	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x80067080	func_80067080	628	p0035	4	157	12.705	5	0.002	0.474	0.524	0.197	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x80067EE4	func_80067EE4	628	p0035	4	157	12.705	5	0.002	0.474	0.524	0.197	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl204	0x8004EBDC	func_8004EBDC	284	p0173	3	71	9.182	5	0.020	0.475	0.504			0					no draft on file, P(machine) 0.02: Claude
+5	ovl202	0x8004D044	func_8004D044	308	p0163	3	77	9.060	5	0.001	0.353	0.646	0.169	sweep/sweep_report.tsv	1			17	wave-3 w3p02	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl202	0x80062974	func_80062974	400	p0139	3	100	9.081	5	0.009	0.291	0.700	0.490	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl203	0x80061DBC	func_80061DBC	400	p0139	3	100	9.081	5	0.005	0.305	0.689	0.490	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x80061508	func_80061508	400	p0139	3	100	9.081	5	0.010	0.212	0.777	0.490	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	fdat040	0x801C5E5C	func_801C5E5C	452	g0135	3	113	9.774	5	0.003	0.302	0.695	0.602	sweep/sweep_report.tsv	1			33	wave-3 w3m02	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	fdat048	0x801C54BC	func_801C54BC	452	g0135	3	113	9.774	5	0.003	0.302	0.695	0.602	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	fdat096	0x801C5B4C	func_801C5B4C	452	g0135	3	113	9.774	5	0.003	0.302	0.695	0.602	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl204	0x8004EEAC	func_8004EEAC	456	p0125	3	114	9.053	4	0.032	0.490	0.478	0.772	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.03): Claude
+5	fdat098	0x801C62DC	func_801C62DC	480	g0133	3	120	9.152	5	0.030	0.455	0.515	0.858	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.03): Claude
+5	fdat164	0x801C87F4	func_801C87F4	480	g0133	3	120	9.152	5	0.030	0.455	0.515	0.858	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.03): Claude
+5	ovl202	0x8005C710	func_8005C710	500	p0119	3	125	9.379	5	0.003	0.153	0.844	0.776	sweep/sweep_report.tsv	1			147	wave-3 w3p03	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x8005C100	func_8005C100	500	p0119	3	125	9.379	5	0.006	0.462	0.532	0.776	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x8005B8B4	func_8005B8B4	500	p0119	3	125	9.379	5	0.012	0.439	0.549	0.776	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x800764D0	func_800764D0	620	p0102	3	155	9.039	5	0.065	0.386	0.549	0.819	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.07): Claude
+5	fdat096	0x801C5DE8	func_801C5DE8	628	g0130	3	157	11.505	5	0.003	0.234	0.764	0.586	sweep/sweep_report.tsv	1			30	wave-3 w3m02	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	fdat098	0x801C6068	func_801C6068	628	g0130	3	157	11.505	5	0.003	0.234	0.764	0.586	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	fdat164	0x801C8580	func_801C8580	628	g0130	3	157	11.505	5	0.003	0.234	0.764	0.586	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x800587F4	func_800587F4	704	p0090	3	176	11.399	5	0.002	0.091	0.907	0.125	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl204	0x80057FA8	func_80057FA8	704	p0090	3	176	11.399	5	0.003	0.077	0.920	0.125	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x80071198	func_80071198	780	p0078	3	195	10.623	5	0.003	0.204	0.793	0.421	closeness.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl204	0x80070FD4	func_80070FD4	780	p0078	3	195	10.623	5	0.005	0.136	0.858	0.421	closeness.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x8006E380	func_8006E380	820	p0074	3	205	11.022	5	0.001	0.101	0.898	0.410	sweep/sweep_report.tsv	1			60	wave-3 w3p05	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x8006D820	func_8006D820	820	p0074	3	205	11.022	5	0.001	0.324	0.675	0.410	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl204	0x8006D65C	func_8006D65C	820	p0074	3	205	11.022	5	0.002	0.210	0.787	0.410	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl202	0x8006EB10	func_8006EB10	892	p0067	3	223	10.495	5	0.003	0.172	0.824	0.484	sweep/sweep_report.tsv	1			42	wave-3 w3p05	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x8006DE94	func_8006DE94	892	p0067	3	223	10.495	5	0.004	0.317	0.680	0.484	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl204	0x8006DCD0	func_8006DCD0	892	p0067	3	223	10.495	5	0.007	0.205	0.788	0.484	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x80085AFC	func_80085AFC	924	p0065	3	231	11.163	5	0.003	0.016	0.980	0.238	sweep/sweep_report.tsv	1			63	wave-3 w3p06	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x800847A8	func_800847A8	924	p0065	3	231	11.163	5	0.006	0.041	0.953	0.238	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x80084558	func_80084558	924	p0065	3	231	11.163	5	0.008	0.029	0.964	0.238	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x8004E22C	func_8004E22C	1888	p0052	3	472	12.586	5	0.007	0.176	0.817	0.451	sweep/sweep_report.tsv	1			280	wave-3 w3p02	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl203	0x8004E448	func_8004E448	1888	p0052	3	472	12.586	5	0.007	0.379	0.613	0.451	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x8004E32C	func_8004E32C	1888	p0052	3	472	12.586	5	0.015	0.218	0.767	0.451	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.02): Claude
+5	ovl202	0x80084314	func_80084314	1924	p0051	3	481	11.914	5	0.003	0.141	0.856	0.578	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl204	0x80082D70	func_80082D70	1924	p0051	3	481	11.914	5	0.011	0.357	0.632	0.578	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x80054750	func_80054750	4332	p0050	3	1083	16.554	5	0.007	0.108	0.885	0.426	sweep/sweep_report.tsv	1					giant (4332 B): Claude long; candidate for block-region splitting
+5	ovl203	0x8005414C	func_8005414C	4332	p0050	3	1083	16.554	5	0.013	0.457	0.530	0.426	sweep/sweep_report.tsv	1					giant (4332 B): Claude long; candidate for block-region splitting
+5	ovl204	0x8005379C	func_8005379C	4332	p0050	3	1083	16.554	5	0.023	0.277	0.700	0.426	sweep/sweep_report.tsv	1					giant (4332 B): Claude long; candidate for block-region splitting
+5	ovl202	0x8006611C	func_8006611C	4488	p0049	3	1122	15.742	5	0.001	0.118	0.881	0.253	sweep/sweep_report.tsv	1					giant (4488 B): Claude long; candidate for block-region splitting
+5	ovl203	0x800655BC	func_800655BC	4488	p0049	3	1122	15.742	5	0.003	0.440	0.557	0.253	sweep/sweep_report.tsv	1					giant (4488 B): Claude long; candidate for block-region splitting
+5	ovl204	0x800653F8	func_800653F8	4488	p0049	3	1122	15.742	5	0.005	0.395	0.599	0.253	sweep/sweep_report.tsv	1					giant (4488 B): Claude long; candidate for block-region splitting
+5	ovl202	0x80059198	func_80059198	4504	p0048	3	1126	15.732	5	0.001	0.118	0.881	0.266	sweep/sweep_report.tsv	1					giant (4504 B): Claude long; candidate for block-region splitting
+5	ovl203	0x80058B88	func_80058B88	4504	p0048	3	1126	15.732	5	0.003	0.440	0.557	0.266	sweep/sweep_report.tsv	1					giant (4504 B): Claude long; candidate for block-region splitting
+5	ovl204	0x8005833C	func_8005833C	4504	p0048	3	1126	15.732	5	0.005	0.395	0.599	0.266	sweep/sweep_report.tsv	1					giant (4504 B): Claude long; candidate for block-region splitting
+5	ovl204	0x80066EBC	func_80066EBC	628	p0466	2	157	12.705	5	0.007	0.124	0.868	0.197	sweep/sweep_report.tsv	1			50	wave-3 w3p10	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x80067D20	func_80067D20	628	p0466	2	157	12.705	5	0.007	0.124	0.868	0.197	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x80051150	func_80051150	668	p0461	2	167	7.522	5	0.002	0.197	0.801	0.401	sweep/sweep_report.tsv	1			14	wave-3 w3p03	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x80051E1C	func_80051E1C	668	p0461	2	167	7.522	5	0.003	0.364	0.633	0.401	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl202	0x8005CE3C	func_8005CE3C	692	p0459	2	173	13.337	5	0.003	0.167	0.830	0.370	sweep/sweep_report.tsv	1			151	wave-3 w3p03	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x8005C82C	func_8005C82C	692	p0459	2	173	13.337	5	0.004	0.427	0.569	0.370	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	fdat014	0x801C64E8	func_801C64E8	920	g0171	2	230	13.021	5	0.005	0.137	0.858	0.317	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	fdat030	0x801C64CC	func_801C64CC	920	g0171	2	230	13.021	5	0.005	0.137	0.858	0.317	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl203	0x800860A4	func_800860A4	928	p0447	2	232	13.041	5	0.005	0.172	0.823	0.302	sweep/sweep_report.tsv	1			115	wave-3 w3p09	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x80085E54	func_80085E54	928	p0447	2	232	13.041	5	0.007	0.147	0.846	0.302	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x8005EB50	func_8005EB50	1000	p0444	2	250	10.967	5	0.007	0.113	0.881	0.552	sweep/sweep_report.tsv	1			114	wave-3 w3p03	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl203	0x8007F414	func_8007F414	1316	p0438	2	329	12.422	5	0.002	0.180	0.818	0.182	sweep/sweep_report.tsv	1			326	wave-3 w3p09	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl204	0x8007F0C0	func_8007F0C0	1316	p0438	2	329	12.422	5	0.004	0.154	0.842	0.182	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	fdat022	0x801C60B0	func_801C60B0	1556	g0169	2	389	11.624	5	0.009	0.212	0.780	0.131	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	fdat052	0x801C614C	func_801C614C	1556	g0169	2	389	11.624	5	0.009	0.212	0.780	0.131	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x8005FB90	func_8005FB90	1708	p0432	2	427	14.242	5	0.007	0.065	0.928	0.340	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl203	0x8005F3B0	func_8005F3B0	1708	p0432	2	427	14.242	5	0.011	0.240	0.749	0.340	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x8007A7FC	func_8007A7FC	1840	p0430	2	460	12.768	5	0.029	0.155	0.816	0.576	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.03): Claude
+5	ovl204	0x800640A4	func_800640A4	2800	p0423	2	700	15.729	5	0.008	0.453	0.539	0.251	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x80067198	func_80067198	2900	p0422	2	725	19.109	5	0.010	0.412	0.577	0.313	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl203	0x800681B8	func_800681B8	3396	p0419	2	849	19.395	5	0.002	0.425	0.573	0.247	sweep/sweep_report.tsv	1			362	wave-3 w3p08	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl204	0x80067FF4	func_80067FF4	3396	p0419	2	849	19.395	5	0.004	0.381	0.615	0.247	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl203	0x8007DB6C	func_8007DB6C	6312	p0417	2	1578	16.375	4	0.002	0.849	0.149	0.517	sweep/sweep_report.tsv	1					giant (6312 B): Claude long; candidate for block-region splitting
+5	ovl204	0x8007D818	func_8007D818	6312	p0417	2	1578	16.375	4	0.005	0.757	0.238	0.517	sweep/sweep_report.tsv	1					giant (6312 B): Claude long; candidate for block-region splitting
+5	ovl202	0x8008C178	func_8008C178	388	p1000	1	97	11.486	5	0.000	0.062	0.937	0.299	sweep/sweep_report.tsv	1			40	wave-3 w3p06	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl201	0x8005F260	func_8005F260	572	p0894	1	143	10.451	5	0.004	0.204	0.792	0.371	sweep/sweep_report.tsv	1			18	wave-3 w3p01	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl201	0x8009C6DC	func_8009C6DC	588	p0884	1	147	9.358	5	0.002	0.473	0.525	0.415	sweep/sweep_report.tsv	1			37	wave-3 w3p02	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl202	0x8005277C	func_8005277C	628	p0873	1	157	10.676	5	0.004	0.104	0.891	0.255	sweep/sweep_report.tsv	1			86	wave-3 w3p03	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl204	0x8005BFE0	func_8005BFE0	692	p0844	1	173	13.337	5	0.027	0.410	0.564	0.370	sweep/sweep_report.tsv	1			90	wave-3 w3p09	machine tiers spent or unlikely (P(machine) 0.03): Claude
+5	ovl202	0x8008D3B0	func_8008D3B0	696	p0843	1	174	7.571	5	0.003	0.212	0.785	0.511	sweep/sweep_report.tsv	1			60	wave-3 w3p06	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl201	0x800B5EEC	func_800B5EEC	740	p0830	1	185	10.291	5	0.004	0.396	0.600	0.503	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl201	0x8007053C	func_8007053C	760	p0813	1	190	10.129	5	0.005	0.130	0.864	0.137	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl201	0x80088AC4	func_80088AC4	800	p0797	1	200	10.795	5	0.002	0.311	0.687	0.570	sweep/sweep_report.tsv	1			14	wave-3 w3p02	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl202	0x8007863C	func_8007863C	820	p0791	1	205	9.936	5	0.002	0.090	0.909	0.620	sweep/sweep_report.tsv	1			18	wave-3 w3p05	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl202	0x80060800	func_80060800	852	p0781	1	213	10.880	5	0.022	0.193	0.785	0.347	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.02): Claude
+5	ovl201	0x800B5618	func_800B5618	868	p0773	1	217	8.911	5	0.002	0.113	0.885	0.023	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	exe	0x80012E5C	func_80012E5C	884	p0766	1	221	11.302	5	0.011	0.152	0.837	0.412	sweep/sweep_report.tsv	1			58	wave-3 w3p01	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x800873F8	func_800873F8	928	p0756	1	232	13.041	5	0.007	0.055	0.938	0.306	sweep/sweep_report.tsv	1			213	wave-3 w3p06	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x8005DAFC	func_8005DAFC	1000	p0741	1	250	10.967	4	0.051	0.482	0.467	0.552	sweep/sweep_report.tsv	1			54	wave-3 w3p10	machine tiers spent or unlikely (P(machine) 0.05): Claude
+5	ovl202	0x80052B28	func_80052B28	1128	p0719	1	282	11.101	5	0.002	0.093	0.905		closeness.tsv	0			91	wave-3 w3p03	no draft on file, P(machine) 0.00: Claude
+5	ovl202	0x800826FC	func_800826FC	1224	p0707	1	306	11.123	5	0.001	0.222	0.777	0.363	sweep/sweep_report.tsv	1			68	wave-3 w3p06	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	fdat044	0x801C6A00	func_801C6A00	1228	g0232	1	307	11.169	5	0.060	0.336	0.604	0.668	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.06): Claude
+5	ovl202	0x8008080C	func_8008080C	1268	p0701	1	317	12.385	5	0.001	0.055	0.944	0.464	sweep/sweep_report.tsv	1			20	wave-3 w3p06	machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl202	0x8005C904	func_8005C904	1336	p0694	1	334	10.972	5	0.011	0.153	0.836	0.428	sweep/sweep_report.tsv	1			88	wave-3 w3p03	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl204	0x8005BAA8	func_8005BAA8	1336	p0696	1	334	10.972	5	0.044	0.399	0.557	0.428	sweep/sweep_report.tsv	1			237	wave-3 w3p09	machine tiers spent or unlikely (P(machine) 0.04): Claude
+5	ovl201	0x8006CC78	func_8006CC78	1376	p0689	1	344	9.497	5	0.002	0.316	0.681	0.294	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl202	0x8007BA98	func_8007BA98	1428	p0680	1	357	13.364	5	0.020	0.293	0.687	0.627	sweep/sweep_report.tsv	1			284	wave-3 w3p05	machine tiers spent or unlikely (P(machine) 0.02): Claude
+5	ovl202	0x8007C7C8	func_8007C7C8	1452	p0677	1	363	12.102	5	0.008	0.293	0.699	0.449	sweep/sweep_report.tsv	1			14	wave-3 w3p05	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x8005D19C	func_8005D19C	1488	p0670	1	372	11.678	5	0.012	0.119	0.869	0.532	sweep/sweep_report.tsv	1			31	wave-3 w3p03	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl203	0x8005CB8C	func_8005CB8C	1488	p0671	1	372	11.678	5	0.025	0.478	0.497	0.532	sweep/sweep_report.tsv	1			150	wave-3 w3p07	machine tiers spent or unlikely (P(machine) 0.03): Claude
+5	ovl201	0x800B4398	func_800B4398	1524	p0666	1	381	11.232	5	0.020	0.427	0.553	0.588	sweep/sweep_report.tsv	1			35	wave-3 w3p02	machine tiers spent or unlikely (P(machine) 0.02): Claude
+5	ovl202	0x80077B78	func_80077B78	1524	p0667	1	381	11.855	5	0.009	0.427	0.564	0.478	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x8008CC88	func_8008CC88	1536	p0665	1	384	15.468	5	0.000	0.044	0.955	0.219	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl202	0x80072A00	func_80072A00	1756	p0653	1	439	12.888	5	0.005	0.355	0.640	0.175	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x8007C02C	func_8007C02C	1796	p0652	1	449	13.809	5	0.017	0.069	0.914	0.517	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.02): Claude
+5	ovl201	0x800B3748	func_800B3748	1844	p0648	1	461	12.344	5	0.011	0.149	0.840	0.330	sweep/sweep_report.tsv	1			70	wave-3 w3p02	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x8007D2F8	func_8007D2F8	2208	p0631	1	552	12.478	5	0.010	0.306	0.684	0.739	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x8007DF98	func_8007DF98	2896	p0615	1	724	14.664	5	0.015	0.225	0.760	0.686	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl201	0x8005F5E8	func_8005F5E8	2944	p0613	1	736	15.499	5	0.021	0.321	0.658	0.111	sweep/sweep_report.tsv	1			24	wave-3 w3p01	machine tiers spent or unlikely (P(machine) 0.02): Claude
+5	ovl202	0x80050468	func_80050468	3296	p0607	1	824	12.336	5	0.011	0.090	0.898	0.706	sweep/sweep_report.tsv	1			58	wave-3 w3p03	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x80068D18	func_80068D18	3396	p0605	1	849	19.395	5	0.001	0.127	0.872	0.247	sweep/sweep_report.tsv	1					machine tiers spent or unlikely (P(machine) 0.00): Claude
+5	ovl201	0x80066F90	func_80066F90	3424	p0604	1	856	12.713	5	0.012	0.369	0.619	0.279	sweep/sweep_report.tsv	1			68	wave-3 w3p01	machine tiers spent or unlikely (P(machine) 0.01): Claude
+5	ovl202	0x8008B380	func_8008B380	3540	p0603	1	885	13.487	5	0.004	0.387	0.608		closeness.tsv	0					no draft on file, P(machine) 0.00: Claude
+5	ovl202	0x800813D8	func_800813D8	4020	p0599	1	1005	15.474	4	0.011	0.498	0.491		closeness.tsv	0					no draft on file, P(machine) 0.01: Claude
+5	ovl202	0x8007EF94	func_8007EF94	6264	p0597	1	1566	16.367	4	0.003	0.506	0.491	0.522	sweep/sweep_report.tsv	1					giant (6264 B): Claude long; candidate for block-region splitting
+5	ovl201	0x80078D84	func_80078D84	7296	p0596	1	1824	15.984	5	0.007	0.406	0.587	0.478	sweep/sweep_report.tsv	1					giant (7296 B): Claude long; candidate for block-region splitting
+5	ovl201	0x80090E88	func_80090E88	11160	p0595	1	2790	13.238	5	0.010	0.396	0.594	0.277	sweep/sweep_report.tsv	1					giant (11160 B): Claude long; candidate for block-region splitting
+5	ovl201	0x80075898	func_80075898	12336	p0594	1	3084	12.895	5	0.011	0.488	0.501	0.388	sweep/sweep_report.tsv	1					giant (12336 B): Claude long; candidate for block-region splitting
+5	ovl201	0x8009C964	func_8009C964	25504	p0593	1	6376	15.271	5	0.004	0.348	0.648	0.184	sweep/sweep_report.tsv	1					giant (25504 B): Claude long; candidate for block-region splitting
