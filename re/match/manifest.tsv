@@ -1402,6 +1402,7 @@
 0x80068CB8	202	ovl202/func_80068CB8.c	40	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80068CE0	202	ovl202/func_8006306C.c	32	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80068D00	202	ovl202/func_80067EA4.c	24	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
+0x80068D18	202	ovl202/func_80068D18.c	3396	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_80090A28=0x80090A28 --defsym D_801987C8=0x801987C8 --defsym D_801A5F24=0x801A5F24 --defsym D_801A5F28=0x801A5F28 --defsym D_801A5F30=0x801A5F30 --defsym D_801A6544=0x801A6544 --defsym func_80068A44=0x80068A44 --defsym func_80068CB8=0x80068CB8 --defsym func_80068CE0=0x80068CE0 --defsym func_80068D00=0x80068D00 --defsym func_80069F04=0x80069F04 --defsym func_8006A7EC=0x8006A7EC --defsym func_8006B0BC=0x8006B0BC --defsym func_8006BC30=0x8006BC30
 0x80069A5C	202	ovl202/func_80069A5C.c	1192	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x80069F04	202	ovl202/func_80069F04.c	568	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_801A6A48=0x801A6A48 --defsym func_80069A5C=0x80069A5C
 0x8006A13C	202	ovl202/func_8006A13C.c	1712	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv
@@ -5549,4 +5550,3 @@
 0x801B87D4	fdat186	fdat004/func_801C6734.c	60	--base 0x801B80C8 --defsym func_80073674=0x800729F8 --defsym func_801C6720=0x801B86E4 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x801B8810	fdat186	fdat000/func_801C558C.c	8	--base 0x801B80C8 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
 0x801B81E8	fdat188	fdat000/func_801C558C.c	8	--base 0x801B80C8 --syms include/ac1/symbols.tsv --syms ac1_markup.tsv
-0x80068D18	202	ovl202/func_80068D18.c	3396	--syms include/ac1/symbols.tsv --syms ac1_markup.tsv --defsym D_80090A28=0x80090A28 --defsym D_801987C8=0x801987C8 --defsym D_801A5F24=0x801A5F24 --defsym D_801A5F28=0x801A5F28 --defsym D_801A5F30=0x801A5F30 --defsym D_801A6544=0x801A6544 --defsym func_80068A44=0x80068A44 --defsym func_80068CB8=0x80068CB8 --defsym func_80068CE0=0x80068CE0 --defsym func_80068D00=0x80068D00 --defsym func_80069F04=0x80069F04 --defsym func_8006A7EC=0x8006A7EC --defsym func_8006B0BC=0x8006B0BC --defsym func_8006BC30=0x8006BC30
