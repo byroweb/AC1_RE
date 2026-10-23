@@ -62,6 +62,12 @@ Everything here runs under **Git Bash** (MSYS2); PowerShell/cmd are not supporte
   terminal; writes `re/match/coverage.tsv` and `hint` rows in `re/match/hints.tsv`.
   See `tools/match/README.md` (Coverage tagging from play). Test:
   `python -m pytest tools/duckstation/test_coverage_tag.py`.
+- **`live_probe.py`**: checks the struct layouts the matching agents proposed against
+  the running game.  You do one thing (buy a part, swap the head, hold X), and it diffs or
+  samples the RAM regions in `probe_steps.json`.  It gives each expectation a verdict and
+  appends the results to `re/match/live_probe.tsv`.  It only reads RAM.  See
+  `tools/match/README.md` (Checking struct layouts live).  Test:
+  `python -m pytest tools/duckstation/test_live_probe.py`.
 - **`savestate.py`** — offline DUCCS reader (header, RAM by PS1 address, VRAM,
   thumbnail, frame counter); `docs/SAVESTATE_FORMAT.md`. Needs a zstd decoder:
   `pip install zstandard` or the `zstd` CLI (neither ships with Windows).

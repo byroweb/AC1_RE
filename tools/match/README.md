@@ -390,6 +390,51 @@ The MCP server has one session: starting the script ends any other client's sess
 (another Claude session's trap script, for example), so check nobody else is driving
 DuckStation first.
 
+## Checking struct layouts live (`tools/duckstation/live_probe.py`)
+
+The matching agents propose struct layouts from the code alone: credits at `0x80039CA4`,
+equipped part ids at `0x80031A58`, the pad state at `0x801A2550`, and so on.  This script
+checks those layouts against the running game, one action at a time.  It only reads
+RAM: no breakpoints, no pauses.
+
+```
+python tools/duckstation/live_probe.py --list            # the steps and what each one expects
+python tools/duckstation/live_probe.py --check           # MCP up? every region readable?
+python tools/duckstation/live_probe.py                   # all steps, in order (s skips one)
+python tools/duckstation/live_probe.py --step buy --step head
+python tools/duckstation/live_probe.py --show credits    # a region's fields as they are now
+```
+
+- **Diff steps** (`buy`, `head`, `colour`, `rename`, `mail`, `padmap`):
+  1. Go to the screen the step names and press Enter.
+  2. Do the one thing it asks (buy one part, swap the head, ...), then press Enter again.
+  3. Answer its question if it has one: the price paid, or the name you typed.
+
+  It prints every field that changed.  Bytes that no field covers are printed too
+  (`+0x2C`); those are new findings.
+- **Sample steps** (`idle`, `pad`):
+  1. Press Enter.
+  2. Switch to the game within 3 s.
+  3. Hold the button it names (or keep your hands off) while it reads the regions over
+     and over.
+
+  Fields that move are printed per phase, along with the button's bit.
+- Each expectation gets a verdict:
+  - `CONFIRMED`;
+  - `REFUTED`, together with what RAM did instead;
+  - `UNCLEAR`, when a question was skipped.
+
+  Verdicts, and every change no expectation covers (verdict `seen`), are appended to
+  `re/match/live_probe.tsv`. Its columns are `step field addr expect before after verdict note timestamp`.
+
+Steps, regions and expectations live in `tools/duckstation/probe_steps.json`.  Each
+region notes which agent proposed it (`src`).  Add a region or a step there; the script
+needs no change.  Only `CONFIRMED` layouts should move into `include/ac1`.  Test:
+`python -m pytest tools/duckstation/test_live_probe.py`.
+
+Like `coverage_tag.py`, it starts a new MCP session.  That ends any other client's
+session, so don't run the two at the same time.
+
 ## Codegen probes
 
 `probes/pNN_*.c` are A/B pairs of tiny functions, one per row of the "GCC 2.7.2
