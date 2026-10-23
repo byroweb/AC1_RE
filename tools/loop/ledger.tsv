@@ -5710,3 +5710,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-23T05:34:48Z	ovl204	0x8004C8EC	match	0	twin of ovl202 0x8004C854 (ovl202/func_8004C854.c)
 2026-10-23T05:34:48Z	ovl201	0x800B55E4	giveup	0	hand-written assembly (PsyQ libpress DecDCTvlcSize), not compiler output: cannot be matched from C
 2026-10-23T05:34:48Z	ovl201	0x800B5618	giveup	0	hand-written assembly (PsyQ libpress DecDCTvlc MDEC VLC decoder), not compiler output: cannot be matched from C
+2026-10-23T18:18:01Z	ovl202	0x80068D18	match	0	permuter (decomp-permuter, file draft)
