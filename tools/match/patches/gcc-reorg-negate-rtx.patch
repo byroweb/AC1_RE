@@ -1,0 +1,14 @@
+--- a/reorg.c
++++ b/reorg.c
+@@ -130,6 +130,11 @@
+ #include "obstack.h"
+ #include "insn-attr.h"
+ 
++/* expr.h is not included here, so negate_rtx would be implicitly declared int:
++   on a 64-bit host (MinGW-w64) that truncates the rtx it returns to 32 bits and
++   fill_slots_from_thread crashes once the heap is above 4 GB (ASLR).  */
++extern rtx negate_rtx ();
++
+ #ifdef DELAY_SLOTS
+ 
+ #define obstack_chunk_alloc xmalloc

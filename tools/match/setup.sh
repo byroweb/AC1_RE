@@ -165,13 +165,19 @@ else
   # the recipe (tools/match/patches/gcc-*.patch, the stack reserve) are stamped next
   # to it, so a cc1.exe built without the current ones is rebuilt by a plain setup.sh.
   CC1_STACK=67108864   # 64 MB: MinGW's default 2 MB overflows on long straight-line functions
-  CC1_BUILD_STAMP="stack-reserve $CC1_STACK"$'\n'
+  # gcc 2.7.2 calls some pointer-returning functions undeclared (implicit int: negate_rtx in
+  # reorg.c, malloc in toplev.c, ...), which truncates the pointer to 32 bits on this 64-bit
+  # host.  Without high-entropy ASLR / dynamic base, cc1's image and heap stay below 4 GB
+  # and the truncation is harmless; patches/gcc-reorg-negate-rtx.patch fixes the one that
+  # crashed.
+  CC1_LINK="-Wl,--disable-high-entropy-va -Wl,--disable-dynamicbase"
+  CC1_BUILD_STAMP="stack-reserve $CC1_STACK"$'\n'"link $CC1_LINK"$'\n'
   for p in "$HERE"/patches/gcc-*.patch; do
     [ -f "$p" ] && CC1_BUILD_STAMP="${CC1_BUILD_STAMP}patch $(basename "$p") sha256=$(sha256_of "$p")"$'\n'
   done
   if [ -f "$VENDOR/cc1.exe" ] && ! $FORCE \
      && [ "$(cat "$VENDOR/cc1.exe.build" 2>/dev/null)" != "$(printf '%s' "$CC1_BUILD_STAMP")" ]; then
-    say "vendor/cc1.exe was built without the current gcc patches / stack reserve: rebuilding it"
+    say "vendor/cc1.exe was built without the current gcc patches / link flags: rebuilding it"
     FORCE_CC1=true
   else
     FORCE_CC1=$FORCE
@@ -251,7 +257,7 @@ EOF
       || die "configure failed, see $BUILD/configure.log"
     say "make cc1 (a few minutes)"
     ( cd "$SRC" && "$MAKE" cc1 CC=gcc CFLAGS="-std=gnu89 -w -O1 -I$STUBS_W" \
-        LDFLAGS="$STUBS_W/compat.o -Wl,--stack,$CC1_STACK" > "$BUILD/make.log" 2>&1 ) \
+        LDFLAGS="$STUBS_W/compat.o -Wl,--stack,$CC1_STACK $CC1_LINK" > "$BUILD/make.log" 2>&1 ) \
       || die "make cc1 failed, see $BUILD/make.log"
     [ -f "$SRC/cc1.exe" ] || die "no cc1.exe after make, see $BUILD/make.log"
 
@@ -271,6 +277,9 @@ EOF
     "$PY" -c "print('extern int g(int);\nvoid f(void)\n{\n' + ''.join('    g(%d);\n' % i for i in range(4000)) + '}')" > "$BUILD/deep.c"
     ( cd "$SRC" && ./cc1.exe -quiet -O2 -G0 -msoft-float "$BUILD/deep.c" -o deep.s </dev/null ) \
       || die "cc1 self-test: crashed on a long function (stack reserve not applied?)"
+    # ours: no high-entropy ASLR (0x20) / dynamic base (0x40) in the PE DllCharacteristics
+    "$PY" -c "import struct,sys; b=open(sys.argv[1],'rb').read(); o=struct.unpack_from('<I',b,0x3C)[0]; sys.exit(struct.unpack_from('<H',b,o+24+70)[0] & 0x60)" "$SRC/cc1.exe" \
+      || die "cc1 self-test: still linked with ASLR (high-entropy VA / dynamic base)"
 
     cp "$SRC/cc1.exe" "$VENDOR/cc1.exe"
     rm -f "$VENDOR/cc1.exe.patches"   # this stamp's name before the stack reserve
