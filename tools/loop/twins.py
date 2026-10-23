@@ -54,6 +54,13 @@ replay: for every original manifest row of the scope (its source is in its
         refit.py skips, so clones do not flatten the calibration sample) and
         reason `twin of <unit> <vaddr> (<source>)`, so rank.py and
         `drive.py next` stop offering it; --no-ledger skips that.
+        A twin that does not match that way is retried once with a wide
+        derivation: every --defsym of the row and every table name the C file
+        uses (outside comments, both scopes) moves by the delta of the nearest
+        slot at A+off, off < WIDE_WINDOW, skipping slots that target another
+        such name's own address.  That reaches struct bases whose fields lie
+        far above them (g_world_structs + 0x18000) without taking a
+        neighbouring variable's delta.
         --scope (default all) limits the run to one scope; report rows of the
         other scope are kept as they are.
 """
@@ -81,6 +88,7 @@ SCOPES = ("missions", "programs")
 GROUP_PREFIX = {"missions": "g", "programs": "p"}
 DEFAULT_SYMS = ["ac1_markup.tsv"]      # match_fn.py's implicit table when a row passes no --syms
 SYM_WINDOW = 0x1000                    # a table name may be up to this far below a slot target
+WIDE_WINDOW = 0x20000                  # the same for the wide retry (struct base + field)
 MANIFEST = os.path.join(REPO, "re", "match", "manifest.tsv")
 REPORT = os.path.join(REPO, "re", "match", "twin_replay.tsv")
 MATCH_FN = os.path.join(REPO, "tools", "match", "match_fn.py")
@@ -406,6 +414,34 @@ def table_moves(tsyms, rep_slots, mem_slots, skip):
     return sorted((n, (A + d) & 0xFFFFFFFF) for n, (_off, A, d) in best.items() if d)
 
 
+def wide_moves(names, rep_slots, mem_slots):
+    """[(name, member address)] for the wide retry: each name at A moves by the delta of
+    the nearest slot at A+off (0 <= off < WIDE_WINDOW) that does not target another
+    name's own address; a name with no such slot keeps A."""
+    exact = {a for _n, a in names}
+    out = []
+    for n, A in names:
+        best = None
+        for (_i, k, a), (_j, _k, b) in zip(rep_slots, mem_slots):
+            off = a - A
+            if k == "HI" or off < 0 or off >= WIDE_WINDOW or (off and a in exact):
+                continue
+            if best is None or off < best[0]:
+                best = (off, b - a)
+        out.append((n, (A + best[1]) & 0xFFFFFFFF if best else A))
+    return out
+
+
+def code_names(path, tsyms):
+    """[(name, addr)] of the table names the C file uses outside comments."""
+    try:
+        text = open(path, encoding="utf-8", errors="replace").read()
+    except OSError:
+        return []
+    words = set(re.findall(r"[A-Za-z_]\w*", re.sub(r"/\*.*?\*/|//[^\n]*", " ", text, flags=re.S)))
+    return [(n, a) for a, n in tsyms if n in words]
+
+
 def is_original(r):
     """A manifest row whose source is its own unit's func_<ADDR>.c (not a replayed twin)."""
     try:
@@ -464,12 +500,12 @@ def cmd_replay(args):
         rep_words = func_words(unit, va, size)
         _m, rep_slots = mask_function(rep_words, va)
         defs, rodata, other = parse_extra(extra)
-        tsyms = []
-        if sc == "programs":
-            tf = row_tables(other)
-            if tf not in tables:
-                tables[tf] = table_syms(tf)
-            tsyms = tables[tf]
+        tf = row_tables(other)
+        if tf not in tables:
+            tables[tf] = table_syms(tf)
+        tsyms = tables[tf] if sc == "programs" else []
+        cpath = os.path.join(os.path.dirname(args.manifest), src)
+        used = code_names(cpath, tables[tf])
         for (munit, mva, msize) in g2m[g]:
             # one job per member: a group with several matched originals (clones matched
             # independently) replays only the first original onto each other member
@@ -509,8 +545,19 @@ def cmd_replay(args):
             ex += other
             job["extra"] = " ".join(ex)
             sel = ["--bin", mu.image_path] if sc == "missions" else list(mu.oracle_flags)
-            job["argv"] = (["0x%08X" % mva, os.path.join(os.path.dirname(args.manifest), src)]
-                           + sel + ex + ["--expect-size", str(msize), "-q"])
+            job["argv"] = (["0x%08X" % mva, cpath] + sel + ex + ["--expect-size", str(msize), "-q"])
+            names = dict(used)
+            names.update(defs)
+            wex = ["--base", "0x%08X" % mu.base] if sc == "missions" else []
+            if mrod is not None:
+                wex += ["--rodata", "0x%08X" % mrod]
+            for n, b in wide_moves(sorted(names.items()), rep_slots, mem_slots):
+                if b != names[n] or n in dict(defs):
+                    wex += ["--defsym", "%s=0x%08X" % (n, b)]
+            wex += other
+            if wex != ex:
+                job["extra_wide"] = " ".join(wex)
+                job["argv_wide"] = (["0x%08X" % mva, cpath] + sel + wex + ["--expect-size", str(msize), "-q"])
             if errs:
                 job["err"] = "ERROR: " + "; ".join(errs)
             jobs.append(job)
@@ -525,6 +572,10 @@ def cmd_replay(args):
     with cf.ThreadPoolExecutor(max_workers=args.jobs) as ex:
         for j, (rc, line) in zip(todo, ex.map(lambda j: run_oracle(j["argv"]), todo)):
             j["rc"], j["line"] = rc, line
+        retry = [j for j in todo if j.get("argv_wide") and not (j["rc"] == 0 and j["line"].startswith("MATCH"))]
+        for j, (rc, line) in zip(retry, ex.map(lambda j: run_oracle(j["argv_wide"]), retry)):
+            if rc == 0 and line.startswith("MATCH"):
+                j["rc"], j["line"], j["extra"] = rc, line, j["extra_wide"]
     for j in jobs:
         if j["err"]:
             j["rc"], j["line"] = 2, j["err"]

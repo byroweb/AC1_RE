@@ -92,6 +92,9 @@ facts from open questions:
 ### Project / build
 - [PRISTINE_PROJECT.md](PRISTINE_PROJECT.md) — the clean, unmodified Ghidra project
   for the pristine USA v1.1 build.
+- [MATCHING_LONG_TAIL.md](MATCHING_LONG_TAIL.md) — why the last functions are the
+  hardest to byte-match (size, loops, register pressure), what blocked the near
+  misses, and advice for the next matching project.
 - [CODE_ARCHAEOLOGY.md](CODE_ARCHAEOLOGY.md) — inferred TU map, style clusters A/B/C, mission-unit lineage, 202/203/204 divergences, matching priors (`tools/archaeology/`).
 
 ### Downstream consumers (not RE)
