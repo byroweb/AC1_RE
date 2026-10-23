@@ -228,6 +228,39 @@ def cmd_cc(args):
     return 0 if compile_candidate(meta, symtab(meta), source, args.out, show_errors=True) else 1
 
 
+ASM_KW = re.compile(r"\b(?:__asm__|__asm|asm)\b")
+ASM_OPERAND = re.compile(r'"[=+&]*[A-Za-z]+"\s*\(')
+
+
+def paren_asm_operands(text):
+    """`"r"(a + b)` -> `"r"((a + b))` in asm statements.  The permuter's C parser takes only a
+    unary expression as an asm operand ("before: +"), and the extra parentheses do not
+    change the code."""
+    import levers
+    out, pos = [], 0
+    for m in ASM_KW.finditer(text):
+        if m.start() < pos:
+            continue
+        op = text.find("(", m.end())
+        end = levers.close_paren(text, op) if op >= 0 else -1
+        if end < 0:
+            continue
+        stmt, k, buf = text[op:end], 0, []
+        for o in ASM_OPERAND.finditer(stmt):
+            a = o.end() - 1
+            b = levers.close_paren(stmt, a)
+            inner = stmt[a + 1:b - 1]
+            if b < 0 or (inner.startswith("(") and levers.close_paren(inner, 0) == len(inner)):
+                continue
+            buf += [stmt[k:a + 1], "(", inner, ")"]
+            k = b - 1
+        buf.append(stmt[k:])
+        out += [text[pos:op], "".join(buf)]
+        pos = end
+    out.append(text[pos:])
+    return "".join(out)
+
+
 def preprocess(tools, cpath, out_path, extra_inc=()):
     incs = []
     for d in [os.path.dirname(os.path.abspath(cpath))] + list(extra_inc) + [os.path.join(MATCH_DIR, "include")]:
@@ -235,6 +268,13 @@ def preprocess(tools, cpath, out_path, extra_inc=()):
     cpp = tools["cpp"]
     run([cpp] + (["-x", "c"] if "gcc" in os.path.basename(cpp) else []) + match_fn.CPP_FLAGS +
         incs + [os.path.abspath(cpath), "-o", out_path])
+    if os.path.basename(out_path) == "base.c":              # the permuter's input
+        with open(out_path, encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+        fixed = paren_asm_operands(text)
+        if fixed != text:
+            with open(out_path, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(fixed)
 
 
 def text_bytes(meta, syms, text, inc_dir):
