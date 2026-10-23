@@ -73,7 +73,7 @@ button.primary { background: var(--accent); color: var(--accent-ink); border-col
     <div class="note" id="scenenote"></div>
 
     <details open><summary>Pilot</summary>
-      <div class="btns"><button data-preset="ac">AC (collision 212)</button><button data-preset="human" class="primary">Pilot on foot</button></div>
+      <div class="btns"><button data-preset="ac">AC (collision 212)</button><button data-preset="human">Pilot on foot</button></div>
       <div id="k-pilot"></div>
       <div class="toggles"><label><input type="checkbox" id="showAC" checked> AC ghost for scale</label>
         <label><input type="checkbox" id="walk" checked> walk on floors</label></div>
@@ -148,7 +148,7 @@ const setSlider = (id, v) => { const el = document.getElementById(id); el.value 
 const m = v => (v / unitsPerM()).toFixed(1) + " m";
 const unitsPerM = () => 212 / (P.acMetres || 10);
 
-slider("k-pilot", "pilotH", "Pilot height", 20, 260, 1, 40, v => v + " u");
+slider("k-pilot", "pilotH", "Pilot height", 20, 260, 1, 38, v => v + " u");
 slider("k-pilot", "speed", "Walk speed", 50, 3000, 10, 400, v => v + " u/s");
 slider("k-cam", "camDist", "Distance", 0, 1500, 5, 520, v => v + " u");
 slider("k-cam", "camLift", "Height above", -150, 800, 5, 170, v => v + " u");
@@ -172,9 +172,20 @@ document.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => {
   if (b.dataset.preset === "ac") { setSlider("pilotH", 212); setSlider("speed", 1200); }
   else { setSlider("pilotH", Math.round(1.8 * unitsPerM())); setSlider("speed", 300); }
 });
-$("modern").onclick = () => { $("res").value = "0"; ["affine", "snap", "dither", "nearDrop"].forEach(i => $(i).checked = false); };
+$("modern").onclick = () => { $("res").value = "0"; ["affine", "snap", "dither", "nearDrop"].forEach(i => $(i).checked = false); syncPresets(); };
 $("tessAll").onchange = () => { needRebuild = true; };
-$("ps1").onclick = () => { $("res").value = "320"; ["affine", "snap", "dither"].forEach(i => $(i).checked = true); };
+$("ps1").onclick = () => { $("res").value = "320"; ["affine", "snap", "dither"].forEach(i => $(i).checked = true); syncPresets(); };
+// A preset button lights up only while the current settings are exactly that preset.
+function syncPresets() {
+  const on = (b, yes) => { b.classList.toggle("primary", yes); b.setAttribute("aria-pressed", yes ? "true" : "false"); };
+  const human = Math.round(1.8 * unitsPerM());
+  document.querySelectorAll("[data-preset]").forEach(b => on(b, b.dataset.preset === "ac" ? P.pilotH === 212 : P.pilotH === human));
+  on($("ps1"), $("res").value === "320" && ["affine", "snap", "dither"].every(chk));
+  on($("modern"), $("res").value === "0" && !["affine", "snap", "dither", "nearDrop"].some(chk));
+}
+["pilotH", "acMetres"].forEach(id => $(id).addEventListener("input", syncPresets));
+["res", "affine", "snap", "dither", "nearDrop"].forEach(id => $(id).addEventListener("change", syncPresets));
+syncPresets();
 $("theme").onclick = () => {
   const r = document.documentElement, dark = matchMedia("(prefers-color-scheme: dark)").matches;
   const cur = r.dataset.theme || (dark ? "dark" : "light");
