@@ -50,8 +50,10 @@ function with the model's tier and probabilities, what the machine tiers have
 already tried on it (sweep reports, permute reports, the agents' near misses in
 tools/loop/near_misses.tsv) and the tier to send it to next.
 
-Pure Python (no numpy): the learners are a CART tree and a small gradient-boosted
-ensemble over binned features, enough for a few thousand rows.
+Learners: scikit-learn's HistGradientBoostingClassifier / DecisionTreeClassifier
+when numpy and scikit-learn import (seconds), else a pure-Python CART tree and a
+small gradient-boosted ensemble over binned features (about a minute for eval);
+--backend python|sklearn forces one, so the two can be compared.
 """
 import argparse
 import collections
@@ -973,9 +975,76 @@ def matrix(rows, cols):
     return [[r[c] for c in cols] for r in rows]
 
 
+class SkModel:
+    """scikit-learn backend with the same fit / predict_proba / rules interface as GBM and Tree.
+    class_weight (a per-class list, set before fit) turns into class_weight="balanced"."""
+
+    def __init__(self, kind, K, args):
+        self.kind, self.K, self.args = kind, K, args
+        self.class_weight = None
+        self.model = None
+
+    def _balanced(self):
+        return self.class_weight is not None and any(abs(w - 1.0) > 1e-9 for w in self.class_weight)
+
+    def fit(self, X, y):
+        import numpy as np
+        from sklearn.ensemble import HistGradientBoostingClassifier
+        from sklearn.tree import DecisionTreeClassifier
+        cw = "balanced" if self._balanced() else None
+        a = self.args
+        if self.kind == "tree":
+            self.model = DecisionTreeClassifier(max_depth=a.tree_depth, min_samples_leaf=a.min_leaf,
+                                                class_weight=cw, random_state=0)
+        else:
+            self.model = HistGradientBoostingClassifier(max_iter=a.rounds, max_depth=a.depth, learning_rate=a.lr,
+                                                        min_samples_leaf=a.min_leaf, class_weight=cw,
+                                                        random_state=0)
+        self.model.fit(np.asarray(X, dtype=float), np.asarray(y))
+        return self
+
+    def predict_proba(self, X):
+        import numpy as np
+        p = self.model.predict_proba(np.asarray(X, dtype=float))
+        # classes absent from the training rows get probability 0
+        out = []
+        cls = list(self.model.classes_)
+        for row in p:
+            full = [0.0] * self.K
+            for c, v in zip(cls, row):
+                full[int(c)] = float(v)
+            out.append(full)
+        return out
+
+    def rules(self, names):
+        from sklearn.tree import export_text
+        return export_text(self.model, feature_names=list(names), max_depth=self.args.tree_depth).splitlines()
+
+
+def sklearn_available():
+    try:
+        import numpy  # noqa: F401
+        import sklearn  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def backend_name(args):
+    """'python' or 'sklearn' for --backend auto|python|sklearn (auto = sklearn when it imports)."""
+    b = getattr(args, "backend", "auto")
+    if b == "auto":
+        return "sklearn" if sklearn_available() else "python"
+    if b == "sklearn" and not sklearn_available():
+        sys.exit("router.py: --backend sklearn but numpy / scikit-learn do not import")
+    return b
+
+
 def make_model(kind, K, names, task, args):
     if kind == "rules":
         return Rules(K, names, task.startswith("draft"))
+    if backend_name(args) == "sklearn":
+        return SkModel(kind, K, args)
     cw = None
     if args.balance:
         cw = [1.0] * K
@@ -1140,6 +1209,7 @@ def main_eval(args):
     tiers = collections.Counter(r["tier"] for r in rows)
     print("labelled functions with features: %d (%s); twins excluded" % (
         len(rows), ", ".join("tier %s %d" % kv for kv in sorted(tiers.items()))))
+    print("learner backend: %s" % backend_description(args))
     if args.claude_since:
         old = sum(1 for r in rows if r["tier"] not in ("1", "2", "3") and r["when"] < args.claude_since)
         print("static tasks leave out %d Claude rows matched before %s (no sweep existed yet, so tier 1 was "
@@ -1239,9 +1309,19 @@ def recommend(r, p_static, p_draft, perm, near, args):
     return (4 if (p_short or 0) >= 0.5 else 5), "machine tiers spent or unlikely (P(machine) %.2f): Claude" % p_m
 
 
+def backend_description(args):
+    b = backend_name(args)
+    if b == "sklearn":
+        import sklearn
+        return "scikit-learn %s (HistGradientBoostingClassifier / DecisionTreeClassifier)" % sklearn.__version__
+    return "pure Python (binned CART / boosted ensemble)%s" % (
+        "" if args.backend == "python" else "; numpy + scikit-learn not importable")
+
+
 def main_rank(args):
     rows = load_dataset(args.labels, args.features)
     opens = open_rows(args.features, args.ledger)
+    print("learner backend: %s" % backend_description(args))
     # newer sweep reports override the closeness columns of the open rows
     reports = load_reports(list(args.report or []))
     for r in opens:
@@ -1319,6 +1399,9 @@ def main(argv=None):
         p.add_argument("--claude-since", default="2026-10-20",
                        help="static tasks: leave out Claude rows matched before this date, when no sweep had "
                             "been run on them (tier 1 untried); '' keeps them")
+        p.add_argument("--backend", choices=["auto", "python", "sklearn"], default="auto",
+                       help="learners: scikit-learn (HistGradientBoosting / DecisionTree) when it imports, "
+                            "else the pure-Python ones (default auto)")
 
     p = sub.add_parser("labels", help="derive the closing tier per ledger row")
     common(p)

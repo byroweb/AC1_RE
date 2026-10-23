@@ -194,6 +194,19 @@ permuter 7 CPU min per body (`QUICK` 120 s + `DEEP` 300 s); one usage window =
 about one hour = one window) costs 579 model-minutes, so the window knob is within
 about 20 %.
 
+**Backends.** The numbers in this section are from the pure-Python learners
+(`--backend python`, about 70 s for `eval`) and stay the reference.  When numpy and
+scikit-learn import, `--backend auto` (the default) runs scikit-learn's
+`HistGradientBoostingClassifier` and `DecisionTreeClassifier` with the same
+rounds / depth / learning rate / leaf size instead (about 4 s for `eval`); the
+output names the backend that ran.  On the same splits the 5-fold boosted
+accuracies are 0.848 / 0.687 / 0.947 / 0.698 (static2 / static3 / draft2 / draft3)
+against 0.851 / 0.691 / 0.946 / 0.705 pure Python, and the tree 0.803 / 0.640 /
+0.939 / 0.636 against 0.809 / 0.637 / 0.929 / 0.641: within a point everywhere, the
+same conclusions.  The committed `queue-router.tsv` is the pure-Python snapshot;
+`rank --backend sklearn` moves 21 of the 226 open functions between Claude short and
+Claude long (the weakly predictable split) and none between a machine tier and Claude.
+
 **Task static2: before any CPU is spent, will a machine tier (sweep, levers,
 permuter, golem) close it, or does it need Claude?**  1896 functions / 1885
 bodies, 629 machine vs 1267 Claude, static features only.

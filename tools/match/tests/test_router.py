@@ -6,7 +6,10 @@
 - group_split never puts two members of one twin group on both sides, in the
   holdout and in k-fold mode, and stratifies by size bucket;
 - the boosted model and the CART tree learn a planted rule on synthetic rows;
-- the committed labels / features TSVs load, agree on keys, and exclude twins.
+- the committed labels / features TSVs load, agree on keys, and exclude twins;
+- backend selection: auto falls back to the pure-Python learners when numpy /
+  scikit-learn do not import (simulated), --backend sklearn then exits; the sklearn
+  learners (when installed) learn the planted rule and print their rules.
 """
 import os
 import random
@@ -89,6 +92,46 @@ def test_rules_baseline_fits_thresholds():
     m = router.Rules(2, names, use_draft=False).fit(X, y)
     assert m.I == 40
     assert router.decide(m.predict_proba([[30, 0, 1, 0, -1], [90, 0, 5, 0, -1]]), 2, 0.5) == [0, 1]
+
+
+class _Args:
+    backend = "auto"
+    balance = False
+    rounds, depth, lr, tree_depth, min_leaf = 10, 2, 0.1, 3, 5
+
+
+def test_backend_falls_back_without_sklearn(monkeypatch):
+    """With numpy / scikit-learn unimportable, auto picks the pure-Python learners."""
+    monkeypatch.setitem(sys.modules, "sklearn", None)
+    monkeypatch.setitem(sys.modules, "numpy", None)
+    a = _Args()
+    assert router.backend_name(a) == "python"
+    assert isinstance(router.make_model("gbm", 2, ["a"], "static2", a), router.GBM)
+    assert isinstance(router.make_model("tree", 2, ["a"], "static2", a), router.Tree)
+    a.backend = "sklearn"
+    with pytest.raises(SystemExit):
+        router.backend_name(a)
+
+
+def test_backend_python_forced():
+    a = _Args()
+    a.backend = "python"
+    assert router.backend_name(a) == "python"
+    assert isinstance(router.make_model("gbm", 3, ["a"], "draft3", a), router.GBM)
+    assert isinstance(router.make_model("rules", 3, ["instructions"], "draft3", a), router.Rules)
+
+
+@pytest.mark.skipif(not router.sklearn_available(), reason="numpy / scikit-learn not installed")
+def test_sklearn_backend_learns_the_rule():
+    X, y = _planted(600)
+    Xt, yt = _planted(300, seed=9)
+    a = _Args()
+    a.backend, a.rounds, a.depth = "sklearn", 40, 3
+    m = router.make_model("gbm", 3, ["a", "b", "c"], "static3", a).fit(X, y)
+    pred = router.decide(m.predict_proba(Xt), 3, 0.5)
+    assert sum(1 for p, q in zip(yt, pred) if p == q) / len(yt) > 0.9
+    t = router.make_model("tree", 3, ["a", "b", "c"], "static3", a).fit(X, y)
+    assert any("a <=" in line for line in t.rules(["a", "b", "c"]))
 
 
 @pytest.mark.skipif(not os.path.isfile(router.LABELS) or not os.path.isfile(router.FEATURES),

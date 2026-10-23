@@ -1136,8 +1136,10 @@ Tiers: 1 sweep / levers, 2 decomp-permuter, 3 golem, 4 Claude short (<= 2 tries)
 5 Claude long, 6 open.  Labels come from the ledger `reason`, the `matched func_<ADDR> N`
 commit subjects and the `.attempts` sidecars; batch-promoted rows (`matched N ... functions`,
 wave 2/3) have an unknown try count and say so.  Twin rows are never trained on and a twin
-group never straddles train and test.  Pure Python (a binned CART tree and a small boosted
-ensemble).  Results and the wiring recommendation: docs/ROUTER_SCOPE.md.  Short version:
+group never straddles train and test.  Learners: scikit-learn when it imports (`eval` in
+seconds), else pure Python (a binned CART tree and a small boosted ensemble, about a
+minute); `--backend python|sklearn` forces one and the numbers agree within a point.
+Results and the wiring recommendation: docs/ROUTER_SCOPE.md.  Short version:
 "a machine tier closes it" vs "Claude" is learnable (0.85 accuracy before any CPU is spent,
 0.95 once a draft's closeness is known); short vs long Claude is not (0.6-0.7); the open set
 is a residue the machine tiers have already failed on, so routing alone saves no windows
