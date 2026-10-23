@@ -193,6 +193,36 @@ code. In order of how often we hit it:
    can never be matched from C. Decide up front how to count them, and apply the
    rule to whole libraries rather than to whichever functions are left open.
 
+## 6. Postscript: the permuter pass
+
+After this report was first written, the permuter (`tools/loop/permute.py run`:
+deterministic levers, then decomp-permuter, 20 minutes per body) was run on the
+wave-3 agents' best C for 76 of the near misses. It matched 11 of them. By how far
+each body started from a match:
+
+| Words off at the start | Tried | Matched |
+|---|---:|---:|
+| 5 or fewer | 12 | 4 |
+| 6-20 | 24 | 6 |
+| 21-60 | 16 | 1 |
+| more than 60 | 22 | 0 |
+
+Two lessons:
+
+- **"Close" is not the same as "almost done".** Eight bodies that started 2-5 words
+  off did not match in 20 minutes of random rewrites. A register-allocation tie is
+  a narrow target, and most rewrites move the function away from it, not toward
+  it. Bodies more than 60 words off never matched: there, the C is still
+  structurally different, and that needs a person (or an agent), not search.
+- **Search tools are heavy, so budget the machine.** Each permuter job holds a
+  copy of the compiler pipeline and a growing candidate cache. 20 parallel jobs on
+  2-3 KB bodies exhausted Windows system resources, and a rerun at 12 jobs ran
+  out of memory and took the PC down with it. On a desktop someone is also using,
+  run 2-4 jobs and let it take longer.
+
+The 31 largest near misses (1.5-3.4 KB) were not reached and are left for a
+slower pass.
+
 ## Method
 
 Features were computed from the retail instruction words of every non-PsyQ
