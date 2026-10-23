@@ -5710,4 +5710,15 @@ when	unit	vaddr	status	attempts	reason
 2026-10-23T05:34:48Z	ovl204	0x8004C8EC	match	0	twin of ovl202 0x8004C854 (ovl202/func_8004C854.c)
 2026-10-23T05:34:48Z	ovl201	0x800B55E4	giveup	0	hand-written assembly (PsyQ libpress DecDCTvlcSize), not compiler output: cannot be matched from C
 2026-10-23T05:34:48Z	ovl201	0x800B5618	giveup	0	hand-written assembly (PsyQ libpress DecDCTvlc MDEC VLC decoder), not compiler output: cannot be matched from C
+2026-10-23T05:51:06Z	exe	0x80014C40	match	0	permuter (decomp-permuter, file draft)
+2026-10-23T05:58:39Z	fdat074	0x801C6FA0	match	0	permuter (decomp-permuter, file draft)
+2026-10-23T05:59:48Z	fdat036	0x801C5F98	match	0	permuter (decomp-permuter, file draft)
+2026-10-23T06:03:56Z	ovl201	0x80055950	match	0	permuter (decomp-permuter, file draft)
+2026-10-23T06:13:16Z	exe	0x80014F78	match	0	permuter (decomp-permuter, file draft)
+2026-10-23T06:13:52Z	fdat080	0x801C52FC	match	0	permuter (decomp-permuter, file draft)
+2026-10-23T06:20:05Z	fdat016	0x801C62CC	match	0	permuter (decomp-permuter after levers swap M2C_FIELD(e, u16 *, 0x10 / e->pos.z = ws->org[2];, file draft)
+2026-10-23T06:21:00Z	ovl201	0x80088AC4	match	0	permuter (decomp-permuter, file draft)
+2026-10-23T06:21:59Z	ovl202	0x8007863C	match	0	permuter (decomp-permuter, file draft)
+2026-10-23T06:31:30Z	ovl204	0x8004F964	match	0	permuter (levers swap D_80039D34 = &D_80040FA0 / D_80040FA0[0].aux = D_80, file draft)
+2026-10-23T06:43:05Z	ovl201	0x800531B8	match	0	permuter (decomp-permuter, file draft)
 2026-10-23T18:18:01Z	ovl202	0x80068D18	match	0	permuter (decomp-permuter, file draft)

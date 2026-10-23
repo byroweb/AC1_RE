@@ -1,0 +1,98 @@
+# agent near misses still open (wave 3, 2026-10-22): words = differing words of the agent's best C (-1 = size mismatch, see size_delta = ours - retail bytes); the C files live outside the repo
+unit	vaddr	size	words	size_delta	source	note
+exe	0x80012E5C	884	58	0	wave-3 w3p01	(1-word shift) first hit cross-jump into flat tail; --defsym func_80012A78=0x80012A78
+exe	0x80013430	224	8	0	wave-3 w3p01	quotient regalloc
+exe	0x80014C40	240	5	0	wave-3 w3p01	tail regalloc (-1 hoist)
+exe	0x80014F78	468	3	0	wave-3 w3p01	disc regalloc v0 vs a0
+exe	0x8001606C	168	24	0	wave-3 w3p01	p regalloc (sched1 hoists p=0)
+fdat004	0x801C5EA8	1540	19	0	wave-3 w3m01	(--rodata 0x801C4C9C --no-rodata-align-fix)
+fdat010	0x801C5FD4	1240	8	0	wave-3 w3m01	loop reg choice a0/a2 vs v1/v0 (case 6)
+fdat016	0x801C62CC	1040	36	0	wave-3 w3m01	tail q reload (lh+move a1 vs lhu)
+fdat016	0x801C66DC	520	122	0	wave-3 w3m01	dead abs of uninit s2,s3 deleted by our cc1
+fdat016	0x801C804C	1456	19	0	wave-3 w3m01	regs
+fdat034	0x801C6B44	280	37	0	wave-3 w3m02	regalloc only (retail: r2=s1,i=s2,maxp=s3,max=s4,min=s5,minp=s6,a2=s7); for-loop frame ok; decl order permutations do not move it
+fdat036	0x801C5F98	532	11	0	wave-3 w3m02	only the two divide-by-sq regs (retail copies SquareRoot0 result v0->a0; ours divides by v0)
+fdat040	0x801C5DE4	120	18	0	wave-3 w3m02	arg-eval order: retail hoists addiu a1,o+16 into bne delay slot + early lw def; twin of 801C5D80
+fdat040	0x801C5E5C	452	33	0	wave-3 w3m02	control flow + types matched; left: x(v>=4?4:v) reg (retail a0 vs ours v1) and call-arg scheduling (retail does a1 idx before cnt=0 and abs late)
+fdat040	0x801C67F8	556	13	0	wave-3 w3m02	loop shape + if-chain ok (for(;;) with return); left: n/ptr callee-saved reg swap (retail n=s0, ptr=s1) and n-- placement
+fdat056	0x801C7544	600	47	0	wave-3 w3m02	call part identical; final weighted score sum: retail loads D_801CD7EC before D_801CD7E8 and uses a0/a1/v1 differently
+fdat056	0x801C78B0	660	2	0	wave-3 w3m02	only li a0,1 vs li s1,6 order before the third loop (shared s/i vars across loops, separate best/bd, best=0 inside the if)
+fdat060	0x801C6528	352	9	0	wave-3 w3m02	only reg swap v0/a0 in the signed %0x1000 sequence (retail keeps v in v0, temp in v1, var_a0 in a0)
+fdat072	0x801C4D28	448	12	0	wave-3 w3m02	same signed %0x1000 reg problem as fdat060 801C6528 (temp t in a0 vs retail v1, u in v1 vs a0); everything else matches (case order, 2 temps q/p, v2=func_800143B8 retval)
+fdat072	0x801C539C	368	2	0	wave-3 w3m02	case 5 state toggle: retail arm1 jumps (li v0,6 in slot) to shared sb block, ours duplicates sb into delay slot; varargs trick (e, s32 msg, ...) with ap=&msg gives exact prologue
+fdat074	0x801C6FA0	496	3	0	wave-3 w3m02	only loop-preheader order (retail lui/addiu s2=&D_80198C14 before addiu s3,sp,48; ours reverse); uses V8 s16 struct, += rnd-0x100 forms
+fdat080	0x801C52FC	716	18	0	wave-3 w3m02	and fdat034 0x801C532C NEAR 18/179 (twin, same C with constants): everything but SquareRoot0(sum,sum) reg (retail keeps sum in a1 and divides by a1=copy of v0; ours sum in a0, divides by v0)
+fdat094	0x801C5D48	304	6	0	wave-3 w3m02	only preheader constant order (t0,a3 before a0); best C saved (raw u16 pointer form)
+fdat096	0x801C5DE8	628	30	0	wave-3 w3m02	structure+frame match (s16 v local gives frame 104); regs: sum in a0 vs v1, lim copy a1 vs a0, lhu reload of vel, lo-compare operand regs
+fdat096	0x801C605C	480	5	0	wave-3 w3m02	only n (f0f) kept in v1 vs retail t2 (3 operand regs + 1 load); varargs (o,msg,a2,...) with tk=((Tick**)&a2)[1] read late; struct for sp20 locals
+ovl201	0x8004E2BC	1496	7	0	wave-3 w3p01	v0/v1 swap front byte vs flags at +0x80 (from w2c01) --rodata 0x8004ADFC
+ovl201	0x800531B8	1576	2	0	wave-3 w3p01	slot reload a0 vs v0 at +0x344 (from w2c01)
+ovl201	0x80055950	492	16	0	wave-3 w3p01	o/r s-reg swap
+ovl201	0x8005F260	572	18	0	wave-3 w3p01	(from w2c02, rechecked only)
+ovl201	0x8005F5E8	2944	24	0	wave-3 w3p01	--rodata 0x8004B420 (from w2c02, rechecked only)
+ovl201	0x80066898	220	33	0	wave-3 w3p01	la-base for D_801EF6C8.idx + regalloc
+ovl201	0x80066F90	3424	68	0	wave-3 w3p01	words, 16 B short (from w2c03, rechecked only)
+ovl201	0x800744A8	1392	4	0	wave-3 w3p01	load order of D_80031A58[3]/[11] vs s3/s5 (from w2c04; 2520 load-order permutations tried, none)
+ovl201	0x8007AD64	2796	2	0	wave-3 w3p01	dead volatile read reg v1 vs v0 (from w2c05; needs --defsym D_80031A5F_v=0x80031A5F)
+ovl201	0x80084AE4	1816	7	0	wave-3 w3p01	const 1 CSEd into a (retail separate v0=1, a in a2) (from w2c06)
+ovl201	0x80086FFC	672	102	0	wave-3 w3p02	(prev): retail keeps i counting down with 64-i recomputed per block (s2=64 var), no giv reduction; ours reduces idx
+ovl201	0x80088AC4	800	14	0	wave-3 w3p02	(was 21): tbl row struct fixed index; left s/d t0<->t1 regalloc
+ovl201	0x8009C6DC	588	37	0	wave-3 w3p02	(prev); ovl201 0x800B5EEC NEAR 36 (prev, arm2 e=0/sh++ moved before call -> cross-jumped call); ovl201 0x800B55E4/0x800B5618 SKIP libpress hand asm
+ovl201	0x800A75A0	380	8	0	wave-3 w3p02	arg/kill sched + lw order
+ovl201	0x800A7A68	2808	548	0	wave-3 w3p02	words but only ~13 real (1-insn shift): needs --defsym D_80039CA0_a=0x80039CA0 --defsym D_800411F8_a=0x800411F8; left: sched of stores [10..13,62,63] (CA2 load hoist), move s0,v0 after malloc vs rect la, andi on first D_8017F498[4]!=0xFF test
+ovl201	0x800A86D0	552	36	0	wave-3 w3p02	(was 63): rx.a as struct field; left: src/dst s0/s1 swap, first wait test needs 764(s4) base (retail hoists &D_80049F90), write() a2 sched
+ovl201	0x800ADB40	224	2	0	wave-3 w3p02	s2/s3 regalloc src vs arg
+ovl201	0x800B0CF0	1916	12	0	wave-3 w3p02	(was 18): switch(r){case 7;case 3;default} fixed layout; left: dup-check loops i/key[i] a2<->a3 regalloc
+ovl201	0x800B3748	1844	70	0	wave-3 w3p02	(prev): x/y/z accumulators regalloc (retail t0/a1/t2), end x copy a2->t0
+ovl201	0x800B4398	1524	35	0	wave-3 w3p02	: only 2 real diffs: memset loop q/n v1<->a0 regalloc, and retail keeps wclose block (close; j fail) separate where ours cross-jumps it into the write-fail block (16 B short)
+ovl202	0x8004D044	308	17	0	wave-3 w3p02	pure regalloc: retail i=a3 vol=a1 -1=a2 prio=t0; ours i=a1 prio=a2 vol=a3
+ovl202	0x8004E22C	1888	280	0	wave-3 w3p02	size ok; loop giv: retail keeps i*6 offset (addu a0,t1,t2 per use), ours strength-reduces rk+i*6 to a pointer; also t-reg naming. alt vv/base3.c (340, rk reg closer)
+ovl202	0x8004EDAC	456	6	0	wave-3 w3p02	(key<<8)+(D_801A5DC0+0x1000) operand/assoc order sll vs addiu
+ovl202	0x80050468	3296	58	0	wave-3 w3p03	s-reg assignment; permuter candidate
+ovl202	0x80051150	668	14	0	wave-3 w3p03	regalloc c a0/t0; permuter candidate
+ovl202	0x80052440	528	5	0	wave-3 w3p03	branch sense + delay slot; permuter candidate
+ovl202	0x8005277C	628	86	0	wave-3 w3p03	regalloc in measure loop; permuter candidate
+ovl202	0x80052B28	1128	91	0	wave-3 w3p03	glyph branch scheduling; permuter candidate
+ovl202	0x8005C710	500	147	0	wave-3 w3p03	scratch const CSE (args vs store addrs)
+ovl202	0x8005C904	1336	88	0	wave-3 w3p03	s-reg swaps; permuter candidate
+ovl202	0x8005CE3C	692	151	0	wave-3 w3p03	regalloc; permuter candidate
+ovl202	0x8005D19C	1488	31	0	wave-3 w3p03	s16 ret; 0x80 branch regs; permuter candidate
+ovl202	0x8005EB50	1000	114	0	wave-3 w3p03	regalloc + tail cross-jump; permuter candidate
+ovl202	0x8006E380	820	60	0	wave-3 w3p05	control flow right; register numbering in all three loops (w/idx/score/i swap)
+ovl202	0x8006EB10	892	42	0	wave-3 w3p05	common-block regalloc: retail keeps ny..ymax in v0,v1,a0..a2 so the 5 stores precede the call args; ours t-regs
+ovl202	0x80071E14	780	9	0	wave-3 w3p05	first copy loop regalloc (n in a0 vs a2, -1 const reg), src = p+0x6800 temp reg
+ovl202	0x8007790C	620	2	0	wave-3 w3p05	slti/addiu read r(a1) instead of k(a0) after r=k copy
+ovl202	0x8007863C	820	18	0	wave-3 w3p05	constant 1 hoisted into s1 by loop.c in 2nd wait loop (retail hoists only 0x100)
+ovl202	0x8007ACC0	1184	102	0	wave-3 w3p05	player auto-follow; regalloc/scheduling in the vel clamp blocks (retail: u16 max local with andi)
+ovl202	0x8007BA98	1428	284	0	wave-3 w3p05	draft (control flow complete, size 1508 vs 1428): base-vs-direct addressing of g_target_list[0] fields and store ordering (alias rule)
+ovl202	0x8007C7C8	1452	14	0	wave-3 w3p05	only the post-volley store block (fire_timer/slot/fire_flags/flash/cooldown) scheduled differently
+ovl202	0x8008080C	1268	20	0	wave-3 w3p06	real (292 incl. 4-byte shift): b0a read direct vs 10(t2), d reg v1 vs v0; per-case store+timer=5 cross-jump layout; return; vs return 0 lever tried
+ovl202	0x800826FC	1224	68	0	wave-3 w3p06	frame ok (lo s16, sm s16); hi reg a0/a1 swap, min block lh vs lhu+sext, n.vy store placement
+ovl202	0x80085AFC	924	63	0	wave-3 w3p06	tail: retail reloads d->vz in z arm and lays out z-arm+common div first (cross-jump), size 936/924
+ovl202	0x800873F8	928	213	0	wave-3 w3p06	structure right (common block inside AC branch, gotos); regalloc o=s8 & 6-giv world loop (retail likely d[i] indexing + dbra); frame 2216 vs 2232
+ovl202	0x8008AD80	196	6	0	wave-3 w3p06	loop-top addiu a0,sp,24 scheduled first (delay slot filled from target) in retail
+ovl202	0x8008C178	388	40	0	wave-3 w3p06	loop giv base t+12 vs retail t+16; heap stores scheduled into load slot
+ovl202	0x8008D3B0	696	60	0	wave-3 w3p06	rot ptr pseudo gets a3 not a2 (call arg rebuilt), tail a2 arg placement; size 704/696
+ovl203	0x8004F3C4	284	7	0	wave-3 w3p07	la-before-guard + i-- in beqz delay slot
+ovl203	0x8005C2F4	1336	102	0	wave-3 w3p07	s-reg coloring + model store via base reg; alt c2f4_v2.c
+ovl203	0x8005CB8C	1488	150	0	wave-3 w3p07	s-reg coloring; --defsym T3=0x800AD1A4
+ovl203	0x80060B3C	2044	6	0	wave-3 w3p07	words (+12 bytes) loop-2 scheduling; --defsym g_ws_cur_set=0x801A4BF0
+ovl203	0x80064268	2800	2	0	wave-3 w3p08	words: scratch base lui s4 retail in prologue (ours fills beqz slot), so jal 8006676C slot differs (+4 bytes); rest identical
+ovl203	0x8006735C	2900	169	0	wave-3 w3p08	unaligned (all reg names): scratch ptr s and packet ptr pk swapped (retail s=s4 pk=s5); priority pk 0.99 > s 0.89 in ours; structure/size/sched match
+ovl203	0x800681B8	3396	362	0	wave-3 w3p08	diff words (size 3400/3396): global regalloc order differs (retail s=s1 b=s2 a=s3 c=s4 pk=s5 mask=s7 verts=s8; ours pk=s1 s=s2 a=s5 verts=s7 mask=s8) + one sched slot; control flow/frame match
+ovl203	0x80071D84	1756	40	0	wave-3 w3p08	regalloc: retail i=s5 &hit=s6 ax=s7 extra=s8 ay spilled; ours ax=s5 i=s6 ay=s7 &hit=s8 extra spilled (structure+frame match)
+ovl203	0x800797D0	1220	4	0	wave-3 w3p08	-word-shift(size 1216/1220) sink value lands in a1 not a0 in the target-sink arm; rest matches
+ovl203	0x8007AB4C	1840	3	0	wave-3 w3p08	loop3 counter k in v1, retail a2 (rest matches)
+ovl203	0x8007CB90	2932	30	0	wave-3 w3p09	words off (400 raw, size 2896/2932, --rodata 0x8004B1D8) AC control; frame/spills match; left: spark loop p/i s0-s1 swap, rand aim fold r-(vx+16), o->kind block (retail rematerializes o->kind from memory, P in a0)
+ovl203	0x8007D704	792	2	0	wave-3 w3p09	side AC init; only li a1,-1 vs pointer-init order before the copy loop
+ovl203	0x8007F414	1316	326	0	wave-3 w3p09	(structure+size ok 1320/1316) jump-leg action picker; retail keeps o in a2 / act in v0, ours o in a0 -> every word shifts
+ovl203	0x80081358	1236	75	0	wave-3 w3p09	foot-probe tilt; frame +8 (extra stack temp in min/clamp block), max/min regalloc
+ovl203	0x800860A4	928	115	0	wave-3 w3p09	debris spawner; structure+spills right, s-reg rename (o s8 vs s7, p s7 vs s6, count s3) and frame 2216 vs 2232 (retail has 2 more spill slots)
+ovl204	0x8004F964	1236	20	0	wave-3 w3p09	VS mode init; only the D_80039D2A load is hoisted to the top by sched1 (retail: after D_80039D34 store, in v0)
+ovl204	0x80050E60	1364	42	0	wave-3 w3p09	VS HUD (weapons/AP/radar); left: constant reassociation (D_800AD958+96/126/150, radar box) and loop i/n s0/s1 swap
+ovl204	0x8005BAA8	1336	237	0	wave-3 w3p09	cell queue/draw; structure right, regalloc (s6/s7 swap, s5=&D_801ADCD8 base) + lod*28 address form differ
+ovl204	0x8005BFE0	692	90	0	wave-3 w3p09	visible-cell gather; loop.c does not hoist &D_801D4488 (retail s6) and vis/drawn base choice differs
+ovl204	0x8005DAFC	1000	54	0	wave-3 w3p10	regalloc: roll>>9 sched, s3/s4 (&pos vs sky) and s7/s8 (th vs &rgb) swaps
+ovl204	0x8005F7AC	852	6	0	wave-3 w3p10	negu s1 scheduled late + rgb store order in FT4 arm (regalloc/sched)
+ovl204	0x80061AD4	2052	2	0	wave-3 w3p10	blocks: sched of D_80039D18=&rec[i] store / ws load around the view lwl/swl copy (4 B short); rest identical. Needs alias trick: buf->cur store as *(u8**)((u8*)buf+8)
+ovl204	0x80066EBC	628	50	0	wave-3 w3p10	loop: v1/a0 swap (clip ptr vs otz temp) and sy<0 |=4 block placed after the 31 barrier
