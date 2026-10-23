@@ -401,10 +401,12 @@ def sext16(v):
     return v - 0x10000 if v & 0x8000 else v
 
 
-def resolve_relocs(elf, fn_start, fn_size, text_vaddr, symtab, rodata_vaddr, data_vaddr):
+def resolve_relocs(elf, fn_start, fn_size, text_vaddr, symtab, rodata_vaddr, data_vaddr, targets=None):
     """Apply every relocation inside the function whose target address is known
     (--defsym / symbol TSV / own .text / --rodata / --data); mask the immediate
-    field of the rest.  Returns (fn_bytes, {fn_offset: mask}, resolved, unresolved)."""
+    field of the rest.  Returns (fn_bytes, {fn_offset: mask}, resolved, unresolved).
+    A list passed as `targets` gets one (type, symbol, effective address or None)
+    tuple per relocation, for the full-link readiness audit."""
     text = bytearray(elf.section_bytes(".text"))
     rels = sorted(elf.rels(".text"), key=lambda r: r["offset"])
     masks, resolved, unresolved = {}, [], []
@@ -431,6 +433,10 @@ def resolve_relocs(elf, fn_start, fn_size, text_vaddr, symtab, rodata_vaddr, dat
     def put(off, w):
         struct.pack_into("<I", text, off, w & 0xffffffff)
 
+    def note(kind, label, addr):
+        if targets is not None:
+            targets.append((kind, label, None if addr is None else addr & 0xffffffff))
+
     for i, r in enumerate(rels):
         off = r["offset"]
         in_fn = fn_start <= off < fn_start + fn_size
@@ -443,33 +449,41 @@ def resolve_relocs(elf, fn_start, fn_size, text_vaddr, symtab, rodata_vaddr, dat
             if val is None:
                 masks[off] = 0x03ffffff
                 unresolved.append(label)
+                note("26", label, None)
             else:
                 a = (word(off) & 0x03ffffff) << 2
                 put(off, (word(off) & 0xfc000000) | (((val + a) >> 2) & 0x03ffffff))
                 resolved.append(label)
+                note("26", label, val + a)
         elif t == R_MIPS_HI16:
             lo = next((q for q in rels[i + 1:] if q["type"] == R_MIPS_LO16 and q["sym"] == r["sym"]), None)
             if val is None or lo is None:
                 masks[off] = 0xffff
                 unresolved.append(label if lo else label + " (unpaired %hi)")
+                note("hi16", label, None)
             else:
                 ahl = ((word(off) & 0xffff) << 16) + sext16(word(lo["offset"]) & 0xffff)
                 v = (val + ahl) & 0xffffffff
                 put(off, (word(off) & 0xffff0000) | (((v + 0x8000) >> 16) & 0xffff))
                 resolved.append(label)
+                note("hi16", label, v)
         elif t == R_MIPS_LO16:
             if val is None:
                 masks[off] = 0xffff
                 unresolved.append(label)
+                note("lo16", label, None)
             else:
                 v = (val + sext16(word(off) & 0xffff)) & 0xffffffff
                 put(off, (word(off) & 0xffff0000) | (v & 0xffff))
                 resolved.append(label)
+                note("lo16", label, v)
         elif t == R_MIPS_32:
             if val is None:
                 masks[off] = 0xffffffff
                 unresolved.append(label)
+                note("32", label, None)
             else:
+                note("32", label, val + word(off))
                 put(off, (val + word(off)) & 0xffffffff)
                 resolved.append(label)
         else:
@@ -619,8 +633,12 @@ def main(argv=None):
         if fn_size == 0 or fn_size % 4:
             raise ToolError("function %s has size %d" % (fn_name, fn_size))
         text_vaddr = args.vaddr - fn_start
+        targets = []
         ours, masks, resolved, unresolved = resolve_relocs(elf, fn_start, fn_size, text_vaddr,
-                                                           load_symbols(args), args.rodata, args.data)
+                                                           load_symbols(args), args.rodata, args.data,
+                                                           targets)
+        facts["relocs"] = [{"type": k, "sym": n, "addr": None if a is None else "0x%08x" % a}
+                           for k, n, a in targets]
         facts["masked_words"] = len(masks)
         facts["unresolved_symbols"] = sorted(set(unresolved))
         facts["resolved_symbols"] = sorted(set(resolved))
