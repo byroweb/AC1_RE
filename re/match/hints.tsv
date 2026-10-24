@@ -2443,3 +2443,15 @@ fdat044	0x801C6A00	name	mission_end_script	2026-10-24T17:28:22Z
 fdat044	0x801C6A00	hint	radio-line state machine D_801CCA40 on timer D_8019F52C, debris spray x6, spawns 0x801C67A0	2026-10-24T17:28:22Z
 ovl202	0x80077B78	name	weapon_fire_dispatch	2026-10-24T17:28:22Z
 ovl202	0x80077B78	hint	variadic (e,kind,dmg,b4,wpn,n,...) fires n shots by wpn class bits 0x7000 / subtype 0xF00	2026-10-24T17:28:22Z
+ovl202	0x80050468	name	hud_draw_mission	2026-10-24T17:28:26Z
+ovl202	0x80050468	hint	draws target gauge, AP, timer, radar, weapon list, compass gated by g_mission_end_seq	2026-10-24T17:28:26Z
+ovl202	0x8008C178	name	vm_load_threads	2026-10-24T17:28:26Z
+ovl202	0x8008C178	hint	README names 0x8008C194 vm_load_threads (stores vm_set); points threads at code, allocates work areas	2026-10-24T17:28:26Z
+ovl202	0x8005C710	name	clip_box_visible	2026-10-24T17:28:26Z
+ovl202	0x8005C710	hint	box corners to scratchpad, AND of outcodes from func_8005C630; 1 if possibly on screen	2026-10-24T17:28:26Z
+ovl202	0x8005CE3C	name	sect_draw_visible	2026-10-24T17:28:26Z
+ovl202	0x8005CE3C	hint	current section + near, unoccluded linked sections; marks drawn/seen bitmaps; flushes two draw lists	2026-10-24T17:28:26Z
+ovl204	0x8005BFE0	name	cell_draw_visible	2026-10-24T17:28:27Z
+ovl204	0x8005BFE0	hint	ovl204 twin of ovl202 0x8005CE3C (portal cell visibility + draw lists)	2026-10-24T17:28:27Z
+ovl203	0x800797D0	name	vs_hover_follow_step	2026-10-24T17:28:27Z
+ovl203	0x800797D0	hint	versus hover mover step with lock target (lead, steer, clamp) or sink/climb	2026-10-24T17:28:27Z
