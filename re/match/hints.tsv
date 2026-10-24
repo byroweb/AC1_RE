@@ -2421,3 +2421,25 @@ ovl203	0x8007D704	name	btl_side_ac_reinit	2026-10-24T17:28:19Z
 ovl203	0x8007D704	hint	resets side flags, recomputes part stats (h208..h216), refills ammo ent[].b=ent[].a, spawns body	2026-10-24T17:28:19Z
 ovl201	0x800744A8	name	ui_asm_screen_create	2026-10-24T17:28:19Z
 ovl201	0x800744A8	hint	ctor of the assembly-screen UiObj (sets ctor/update/destroy, w.src/owner/mode, snapshots D_80031A58 config bytes and rebuilds when changed)	2026-10-24T17:28:19Z
+ovl202	0x80084314	name	proj_missile_think	2026-10-24T17:28:21Z
+ovl202	0x80084314	hint	homing missile: def table 0x8009019C stride 0x28, turns ang toward target, 4-way split at t_fire+6 for type 3	2026-10-24T17:28:21Z
+fdat008	0x801CB03C	name	ai_move_state_machine	2026-10-24T17:28:21Z
+fdat008	0x801CB03C	hint	fn_move sibling of fdat000 0x801C981C (same event/mode switches)	2026-10-24T17:28:21Z
+fdat024	0x801C6498	name	trap_proximity_blast	2026-10-24T17:28:21Z
+fdat024	0x801C6498	hint	timer at ctl+8 reloads from +0x28; player in box lo/hi<<8 -> blast type 7, fx by +0x29	2026-10-24T17:28:21Z
+fdat022	0x801C60B0	name	carrier_drop_think	2026-10-24T17:28:21Z
+fdat022	0x801C60B0	hint	lowers carried units (D_8019FAB8 slots) to floor, then flies keyframes 0x801C7538 (14 B), spawns next unit at event 1	2026-10-24T17:28:21Z
+fdat044	0x801C67A0	name	mission_end_sequence	2026-10-24T17:28:21Z
+fdat044	0x801C67A0	hint	frame counter D_801CCA48: <110 spray fx, then sink, fade 158/159+, master volume ramp 200+	2026-10-24T17:28:21Z
+ovl201	0x8006E148	name	emblem_image_scroll	2026-10-24T17:28:21Z
+ovl201	0x8006E148	hint	(hint) 64x64 4bpp image scroll U/D/L/R	2026-10-24T17:28:21Z
+fdat004	0x801C5534	name	mission_turret10_event_handler	2026-10-24T17:28:21Z
+fdat004	0x801C5534	hint	(hint) varargs msg handler, distance bands, rand dispatch table 0x801C4C60	2026-10-24T17:28:21Z
+exe	0x80012A78	name	math_line_circle_intersect	2026-10-24T17:28:21Z
+exe	0x80012A78	hint	line (x0,y0)+(dx,dy) vs circle r2, solves on long axis, SquareRoot0, returns 1/2 axis or 0	2026-10-24T17:28:22Z
+fdat074	0x801C4D50	name	ai_fly_mover_step	2026-10-24T17:28:22Z
+fdat074	0x801C4D50	hint	sibling of fdat000 0x801C5CB8 hover mover; functions.tsv row 0x801C4D48 starts 8 bytes early	2026-10-24T17:28:22Z
+fdat044	0x801C6A00	name	mission_end_script	2026-10-24T17:28:22Z
+fdat044	0x801C6A00	hint	radio-line state machine D_801CCA40 on timer D_8019F52C, debris spray x6, spawns 0x801C67A0	2026-10-24T17:28:22Z
+ovl202	0x80077B78	name	weapon_fire_dispatch	2026-10-24T17:28:22Z
+ovl202	0x80077B78	hint	variadic (e,kind,dmg,b4,wpn,n,...) fires n shots by wpn class bits 0x7000 / subtype 0xF00	2026-10-24T17:28:22Z
