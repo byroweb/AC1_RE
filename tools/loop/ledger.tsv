@@ -5724,3 +5724,4 @@ when	unit	vaddr	status	attempts	reason
 2026-10-23T18:18:01Z	ovl202	0x80068D18	match	0	permuter (decomp-permuter, file draft)
 2026-10-24T02:19:53Z	ovl203	0x8007AB4C	match	1	
 2026-10-24T06:05:08Z	ovl204	0x8007A7FC	match	0	twin of ovl203 0x8007AB4C (ovl203/func_8007AB4C.c)
+2026-10-24T07:30:56Z	ovl202	0x8007C7C8	match	1	
