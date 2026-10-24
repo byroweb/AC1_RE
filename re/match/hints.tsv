@@ -2563,3 +2563,11 @@ ovl202	0x8008D3B0	name	view_overlay_setup_draw	2026-10-24T23:25:40Z
 ovl202	0x8008D3B0	hint	draft header: scratchpad light/scaled matrices for a player-centred overlay view, then draws it	2026-10-24T23:25:40Z
 ovl202	0x80085AFC	name	coll_sweep_mover	2026-10-24T23:25:40Z
 ovl202	0x80085AFC	hint	draft header: sweeps a moving point against world collision (one or two segment probes), stores hit point and frames-to-impact, returns hit world struct	2026-10-24T23:25:40Z
+ovl203	0x8007CB90	name	ac_player_ctrl_update	2026-10-24T23:46:03Z
+ovl203	0x8007CB90	hint	per-frame AC control for side D_80039D18: wreck sparks, energy recharge, weapon switch/fire, dash (twin of ovl202 0x8007DF98)	2026-10-24T23:46:03Z
+ovl204	0x8007C83C	name	ac_player_ctrl_update	2026-10-24T23:46:03Z
+ovl204	0x8007C83C	hint	ovl204 twin of ovl203 0x8007CB90	2026-10-24T23:46:03Z
+ovl202	0x8007C02C	name	ac_player_multilock_aim	2026-10-24T23:46:03Z
+ovl202	0x8007C02C	hint	player multi-lock missile aim on D_80040FA0 slots; twin of ovl203 0x8007AB4C (versus)	2026-10-24T23:46:03Z
+ovl202	0x8007ACC0	name	ac_player_hover_step	2026-10-24T23:46:03Z
+ovl202	0x8007ACC0	hint	player hover mover step with lock target; twin of ovl203 0x800797D0 (versus)	2026-10-24T23:46:03Z
