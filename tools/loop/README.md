@@ -28,6 +28,7 @@ memgate.py    (library + CLI)    memory gate: quote a job's commit, admit it onl
 doctor.py     -> stdout, re/match  one front door: classify a near miss from one compile, run the tool that fits
 regtie.py     -> re/match          register-tie tier: read cc1's allocation dumps, steer the deciding tie
 structdiff.py -> stdout, re/match  where the shape differs, in C lines (object line table), + structural moves
+nearport.py   -> stdout, OUTDIR    near-copies twins.py misses: families of open bodies, auto-port from a matched copy
 m2cfix.py     (library)          sweep.py's draft fix-ups: stack locals, frame union, casts, cc1-driven repair
 golem.py      -> re/match/<unit>/func_<ADDR>.c
                                  local-LLM tier: compile fixes and near-miss edits from a model in LM Studio
@@ -1239,6 +1240,33 @@ Findings over the 41 structural near misses (2026-10-23, bodies with each):
 14 had no named finding. The moves matched none outright in a first pass, but took
 ovl203 0x8007CB90 from 418 to 118 words and ovl202 0x800873F8 from 217 to 187;
 `doctor.py fix` hands such improvements on to regtie.
+
+## nearport.py (near-copies)
+
+```
+nearport.py scan [--min 0.97]                   # families of open functions with the same shape
+nearport.py port OUTDIR [UNIT:VADDR ...]        # port matched C onto open copies, one compile at a time
+```
+
+twins.py groups functions whose bodies are identical once relocation slots are masked.
+Copies that differ in a few immediates fall into separate groups, so a match is never
+replayed onto them. The usual difference is one struct field offset: the renderer reads
+its globals block at +0xB20 in ovl202 and at +0x670 in ovl203/204. Two agents can then
+work the same body twice, and an agent may port a twin by hand when a tool could do it.
+
+- **scan** links open functions whose opcode/funct sequences are at least `--min` alike
+  (or that share a twin group) into families, and names the closest matched function for
+  each. A family is one unit of work: give it to one agent, then port or replay the rest.
+- **port** takes each open function whose shape is identical to a matched one. It copies
+  that C, renames the function, and moves its symbols by the relocation slots (the
+  twins.py wide-window rule). It then tries single-literal edits that turn the matched
+  copy's differing immediates into the open copy's, such as a pad size before a field.
+  Register differences and sources that need `--rodata` are reported, not tried. A clean
+  MATCH stays in OUTDIR, with a promote item `unit:0xVADDR@NAME=ADDR...`.
+
+First run (2026-10-24, 113 open): 6 of 12 shape-identical copies ported with no agent
+time, worth 6 functions. Of the 101 open functions, 23 families had a split twin group or a
+matched near-copy.
 
 ## golem.py (local LLM tier)
 
