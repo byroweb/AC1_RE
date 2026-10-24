@@ -2417,3 +2417,7 @@ ovl201	0x8006E148	name	emblem_image_scroll	2026-10-24T17:15:50Z
 ovl201	0x8006E148	hint	(hint) 64x64 4bpp image scroll U/D/L/R	2026-10-24T17:15:51Z
 fdat004	0x801C5534	name	mission_turret10_event_handler	2026-10-24T17:15:51Z
 fdat004	0x801C5534	hint	(hint) varargs msg handler, distance bands, rand dispatch table 0x801C4C60	2026-10-24T17:15:51Z
+ovl203	0x8007D704	name	btl_side_ac_reinit	2026-10-24T17:28:19Z
+ovl203	0x8007D704	hint	resets side flags, recomputes part stats (h208..h216), refills ammo ent[].b=ent[].a, spawns body	2026-10-24T17:28:19Z
+ovl201	0x800744A8	name	ui_asm_screen_create	2026-10-24T17:28:19Z
+ovl201	0x800744A8	hint	ctor of the assembly-screen UiObj (sets ctor/update/destroy, w.src/owner/mode, snapshots D_80031A58 config bytes and rebuilds when changed)	2026-10-24T17:28:19Z
