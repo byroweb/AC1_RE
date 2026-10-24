@@ -2403,3 +2403,17 @@ ovl202	0x80051150	name	ui_draw_text_ft4	2026-10-24T17:15:44Z
 ovl202	0x80051150	hint	draws ASCII string as POLY_FT4 glyphs, backslash-digit colour escape, returns pixel width	2026-10-24T17:15:44Z
 ovl203	0x8007D704	name	btl_side_ac_reinit	2026-10-24T17:15:48Z
 ovl203	0x8007D704	hint	resets side flags, recomputes part stats (h208..h216), refills ammo ent[].b=ent[].a, spawns body	2026-10-24T17:15:48Z
+ovl202	0x80084314	name	proj_missile_think	2026-10-24T17:15:50Z
+ovl202	0x80084314	hint	homing missile: def table 0x8009019C stride 0x28, turns ang toward target, 4-way split at t_fire+6 for type 3	2026-10-24T17:15:50Z
+fdat008	0x801CB03C	name	ai_move_state_machine	2026-10-24T17:15:50Z
+fdat008	0x801CB03C	hint	fn_move sibling of fdat000 0x801C981C (same event/mode switches)	2026-10-24T17:15:50Z
+fdat024	0x801C6498	name	trap_proximity_blast	2026-10-24T17:15:50Z
+fdat024	0x801C6498	hint	timer at ctl+8 reloads from +0x28; player in box lo/hi<<8 -> blast type 7, fx by +0x29	2026-10-24T17:15:50Z
+fdat022	0x801C60B0	name	carrier_drop_think	2026-10-24T17:15:50Z
+fdat022	0x801C60B0	hint	lowers carried units (D_8019FAB8 slots) to floor, then flies keyframes 0x801C7538 (14 B), spawns next unit at event 1	2026-10-24T17:15:50Z
+fdat044	0x801C67A0	name	mission_end_sequence	2026-10-24T17:15:50Z
+fdat044	0x801C67A0	hint	frame counter D_801CCA48: <110 spray fx, then sink, fade 158/159+, master volume ramp 200+	2026-10-24T17:15:50Z
+ovl201	0x8006E148	name	emblem_image_scroll	2026-10-24T17:15:50Z
+ovl201	0x8006E148	hint	(hint) 64x64 4bpp image scroll U/D/L/R	2026-10-24T17:15:51Z
+fdat004	0x801C5534	name	mission_turret10_event_handler	2026-10-24T17:15:51Z
+fdat004	0x801C5534	hint	(hint) varargs msg handler, distance bands, rand dispatch table 0x801C4C60	2026-10-24T17:15:51Z
