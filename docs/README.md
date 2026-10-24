@@ -92,6 +92,8 @@ facts from open questions:
 ### Project / build
 - [PRISTINE_PROJECT.md](PRISTINE_PROJECT.md) — the clean, unmodified Ghidra project
   for the pristine USA v1.1 build.
+- [MATCHING_GUIDE.md](MATCHING_GUIDE.md) — start here for the matching decompilation:
+  glossary, which tool when, and the rules (CPU, usage budget, verify, PR checks).
 - [MATCHING_LONG_TAIL.md](MATCHING_LONG_TAIL.md) — why the last functions are the
   hardest to byte-match (size, loops, register pressure), what blocked the near
   misses, and advice for the next matching project.
