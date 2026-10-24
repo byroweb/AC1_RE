@@ -2455,3 +2455,15 @@ ovl204	0x8005BFE0	name	cell_draw_visible	2026-10-24T17:28:27Z
 ovl204	0x8005BFE0	hint	ovl204 twin of ovl202 0x8005CE3C (portal cell visibility + draw lists)	2026-10-24T17:28:27Z
 ovl203	0x800797D0	name	vs_hover_follow_step	2026-10-24T17:28:27Z
 ovl203	0x800797D0	hint	versus hover mover step with lock target (lead, steer, clamp) or sink/climb	2026-10-24T17:28:27Z
+ovl201	0x800B5EEC	name	sf_divdf	2026-10-24T17:28:31Z
+ovl201	0x800B5EEC	hint	soft-float double divide: restoring division one quotient bit per step, overflow -> err(34)	2026-10-24T17:28:31Z
+ovl201	0x800B4398	name	mc_save_emblem_file	2026-10-24T17:28:31Z
+ovl201	0x800B4398	hint	writes "Z" emblem save (header, icon, 7 VRAM emblem slots) to card port, reads back and verifies checksum	2026-10-24T17:28:31Z
+ovl203	0x800860A4	name	debris_spawn_from_object	2026-10-24T17:28:31Z
+ovl203	0x800860A4	hint	spawns tumbling debris pieces from an AC / projectile-pool object / world cell model parts (80085D1C per part)	2026-10-24T17:28:31Z
+fdat014	0x801C64E8	name	debris_spawn_from_object	2026-10-24T17:28:31Z
+fdat014	0x801C64E8	hint	fdat014 twin of ovl203 0x800860A4	2026-10-24T17:28:31Z
+ovl203	0x80071D84	name	cell_carrier_move_push	2026-10-24T17:28:31Z
+ovl203	0x80071D84	hint	moves a lift-like world cell by its carrier, pushes touching ACs (800736CC), refuses when push too short	2026-10-24T17:28:31Z
+ovl202	0x8005FB90	name	beam_draw_textured	2026-10-24T17:28:31Z
+ovl202	0x8005FB90	hint	textured beam quad a->b of width w; near beams go to the recursive splitter 8005F5DC	2026-10-24T17:28:31Z
