@@ -2553,3 +2553,13 @@ ovl203	0x800655BC	name	render_draw_part_depthcue_b	2026-10-24T23:23:52Z
 ovl203	0x800655BC	hint	port of ovl202 0x8006611C	2026-10-24T23:23:52Z
 ovl204	0x800653F8	name	render_draw_part_depthcue_b	2026-10-24T23:23:52Z
 ovl204	0x800653F8	hint	port of ovl202 0x8006611C	2026-10-24T23:23:52Z
+ovl201	0x8007AD64	name	asm_screen_draw_warnings	2026-10-24T23:25:39Z
+ovl201	0x8007AD64	hint	draft header: assembly screen draws warning icons (part missing, credits < 0, arm/leg overload) and part names	2026-10-24T23:25:39Z
+ovl201	0x800A4A74	name	movie_upload_slice	2026-10-24T23:25:39Z
+ovl201	0x800A4A74	hint	draft header: movie player per-frame upload, swaps decode buffers, LoadImage of the slice	2026-10-24T23:25:39Z
+ovl201	0x8009C6DC	name	pilot_new_reset_name	2026-10-24T23:25:40Z
+ovl201	0x8009C6DC	hint	draft header: new pilot bumps counter, copies name template, appends three random SJIS digits, plays movie 6	2026-10-24T23:25:40Z
+ovl202	0x8008D3B0	name	view_overlay_setup_draw	2026-10-24T23:25:40Z
+ovl202	0x8008D3B0	hint	draft header: scratchpad light/scaled matrices for a player-centred overlay view, then draws it	2026-10-24T23:25:40Z
+ovl202	0x80085AFC	name	coll_sweep_mover	2026-10-24T23:25:40Z
+ovl202	0x80085AFC	hint	draft header: sweeps a moving point against world collision (one or two segment probes), stores hit point and frames-to-impact, returns hit world struct	2026-10-24T23:25:40Z
