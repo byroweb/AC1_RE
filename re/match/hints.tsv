@@ -2481,3 +2481,23 @@ ovl202	0x80052B28	name	msgwin_type_text	2026-10-24T17:28:35Z
 ovl202	0x80052B28	hint	types up to n chars of a message window: control codes C/W/F/K/T/H, 6px and 12px glyph POLY_FT4 in OT 13	2026-10-24T17:28:35Z
 ovl202	0x8005C904	name	world_sect_draw_or_queue	2026-10-24T17:28:36Z
 ovl202	0x8005C904	hint	culls a world section box, draws near sections lit at once or queues 24-byte entries on near/far lists	2026-10-24T17:28:36Z
+ovl201	0x800A86D0	name	link_exchange_words	2026-10-24T17:40:41Z
+ovl201	0x800A86D0	hint	read/write 8-byte R..C packets on fd pair at 0x8004A284, GetRCnt timeout 7866, copies u16 pairs src->dst	2026-10-24T17:40:41Z
+ovl204	0x80050E60	name	hud_draw_vs_status	2026-10-24T17:40:41Z
+ovl204	0x80050E60	hint	draws weapon list+ammo, AP counter, radar frame and blips for side D_80039D18	2026-10-24T17:40:41Z
+ovl204	0x8005DAFC	name	bg_draw_sky_horizon	2026-10-24T17:40:41Z
+ovl204	0x8005DAFC	hint	sky gradient, scrolling horizon strip (ratan2 of camera), ground colour; flags 1/2/4/8	2026-10-24T17:40:41Z
+ovl202	0x80060800	name	sprite3d_draw_billboard	2026-10-24T17:40:41Z
+ovl202	0x80060800	hint	textured POLY_FT4/FT3 of half size s at pos rotated by rot, scratchpad matrices, OT +100	2026-10-24T17:40:41Z
+exe	0x80012E5C	name	col_segment_vs_cylinder	2026-10-24T17:40:41Z
+exe	0x80012E5C	hint	AABB reject on x/z/y, slope/flat hit on cylinder radius r height h at c, calls func_80012A78 circle test, writes hit to out	2026-10-24T17:40:41Z
+ovl202	0x80052B28	name	msgwin_type_text	2026-10-24T17:40:41Z
+ovl202	0x80052B28	hint	types up to n chars of a message window: control codes C/W/F/K/T/H, 6px and 12px glyph POLY_FT4 in OT 13	2026-10-24T17:40:41Z
+ovl202	0x8005C904	name	world_sect_draw_or_queue	2026-10-24T17:40:41Z
+ovl202	0x8005C904	hint	culls a world section box, draws near sections lit at once or queues 24-byte entries on near/far lists	2026-10-24T17:40:41Z
+ovl203	0x8005C2F4	name	world_sect_draw_or_queue	2026-10-24T17:40:41Z
+ovl203	0x8005C2F4	hint	same body as ovl202 0x8005C904 with ovl203 RenderGlobals at 0x8019D968	2026-10-24T17:40:41Z
+ovl203	0x8006735C	name	model_draw_near_clip	2026-10-24T17:40:42Z
+ovl203	0x8006735C	hint	draws model record idx near camera: clip-code reject, near-plane polys queued to 4 subdivider lists, rest FT3/FT4/GT3/GT4	2026-10-24T17:40:42Z
+ovl202	0x8007BA98	name	lockon_update	2026-10-24T17:40:42Z
+ovl202	0x8007BA98	hint	picks best target via func_80073F38/func_80015440, tracks lock progress/timer in target slot 0 at 0x80041024, beeps, writes aim angles to e+0x76..0x7A	2026-10-24T17:40:42Z
