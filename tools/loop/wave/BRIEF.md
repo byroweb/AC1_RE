@@ -58,6 +58,30 @@ Other agents work in the same checkout at the same time.
 
 ## Levers that matched in the tail (newest first)
 
+- **Port by delta.** When a twin replay misses only in lui/addiu immediates, subtract the
+  two values. A constant delta points to one struct field whose offset differs between
+  overlays (DrawWork.vtx sits at +0xB24 in ovl202 and +0x674 in ovl203/204). Fix that pad.
+- **Bitfields.** A bitfield struct (`u32 lo:17, f:10, hi:5`) reproduces a mask/shift/or
+  sequence and the scheduling around it.
+- **Volatile casts.** A volatile cast on a load after a branch
+  (`*(volatile u16 *)&p->f`) stops reorg filling the branch's delay slot from below. A
+  volatile global does the same for a call's delay slot.
+- **Switch defaults.** `case 0: case 1:` written before `default:` makes the default arm
+  re-read a field instead of reusing a CSE'd value.
+- **goto loops.** A loop built from `goto` is invisible to loop.c, so address loads and
+  field re-reads stay inside it.
+- **Dead pointer step.** `p -= 8;` after a counted loop keeps a field address in a saved
+  register, so nearby fields are reached as reg+offset, not absolute.
+- **do/while(0) as a barrier.** It is also a scheduling barrier: loads after it stay
+  after the stores before it.
+- **Per-arm stores.** Volatile stores written in each case before a `goto common` let
+  cross-jumping merge them.
+- **Frame padding.** A spare `u8 spare[1]` local fixes the frame of a leaf function.
+- **Callee prototypes.** Check the callee's matched prototype before trusting m2c's
+  argument count; m2c drops and invents arguments.
+- **Last resort, and flag it in your report:** `register T v asm("$N")` pins and empty
+  `__asm__` statements (an opaque pointer, a memory clobber). They byte-match, but they
+  are not how the original source was written.
 - `do { stmt; } while (0)` around a statement raises its variables' allocation
   priority, because loop depth weights their refs. This flipped three register ties.
 - A delay slot filled from the branch *target* means retail predicted the branch taken.
