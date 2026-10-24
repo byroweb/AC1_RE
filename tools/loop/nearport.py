@@ -150,8 +150,9 @@ def imm_pairs(rw, mw):
 
 
 def literal_edits(text, rep_imm, mem_imm):
-    """Single-literal edits L -> L + (mem - rep) for literals at or a little below rep_imm
-    (a field offset, or the pad before the field). Comments are left alone."""
+    """Edits L -> L + (mem - rep) for literals at or a little below rep_imm (a field offset,
+    or the pad before the field): each as a list of spans, every use of one value first,
+    then single uses. Comments are left alone."""
     d = twins.s16(mem_imm) - twins.s16(rep_imm)
     a = twins.s16(rep_imm)
     code = re.sub(r"/\*.*?\*/|//[^\n]*", lambda m: " " * len(m.group(0)), text, flags=re.S)
@@ -163,8 +164,13 @@ def literal_edits(text, rep_imm, mem_imm):
             if base - 0x200 <= v <= base and v + d >= 0:
                 nv = v + d if base == a else v - d
                 ns = ("0x%X" % nv) if s[:2].lower() == "0x" else str(nv)
-                out.append((m.start(1), m.end(1), ns))
-    return out
+                out.append([(m.start(1), m.end(1), ns)])
+    # the same value written in several places (a screen limit tested twice) moves together
+    byval = defaultdict(list)
+    for e in out:
+        byval[(int(code[e[0][0]:e[0][1]], 0) if code[e[0][0]:e[0][1]][:2].lower() == "0x"
+               else int(code[e[0][0]:e[0][1]]), e[0][2])].append(e[0])
+    return [spans for spans in byval.values() if len(spans) > 1] + out
 
 
 def try_c(out, unit, va, text, defsyms):
@@ -231,7 +237,7 @@ def port_one(out, unit, va, sz, src_key, rows, tsyms_cache, max_edits):
     for c in cands:
         combos = [k + [e] for k in combos for e in c][:max_edits]
     for k in combos:
-        edits = sorted({(s, e, ns) for s, e, ns in k}, reverse=True)
+        edits = sorted({sp for spans in k for sp in spans}, reverse=True)
         if any(edits[i][0] < edits[i + 1][1] for i in range(len(edits) - 1)):
             continue
         t = text
