@@ -19,7 +19,8 @@ into the checkout).
   python tools/loop/wave/wave.py items SCRATCH
       Promote items for an agent's clean MATCH rows not yet in re/match.
   python tools/loop/wave/wave.py promote SCRATCH LABEL [ITEM ...]
-      Copy each matched C file into re/match, re-run drive.py try there (manifest and
+      Copy each matched C file into re/match (replacing a NOT MATCHED stub), re-run
+      drive.py try there (manifest and
       ledger rows), add the agent's names.tsv as hints, and commit. ITEMs default to
       `items SCRATCH`. Then run twins.py replay and drive.py verify.
 """
@@ -194,6 +195,14 @@ def cmd_status(args):
 # ---------------------------------------------------------------------------
 # items / promote
 # ---------------------------------------------------------------------------
+def matched_file(path):
+    """True when re/match already holds a real match here (a NOT MATCHED stub does not count)."""
+    if not os.path.exists(path):
+        return False
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        return "NOT MATCHED" not in fh.read(4096)
+
+
 def items(scratch):
     """unit:0xVADDR[@rodata=VA][@noalign][@NAME=ADDR...] for clean MATCH rows whose C file is in
     SCRATCH and not yet in re/match. Flags come from the drive.py `commit:` line the agent
@@ -206,7 +215,7 @@ def items(scratch):
         v = "%08X" % int(p[1], 16)
         if (p[0], v) in seen or not os.path.exists(os.path.join(scratch, p[0], "func_%s.c" % v)):
             continue
-        if os.path.exists(os.path.join(REPO, "re", "match", p[0], "func_%s.c" % v)):
+        if matched_file(os.path.join(REPO, "re", "match", p[0], "func_%s.c" % v)):
             continue
         seen.add((p[0], v))
         m = re.search(r"--rodata (0x[0-9A-Fa-f]+)", ln)
@@ -231,9 +240,10 @@ def cmd_promote(args):
         v = v.upper().replace("0X", "")
         src = os.path.join(scratch, unit, "func_%s.c" % v)
         dst = os.path.join(REPO, "re", "match", unit, "func_%s.c" % v)
-        if os.path.exists(dst):
+        if matched_file(dst):
             print("SKIP %s 0x%s  already in re/match" % (unit, v))
             continue
+        stub = open(dst, encoding="utf-8").read() if os.path.exists(dst) else None   # a NOT MATCHED stub
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.copyfile(src, dst)
         extra = []
@@ -251,7 +261,11 @@ def cmd_promote(args):
             ok.append((unit, v))
             print("OK   %s 0x%s  %s" % (unit, v, res[0] if res else ""))
             continue
-        os.remove(dst)                                 # leave re/match as it was
+        if stub is None:                               # leave re/match as it was
+            os.remove(dst)
+        else:
+            with open(dst, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(stub)
         side = dst[:-2] + ".attempts"
         if os.path.exists(side):
             os.remove(side)
