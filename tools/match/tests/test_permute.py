@@ -231,3 +231,12 @@ def test_oracle_on_a_matched_file(tools):
     c = {"unit": "ovl201", "vaddr": "0x80086FD4"}
     out = permute.oracle(c, cpath, {"size": 40, "rodata": None})
     assert len(out) == 3 and out[0] is True, out
+
+
+def test_paren_asm_operands():
+    # the permuter's C parser takes only a unary expression as an asm operand
+    t = ('void f(){ __asm__ volatile ("lwc2 $0, 0(%0)" : : "r"(s->nbase + pk[6])); '
+         'asm("y" : "=r"(a) : "r"((b+c)) : "memory"); int basm = (1+2); }')
+    assert permute.paren_asm_operands(t) == (
+        'void f(){ __asm__ volatile ("lwc2 $0, 0(%0)" : : "r"((s->nbase + pk[6]))); '
+        'asm("y" : "=r"((a)) : "r"((b+c)) : "memory"); int basm = (1+2); }')

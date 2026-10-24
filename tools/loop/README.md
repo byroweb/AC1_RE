@@ -25,6 +25,9 @@ permute.py    -> re/match/<unit>/func_<ADDR>.c
                                  permuter tier: levers.py rewrites + decomp-permuter on near misses, no LLM
 memgate.py    (library + CLI)    memory gate: quote a job's commit, admit it only above a headroom,
                                  stop the newest job if free commit runs low (used by permute.py run)
+doctor.py     -> stdout, re/match  one front door: classify a near miss from one compile, run the tool that fits
+regtie.py     -> re/match          register-tie tier: read cc1's allocation dumps, steer the deciding tie
+structdiff.py -> stdout, re/match  where the shape differs, in C lines (object line table), + structural moves
 m2cfix.py     (library)          sweep.py's draft fix-ups: stack locals, frame union, casts, cc1-driven repair
 golem.py      -> re/match/<unit>/func_<ADDR>.c
                                  local-LLM tier: compile fixes and near-miss edits from a model in LM Studio
@@ -1091,6 +1094,118 @@ the quote is the worst case seen: 633 MB x 1.25 = 791 MB per job. At the default
 The same runs show what parallel jobs buy. One job alone ran ~27 permuter
 iterations/s. At `-j 20` each job ran ~5.5/s, about 110/s in all: 20 jobs for
 4x the throughput, at the cost of the whole machine.
+
+## doctor.py (one front door)
+
+```
+doctor.py check UNIT VADDR [CFILE]      # what kind of miss, why, and the plan
+doctor.py fix   UNIT VADDR [CFILE] [--skip permuter] [--save-best DIR] [--dry-run]
+doctor.py scan  --list FILE | --cfile UNIT:C ...  [--out census.tsv]
+```
+
+There are many tools now (sweep, levers, permuter, regtie, structdiff, golem, twin
+replay), and which one fits depends on the kind of miss. The doctor compiles the C once,
+exactly like the oracle, and reads the kind of miss off the diff:
+
+| class | what the diff shows | plan (cheapest first) |
+|---|---|---|
+| `build` | cc1/cpp/as fails (the error is shown) | m2c fix-ups, an agent |
+| `match` | byte-identical | commit (`drive.py try`) |
+| `twin` | a member of the body's twin group is matched | `twins.py replay` |
+| `constants` | only immediates differ | levers (`imm`/`cmp`), regtie, permuter |
+| `registers` | only register names differ | regtie, permuter |
+| `schedule` | the same instructions in another order | permuter, regtie |
+| `mixed` | register names plus a few other words | regtie, levers, permuter |
+| `size-small` | <= 16 bytes off, same branch skeleton (a delay slot, a spill) | regtie, permuter, structdiff |
+| `size` | another length, different branches | structdiff, regtie, an agent |
+| `structure` | same length, different branch skeleton | structdiff, regtie, an agent |
+
+`fix` runs the plan; a tool that improves the text hands the improvement to the next
+one, and only an oracle-confirmed clean MATCH (written through `drive.py try`) counts.
+Every tool tried is appended to the doctor log (`$AC1_DOCTOR_LOG`, default
+`~/dev/ac1_work/doctor_log.tsv`: when, unit, vaddr, class, words, tool, result, note):
+outcome data for `router.py`, and later for a fine-tuned model. CFILE may carry oracle
+options as `PATH@rodata=VA@noalign` (a jump table's `.rodata` start,
+`--no-rodata-align-fix`), the same spelling `regtie.py run --cfile` takes.
+
+Census of the 95 open near misses with an agent draft (2026-10-23): structure 29,
+size-small 24, mixed 15, size 12, registers 7, schedule 7, build 1. So about 53 are
+tie-like (regtie's ground) and about 41 structural (structdiff's).
+
+## regtie.py (register-tie tier)
+
+```
+regtie.py diagnose UNIT VADDR CFILE
+regtie.py run --cfile UNIT:CFILE[@rodata=VA][@noalign] ... [--evals 300] [--beam 6] [--dry-run]
+```
+
+Most near misses the permuter leaves are register ties: two values with nearly equal
+global-alloc priority got each other's registers. `diagnose` compiles like the oracle
+plus `cc1 -dl -dg` (dumps only; no code change) and prints which variable sits in the
+register retail gave to which, with both priorities. It reads:
+
+- retail vs ours: aligned instructions that differ only in register names;
+- `fn.i.lreg`: each pseudo's weighted use count and live length;
+- `fn.i.greg`: global-alloc's allocation order; the same insn (by uid) in both dumps
+  maps pseudos to hard registers;
+- the COFF debug info in `fn.s` (`-gcoff` is a pinned flag): each register variable's register.
+
+Priority is `floor_log2(refs) * refs / live_length` (global.c; refs are weighted by
+loop depth), and ties go to the lower pseudo number.
+
+`run` is a beam search per body over edits restricted to the tied variables:
+- move a statement that names one 1-3 places (changes the live range);
+- retype its declaration;
+- **split** a reused variable from a later assignment on (one allocno per variable in
+  this GCC, so reuse stretches the live range);
+- **reuse** the tied partner's name;
+- levers.py's rewrites that touch them.
+
+The score is (differing words, how far the tied priorities are from flipping), so an
+edit that moves the tie is kept before the bytes change. About 14 compiles/s on one core.
+
+First match (2026-10-23): ovl203 0x8007AB4C. It was 3 words off after the agent and 20
+minutes / 19,583 decomp-permuter iterations. diagnose showed `k` (priority 2.46) losing
+a2 to `k2` (3.67), and `run` matched it in 156 compiles: reuse `k2` as the loop-3
+counter and split the later `(r->rate * 3) >> 4` value off. The ovl204 twin replayed.
+
+## structdiff.py (structural diff)
+
+```
+structdiff.py UNIT VADDR [CFILE] [--fix [--evals 200] [--dry-run]]
+```
+
+It compiles like the oracle, keeps the object and reads its line table (cc1 `.loc` ->
+`.debug_line`, `readelf --debug-dump=decodedline`), so every one of our instructions has
+a C line. It then compares the two functions with register names abstracted and
+reports:
+
+- the first differing region side by side, with its C lines;
+- named findings: loop tested at the top vs the bottom, jump table vs compare chain,
+  return paths, blocks cross-jumping merged or kept, calls merged, branch sense
+  (arms swapped), jumps landing elsewhere (delay-slot stealing / a label inside a
+  shared block), and the stack frame size.
+
+Each finding names the idiom that usually fixes it. `--fix` searches structural moves
+at the flagged lines (invert an if/else, while <-> guarded do-while, merge a shared
+last statement out of both arms, copy the next statement into both) and commits a
+score-0 text through `drive.py try`.
+
+Findings over the 41 structural near misses (2026-10-23, bodies with each):
+
+| finding | bodies |
+|---|---:|
+| jump lands elsewhere | 20 |
+| loops | 7 |
+| tail | 6 |
+| branch | 6 |
+| loop | 5 |
+| frame | 5 |
+| call | 3 |
+
+14 had no named finding. The moves matched none outright in a first pass, but took
+ovl203 0x8007CB90 from 418 to 118 words and ovl202 0x800873F8 from 217 to 187;
+`doctor.py fix` hands such improvements on to regtie.
 
 ## golem.py (local LLM tier)
 

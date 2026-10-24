@@ -223,6 +223,53 @@ Two lessons:
 The 31 largest near misses (1.5-3.4 KB) were not reached and are left for a
 slower pass.
 
+## 7. Second postscript: reading the compiler instead of searching
+
+A slow, one-job-at-a-time permuter pass on the 25 largest near misses (1.3-3.4 KB,
+20 minutes each, about 8 hours in all) matched **none**. That included bodies the
+agents had left 2-7 words off. Random rewrites stop working on big functions because
+almost none of them touch the one decision that is wrong, and the score gives no
+"warmer" signal until it flips.
+
+So three tools now use the compiler's own records instead of guessing
+(`tools/loop/README.md` has the details):
+
+- **`doctor.py`** compiles once and classifies the miss: constants, register tie,
+  scheduling, a few bytes off, or structural. It then runs the tools that fit, cheapest
+  first, and logs every attempt. Census of the 95 open near misses: about 53 are
+  register-tie-like and about 41 structural.
+- **`regtie.py`** reads cc1's register-allocation dumps (`-dl -dg`; dumps only, the
+  code is unchanged) and the debug info. It says which variable holds the register
+  retail gave to which, and why: both allocation priorities. It then searches only
+  edits to those variables, steered by how close the tie is to flipping.
+- **`structdiff.py`** maps every instruction to its C line through the object's line
+  table, and names where the shape differs: loops, jump tables, merged tails, swapped
+  arms, jumps landing elsewhere, frame size.
+
+Results of one night:
+
+| | Bodies | Matched | Improved |
+|---|---:|---:|---:|
+| permuter, one job, 20 min each | 25 | 0 | - |
+| regtie, about 2 min each | 95 | 2 (+1 twin) | 51 |
+| doctor on structural bodies (structdiff moves, then regtie) | 43 | 0 | 8 |
+
+The two regtie matches show the method:
+
+- **ovl203 0x8007AB4C**, 3 words off, matched in 156 compiles (12 seconds). The
+  permuter had just failed on it for 20 minutes. regtie showed loop counter `k`
+  (priority 2.46) losing register a2 to `k2` (3.67), and the fix was to use one
+  variable for both loops.
+- **ovl202 0x8007C7C8** matched in 1,102 compiles by reordering a block of stores.
+
+Even where nothing matched, regtie cut the distance on more than half the bodies:
+687 to 38 words, 345 to 114, 155 to 52.
+
+**Lesson:** when a search stalls, look for the program's own record of its decisions.
+A compiler, like any machine, usually logs more than its output shows: dumps, debug
+info, line tables. Reading those turned a blind search into a targeted one. The
+structural cases need richer moves and remain the frontier.
+
 ## Method
 
 Features were computed from the retail instruction words of every non-PsyQ
