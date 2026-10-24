@@ -284,7 +284,19 @@ def run_twins(st, args):
     return ("replayed" if ok else "no new rows"), None, ""
 
 
-TOOLS = {"levers": run_levers, "regtie": run_regtie, "permuter": run_permuter, "twins": run_twins}
+def run_structdiff(st, args):
+    """The structural findings (no automatic rewrite yet): printed, and logged as the note."""
+    import structdiff
+    lm, head, fs = structdiff.run(st["unit"], st["vaddr"], st["cfile"])
+    print(structdiff.render(lm, head, fs).replace("
+", "
+    "))
+    kinds = collections.Counter(k for k, _m, _x in fs if k not in ("divergence", "regions"))
+    return "findings", None, ", ".join("%s %d" % kv for kv in kinds.most_common()) or "none"
+
+
+TOOLS = {"levers": run_levers, "regtie": run_regtie, "permuter": run_permuter, "twins": run_twins,
+         "structdiff": run_structdiff}
 
 
 # ---------------------------------------------------------------------------
