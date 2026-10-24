@@ -2501,3 +2501,17 @@ ovl203	0x8006735C	name	model_draw_near_clip	2026-10-24T17:40:42Z
 ovl203	0x8006735C	hint	draws model record idx near camera: clip-code reject, near-plane polys queued to 4 subdivider lists, rest FT3/FT4/GT3/GT4	2026-10-24T17:40:42Z
 ovl202	0x8007BA98	name	lockon_update	2026-10-24T17:40:42Z
 ovl202	0x8007BA98	hint	picks best target via func_80073F38/func_80015440, tracks lock progress/timer in target slot 0 at 0x80041024, beeps, writes aim angles to e+0x76..0x7A	2026-10-24T17:40:42Z
+ovl204	0x8005BAA8	name	world_sect_draw_or_queue	2026-10-24T18:19:47Z
+ovl204	0x8005BAA8	hint	same body as ovl202 0x8005C904 (world_sect_draw_or_queue), ovl204 RenderGlobals at 0x801ADCD8	2026-10-24T18:19:47Z
+ovl202	0x80072A00	name	cell_carrier_move_push	2026-10-24T18:19:47Z
+ovl202	0x80072A00	hint	same body as ovl203 0x80071D84 (cell_carrier_move_push), 16 entities instead of 2	2026-10-24T18:19:47Z
+ovl203	0x80060B3C	name	scene_draw_2p_objects	2026-10-24T18:19:47Z
+ovl203	0x80060B3C	hint	same body as ovl204 0x800602C8: 2-player scene draw: both ACs + shadows, 512 world objects, 256 effect slots by kind	2026-10-24T18:19:47Z
+ovl203	0x80081358	name	ac_feet_tilt_update	2026-10-24T18:19:47Z
+ovl203	0x80081358	hint	engine sound, probe ground under four feet (func_800812B0), tilt body to plane of the lowest three	2026-10-24T18:19:48Z
+ovl202	0x80064CB8	name	gte_project_verts_dp	2026-10-24T18:19:48Z
+ovl202	0x80064CB8	hint	projects n vertices of D_801A6544 into D_801A6A48 (sxy/otz, depth cue dp when enabled)	2026-10-24T18:19:48Z
+ovl202	0x80067BE0	name	gte_project_verts_clip	2026-10-24T18:19:48Z
+ovl202	0x80067BE0	hint	projects vertex list into D_801A6A48 with near (z<1000/80) and screen-edge clip codes	2026-10-24T18:19:48Z
+ovl202	0x8004D044	name	snd_chan_alloc	2026-10-24T18:19:48Z
+ovl202	0x8004D044	hint	picks a sound channel: free voice, else the one playing id (stopped via func_8004CF0C), else lowest-priority idle; called by func_8004D178 with (id, vl, vr)	2026-10-24T18:19:48Z
