@@ -461,6 +461,7 @@ def load(unit, vaddr, cfile, work):
 
 
 def parse_cfile(spec):
+    spec = spec.strip()                                  # a list file written on Windows ends lines in \r
     unit, path = spec.split(":", 1) if re.match(r"^(exe|ovl20[1-4]|fdat\d{3}):", spec) else (None, spec)
     m = re.search(r"func_([0-9A-Fa-f]{8})", os.path.basename(path))
     if not unit or not m:
