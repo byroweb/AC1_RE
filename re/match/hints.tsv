@@ -2377,3 +2377,21 @@ ovl201	0x800B55E4	name	libpress_DecDCTvlcSize2	2026-10-22T22:35:50Z
 ovl201	0x800B55E4	hint	PsyQ libpress hand asm	2026-10-22T22:35:50Z
 ovl201	0x800B5618	name	libpress_DecDCTvlc2	2026-10-22T22:35:50Z
 ovl201	0x800B5618	hint	PsyQ libpress hand asm	2026-10-22T22:35:50Z
+ovl202	0x8007790C	name	ent_fall_set_velocity	2026-10-24T17:15:40Z
+ovl202	0x8007790C	hint	horiz vel scaled down by 0x80 (sqrt), mover setup, collision step via func_800749A0	2026-10-24T17:15:40Z
+ovl202	0x8004EDAC	name	snd_seq_step	2026-10-24T17:15:40Z
+ovl202	0x8004EDAC	hint	steps sound-event sequence; calls func_8004CC30/func_8004CE44 per event (draft comment)	2026-10-24T17:15:40Z
+ovl202	0x8004D044	name	snd_chan_alloc	2026-10-24T17:15:40Z
+ovl202	0x8004D044	hint	picks a free/same-id/lowest-prio sound channel from D_80041DE0[23]	2026-10-24T17:15:40Z
+ovl201	0x8004E2BC	name	garage_ring_idle	2026-10-24T17:15:40Z
+ovl201	0x8004E2BC	hint	garage main menu ring idle step (draft comment): confirm opens item, left/right turn	2026-10-24T17:15:40Z
+exe	0x80013430	name	vec_dir_scaled	2026-10-24T17:15:40Z
+exe	0x80013430	hint	out = (b - a) * len / func_80014988(b - a): direction vector of length len	2026-10-24T17:15:40Z
+exe	0x8001606C	name	mem_alloc_block	2026-10-24T17:15:40Z
+exe	0x8001606C	hint	heap alloc: finds block (func_80015E68), splits if >=0x810 left, marks used=2, records owner/tag, returns payload b+1	2026-10-24T17:15:40Z
+ovl201	0x8005F260	name	sjis_draw_string	2026-10-24T17:15:40Z
+ovl201	0x8005F260	hint	draws a >-terminated SJIS string glyph by glyph then LoadImage of its CLUT	2026-10-24T17:15:40Z
+ovl202	0x8005EB50	name	sky_draw_backdrop	2026-10-24T17:15:40Z
+ovl202	0x8005EB50	hint	draws sky bands + scrolling horizon sprites from camera pitch/heading (draft comment)	2026-10-24T17:15:40Z
+ovl202	0x8005277C	name	msgbox_open_parse	2026-10-24T17:15:41Z
+ovl202	0x8005277C	hint	parses M/L/W/C/P message-box header, measures text, opens box via func_80052650 (draft comment)	2026-10-24T17:15:41Z
