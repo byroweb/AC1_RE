@@ -2515,3 +2515,9 @@ ovl202	0x80067BE0	name	gte_project_verts_clip	2026-10-24T18:19:48Z
 ovl202	0x80067BE0	hint	projects vertex list into D_801A6A48 with near (z<1000/80) and screen-edge clip codes	2026-10-24T18:19:48Z
 ovl202	0x8004D044	name	snd_chan_alloc	2026-10-24T18:19:48Z
 ovl202	0x8004D044	hint	picks a sound channel: free voice, else the one playing id (stopped via func_8004CF0C), else lowest-priority idle; called by func_8004D178 with (id, vl, vr)	2026-10-24T18:19:48Z
+ovl202	0x8005277C	name	msg_open_box_from_header	2026-10-24T23:08:13Z
+ovl202	0x8005277C	hint	parses M/L/W/C/P header, measures text (6px ascii, 12px sjis), calls func_80052650	2026-10-24T23:08:13Z
+ovl202	0x8004EADC	name	anim_frame_in_mid_key	2026-10-24T23:08:13Z
+ovl202	0x8004EADC	hint	AnimSt clip lookup like 0x8004E22C: is the current frame between the keys around the clip midpoint (dir>0) / from the end (dir<0)	2026-10-24T23:08:13Z
+ovl203	0x8004BF94	name	vs_link_battle_main	2026-10-24T23:08:13Z
+ovl203	0x8004BF94	hint	link-cable twin of ovl204 0x8004BF3C (VS battle main loop): handshake via func_80029B70/80 write/read, then round loop	2026-10-24T23:08:13Z
