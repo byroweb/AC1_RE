@@ -270,6 +270,44 @@ A compiler, like any machine, usually logs more than its output shows: dumps, de
 info, line tables. Reading those turned a blind search into a targeted one. The
 structural cases need richer moves and remain the frontier.
 
+## 8. Third postscript: under 100, by not doing the same work twice
+
+One day took the open count from 197 to 85. Where the 112 functions came from:
+
+| Source | Functions |
+|---|---:|
+| 8 agents, one compile at a time, starting from the best earlier draft | 65 |
+| twin replay crediting copies of those matches | 39 |
+| near-copy porting by a tool, no agent time | 8 |
+
+The agents did much better than the earlier waves. Each one got a short list, the
+previous agent's notes, and the compiler-reading tools from the second postscript.
+
+The bigger lesson was about duplicate work. The game ships the same source compiled
+into several overlays. Matched C for one copy usually works for all of them, so
+"twin" groups credit every copy at once. But those groups only join copies whose
+bytes are identical apart from addresses. A copy that differs in one number fell into
+a group of its own. Examples: a struct field at +0x670 instead of +0xB20, or a
+split-screen renderer whose screen limits are half as wide. Two agents then
+unknowingly worked the same function, and a third ported a copy by hand.
+
+The fix was cheap. Compare functions by instruction *shape* (the sequence of
+operations, ignoring registers and numbers) and treat a set of same-shaped functions
+as one **family**. Give each family to one agent, then let a tool port the match to
+the other members. The tool copies the C, moves the addresses, and tries changing
+the few numbers that differ. Organised that way, the last agent of the day matched
+all 8 of its families, and the tools then credited 10 more functions without an agent.
+
+Two more pieces of advice:
+
+- **Dedupe before you dispatch.** Cluster the remaining work by similarity *before*
+  handing it out, not after. One work item per family.
+- **Budget the shared resource, not just the machine.** The agents run on a usage plan
+  shared with other people. Seven agents burned about 1% of a 5-hour window per
+  minute. The rule now is to size the fleet so that each window ends at about 80%,
+  never at the cap. Interrupting someone else's work costs more than finishing an
+  hour later.
+
 ## Method
 
 Features were computed from the retail instruction words of every non-PsyQ
