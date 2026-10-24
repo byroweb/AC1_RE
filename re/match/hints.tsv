@@ -2401,3 +2401,5 @@ ovl202	0x80067AB4	name	coll_sphere_box_mask	2026-10-24T17:15:44Z
 ovl202	0x80067AB4	hint	hints.tsv name; loops sphere set 0x801AE82C last to first, returns overlap bitmask	2026-10-24T17:15:44Z
 ovl202	0x80051150	name	ui_draw_text_ft4	2026-10-24T17:15:44Z
 ovl202	0x80051150	hint	draws ASCII string as POLY_FT4 glyphs, backslash-digit colour escape, returns pixel width	2026-10-24T17:15:44Z
+ovl203	0x8007D704	name	btl_side_ac_reinit	2026-10-24T17:15:48Z
+ovl203	0x8007D704	hint	resets side flags, recomputes part stats (h208..h216), refills ammo ent[].b=ent[].a, spawns body	2026-10-24T17:15:48Z
