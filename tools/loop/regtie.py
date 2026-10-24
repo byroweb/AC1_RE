@@ -92,7 +92,10 @@ def build(meta, syms, text, inc):
                 return ""
             with open(p, encoding="utf-8", errors="replace") as fh:
                 return fh.read()
-        return {"bytes": blob, "unresolved": unresolved, "asm": asm, "lreg": dump("lreg"), "greg": dump("greg")}
+        with open(os.path.join(work, "fn.i"), encoding="utf-8", errors="replace") as fh:
+            fni = fh.read()
+        return {"bytes": blob, "unresolved": unresolved, "asm": asm, "lreg": dump("lreg"), "greg": dump("greg"),
+                "fni": fni}
     except (RuntimeError, match_fn.ToolError, OSError, ValueError):
         return None
     finally:
@@ -151,6 +154,40 @@ def pseudo_regs(lreg, greg, first_pseudo):
                 if isuser:
                     user.add(p)
     return {p: (c.most_common(1)[0][0], p in user) for p, c in votes.items()}
+
+
+LINE_NOTE = re.compile(r'^\(note \d+ \d+ \d+ \("[^"]*"\) (\d+)\)', re.M)
+SET_REG = re.compile(r"\(set \(reg(?:/[a-z/]+)?:\w+ (\d+)\)")
+
+
+def pseudo_lines(lreg):
+    """{pseudo: fn.i line of its first set} from the line notes interleaved with the insns."""
+    marks = sorted([(m.start(), "note", int(m.group(1))) for m in LINE_NOTE.finditer(lreg)] +
+                   [(m.start(), "set", int(m.group(1))) for m in SET_REG.finditer(lreg)])
+    out, line = {}, None
+    for _pos, kind, v in marks:
+        if kind == "note":
+            line = v
+        elif line is not None:
+            out.setdefault(v, line)
+    return out
+
+
+def c_line(fni, ctext, iline):
+    """The C file's line whose text equals fn.i's line `iline` (whitespace-insensitive)."""
+    fl, cl = fni.split("\n"), ctext.split("\n")
+    if not iline or iline > len(fl):
+        return None
+    key = " ".join(fl[iline - 1].split())
+    if not key:
+        return None
+    hits = [i + 1 for i, t in enumerate(cl) if " ".join(t.split()) == key]
+    if len(hits) == 1:
+        return hits[0]
+    if hits:
+        rel = iline / max(1, len(fl))
+        return min(hits, key=lambda c: abs(c / max(1, len(cl)) - rel))
+    return None
 
 
 def coff_vars(asm, fn):
@@ -239,6 +276,22 @@ class Picture:
             out.append((o, r, n, names.get(o, []), names.get(r, [])))
         return out
 
+    def temp_lines(self, ctext):
+        """C lines that define the temporaries (non-variable pseudos) sitting in the registers
+        of the main ties, on either side."""
+        regs = set()
+        for o, r, _n, _ours, _theirs in self.ties()[:4]:
+            regs.update((REGNUM[o], REGNUM[r]))
+        defs = pseudo_lines(self.res["lreg"])
+        out = set()
+        for p, (h, isuser) in self.hard.items():
+            if isuser or h not in regs:
+                continue
+            ln = c_line(self.res.get("fni", ""), ctext, defs.get(p))
+            if ln:
+                out.add(ln)
+        return sorted(out)
+
     def info(self, var):
         p = self.var_pseudo().get(var)
         d = self.ps.get(p, {}) if p is not None else {}
@@ -302,18 +355,22 @@ RETYPE = ["s32", "u32", "s16", "u16", "s8", "u8"]
 CONTROL = re.compile(r"\s*(return|break|continue|goto|case|default)\b")
 
 
-def lever_move(text, fn, names):
-    """A statement that names a tied variable, moved 1-3 places up or down inside its own
-    block (same indentation, nothing but statements in between): its live range changes."""
+def lever_move(text, fn, names, lines=()):
+    """A statement that names a tied variable (or sits on a line that defines a tied
+    temporary), moved 1-3 places up or down inside its own block (same indentation,
+    nothing but statements in between): its live range changes."""
     sp = levers.fn_span(text, fn)
-    if not sp or not names:
+    if not sp or not (names or lines):
         return []
-    pat = re.compile(r"\b(?:%s)\b" % "|".join(re.escape(n) for n in names))
+    pat = re.compile(r"\b(?:%s)\b" % "|".join(re.escape(n) for n in names)) if names else None
     body = text[sp[0]:sp[1]]
+    first_line = text.count("\n", 0, sp[0]) + 1
+    want = set(lines)
     stmts = [m for m in levers.STMT.finditer(body) if not CONTROL.match(m.group(2))]
     out = []
     for i, a in enumerate(stmts):
-        if not pat.search(a.group(2)):
+        ln = first_line + body.count("\n", 0, a.start())
+        if not ((pat and pat.search(a.group(2))) or ln in want):
             continue
         for d in (-3, -2, -1, 1, 2, 3):
             j = i + d
@@ -389,8 +446,8 @@ def lever_split(text, fn, names, pairs=()):
     return out
 
 
-def candidates(text, fn, names, pairs=()):
-    out = lever_split(text, fn, names, pairs) + lever_move(text, fn, names) + lever_retype(text, fn, names)
+def candidates(text, fn, names, pairs=(), lines=()):
+    out = lever_split(text, fn, names, pairs) + lever_move(text, fn, names, lines) + lever_retype(text, fn, names)
     out += [(d, c) for d, c in levers.variants(text, fn, SEARCH_LEVERS) if mentions(text, c, names)]
     return out
 
@@ -417,6 +474,9 @@ def search(meta, syms, text, inc, retail, evals=300, beam=6, log=print):
     log(describe(pic))
     log("targets: %s" % (", ".join("%s<->%s" % p for p in pairs) or "(none: unrestricted levers)"))
     start = (pic.words, tie_gap(pic, pairs))
+    tlines = {text: pic.temp_lines(text)}
+    if tlines[text]:
+        log("temporaries of the ties defined at C lines %s" % ", ".join(map(str, tlines[text][:8])))
     frontier = [(start, text, [])]
     best = frontier[0]
     seen = {res["bytes"]}
@@ -424,7 +484,7 @@ def search(meta, syms, text, inc, retail, evals=300, beam=6, log=print):
     while frontier and n < evals and best[0][0] > 0:
         nxt = []
         for score, t, trail in frontier:
-            for desc, cand in candidates(t, meta["fn"], names, pairs):
+            for desc, cand in candidates(t, meta["fn"], names, pairs, tlines.get(t, ())):
                 if n >= evals:
                     break
                 r = build(meta, syms, cand, inc)
@@ -434,6 +494,7 @@ def search(meta, syms, text, inc, retail, evals=300, beam=6, log=print):
                 seen.add(r["bytes"])
                 p = Picture(meta, r, retail)
                 s = (p.words, tie_gap(p, pairs))
+                tlines[cand] = p.temp_lines(cand)
                 nxt.append((s, cand, trail + [desc]))
                 if s < best[0]:
                     best = (s, cand, trail + [desc])
@@ -445,6 +506,8 @@ def search(meta, syms, text, inc, retail, evals=300, beam=6, log=print):
         nxt.sort(key=lambda x: x[0])
         # the best `beam` children go on, worse ones too: a tie is often flipped two edits away
         frontier = nxt[:beam]
+        keep = {t for _s, t, _tr in frontier} | {best[1]}
+        tlines = {t: v for t, v in tlines.items() if t in keep}
     return {"text": best[1], "words": best[0][0], "gap": best[0][1], "evals": n, "trail": best[2],
             "start": start[0], "note": ""}
 
