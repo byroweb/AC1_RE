@@ -735,7 +735,7 @@ the percentages too.  2026-10-19 after this round:
 ```
 sweep.py --queue FILE [--queue FILE ...] [--max-size 160] [--limit N] [-j N]
          [--variants ctx,ctx-no-andor] [--try-all]
-         [--neighbour-min 0.5] [--neighbour-tries 1]
+         [--neighbour-min 0.5] [--neighbour-op-min 0.6] [--neighbour-tries 1]
          [--work DIR] [--report F] [--best-dir DIR] [--dry-run] [--no-replay] [--no-ledger]
 ```
 
@@ -743,7 +743,7 @@ No LLM in the loop: for each open body of the queue(s), in order, smaller than
 `--max-size`, not closed in the ledger and without a C file in `re/match`, draft C
 with `tools/match/ctx.py`'s `decompile()` (symbolised asm + the shared-type context)
 and m2c `--valid-syntax`, then the `--variants` after it in order until one
-matches (default `ctx,ctx-regvars,ctx-knr,ctx-spframe,ctx-fix-frame,ctx-fix,neighbour`:
+matches (default `ctx,ctx-regvars,ctx-knr,ctx-spframe,ctx-fix-frame,ctx-fix,neighbour,neighbour-op`:
 `--reg-vars saved`, then `ctx` with m2c's guessed `/* extern */` prototypes
 rewritten unprototyped, `T f();`, since m2c guesses arity from live registers and
 a later shorter call is a cc1 error, then the `m2cfix.py` fix-ups below, then `neighbour` (below; it also runs on bodies over `--max-size`);
@@ -935,6 +935,39 @@ sit in clusters of open bodies with pairwise similarity >= 0.8 (e.g. ovl202
 0x80064DC8).  Match one member of a cluster by hand, then re-run the line above: the
 others get its C file remapped as their draft (a match when only constants differ,
 otherwise a port: the 9 open bodies at 0.9+ today were 1 to 46 words off).
+
+### The opcode-only backup: `neighbour-op` and reference C (2026-10-24)
+
+The masked-word similarity above keeps register numbers and wants sizes within
+0.7x..1.43x, so it misses relatives that do the same thing with other registers,
+constants or a few more statements.  `Neighbours.ranked(..., mode="opcode")` is the
+backup, in the spirit of coddog: the same trigram pre-filter and difflib ratio, but over
+`opkey()` sequences (primary opcode, SPECIAL funct, REGIMM rt, coprocessor command;
+registers and immediates dropped) and sizes 0.5x..2x.  It is used in three places:
+
+- **`neighbour-op` sweep variant** (in the default list, after `neighbour`): only for a
+  body whose best masked neighbour is under `--neighbour-min`, it drafts from the opcode
+  neighbours at or above `--neighbour-op-min` (default 0.6), remapped the same way.
+- **`drive.py next`** lists up to `--refs` (default 3) similar matched functions as
+  reference C, masked neighbours at or above 0.5 first and opcode ones filling the rest
+  (`Neighbours.references`), and prints the best one's C up to `--refs-lines` (80).
+- **`golem.py tweak --refs`** adds the best reference function's code to the prompt when
+  it fits `--max-prompt` (off by default, so bench runs stay comparable).
+
+**Measured (2026-10-24)**, the 202 open non-PsyQ functions against the 1987-body corpus:
+
+| best masked | best opcode-only | functions |
+|---|---|---:|
+| >= 0.5 | (already has a masked neighbour) | 50 |
+| < 0.5 | >= 0.6 | 15 |
+| < 0.5 | 0.4 .. 0.6 | 37 |
+| < 0.5 | < 0.4 | 100 |
+
+So the backup gives a reference to 15 more functions at 0.6+ (52 at 0.4+).  As drafts
+they do not match: `--variants neighbour-op --neighbour-tries 2` on those 15 compiled
+all of them, matched none, mean aligned closeness 0.31 (best 0.73, ovl201 0x800B3748).
+Its value is the reference C an agent or golem reads, not the draft; the draft is
+there because it costs one compile per body and the corpus grows with every match.
 
 ## permute.py (permuter tier)
 
