@@ -2521,3 +2521,13 @@ ovl202	0x8004EADC	name	anim_frame_in_mid_key	2026-10-24T23:08:13Z
 ovl202	0x8004EADC	hint	AnimSt clip lookup like 0x8004E22C: is the current frame between the keys around the clip midpoint (dir>0) / from the end (dir<0)	2026-10-24T23:08:13Z
 ovl203	0x8004BF94	name	vs_link_battle_main	2026-10-24T23:08:13Z
 ovl203	0x8004BF94	hint	link-cable twin of ovl204 0x8004BF3C (VS battle main loop): handshake via func_80029B70/80 write/read, then round loop	2026-10-24T23:08:13Z
+ovl201	0x800ADB40	name	ui_row_scroll_spawn	2026-10-24T23:13:21Z
+ovl201	0x800ADB40	hint	allocs UiObj with update func_800ADC20 (pos.vy = y + *src*0x18), stores src/x/y/arg in work	2026-10-24T23:13:21Z
+ovl202	0x8008AD80	name	hud_draw_number_right	2026-10-24T23:13:21Z
+ovl202	0x8008AD80	hint	func_8008ACE4 formats n into buf, draws digit sprites from D_800907A0 right-aligned in 9 cells at 8 px pitch	2026-10-24T23:13:21Z
+ovl201	0x8005F260	name	font_draw_sjis_string	2026-10-24T23:13:21Z
+ovl201	0x8005F260	hint	draws > -terminated SJIS string via glyph block table D_800B7470 and func_8005F49C, then LoadImage of 16x1 CLUT	2026-10-24T23:13:21Z
+ovl202	0x800826FC	name	ac_ground_tilt_step	2026-10-24T23:13:21Z
+ovl202	0x800826FC	hint	twin of ovl203 0x80081358: engine sound, 4 foot probes func_80082654, plane fit func_8001467C, ease tilt +0x108	2026-10-24T23:13:21Z
+ovl202	0x8007DF98	name	ac_player_control_step	2026-10-24T23:13:21Z
+ovl202	0x8007DF98	hint	near-copy of ovl203 0x8007CB90 (sparks when dead, missile intercept, energy, weapon switch/fire, dash) on side struct D_80040FA0	2026-10-24T23:13:21Z
