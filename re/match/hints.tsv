@@ -2395,3 +2395,9 @@ ovl202	0x8005EB50	name	sky_draw_backdrop	2026-10-24T17:15:40Z
 ovl202	0x8005EB50	hint	draws sky bands + scrolling horizon sprites from camera pitch/heading (draft comment)	2026-10-24T17:15:40Z
 ovl202	0x8005277C	name	msgbox_open_parse	2026-10-24T17:15:41Z
 ovl202	0x8005277C	hint	parses M/L/W/C/P message-box header, measures text, opens box via func_80052650 (draft comment)	2026-10-24T17:15:41Z
+ovl202	0x80062974	name	wst_spawn_emitter_fx	2026-10-24T17:15:44Z
+ovl202	0x80062974	hint	loops 4 model emitter points selected by world-struct flags bits 24..27, calls effect spawner func_80056B54 per point	2026-10-24T17:15:44Z
+ovl202	0x80067AB4	name	coll_sphere_box_mask	2026-10-24T17:15:44Z
+ovl202	0x80067AB4	hint	hints.tsv name; loops sphere set 0x801AE82C last to first, returns overlap bitmask	2026-10-24T17:15:44Z
+ovl202	0x80051150	name	ui_draw_text_ft4	2026-10-24T17:15:44Z
+ovl202	0x80051150	hint	draws ASCII string as POLY_FT4 glyphs, backslash-digit colour escape, returns pixel width	2026-10-24T17:15:44Z
