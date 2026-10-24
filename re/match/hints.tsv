@@ -2531,3 +2531,11 @@ ovl202	0x800826FC	name	ac_ground_tilt_step	2026-10-24T23:13:21Z
 ovl202	0x800826FC	hint	twin of ovl203 0x80081358: engine sound, 4 foot probes func_80082654, plane fit func_8001467C, ease tilt +0x108	2026-10-24T23:13:21Z
 ovl202	0x8007DF98	name	ac_player_control_step	2026-10-24T23:13:21Z
 ovl202	0x8007DF98	hint	near-copy of ovl203 0x8007CB90 (sparks when dead, missile intercept, energy, weapon switch/fire, dash) on side struct D_80040FA0	2026-10-24T23:13:21Z
+ovl203	0x8004F3C4	name	link_exchange_pairs	2026-10-24T23:13:24Z
+ovl203	0x8004F3C4	hint	per pair: writes R..C 8-byte tx packet, read()/write() on link fds at +0x2F4/+0x2F8, copies rx.a/rx.b out; aborts on D_800895C8 or func_8004BEB0()==0	2026-10-24T23:13:24Z
+ovl201	0x8005F5E8	name	ui_draw_window_box	2026-10-24T23:13:24Z
+ovl201	0x8005F5E8	hint	draft comment: panel FT4/G4 quad clipped to the box draw area (D_801BCE88 env clip), then frame style switch (+0x84) to func_8006035C..func_80063F64	2026-10-24T23:13:24Z
+ovl201	0x8006E148	name	ovl201_emblem_image_scroll	2026-10-24T23:13:24Z
+ovl201	0x8006E148	hint	scrolls the 64x64 4bpp image at +0x88 by one pixel per dir U/D/L/R with wrap-around	2026-10-24T23:13:24Z
+ovl202	0x8007C02C	name	player_multilock_aim	2026-10-24T23:13:24Z
+ovl202	0x8007C02C	hint	twin of ovl203 func_8007AB4C (versus multi-lock aim) on the fixed player block D_80040FA0: g_target_list/g_target_head, lock tones 43/44/47	2026-10-24T23:13:25Z
