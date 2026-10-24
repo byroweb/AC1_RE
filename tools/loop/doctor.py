@@ -61,9 +61,9 @@ PLANS = {
     "build": ["agent"],
     "match": ["commit"],
     "twin": ["twins", "regtie", "permuter"],
-    "size": ["structdiff", "agent"],
+    "size": ["structdiff", "regtie", "agent"],
     "size-small": ["regtie", "permuter", "structdiff"],
-    "structure": ["structdiff", "agent"],
+    "structure": ["structdiff", "regtie", "agent"],
     "constants": ["levers", "regtie", "permuter"],
     "registers": ["regtie", "permuter"],
     "schedule": ["permuter", "regtie"],
@@ -285,14 +285,20 @@ def run_twins(st, args):
 
 
 def run_structdiff(st, args):
-    """The structural findings (no automatic rewrite yet): printed, and logged as the note."""
+    """The structural findings, then structdiff's moves at the flagged lines (an improved
+    text goes on to the next tool)."""
     import structdiff
     lm, head, fs = structdiff.run(st["unit"], st["vaddr"], st["cfile"])
-    print(structdiff.render(lm, head, fs).replace("
-", "
-    "))
+    print("    " + structdiff.render(lm, head, fs).replace("\n", "\n    "))
     kinds = collections.Counter(k for k, _m, _x in fs if k not in ("divergence", "regions"))
-    return "findings", None, ", ".join("%s %d" % kv for kv in kinds.most_common()) or "none"
+    note = ", ".join("%s %d" % kv for kv in kinds.most_common()) or "no named finding"
+    out = structdiff.fix(st["unit"], st["vaddr"], st["cfile"], evals=min(args.evals, 300), log=lambda m: None)
+    if out.get("words") == 0:
+        return "zero", out["text"], "structdiff " + " + ".join(out["trail"])
+    better = out.get("text") if out.get("words") is not None and out["words"] < st["words"] else None
+    if better:
+        note += "; moves %s -> %s: %s" % (st["words"], out["words"], " + ".join(out["trail"])[:120])
+    return "findings", better, note
 
 
 TOOLS = {"levers": run_levers, "regtie": run_regtie, "permuter": run_permuter, "twins": run_twins,
@@ -334,9 +340,17 @@ def report(st):
     return "\n".join(lines)
 
 
-def cmd_check(args):
+def resolve(args):
+    """unit, vaddr, cfile from the arguments; CFILE may carry @rodata=VA / @noalign."""
     unit, vaddr = args.unit, int(args.vaddr, 16)
     cfile = args.cfile or default_cfile(unit, vaddr)
+    if "@" in cfile:
+        _u, _v, cfile = regtie.parse_cfile("%s:%s" % (unit, cfile))
+    return unit, vaddr, cfile
+
+
+def cmd_check(args):
+    unit, vaddr, cfile = resolve(args)
     work = tempfile.mkdtemp(prefix="doctor_")
     try:
         print(report(examine(unit, vaddr, cfile, work)))
@@ -346,8 +360,7 @@ def cmd_check(args):
 
 
 def cmd_fix(args):
-    unit, vaddr = args.unit, int(args.vaddr, 16)
-    cfile = args.cfile or default_cfile(unit, vaddr)
+    unit, vaddr, cfile = resolve(args)
     work = tempfile.mkdtemp(prefix="doctor_")
     try:
         st = examine(unit, vaddr, cfile, work)
@@ -359,7 +372,8 @@ def cmd_fix(args):
             print("  commit: " + res)
             append_log(dict(base, tool="commit", result=res))
             return 0 if res in ("MATCH", "dry run") else 1
-        for tool in PLANS[st["class"]]:
+        skip = {t.strip() for t in args.skip.split(",") if t.strip()}
+        for tool in [t for t in PLANS[st["class"]] if t not in skip]:
             if tool not in TOOLS:
                 print("  %s: not automatic (%s)" % (tool, "agent work" if tool == "agent" else "not built yet"))
                 append_log(dict(base, tool=tool, result="handed off"))
@@ -383,6 +397,13 @@ def cmd_fix(args):
                 with open(path, "w", encoding="utf-8", newline="\n") as fh:
                     fh.write(better)
                 st["cfile"] = path
+                m = re.search(r"best (\d+)", status) or re.search(r"-> (\d+):", note)
+                if m:
+                    st["words"] = int(m.group(1))
+                if args.save_best:
+                    d = os.path.join(args.save_best, unit)
+                    os.makedirs(d, exist_ok=True)
+                    shutil.copyfile(path, os.path.join(d, "func_%08X.c" % vaddr))
         return 1
     finally:
         shutil.rmtree(work, ignore_errors=True)
@@ -434,6 +455,9 @@ def main(argv=None):
             p.add_argument("--evals", type=int, default=1500, help="regtie compiles (default %(default)s)")
             p.add_argument("--no-ledger", action="store_true")
             p.add_argument("--dry-run", action="store_true", help="never write re/match")
+            p.add_argument("--save-best", metavar="DIR", help="write every improved text to DIR/<unit>/func_<ADDR>.c")
+            p.add_argument("--skip", default="", help="tools to leave out of the plan, comma-separated "
+                           "(e.g. permuter after an overnight pass)")
     p = sub.add_parser("scan")
     p.add_argument("--cfile", action="append", metavar="UNIT:C")
     p.add_argument("--list", help="file of UNIT:C lines")

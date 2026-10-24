@@ -450,9 +450,17 @@ def search(meta, syms, text, inc, retail, evals=300, beam=6, log=print):
 
 
 # ---------------------------------------------------------------------------
+# per-function oracle options from a --cfile spec (UNIT:PATH@rodata=VA@noalign), as promote.py
+# spells them: a jump table's .rodata start, and --no-rodata-align-fix for 8-aligned tables
+OPTS = {}
+
+
 def load(unit, vaddr, cfile, work):
     d = os.path.join(work, "%s_%08X" % (unit, vaddr))
-    meta = permute.setup_dir(unit, vaddr, cfile, d, tools=permute.tools_once())
+    o = OPTS.get((unit, vaddr), {})
+    meta = permute.setup_dir(unit, vaddr, cfile, d, rodata=o.get("rodata"), tools=permute.tools_once())
+    if o.get("noalign"):
+        meta["no_rodata_align_fix"] = True
     syms = permute.symtab(meta)
     retail = permute.retail_bytes(unit, vaddr, meta["size"])
     with open(cfile, encoding="utf-8") as fh:
@@ -461,12 +469,23 @@ def load(unit, vaddr, cfile, work):
 
 
 def parse_cfile(spec):
+    """UNIT:PATH[@rodata=VA][@noalign] -> (unit, vaddr, path); the options go to OPTS."""
     spec = spec.strip()                                  # a list file written on Windows ends lines in \r
+    spec, *opts = spec.split("@")
     unit, path = spec.split(":", 1) if re.match(r"^(exe|ovl20[1-4]|fdat\d{3}):", spec) else (None, spec)
     m = re.search(r"func_([0-9A-Fa-f]{8})", os.path.basename(path))
     if not unit or not m:
         raise SystemExit("regtie.py: --cfile wants UNIT:PATH with func_<ADDR> in the name: %s" % spec)
-    return unit, int(m.group(1), 16), path
+    vaddr = int(m.group(1), 16)
+    o = {}
+    for x in opts:
+        if x.startswith("rodata="):
+            o["rodata"] = "0x%08X" % int(x.split("=", 1)[1], 16)
+        elif x == "noalign":
+            o["noalign"] = True
+    if o:
+        OPTS[(unit, vaddr)] = o
+    return unit, vaddr, path
 
 
 def commit(unit, vaddr, text, trail, no_ledger):
@@ -483,7 +502,9 @@ def commit(unit, vaddr, text, trail, no_ledger):
     env = dict(os.environ)
     if no_ledger:
         env["AC1_LEDGER"] = os.path.join(tempfile.gettempdir(), "regtie_scratch_ledger.tsv")
-    r = subprocess.run([sys.executable, os.path.join(HERE, "drive.py"), "try", unit, vs], cwd=REPO, env=env,
+    o = OPTS.get((unit, vaddr), {})
+    extra = (["--rodata", o["rodata"]] if o.get("rodata") else []) + (["--no-rodata-align-fix"] if o.get("noalign") else [])
+    r = subprocess.run([sys.executable, os.path.join(HERE, "drive.py"), "try", unit, vs] + extra, cwd=REPO, env=env,
                        capture_output=True, text=True, errors="replace")
     if r.returncode != 0:
         os.unlink(cpath)

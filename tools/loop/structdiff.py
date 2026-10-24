@@ -626,6 +626,8 @@ def main(argv=None):
     args = ap.parse_args(argv)
     vaddr = int(args.vaddr, 16)
     cfile = args.cfile or os.path.join(REPO, "re", "match", args.unit, "func_%08X.c" % vaddr)
+    if "@" in cfile:
+        _u, _v, cfile = regtie.parse_cfile("%s:%s" % (args.unit, cfile))
     lm, head, fs = run(args.unit, vaddr, cfile, args.context)
     print(render(lm, head, fs))
     if args.fix:
