@@ -184,6 +184,35 @@ the field-level evidence: `include/ac1/README.md`):
    best C in place with a `/* NOT MATCHED: <first diff offset>, <what differs> */`
    header, and report the last diff. A partial match is reported as a mismatch.
 
+## Stuck on a near miss? Ask the doctor
+
+After a few tries without progress, let the compiler tell you what kind of miss it is
+instead of guessing:
+
+```bash
+python tools/loop/doctor.py check <unit> 0x<VADDR> [file.c[@rodata=0x<VA>]]
+```
+
+It compiles once like the oracle and prints the class (`registers`, `mixed`,
+`size-small`, `structure`, `size`, `constants`, `schedule`, ...), why, and the plan.
+
+- **Register tie** (`registers` / `mixed` / `size-small`): run
+  `tools/loop/regtie.py diagnose`. It names the variable in the wrong register, the one
+  retail gave that register to, and both allocation priorities. Fix the tie, not the
+  symptom:
+  - split a variable that is reused for an unrelated later value;
+  - reuse one variable for two loops;
+  - move a statement to change a live range.
+
+  `regtie.py run --cfile <unit>:file.c` searches those edits automatically.
+- **Structural** (`structure` / `size`): run `tools/loop/structdiff.py`. It points at the
+  C lines where the shape diverges and names the pattern: loop tested at the top or the
+  bottom, jump table vs compares, a tail cross-jumping merged, swapped if/else arms, a
+  jump into a shared block. `--fix` tries the standard moves there.
+
+`doctor.py fix` runs the whole plan, cheapest tool first. Only a clean MATCH from
+`drive.py try` counts, as always.
+
 ## Quick reference
 
 - MATCH / MISMATCH / ERROR line formats and exit codes: `tools/match/README.md`.
