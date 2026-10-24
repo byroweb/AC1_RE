@@ -1,5 +1,8 @@
 # tools/loop — ranking and bookkeeping for the matching-decompilation loop
 
+New here? Read [`docs/MATCHING_GUIDE.md`](../../docs/MATCHING_GUIDE.md) first: the glossary
+and a which-tool-when map. This file is the reference, one section per tool.
+
 Three small Python tools that decide *which* function to try next and record
 *what happened*.  They do not compile or compare anything: the only judge of a
 match is the oracle, `tools/match/match_fn.py` (final line `MATCH ...` or
@@ -29,6 +32,8 @@ doctor.py     -> stdout, re/match  one front door: classify a near miss from one
 regtie.py     -> re/match          register-tie tier: read cc1's allocation dumps, steer the deciding tie
 structdiff.py -> stdout, re/match  where the shape differs, in C lines (object line table), + structural moves
 nearport.py   -> stdout, OUTDIR    near-copies twins.py misses: families of open bodies, auto-port from a matched copy
+wave/wave.py  -> OUT (outside repo) a wave of matching agents: per-family lists + best drafts, brief, status, promote
+                                 (see wave/README.md)
 m2cfix.py     (library)          sweep.py's draft fix-ups: stack locals, frame union, casts, cc1-driven repair
 golem.py      -> re/match/<unit>/func_<ADDR>.c
                                  local-LLM tier: compile fixes and near-miss edits from a model in LM Studio

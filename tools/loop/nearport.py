@@ -82,7 +82,11 @@ def words_of(u, va, sz):
 # ---------------------------------------------------------------------------
 # scan
 # ---------------------------------------------------------------------------
-def cmd_scan(args):
+def families(min_ratio=0.97):
+    """[(members [(unit, vaddr)], best)] for every open function. A family links open
+    functions in one twin group or with shapes at least min_ratio alike. best is
+    (ratio, unit, vaddr, member unit, member vaddr) of the closest matched function,
+    or None. Families are sorted largest first."""
     opn, done = inventory()
     grp = {}
     for path in (twins.TWINS, twins.TWINS_PROGRAMS):
@@ -101,10 +105,10 @@ def cmd_scan(args):
     for i, a in enumerate(keys):
         for b in keys[i + 1:]:
             sa, sb = shp[a], shp[b]
-            if min(len(sa), len(sb)) / max(len(sa), len(sb)) < args.min:
+            if min(len(sa), len(sb)) / max(len(sa), len(sb)) < min_ratio:
                 continue
             if (grp.get(a) and grp.get(a) == grp.get(b)) or \
-                    difflib.SequenceMatcher(None, sa, sb, autojunk=False).ratio() >= args.min:
+                    difflib.SequenceMatcher(None, sa, sb, autojunk=False).ratio() >= min_ratio:
                 parent[find(a)] = find(b)
     fam = defaultdict(list)
     for k in keys:
@@ -119,18 +123,23 @@ def cmd_scan(args):
         for u, va in members:
             s = shp[(u, va)]
             n = len(s)
-            for b in range(int(n * args.min * 4) // 16, int(n / args.min * 4) // 16 + 1):
+            for b in range(int(n * min_ratio * 4) // 16, int(n / min_ratio * 4) // 16 + 1):
                 for mu, mva, msz in done_shapes.get(b, ()):
-                    if min(n, msz // 4) / max(n, msz // 4) < args.min:
+                    if min(n, msz // 4) / max(n, msz // 4) < min_ratio:
                         continue
                     r = difflib.SequenceMatcher(None, s, shape(words_of(mu, mva, msz)), autojunk=False).ratio()
-                    if r >= args.min and (best is None or r > best[0]):
+                    if r >= min_ratio and (best is None or r > best[0]):
                         best = (r, mu, mva, u, va)
         rows.append((members, best))
     rows.sort(key=lambda r: (-len(r[0]), r[0][0]))
+    return rows
+
+
+def cmd_scan(args):
+    rows = families(args.min)
     multi = [r for r in rows if len(r[0]) > 1 or r[1]]
     print("%d open functions, %d families; %d families have a twin-group split or a matched near-copy"
-          % (len(keys), len(rows), len(multi)))
+          % (sum(len(r[0]) for r in rows), len(rows), len(multi)))
     for members, best in multi:
         src = "port from %s 0x%08X (%.3f)" % (best[1], best[2], best[0]) if best else "no matched copy"
         print("  %-60s %s" % (" ".join("%s:0x%08X" % m for m in members), src))

@@ -5,6 +5,8 @@ description: Byte-match one Armored Core (SLUS-01323) function. Use when asked t
 
 # match-function
 
+New to the terms (near miss, twin, family, lever)? See `docs/MATCHING_GUIDE.md`.
+
 Goal: a C function that, compiled with the retail toolchain, produces exactly the
 retail bytes at the given address. The only judge is
 
