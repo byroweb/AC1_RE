@@ -416,7 +416,35 @@ def hint(rows, size, ours_size):
     return h.split(" - see the diff-pattern table")[0] if h else None
 
 
-def tweak_prompt(tgt, text, ev, n, tried, max_prompt):
+_NEIGHBOURS = []
+
+
+def reference_snippet(tgt, room):
+    """The most similar matched function's code (sweep.py Neighbours.references: masked
+    neighbour, else the opcode-only backup) as (header, code), or None when it does not
+    fit in `room` characters.  The index is built once per process."""
+    if room < 400:
+        return None
+    if not _NEIGHBOURS:
+        _NEIGHBOURS.append(sweep.Neighbours())
+    try:
+        refs = _NEIGHBOURS[0].references(tgt.unit, tgt.vaddr, tgt.size, 1)
+    except (OSError, ValueError, units.UnitError):
+        return None
+    if not refs:
+        return None
+    sim, mode, c = refs[0]
+    with open(os.path.join(drive.RE_MATCH, c["src"]), encoding="utf-8", errors="replace") as fh:
+        code = code_part(fh.read())
+    span = permute.find_function(code, "func_%08X" % c["vaddr"])
+    if len(code) > room and span:
+        code = code[span[0]:span[1]] + "\n"
+    if len(code) > room:
+        return None
+    return "%s 0x%08X, %s similarity %.2f" % (c["unit"], c["vaddr"], mode, sim), code
+
+
+def tweak_prompt(tgt, text, ev, n, tried, max_prompt, refs=False):
     code = code_part(text)
     span = permute.find_function(code, tgt.fn)
     if len(code) > max_prompt * 0.6 and span:
@@ -430,6 +458,10 @@ def tweak_prompt(tgt, text, ev, n, tried, max_prompt):
             "Our C (%s, %s):\n```c\n%s```\n"
             % (asm, sum(1 for r in rows if r[0] != " "), tgt.size, ev["size"],
                ("Hint: %s\n" % h) if h else "", tgt.fn, tgt.unit, code))
+    ref = reference_snippet(tgt, max_prompt - len(user) - 900) if refs else None
+    if ref:
+        user += ("\nA similar function that already matches (%s), for how this code base writes "
+                 "such code; it is not the same function:\n```c\n%s```\n" % ref)
     if tried:
         user += "\nEdits already tried, no better:\n%s\n" % "\n".join("- " + t for t in tried[-12:])
     user += ("\nEdit the C (never the assembly) so it compiles to the target.  Give up to %d different "
@@ -566,7 +598,7 @@ def do_tweak(tgt, args, model, log, work, rounds=None):
     tried = []
     seen = {hashlib.sha1(text.encode()).digest()}
     for k in range(1, (rounds or args.rounds) + 1):
-        user = tweak_prompt(tgt, text, ev, args.n, tried, args.max_prompt)
+        user = tweak_prompt(tgt, text, ev, args.n, tried, args.max_prompt, getattr(args, "refs", False))
         try:
             r = ask(args, model, SYSTEM_TWEAK, user, 120 + 160 * args.n, 0.3 + 0.25 * (k - 1), calls)
         except LLMError as e:
@@ -857,6 +889,8 @@ def add_common(ap):
     ap.add_argument("--attempts", type=int, default=3, help="fix: answers per draft (default 3)")
     ap.add_argument("--rounds", type=int, default=3, help="tweak: rounds (default 3)")
     ap.add_argument("-n", type=int, default=6, help="tweak: edit blocks asked for per round (default 6)")
+    ap.add_argument("--refs", action="store_true",
+                    help="tweak: add the most similar matched function's C when it fits the prompt")
     ap.add_argument("--then-tweak", type=int, default=0, metavar="R",
                     help="fix: R tweak rounds after a fix that compiles within --max-words")
     ap.add_argument("--max-words", type=int, default=12, help="tweak only drafts this close (default 12)")

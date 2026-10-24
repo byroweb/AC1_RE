@@ -3,7 +3,7 @@
 
     sweep.py --queue FILE [--queue FILE ...] [--max-size 160] [--limit 100] [-j 20]
              [--variants ctx,ctx-regvars,ctx-knr,...,neighbour] [--try-all]
-             [--neighbour-min 0.5] [--neighbour-tries 1]
+             [--neighbour-min 0.5] [--neighbour-op-min 0.6] [--neighbour-tries 1]
              [--work DIR] [--report FILE] [--best-dir DIR] [--dry-run] [--no-replay]
              [--no-ledger]
 
@@ -27,7 +27,10 @@ longer open in the ledger, that already have re/match/<unit>/func_<ADDR>.c, or
      words), renamed, its func_/D_ names and --defsyms moved through the aligned
      relocation slots, plus `neighbour+imm` when only immediates differ (see
      Neighbours / neighbour_draft / imm_fixup; the report's neighbour column names
-     it for every body);
+     it for every body); then `neighbour-op`, the backup for bodies whose best
+     masked neighbour is under --neighbour-min: the same draft from the nearest
+     function by opcodes only (registers and immediates ignored), at or above
+     --neighbour-op-min;
   2. each draft goes through tools/match/match_fn.py with the unit's flags,
      --expect-size, --rodata from jt_addrs, the two --syms tables, and every
      unresolved func_<ADDR> / D_<ADDR> as --defsym (rerun once), as
@@ -110,7 +113,8 @@ VARIANTS = {"ctx": (False, [V], (), 0),
             "ctx-fix-frame": (False, [V, SS], (_fix_frame,), 6),
             "ctx-fix-regvars": (False, [V, SS, "--reg-vars", "saved"], (_fix,), 6)}
 NEIGHBOUR = "neighbour"     # not an m2c draft: the nearest matched function's C (below)
-DEFAULT_VARIANTS = "ctx,ctx-regvars,ctx-knr,ctx-spframe,ctx-fix-frame,ctx-fix,neighbour"
+NEIGHBOUR_OP = "neighbour-op"   # the backup: nearest by opcodes only, when no masked neighbour is close
+DEFAULT_VARIANTS = "ctx,ctx-regvars,ctx-knr,ctx-spframe,ctx-fix-frame,ctx-fix,neighbour,neighbour-op"
 PRELUDE = '#include "ac1/ac1.h"\n#include "m2c_compat.h"\n'
 
 
@@ -179,20 +183,44 @@ IDENT = re.compile(r"\b[A-Za-z_]\w*\b")
 NEIGHBOUR_HDR = "/* neighbour draft"
 COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.S)
 NEIGHBOUR_MIN = 0.5        # default --neighbour-min: lowest similarity worth an oracle run
+NEIGHBOUR_OP_MIN = 0.6     # default --neighbour-op-min: the same for the opcode-only backup
 
 
 def trigrams(m):
     return set(zip(m, m[1:], m[2:]))
 
 
+def opkey(w):
+    """The operation of one MIPS word with registers and immediates dropped: the
+    primary opcode, plus funct for SPECIAL, rt for REGIMM and the command for COP0..3
+    (the GTE commands of COP2 stay apart).  0 (nop) is its own key."""
+    if w == 0:
+        return -1
+    op = w >> 26
+    if op == 0:
+        return 0x100 | (w & 0x3F)
+    if op == 1:
+        return 0x200 | ((w >> 16) & 0x1F)
+    if 0x10 <= op <= 0x13:
+        if (w >> 25) & 1:                         # CO bit: a command (a GTE op for COP2)
+            return 0x800 | (op << 6) | (w & 0x3F)
+        return 0x400 | (op << 6) | ((w >> 21) & 0x1F)   # mfc / mtc / cfc / ctc / bc
+    return op
+
+
 class Neighbours:
     """Every original manifest row (its own func_<ADDR>.c) as (masked body, slots), one
-    per distinct masked body; best(unit, vaddr, size) finds the most similar one.
+    per distinct masked body; ranked(unit, vaddr, size) finds the most similar ones.
 
-    Similarity is difflib's ratio over the masked words (twins.mask_function: the
-    relocated fields zeroed), computed for the 5 candidates of size 0.7x..1.43x with the
-    highest masked-trigram Jaccard.  The whole corpus is read from the images, so a
-    rebuild after a batch of matches costs a few seconds."""
+    mode "masked" (the default, and what the `neighbour` draft uses): difflib's ratio over
+    the masked words (twins.mask_function: the relocated fields zeroed), computed for the
+    5 candidates of size 0.7x..1.43x with the highest masked-trigram Jaccard.
+    mode "opcode" (the backup, coddog-style): the same over opkey() sequences, so register
+    choice and every immediate are ignored, for sizes 0.5x..2x.  It finds the relatives
+    the masked words miss: useless as a draft more often, but a reference for how this
+    codebase wrote the same shape of code.
+    The whole corpus is read from the images, so a rebuild after a batch of matches costs
+    a few seconds."""
 
     def __init__(self, manifest=drive.MANIFEST):
         import twins
@@ -210,26 +238,50 @@ class Neighbours:
             if masked in seen:
                 continue
             seen.add(masked)
+            ops = tuple(opkey(w) for w in masked)
             self.corpus.append({"unit": unit, "vaddr": va, "size": size, "src": r["src"],
                                 "extra": r["extra"], "masked": masked, "slots": slots,
-                                "tri": trigrams(masked)})
+                                "tri": trigrams(masked), "ops": ops, "otri": trigrams(ops)})
 
-    def ranked(self, unit, vaddr, size, k=1):
+    def ranked(self, unit, vaddr, size, k=1, mode="masked"):
         """[(similarity, corpus entry, (masked, slots) of the body)] best first, at most k."""
+        unit = units.norm(unit)
         masked, slots = self.twins.mask_function(self.twins.func_words(unit, vaddr, size), vaddr)
-        g = trigrams(masked)
+        if mode == "opcode":
+            seq, key, tri, lo, hi = tuple(opkey(w) for w in masked), "ops", "otri", 0.5, 2.0
+        else:
+            seq, key, tri, lo, hi = masked, "masked", "tri", 0.7, 1.43
+        g = trigrams(seq)
         cands = []
         for c in self.corpus:
-            if not (0.7 * size <= c["size"] <= 1.43 * size) or (c["unit"], c["vaddr"]) == (unit, vaddr):
+            if not (lo * size <= c["size"] <= hi * size) or (c["unit"], c["vaddr"]) == (unit, vaddr):
                 continue
-            cands.append((len(g & c["tri"]) / (len(g | c["tri"]) or 1), c["unit"], c["vaddr"], c))
+            cands.append((len(g & c[tri]) / (len(g | c[tri]) or 1), c["unit"], c["vaddr"], c))
         cands.sort(key=lambda x: x[:3], reverse=True)
         out = []
         for _j, _u, _v, c in cands[:max(5, k)]:
-            s = difflib.SequenceMatcher(None, c["masked"], masked, autojunk=False).ratio()
+            s = difflib.SequenceMatcher(None, c[key], seq, autojunk=False).ratio()
             out.append((s, c, (masked, slots)))
         out.sort(key=lambda x: -x[0])
         return out[:k]
+
+    def references(self, unit, vaddr, size, k=3, masked_min=NEIGHBOUR_MIN):
+        """Up to k matched functions to read as reference C: the masked neighbours at or
+        above masked_min first, then opcode-only neighbours to fill the rest (each body at
+        most once) -> [(similarity, mode, corpus entry)]."""
+        out, seen = [], set()
+        for s, c, _b in self.ranked(unit, vaddr, size, k):
+            if s >= masked_min:
+                out.append((s, "masked", c))
+                seen.add((c["unit"], c["vaddr"]))
+        if len(out) < k:
+            for s, c, _b in self.ranked(unit, vaddr, size, k + len(out), mode="opcode"):
+                if len(out) >= k:
+                    break
+                if (c["unit"], c["vaddr"]) not in seen:
+                    out.append((s, "opcode", c))
+                    seen.add((c["unit"], c["vaddr"]))
+        return out
 
 
 def align_slots(nmasked, nslots, bmasked, bslots):
@@ -250,7 +302,7 @@ def align_slots(nmasked, nslots, bmasked, bslots):
     return a, b
 
 
-def neighbour_draft(row, sim, nb, body):
+def neighbour_draft(row, sim, nb, body, mode="masked"):
     """(C text, defsyms, extra args, rodata or None, notes) of the neighbour's C remapped
     onto the body: its function renamed, every func_/D_<ADDR> name moved by the delta of
     the aligned relocation slot that targets it (twins.map_addr), table names whose slot
@@ -287,8 +339,8 @@ def neighbour_draft(row, sim, nb, body):
                     notes.append("0x%08X kept (collides at 0x%08X)" % (a, b))
     text = AUTO_NAME.sub(lambda m: "%s_%08X" % (m.group(1), amap[int(m.group(2), 16)]), text)
     first, nl, rest = text.partition("\n")
-    hdr = (NEIGHBOUR_HDR + " (tools/loop/sweep.py): %s 0x%08X %s, masked similarity %.3f */"
-           % (nb["unit"], nb["vaddr"], nb["src"], sim))
+    hdr = (NEIGHBOUR_HDR + " (tools/loop/sweep.py): %s 0x%08X %s, %s similarity %.3f */"
+           % (nb["unit"], nb["vaddr"], nb["src"], mode, sim))
     text = hdr + "\n" + (rest if first.startswith("/*") and first.rstrip().endswith("*/") else text)
 
     defs, rodata, other = twins.parse_extra(nb["extra"])
@@ -462,11 +514,14 @@ def note_try(res, variant, clean, facts, size, text):
         res["best"] = {"variant": variant, "aligned": al, "positional": pos, "text": text}
 
 
-def work(row, workdir, variants, try_all=False, neighbours=None, nb_min=NEIGHBOUR_MIN, nb_tries=1, hb=None):
+def work(row, workdir, variants, try_all=False, neighbours=None, nb_min=NEIGHBOUR_MIN, nb_tries=1, hb=None,
+         nb_op_min=NEIGHBOUR_OP_MIN):
     """Try the variants in order on one body -> dict(result..., c_text, defsyms, variant).
     try_all: keep trying after the first clean one (to measure variants; the first wins).
     neighbours: a Neighbours index; the body's best neighbour goes to res["neighbour"]
     whether or not the `neighbour` variant is tried (it is only for similarity >= nb_min).
+    `neighbour-op` is the backup: only when the best masked neighbour is under nb_min, the
+    opcode-only neighbours at or above nb_op_min are drafted the same way.
     res["best"] is the compiling draft with the highest aligned closeness, res["stats"]
     one (variant, match|compiled|error|m2c_fail, positional, aligned) per try.
     hb: a heartbeat.Heartbeat told the variant being tried and each oracle run."""
@@ -487,13 +542,21 @@ def work(row, workdir, variants, try_all=False, neighbours=None, nb_min=NEIGHBOU
         if res["match"] and not try_all:
             break
         hb.update(unit, row["vaddr"], phase=variant)
-        if variant == NEIGHBOUR:
-            for k, (sim, nb, body) in enumerate(res["neighbour"]):
-                if sim < nb_min:
+        if variant in (NEIGHBOUR, NEIGHBOUR_OP):
+            if variant == NEIGHBOUR:
+                ranked, floor, mode = res["neighbour"], nb_min, "masked"
+            elif res["neighbour"] and res["neighbour"][0][0] >= nb_min:
+                continue                            # a close masked neighbour exists: no backup needed
+            else:
+                ranked = neighbours.ranked(unit, vaddr, size, max(1, nb_tries), mode="opcode") \
+                    if neighbours is not None else []
+                floor, mode = nb_op_min, "opcode"
+            for k, (sim, nb, body) in enumerate(ranked):
+                if sim < floor:
                     break
                 name = variant if k == 0 else "%s%d" % (variant, k + 1)
                 try:
-                    text, defsyms, extra, nrod, _notes = neighbour_draft(row, sim, nb, body)
+                    text, defsyms, extra, nrod, _notes = neighbour_draft(row, sim, nb, body, mode)
                 except (OSError, ValueError) as e:
                     res["tries"].append((name, "DRAFT_FAIL:%s" % e))
                     continue
@@ -520,10 +583,10 @@ def work(row, workdir, variants, try_all=False, neighbours=None, nb_min=NEIGHBOU
                 if clean and not res["match"]:
                     res["match"] = {"variant": name, "text": text, "defsyms": defsyms, "rodata": rod,
                                     "extra": extra,
-                                    "from": "%s draft of %s 0x%08X (%s, similarity %.3f)"
-                                    % (name, nb["unit"], nb["vaddr"], nb["src"], sim),
-                                    "why": "%s of %s 0x%08X, similarity %.3f"
-                                    % (name, nb["unit"], nb["vaddr"], sim)}
+                                    "from": "%s draft of %s 0x%08X (%s, %s similarity %.3f)"
+                                    % (name, nb["unit"], nb["vaddr"], nb["src"], mode, sim),
+                                    "why": "%s of %s 0x%08X, %s similarity %.3f"
+                                    % (name, nb["unit"], nb["vaddr"], mode, sim)}
                 if clean:
                     break
             continue
@@ -661,9 +724,11 @@ def main(argv=None):
     ap.add_argument("--report", help="per-body report TSV (default <work>/sweep_report.tsv)")
     ap.add_argument("--variants", default=DEFAULT_VARIANTS,
                     help="comma-separated drafts to try in order, of: %s (default %%(default)s)"
-                    % ", ".join(list(VARIANTS) + [NEIGHBOUR]))
+                    % ", ".join(list(VARIANTS) + [NEIGHBOUR, NEIGHBOUR_OP]))
     ap.add_argument("--neighbour-min", type=float, default=NEIGHBOUR_MIN,
                     help="neighbour variant: lowest masked similarity tried (default %(default)s)")
+    ap.add_argument("--neighbour-op-min", type=float, default=NEIGHBOUR_OP_MIN,
+                    help="neighbour-op variant: lowest opcode-only similarity tried (default %(default)s)")
     ap.add_argument("--neighbour-tries", type=int, default=1,
                     help="neighbour variant: try the best N neighbours (default %(default)s)")
     ap.add_argument("--try-all", action="store_true",
@@ -676,11 +741,12 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     variants = [v.strip() for v in args.variants.split(",") if v.strip()]
-    bad = [v for v in variants if v not in VARIANTS and v != NEIGHBOUR]
+    bad = [v for v in variants if v not in VARIANTS and v not in (NEIGHBOUR, NEIGHBOUR_OP)]
     if bad:
         ap.error("unknown variant(s) %s; known: %s"
-                 % (", ".join(bad), ", ".join(list(VARIANTS) + [NEIGHBOUR])))
-    use_nb = NEIGHBOUR in variants
+                 % (", ".join(bad), ", ".join(list(VARIANTS) + [NEIGHBOUR, NEIGHBOUR_OP])))
+    nb_variants = [v for v in variants if v in (NEIGHBOUR, NEIGHBOUR_OP)]
+    use_nb = bool(nb_variants)
     rows, skipped = load_queue_rows(args.queue, args.max_size, args.limit, any_size=use_nb)
     print("%d bod(ies) to sweep (skipped: %d >= %d B, %d not open, %d with a C file)"
           % (len(rows), skipped["size"], args.max_size, skipped["closed"], skipped["c_file"]))
@@ -693,7 +759,7 @@ def main(argv=None):
     def row_variants(r):
         if int(r["size"]) < args.max_size:
             return variants
-        return [NEIGHBOUR]
+        return nb_variants
     if args.dry_run:
         for r in rows:
             nb = ""
@@ -708,7 +774,8 @@ def main(argv=None):
     hb = heartbeat.Heartbeat(workdir, "sweep", len(rows), label=",".join(variants))
     with cf.ThreadPoolExecutor(max_workers=args.jobs) as ex:
         futs = {ex.submit(work, r, workdir, row_variants(r), args.try_all, neighbours,
-                          args.neighbour_min, args.neighbour_tries, hb): r for r in rows}
+                          args.neighbour_min, args.neighbour_tries, hb, args.neighbour_op_min): r
+                for r in rows}
         for i, f in enumerate(cf.as_completed(futs), 1):
             r = futs[f]
             try:

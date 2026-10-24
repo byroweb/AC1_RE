@@ -2,8 +2,8 @@
 """drive.py - the driver half of the matching loop: everything except writing the C.
 
     drive.py next   [--unit U] [--queue FILE] [--shard k/n] [--max-score S] [--no-m2c]
-                    [--dry-run] [--re-dir DIR]
-    drive.py try    <unit> <vaddr> [--defsym NAME=ADDR]... [--rodata VA] [--no-rodata-align-fix]
+                    [--dry-run] [--re-dir DIR] [--refs 3] [--refs-lines 80]
+    drive.py try   <unit> <vaddr> [--defsym NAME=ADDR]... [--rodata VA] [--no-rodata-align-fix]
                     [--no-auto-defsym]
                     [--commit] [--keep] [--re-dir DIR]
     drive.py giveup <unit> <vaddr> <reason...>
@@ -12,8 +12,10 @@
 
 next    prints a work package for the next open function (exit 3 when nothing is
         left): the functions.tsv row and score, the retail disassembly, the GAS
-        that m2c reads, the m2c draft, the exact oracle command line and the C
-        path.  If the C file does not exist it writes a skeleton with the draft
+        that m2c reads, the m2c draft, up to --refs similar matched functions as
+        reference C (sweep.py Neighbours.references: masked-word neighbours, then
+        opcode-only ones as the backup; the best one's C printed), the exact oracle
+        command line and the C path.  If the C file does not exist it writes a skeleton with the draft
         in a comment; that is the only file `next` writes.  With --queue the
         rows come from a matcher queue (queue-A.tsv) and $AC1_LEDGER must point
         at that matcher's own ledger; otherwise rank.candidates() is used,
@@ -540,6 +542,35 @@ def skeleton(cpath, row, draft):
         fh.write("\n".join(lines))
 
 
+def print_references(unit, vaddr, size, k, max_lines):
+    """Work-package section: up to k matched functions that look like this one (sweep.py
+    Neighbours.references: masked-word neighbours, then opcode-only ones as the backup),
+    and the best one's C, at most max_lines lines.  They are reading material for how this
+    codebase wrote the same shape of code, not drafts."""
+    import sweep
+    print("\n-- similar matched functions (reference C; masked = same words but addresses,"
+          " opcode = same operations, any registers / immediates)")
+    try:
+        refs = sweep.Neighbours().references(unit, vaddr, size, k)
+    except (OSError, ValueError, units.UnitError) as e:
+        print("unavailable: %s" % e)
+        return
+    if not refs:
+        print("(none)")
+        return
+    for sim, mode, c in refs:
+        print("%.3f %-6s %s 0x%08X %4d B  %s" % (sim, mode, c["unit"], c["vaddr"], c["size"],
+                                                rel(os.path.join(RE_MATCH, c["src"]))))
+    if max_lines > 0:
+        sim, mode, c = refs[0]
+        with open(os.path.join(RE_MATCH, c["src"]), encoding="utf-8", errors="replace") as fh:
+            lines = fh.read().rstrip("\n").split("\n")
+        print("\n-- %s (%s %.3f)" % (rel(os.path.join(RE_MATCH, c["src"])), mode, sim))
+        print("\n".join(lines[:max_lines]))
+        if len(lines) > max_lines:
+            print("... (%d more lines)" % (len(lines) - max_lines))
+
+
 def cmd_next(args):
     re_dir = os.path.abspath(args.re_dir)
     if args.queue:
@@ -598,6 +629,8 @@ def cmd_next(args):
     else:
         skeleton(cpath, pick, draft)
         state = "skeleton written"
+    if args.refs > 0:
+        print_references(unit, vaddr, size, args.refs, args.refs_lines)
     # the oracle line reflects the file's includes, so build it after the skeleton exists
     argv = oracle_argv(u, vaddr, cpath, size, rodata=rodata)
     print("\n-- oracle")
@@ -840,6 +873,10 @@ def main(argv=None):
     p.add_argument("--no-m2c", action="store_true")
     p.add_argument("--dry-run", action="store_true", help="do not write the skeleton")
     p.add_argument("--re-dir", default=RE_MATCH, help="where the C files live (default re/match)")
+    p.add_argument("--refs", type=int, default=3,
+                   help="list this many similar matched functions as reference C (0: none; default 3)")
+    p.add_argument("--refs-lines", type=int, default=80,
+                   help="print the best reference's C up to this many lines (0: paths only; default 80)")
     p.set_defaults(func=cmd_next)
 
     p = sub.add_parser("try", help="run the oracle on re/match/<unit>/func_<ADDR>.c")
