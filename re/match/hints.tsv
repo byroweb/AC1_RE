@@ -2377,3 +2377,127 @@ ovl201	0x800B55E4	name	libpress_DecDCTvlcSize2	2026-10-22T22:35:50Z
 ovl201	0x800B55E4	hint	PsyQ libpress hand asm	2026-10-22T22:35:50Z
 ovl201	0x800B5618	name	libpress_DecDCTvlc2	2026-10-22T22:35:50Z
 ovl201	0x800B5618	hint	PsyQ libpress hand asm	2026-10-22T22:35:50Z
+ovl202	0x8007790C	name	ent_fall_set_velocity	2026-10-24T17:15:40Z
+ovl202	0x8007790C	hint	horiz vel scaled down by 0x80 (sqrt), mover setup, collision step via func_800749A0	2026-10-24T17:15:40Z
+ovl202	0x8004EDAC	name	snd_seq_step	2026-10-24T17:15:40Z
+ovl202	0x8004EDAC	hint	steps sound-event sequence; calls func_8004CC30/func_8004CE44 per event (draft comment)	2026-10-24T17:15:40Z
+ovl202	0x8004D044	name	snd_chan_alloc	2026-10-24T17:15:40Z
+ovl202	0x8004D044	hint	picks a free/same-id/lowest-prio sound channel from D_80041DE0[23]	2026-10-24T17:15:40Z
+ovl201	0x8004E2BC	name	garage_ring_idle	2026-10-24T17:15:40Z
+ovl201	0x8004E2BC	hint	garage main menu ring idle step (draft comment): confirm opens item, left/right turn	2026-10-24T17:15:40Z
+exe	0x80013430	name	vec_dir_scaled	2026-10-24T17:15:40Z
+exe	0x80013430	hint	out = (b - a) * len / func_80014988(b - a): direction vector of length len	2026-10-24T17:15:40Z
+exe	0x8001606C	name	mem_alloc_block	2026-10-24T17:15:40Z
+exe	0x8001606C	hint	heap alloc: finds block (func_80015E68), splits if >=0x810 left, marks used=2, records owner/tag, returns payload b+1	2026-10-24T17:15:40Z
+ovl201	0x8005F260	name	sjis_draw_string	2026-10-24T17:15:40Z
+ovl201	0x8005F260	hint	draws a >-terminated SJIS string glyph by glyph then LoadImage of its CLUT	2026-10-24T17:15:40Z
+ovl202	0x8005EB50	name	sky_draw_backdrop	2026-10-24T17:15:40Z
+ovl202	0x8005EB50	hint	draws sky bands + scrolling horizon sprites from camera pitch/heading (draft comment)	2026-10-24T17:15:40Z
+ovl202	0x8005277C	name	msgbox_open_parse	2026-10-24T17:15:41Z
+ovl202	0x8005277C	hint	parses M/L/W/C/P message-box header, measures text, opens box via func_80052650 (draft comment)	2026-10-24T17:15:41Z
+ovl202	0x80062974	name	wst_spawn_emitter_fx	2026-10-24T17:15:44Z
+ovl202	0x80062974	hint	loops 4 model emitter points selected by world-struct flags bits 24..27, calls effect spawner func_80056B54 per point	2026-10-24T17:15:44Z
+ovl202	0x80067AB4	name	coll_sphere_box_mask	2026-10-24T17:15:44Z
+ovl202	0x80067AB4	hint	hints.tsv name; loops sphere set 0x801AE82C last to first, returns overlap bitmask	2026-10-24T17:15:44Z
+ovl202	0x80051150	name	ui_draw_text_ft4	2026-10-24T17:15:44Z
+ovl202	0x80051150	hint	draws ASCII string as POLY_FT4 glyphs, backslash-digit colour escape, returns pixel width	2026-10-24T17:15:44Z
+ovl203	0x8007D704	name	btl_side_ac_reinit	2026-10-24T17:15:48Z
+ovl203	0x8007D704	hint	resets side flags, recomputes part stats (h208..h216), refills ammo ent[].b=ent[].a, spawns body	2026-10-24T17:15:48Z
+ovl202	0x80084314	name	proj_missile_think	2026-10-24T17:15:50Z
+ovl202	0x80084314	hint	homing missile: def table 0x8009019C stride 0x28, turns ang toward target, 4-way split at t_fire+6 for type 3	2026-10-24T17:15:50Z
+fdat008	0x801CB03C	name	ai_move_state_machine	2026-10-24T17:15:50Z
+fdat008	0x801CB03C	hint	fn_move sibling of fdat000 0x801C981C (same event/mode switches)	2026-10-24T17:15:50Z
+fdat024	0x801C6498	name	trap_proximity_blast	2026-10-24T17:15:50Z
+fdat024	0x801C6498	hint	timer at ctl+8 reloads from +0x28; player in box lo/hi<<8 -> blast type 7, fx by +0x29	2026-10-24T17:15:50Z
+fdat022	0x801C60B0	name	carrier_drop_think	2026-10-24T17:15:50Z
+fdat022	0x801C60B0	hint	lowers carried units (D_8019FAB8 slots) to floor, then flies keyframes 0x801C7538 (14 B), spawns next unit at event 1	2026-10-24T17:15:50Z
+fdat044	0x801C67A0	name	mission_end_sequence	2026-10-24T17:15:50Z
+fdat044	0x801C67A0	hint	frame counter D_801CCA48: <110 spray fx, then sink, fade 158/159+, master volume ramp 200+	2026-10-24T17:15:50Z
+ovl201	0x8006E148	name	emblem_image_scroll	2026-10-24T17:15:50Z
+ovl201	0x8006E148	hint	(hint) 64x64 4bpp image scroll U/D/L/R	2026-10-24T17:15:51Z
+fdat004	0x801C5534	name	mission_turret10_event_handler	2026-10-24T17:15:51Z
+fdat004	0x801C5534	hint	(hint) varargs msg handler, distance bands, rand dispatch table 0x801C4C60	2026-10-24T17:15:51Z
+ovl203	0x8007D704	name	btl_side_ac_reinit	2026-10-24T17:28:19Z
+ovl203	0x8007D704	hint	resets side flags, recomputes part stats (h208..h216), refills ammo ent[].b=ent[].a, spawns body	2026-10-24T17:28:19Z
+ovl201	0x800744A8	name	ui_asm_screen_create	2026-10-24T17:28:19Z
+ovl201	0x800744A8	hint	ctor of the assembly-screen UiObj (sets ctor/update/destroy, w.src/owner/mode, snapshots D_80031A58 config bytes and rebuilds when changed)	2026-10-24T17:28:19Z
+ovl202	0x80084314	name	proj_missile_think	2026-10-24T17:28:21Z
+ovl202	0x80084314	hint	homing missile: def table 0x8009019C stride 0x28, turns ang toward target, 4-way split at t_fire+6 for type 3	2026-10-24T17:28:21Z
+fdat008	0x801CB03C	name	ai_move_state_machine	2026-10-24T17:28:21Z
+fdat008	0x801CB03C	hint	fn_move sibling of fdat000 0x801C981C (same event/mode switches)	2026-10-24T17:28:21Z
+fdat024	0x801C6498	name	trap_proximity_blast	2026-10-24T17:28:21Z
+fdat024	0x801C6498	hint	timer at ctl+8 reloads from +0x28; player in box lo/hi<<8 -> blast type 7, fx by +0x29	2026-10-24T17:28:21Z
+fdat022	0x801C60B0	name	carrier_drop_think	2026-10-24T17:28:21Z
+fdat022	0x801C60B0	hint	lowers carried units (D_8019FAB8 slots) to floor, then flies keyframes 0x801C7538 (14 B), spawns next unit at event 1	2026-10-24T17:28:21Z
+fdat044	0x801C67A0	name	mission_end_sequence	2026-10-24T17:28:21Z
+fdat044	0x801C67A0	hint	frame counter D_801CCA48: <110 spray fx, then sink, fade 158/159+, master volume ramp 200+	2026-10-24T17:28:21Z
+ovl201	0x8006E148	name	emblem_image_scroll	2026-10-24T17:28:21Z
+ovl201	0x8006E148	hint	(hint) 64x64 4bpp image scroll U/D/L/R	2026-10-24T17:28:21Z
+fdat004	0x801C5534	name	mission_turret10_event_handler	2026-10-24T17:28:21Z
+fdat004	0x801C5534	hint	(hint) varargs msg handler, distance bands, rand dispatch table 0x801C4C60	2026-10-24T17:28:21Z
+exe	0x80012A78	name	math_line_circle_intersect	2026-10-24T17:28:21Z
+exe	0x80012A78	hint	line (x0,y0)+(dx,dy) vs circle r2, solves on long axis, SquareRoot0, returns 1/2 axis or 0	2026-10-24T17:28:22Z
+fdat074	0x801C4D50	name	ai_fly_mover_step	2026-10-24T17:28:22Z
+fdat074	0x801C4D50	hint	sibling of fdat000 0x801C5CB8 hover mover; functions.tsv row 0x801C4D48 starts 8 bytes early	2026-10-24T17:28:22Z
+fdat044	0x801C6A00	name	mission_end_script	2026-10-24T17:28:22Z
+fdat044	0x801C6A00	hint	radio-line state machine D_801CCA40 on timer D_8019F52C, debris spray x6, spawns 0x801C67A0	2026-10-24T17:28:22Z
+ovl202	0x80077B78	name	weapon_fire_dispatch	2026-10-24T17:28:22Z
+ovl202	0x80077B78	hint	variadic (e,kind,dmg,b4,wpn,n,...) fires n shots by wpn class bits 0x7000 / subtype 0xF00	2026-10-24T17:28:22Z
+ovl202	0x80050468	name	hud_draw_mission	2026-10-24T17:28:26Z
+ovl202	0x80050468	hint	draws target gauge, AP, timer, radar, weapon list, compass gated by g_mission_end_seq	2026-10-24T17:28:26Z
+ovl202	0x8008C178	name	vm_load_threads	2026-10-24T17:28:26Z
+ovl202	0x8008C178	hint	README names 0x8008C194 vm_load_threads (stores vm_set); points threads at code, allocates work areas	2026-10-24T17:28:26Z
+ovl202	0x8005C710	name	clip_box_visible	2026-10-24T17:28:26Z
+ovl202	0x8005C710	hint	box corners to scratchpad, AND of outcodes from func_8005C630; 1 if possibly on screen	2026-10-24T17:28:26Z
+ovl202	0x8005CE3C	name	sect_draw_visible	2026-10-24T17:28:26Z
+ovl202	0x8005CE3C	hint	current section + near, unoccluded linked sections; marks drawn/seen bitmaps; flushes two draw lists	2026-10-24T17:28:26Z
+ovl204	0x8005BFE0	name	cell_draw_visible	2026-10-24T17:28:27Z
+ovl204	0x8005BFE0	hint	ovl204 twin of ovl202 0x8005CE3C (portal cell visibility + draw lists)	2026-10-24T17:28:27Z
+ovl203	0x800797D0	name	vs_hover_follow_step	2026-10-24T17:28:27Z
+ovl203	0x800797D0	hint	versus hover mover step with lock target (lead, steer, clamp) or sink/climb	2026-10-24T17:28:27Z
+ovl201	0x800B5EEC	name	sf_divdf	2026-10-24T17:28:31Z
+ovl201	0x800B5EEC	hint	soft-float double divide: restoring division one quotient bit per step, overflow -> err(34)	2026-10-24T17:28:31Z
+ovl201	0x800B4398	name	mc_save_emblem_file	2026-10-24T17:28:31Z
+ovl201	0x800B4398	hint	writes "Z" emblem save (header, icon, 7 VRAM emblem slots) to card port, reads back and verifies checksum	2026-10-24T17:28:31Z
+ovl203	0x800860A4	name	debris_spawn_from_object	2026-10-24T17:28:31Z
+ovl203	0x800860A4	hint	spawns tumbling debris pieces from an AC / projectile-pool object / world cell model parts (80085D1C per part)	2026-10-24T17:28:31Z
+fdat014	0x801C64E8	name	debris_spawn_from_object	2026-10-24T17:28:31Z
+fdat014	0x801C64E8	hint	fdat014 twin of ovl203 0x800860A4	2026-10-24T17:28:31Z
+ovl203	0x80071D84	name	cell_carrier_move_push	2026-10-24T17:28:31Z
+ovl203	0x80071D84	hint	moves a lift-like world cell by its carrier, pushes touching ACs (800736CC), refuses when push too short	2026-10-24T17:28:31Z
+ovl202	0x8005FB90	name	beam_draw_textured	2026-10-24T17:28:31Z
+ovl202	0x8005FB90	hint	textured beam quad a->b of width w; near beams go to the recursive splitter 8005F5DC	2026-10-24T17:28:31Z
+ovl201	0x800A86D0	name	link_exchange_words	2026-10-24T17:28:35Z
+ovl201	0x800A86D0	hint	read/write 8-byte R..C packets on fd pair at 0x8004A284, GetRCnt timeout 7866, copies u16 pairs src->dst	2026-10-24T17:28:35Z
+ovl204	0x80050E60	name	hud_draw_vs_status	2026-10-24T17:28:35Z
+ovl204	0x80050E60	hint	draws weapon list+ammo, AP counter, radar frame and blips for side D_80039D18	2026-10-24T17:28:35Z
+ovl204	0x8005DAFC	name	bg_draw_sky_horizon	2026-10-24T17:28:35Z
+ovl204	0x8005DAFC	hint	sky gradient, scrolling horizon strip (ratan2 of camera), ground colour; flags 1/2/4/8	2026-10-24T17:28:35Z
+ovl202	0x80060800	name	sprite3d_draw_billboard	2026-10-24T17:28:35Z
+ovl202	0x80060800	hint	textured POLY_FT4/FT3 of half size s at pos rotated by rot, scratchpad matrices, OT +100	2026-10-24T17:28:35Z
+exe	0x80012E5C	name	col_segment_vs_cylinder	2026-10-24T17:28:35Z
+exe	0x80012E5C	hint	AABB reject on x/z/y, slope/flat hit on cylinder radius r height h at c, calls func_80012A78 circle test, writes hit to out	2026-10-24T17:28:35Z
+ovl202	0x80052B28	name	msgwin_type_text	2026-10-24T17:28:35Z
+ovl202	0x80052B28	hint	types up to n chars of a message window: control codes C/W/F/K/T/H, 6px and 12px glyph POLY_FT4 in OT 13	2026-10-24T17:28:35Z
+ovl202	0x8005C904	name	world_sect_draw_or_queue	2026-10-24T17:28:36Z
+ovl202	0x8005C904	hint	culls a world section box, draws near sections lit at once or queues 24-byte entries on near/far lists	2026-10-24T17:28:36Z
+ovl201	0x800A86D0	name	link_exchange_words	2026-10-24T17:40:41Z
+ovl201	0x800A86D0	hint	read/write 8-byte R..C packets on fd pair at 0x8004A284, GetRCnt timeout 7866, copies u16 pairs src->dst	2026-10-24T17:40:41Z
+ovl204	0x80050E60	name	hud_draw_vs_status	2026-10-24T17:40:41Z
+ovl204	0x80050E60	hint	draws weapon list+ammo, AP counter, radar frame and blips for side D_80039D18	2026-10-24T17:40:41Z
+ovl204	0x8005DAFC	name	bg_draw_sky_horizon	2026-10-24T17:40:41Z
+ovl204	0x8005DAFC	hint	sky gradient, scrolling horizon strip (ratan2 of camera), ground colour; flags 1/2/4/8	2026-10-24T17:40:41Z
+ovl202	0x80060800	name	sprite3d_draw_billboard	2026-10-24T17:40:41Z
+ovl202	0x80060800	hint	textured POLY_FT4/FT3 of half size s at pos rotated by rot, scratchpad matrices, OT +100	2026-10-24T17:40:41Z
+exe	0x80012E5C	name	col_segment_vs_cylinder	2026-10-24T17:40:41Z
+exe	0x80012E5C	hint	AABB reject on x/z/y, slope/flat hit on cylinder radius r height h at c, calls func_80012A78 circle test, writes hit to out	2026-10-24T17:40:41Z
+ovl202	0x80052B28	name	msgwin_type_text	2026-10-24T17:40:41Z
+ovl202	0x80052B28	hint	types up to n chars of a message window: control codes C/W/F/K/T/H, 6px and 12px glyph POLY_FT4 in OT 13	2026-10-24T17:40:41Z
+ovl202	0x8005C904	name	world_sect_draw_or_queue	2026-10-24T17:40:41Z
+ovl202	0x8005C904	hint	culls a world section box, draws near sections lit at once or queues 24-byte entries on near/far lists	2026-10-24T17:40:41Z
+ovl203	0x8005C2F4	name	world_sect_draw_or_queue	2026-10-24T17:40:41Z
+ovl203	0x8005C2F4	hint	same body as ovl202 0x8005C904 with ovl203 RenderGlobals at 0x8019D968	2026-10-24T17:40:41Z
+ovl203	0x8006735C	name	model_draw_near_clip	2026-10-24T17:40:42Z
+ovl203	0x8006735C	hint	draws model record idx near camera: clip-code reject, near-plane polys queued to 4 subdivider lists, rest FT3/FT4/GT3/GT4	2026-10-24T17:40:42Z
+ovl202	0x8007BA98	name	lockon_update	2026-10-24T17:40:42Z
+ovl202	0x8007BA98	hint	picks best target via func_80073F38/func_80015440, tracks lock progress/timer in target slot 0 at 0x80041024, beeps, writes aim angles to e+0x76..0x7A	2026-10-24T17:40:42Z
