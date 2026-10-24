@@ -2543,3 +2543,13 @@ ovl202	0x80059198	name	render_draw_part_depthcue	2026-10-24T23:13:26Z
 ovl202	0x80059198	hint	draws model part with func_80058E04 vertex lighting, NCS+DPCS for 0x25/0x2D, NCDS 0x35/0x3D, sibling of func_8005804C	2026-10-24T23:13:26Z
 ovl202	0x80054750	name	anim_update_state	2026-10-24T23:13:26Z
 ovl202	0x80054750	hint	skeletal animation state update: alloc state+parts, pose apply/drop, anim2 switch, blend start, func_80053A54/80053FAC streams, GPF blend, RotMatrix per part	2026-10-24T23:13:26Z
+ovl203	0x80058B88	name	render_draw_part_depthcue	2026-10-24T23:23:51Z
+ovl203	0x80058B88	hint	byte-identical port of ovl202 0x80059198	2026-10-24T23:23:51Z
+ovl204	0x8005833C	name	render_draw_part_depthcue	2026-10-24T23:23:52Z
+ovl204	0x8005833C	hint	byte-identical port of ovl202 0x80059198	2026-10-24T23:23:52Z
+ovl202	0x8006611C	name	render_draw_part_depthcue_b	2026-10-24T23:23:52Z
+ovl202	0x8006611C	hint	same body as 0x80059198 but calls func_800672CC then 3-arg lighter func_80065CF8; scratch col/sv at 0x1F8000E0/E4	2026-10-24T23:23:52Z
+ovl203	0x800655BC	name	render_draw_part_depthcue_b	2026-10-24T23:23:52Z
+ovl203	0x800655BC	hint	port of ovl202 0x8006611C	2026-10-24T23:23:52Z
+ovl204	0x800653F8	name	render_draw_part_depthcue_b	2026-10-24T23:23:52Z
+ovl204	0x800653F8	hint	port of ovl202 0x8006611C	2026-10-24T23:23:52Z
