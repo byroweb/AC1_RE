@@ -2593,3 +2593,7 @@ ovl201	0x800B3748	name	acprev_part_obj_create	2026-10-25T05:42:23Z
 ovl201	0x800B3748	hint	ctor of a UiObj that places an AC part model at its core attach point (D_800BC428/D_800BC440 core points, D_80031A58 equipped parts, flag bit0 mirrors x)	2026-10-25T05:42:23Z
 ovl201	0x8006BA08	name	emb_edit_update_palette	2026-10-25T05:42:23Z
 ovl201	0x8006BA08	hint	emblem editor: LoadImage pixels + 16-colour CLUT from D_8017E5D8, fades bg colour D_800B7E48 in/out (img fade +0x13), cursor-colour light matrix D_800B8DC4[10]	2026-10-25T05:42:23Z
+ovl202	0x8004E22C	name	mover_anim_clip_step	2026-10-25T05:47:25Z
+ovl202	0x8004E22C	hint	finds the key pair around a->frame in the clip bank, interpolates the move/rot delta, clamps by limxz/limy, rotates by facing (RotMatrixYXZ+ApplyMatrixSV), returns frames to next key	2026-10-25T05:47:25Z
+ovl201	0x8006CC78	name	emb_draw_color_value	2026-10-25T05:47:25Z
+ovl201	0x8006CC78	hint	swatch TILE of D_8017E5D8[e->color] then per channel (>>3) tens/units digit SPRTs (clut 0x3957, v0 248) and a SetDrawMode(tpage 0x49) into cursor OT[player][2]	2026-10-25T05:47:25Z
