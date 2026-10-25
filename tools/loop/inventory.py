@@ -10,7 +10,8 @@ Columns
     size          bytes, including the delay slot after the final jr ra
     name          ac1_markup.tsv name for exe functions, func_<ADDR> otherwise
                   (overlay-range markup names are ambiguous between overlays)
-    is_psyq       1 inside the PsyQ library block of the exe (excluded by rank.py)
+    is_psyq       1 inside the PsyQ library block of the exe, or an OVERLAY_PSYQ_RANGES
+                  range of a program overlay (excluded by rank.py)
     instructions  size / 4
     branches      conditional branches + j (not jal/jalr/jr)
     calls         jal count
@@ -115,6 +116,14 @@ MISSION_ALIASES = {168: 166}            # entry -> byte-identical entry it dupli
 # fdat188 has no CODE_UNITS.tsv row: 4096 bytes, eight header pointers to one
 # `jr ra; nop` at 0x801B81E8 (file offset 0x120, where every 18x entry's text starts).
 STUB_TEXT = {"fdat188": (0x801B81E8, 0x801B81F0)}
+# text starts CODE_UNITS.tsv gets wrong: fdat074's header puts text at 0x801C4D48, but its
+# first two words (0x27100007, 0x00000010) are rodata constants; the first function's
+# prologue (addiu sp,sp,-72) is at 0x801C4D50, where its twin fdat012 0x801C5600 starts.
+TEXT_START_FIX = {"fdat074": 0x801C4D50}
+# PsyQ library code linked into a program overlay: hand-written assembly, never game C.
+OVERLAY_PSYQ_RANGES = {
+    "ovl201": ((0x800B55E4, 0x800B597C, "PsyQ libpress DecDCTvlcSize / DecDCTvlc (MDEC VLC, asm)"),),
+}
 DEFAULT_CODE_UNITS = os.path.join(REPO, "overlays", "CODE_UNITS.tsv")
 
 # a prologue this many words after another start candidate belongs to it
@@ -759,7 +768,7 @@ refresh_mission_entries()
 
 def is_psyq(unit, va):
     if unit != "exe":
-        return 0
+        return int(any(lo <= va < hi for lo, hi, _ in OVERLAY_PSYQ_RANGES.get(unit, ())))
     return int(any(lo <= va < hi for lo, hi, _ in PSYQ_RANGES))
 
 
@@ -854,6 +863,9 @@ def main():
         print("no CODE_UNITS.tsv at %s: text ranges detected, mission overlay bases from MISSION_TABLE"
               % args.code_units)
     known_text.update(cu)
+    for u, start in TEXT_START_FIX.items():
+        if u in known_text:
+            known_text[u] = (start, known_text[u][1])
     known_text.update(parse_text_overrides(args.text))
 
     rows = []
