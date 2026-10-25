@@ -81,7 +81,9 @@ Other agents work in the same checkout at the same time.
   argument count; m2c drops and invents arguments.
 - **Last resort, and flag it in your report:** `register T v asm("$N")` pins and empty
   `__asm__` statements (an opaque pointer, a memory clobber). They byte-match, but they
-  are not how the original source was written.
+  are not how the original source was written, so such a match is recorded as
+  **provisional** (re/match/provisional.tsv) and gets reworked later. Try every other
+  lever first. A gp base pin (`asm("$28")`) for small-data globals is fine.
 - `do { stmt; } while (0)` around a statement raises its variables' allocation
   priority, because loop depth weights their refs. This flipped three register ties.
 - A delay slot filled from the branch *target* means retail predicted the branch taken.

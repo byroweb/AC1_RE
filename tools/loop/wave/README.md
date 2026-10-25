@@ -29,6 +29,7 @@ python tools/loop/wave/wave.py status OUT
 python tools/loop/wave/wave.py promote OUT/agent1 wave6-a1
 python tools/loop/twins.py replay -j 4
 python tools/loop/nearport.py port OUT/ported2                    # family members
+python tools/loop/provisional.py scan                             # asm-steered matches + their twins
 python tools/loop/drive.py verify -j 4                            # must end N/N matched
 
 # 5. Push a branch and open a PR. Before saying it is ready, confirm that the PR head
@@ -75,5 +76,6 @@ one compile, and the closest one becomes the row's `draft`.
 | `OUT/agentN.tsv` | one agent's list (round-robin, so every agent starts with easy rows) |
 | `OUT/ports.tsv` | families with a matched near-copy (start from that C) |
 | `OUT/held.tsv` | families over `--giant` bytes |
+| `OUT/rework.tsv` | provisional matches (asm-steered C) to rewrite cleanly; the C in re/match is the draft |
 | `OUT/drafts/` | the best draft per family |
 | `OUT/agentN/` | an agent's scratch: C files, `PROGRESS.md`, `names.tsv` |

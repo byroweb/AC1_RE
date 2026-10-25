@@ -16,6 +16,9 @@ numbers are ours:
              every one re-verified by check_all.sh / drive.py verify.  Manifest
              rows that are not (or no longer) a functions.tsv start are counted
              on a separate line, not in the table.
+  Provisional  matched rows listed in re/match/provisional.tsv (C that steers the
+             compiler with asm pins; provisional.py) are counted as matched and
+             reported on their own line with the clean total.
 
 --stubs-matched also counts the open 8-byte `jr ra; nop` functions as matched
 (his README says the empty stubs splat wrote as C count as matched there).
@@ -36,6 +39,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 import merge_manifest  # noqa: E402
+import provisional  # noqa: E402
 import units  # noqa: E402
 
 FUNCTIONS = os.path.join(HERE, "functions.tsv")
@@ -164,9 +168,15 @@ def main(argv=None):
     ap.add_argument("--compare", action="store_true", help="fetch Wyrelade's README table (gh api) and print the delta")
     args = ap.parse_args(argv)
 
-    per, stray = count(load_functions(args.functions), load_matched(args.manifest), args.stubs_matched)
+    funcs, matched = load_functions(args.functions), load_matched(args.manifest)
+    per, stray = count(funcs, matched, args.stubs_matched)
     rows = components(per)
     print(render(rows))
+    prov = {k for k in provisional.load() if k in matched and k[1] in funcs.get(k[0], {})}
+    if prov:
+        total, done = rows[-1][2], rows[-1][3]
+        print("\n%d of the matched are provisional (C steered with asm pins, re/match/provisional.tsv);"
+              " clean: %d / %d (%.2f%%)" % (len(prov), done - len(prov), total, 100.0 * (done - len(prov)) / total))
     if stray:
         print("\n%d manifest row(s) are not a functions.tsv start (not counted): %s"
               % (len(stray), ", ".join("%s 0x%08X" % k for k in stray[:8]) + (" ..." if len(stray) > 8 else "")))

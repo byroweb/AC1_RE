@@ -33,6 +33,7 @@ mission overlays (fdatNNN). `python tools/loop/progress.py` prints the current c
 | **register tie** | Two variables with nearly equal allocation priority, where retail gave the register to the other one. Fixed by changing refs or live ranges, not by guessing. |
 | **structural miss** | The control flow differs: a loop tested at the top vs the bottom, a jump table vs compares, a merged ("cross-jumped") tail, swapped if/else arms. |
 | **promote** | Copy an agent's matched C from its scratch folder into `re/match`, re-run the oracle there, commit. |
+| **provisional** | A match whose C forces the compiler's hand with `register ... asm("$N")` pins or empty `__asm__` statements. The bytes are verified, but it is probably not the original source. Listed in `re/match/provisional.tsv` and shown apart by `progress.py`; to be rewritten cleanly later. |
 | **give-up** | A function recorded as not matchable for now (`drive.py giveup`), for example hand-written assembly. |
 | **tier** | One of the escalating ways to close a function: sweep (no AI), permuter (random search), golem (local model), compiler-reading tools, agents. |
 | **wave** | A batch of matching agents working in parallel, each with its own list. See `tools/loop/wave/README.md`. |
@@ -59,7 +60,8 @@ many functions at once:
 
 watch / steer:           browser-tools/match-viewer (live view, leave hints for a function)
 what's left, by family:  nearport.py scan
-how far along:           progress.py
+how far along:           progress.py   (matched, and clean = matched minus provisional)
+asm-steered matches:     provisional.py list   (rework list: wave.py build writes OUT/rework.tsv)
 check everything:        drive.py verify -j 4   (must end N/N matched)
 ```
 
@@ -80,6 +82,9 @@ Every tool takes `--help`; the reference for each is its section in `tools/loop/
 - **Verify before a PR, and check the PR head before calling it ready.** Run
   `drive.py verify -j 4`, push, then compare `gh pr view N --json headRefOid` with your
   pushed commit. Twice a PR was merged from a stale head and lost its last commits.
+- **asm-steered C is provisional.** Register pins and empty asm statements are a last resort.
+  `provisional.py scan` lists such matches (and their replayed twins) in
+  `re/match/provisional.tsv`. `wave.py promote` runs it, and `progress.py` reports the clean total.
 - **Keep PRs free of local paths and machine details.**
 
 ## Further reading
