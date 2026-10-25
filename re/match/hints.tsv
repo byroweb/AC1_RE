@@ -2577,3 +2577,9 @@ ovl201	0x8007053C	name	emb_draw_pixel_tile	2026-10-25T04:08:01Z
 ovl201	0x8007053C	hint	emblem editor: TILE prim at canvas pixel (x,y) plus zoomed copy in the magnifier view	2026-10-25T04:08:01Z
 ovl201	0x80066898	name	ui_queue_drawmode	2026-10-25T04:08:01Z
 ovl201	0x80066898	hint	SetDrawMode(p,0,0,7,0) + addPrim into o->ot[idx]+depth	2026-10-25T04:08:01Z
+ovl202	0x80052440	name	scr_vm_compact_threads	2026-10-25T04:16:54Z
+ovl202	0x80052440	hint	stops lower-priority script threads (state=0), packs live ones toward ring start, moves last/cur pointers (D_801ED7A0 thread ring)	2026-10-25T04:16:54Z
+fdat022	0x801C60B0	name	fdat022_dropship_think	2026-10-25T04:16:54Z
+fdat022	0x801C60B0	hint	draft: lowers carried units until landed, flies keyframed path (14-byte keys at 0x801C7538), engine sound, spawns next unit at path events	2026-10-25T04:16:54Z
+ovl201	0x800B3748	name	ui_acpreview_part_create	2026-10-25T04:16:54Z
+ovl201	0x800B3748	hint	ctor stores itself, places part object at core attach point from per-part offset tables, mirrors x on flag&1	2026-10-25T04:16:54Z
