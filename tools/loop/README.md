@@ -32,6 +32,7 @@ doctor.py     -> stdout, re/match  one front door: classify a near miss from one
 regtie.py     -> re/match          register-tie tier: read cc1's allocation dumps, steer the deciding tie
 structdiff.py -> stdout, re/match  where the shape differs, in C lines (object line table), + structural moves
 nearport.py   -> stdout, OUTDIR    near-copies twins.py misses: families of open bodies, auto-port from a matched copy
+provisional.py -> re/match/provisional.tsv  matches whose C steers the compiler with asm pins (counted apart)
 wave/wave.py  -> OUT (outside repo) a wave of matching agents: per-family lists + best drafts, brief, status, promote
                                  (see wave/README.md)
 m2cfix.py     (library)          sweep.py's draft fix-ups: stack locals, frame union, casts, cc1-driven repair
@@ -1272,6 +1273,26 @@ work the same body twice, and an agent may port a twin by hand when a tool could
 First run (2026-10-24, 113 open): 6 of 12 shape-identical copies ported with no agent
 time, worth 6 functions. Of the 101 open functions, 23 families had a split twin group or a
 matched near-copy.
+
+## provisional.py (asm-steered matches)
+
+```
+provisional.py scan | check | list
+```
+
+Some C reaches a byte match by forcing the compiler's hand: a `register T v asm("$N")`
+pin, or an empty `__asm__` statement used as an opaque value, a memory clobber or a
+scheduling barrier. The oracle accepts it, but it is probably not how the original
+source was written. `scan` lists every manifest row whose source C uses one of these
+in `re/match/provisional.tsv`, including twins replayed from such a file. `check`
+exits 1 when that file is stale. Non-empty asm (the PsyQ GTE macros) and gp base pins
+(`asm("$28")`, standing in for gp-relative small data) do not count.
+
+Provisional matches stay in the manifest and are verified like any other.
+`progress.py` prints them on their own line with the clean total. `wave.py promote`
+runs `scan` before it commits and tags each provisional match. `wave.py build` writes
+the originals to `OUT/rework.tsv`, so a later wave can rewrite them without asm. First
+scan (2026-10-24): 16 rows from 7 C files.
 
 ## golem.py (local LLM tier)
 

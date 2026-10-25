@@ -40,6 +40,7 @@ REPO = os.path.dirname(os.path.dirname(LOOP))
 sys.path.insert(0, LOOP)
 import drive  # noqa: E402
 import nearport  # noqa: E402
+import provisional  # noqa: E402
 import permute  # noqa: E402
 
 UNIT_RE = r"(?:exe|ovl20[1-4]|fdat\d{3})"
@@ -158,6 +159,19 @@ def cmd_build(args):
         print("agent%d: %d families, %d functions" % (k, len(c), sum(r["copies"] for r in c)))
     print("held (> %d B): %d families, %d functions" % (args.giant, len(held), sum(r["copies"] for r in held)))
     print("ports (matched near-copy, run nearport.py port first): %d" % len(ports))
+    # provisional matches (asm-steered C) to rewrite cleanly; the C in re/match is the draft
+    rework, seen, prov = [], set(), provisional.compute()
+    for unit, va, src, why in prov:
+        if src in seen or src.split("/")[0] != unit:          # one row per original C file
+            continue
+        seen.add(src)
+        copies = sum(1 for r in prov if r[2] == src)
+        rework.append(dict(unit=unit, vaddr=va, size=sizes.get((unit, int(va, 16)), ""), copies=copies,
+                           words=0, source="re/match", opts="", draft="re/match/" + src,
+                           note="PROVISIONAL (%s): rewrite without asm pins; the bytes already match" % why,
+                           members="-"))
+    write_tsv(os.path.join(out, "rework.tsv"), rework)
+    print("rework (provisional matches to rewrite without asm): %d" % len(rework))
     return 0
 
 
@@ -259,7 +273,8 @@ def cmd_promote(args):
         res = [ln for ln in r.stdout.splitlines() if ln.startswith("result:")]
         if r.returncode == 0:
             ok.append((unit, v))
-            print("OK   %s 0x%s  %s" % (unit, v, res[0] if res else ""))
+            why = provisional.reasons(dst)
+            print("OK   %s 0x%s  %s%s" % (unit, v, res[0] if res else "", "  PROVISIONAL (%s)" % why if why else ""))
             continue
         if stub is None:                               # leave re/match as it was
             os.remove(dst)
@@ -287,6 +302,7 @@ def cmd_promote(args):
             nadd += 1
     print("names added: %d" % nadd)
     if ok or nadd:
+        provisional.main(["scan"])                     # keep re/match/provisional.tsv current
         subprocess.run(["git", "add", "re/match", "tools/loop/ledger.tsv"], cwd=REPO, check=True)
         what = ("matched %d %s functions (%s)" % (len(ok), args.label, ", ".join("%s 0x%s" % k for k in ok))
                 if ok else "name proposals for %s functions" % args.label)
