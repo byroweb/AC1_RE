@@ -68,6 +68,38 @@ at a time, `-j 2`.
 
 ## Levers that matched in the tail (newest first)
 
+- **Free refs (wave 10).** flow counts reg_n_refs before combine, and combine never lowers
+  the count for uses it deletes. A redundant self-cast right after the set,
+  `v = (s16)x; v = (s16)v;`, raises v's allocation priority by a floor_log2 step with no
+  code. It only works if combine can prove the cast redundant (a narrow load, or an
+  already-extended value).
+- **Free live length, placed.** A `(u16)`/`(u8)` self-cast that combine deletes leaves a
+  code-free `(use reg)` insn, and sched1 counts it in the live length of every register
+  live there. Chain it on a value whose definition comes early: the USE then sticks
+  right before that definition. Use it to nudge one tie by +1 (ovl201 0x8007053C).
+- **A sign-changing cast is a separate copy.** `z = (s16)u16var` is never CSE-shared with
+  zero-extended uses (sign_extend and zero_extend hash differently), and combine reduces
+  it to a plain move.
+- **Identical arms hide a pointer from sched's alias analysis.** Set the pointer in both
+  arms of `if ((s32)o < 0) {...} else {...}`, 2+ insns per arm: reg_n_sets becomes 2, so
+  init_alias_analysis has no known value. jump2 merges the arms. Cost: the join label
+  ends cse's extended block (ovl204 0x80061AD4).
+- **A block-local `t = global + k` steers s0.** local-alloc gives it s0 first, and
+  set_preference makes the global prefer s0, so other globals avoid it. This fixes
+  saved-register swaps without priority changes.
+- **Keep an address base-relative through cse2.** Set `bp = &G.f` after the base's first
+  use, set it again inside a block the cse path skips, then read through `*bp`. cse1
+  invalidates bp, cse2 keeps `off(base)`, and flow deletes the dead bp
+  (ovl202 0x8008080C).
+- **Stop the outer loop re-hoisting.** Assign the variable at the top of the inner body,
+  so the inner loop hoists it, and assign it again, dead, after the inner loop: the
+  outer loop sees two sets. A separate extern symbol for a field address
+  (`extern u8 D_X[]`) keeps cse from relating it to the other fields.
+- **do/while(0) weights compiler temps too.** To raise a global's priority without
+  disturbing a block's locals, wrap a pure copy (`do { x = nx; } while (0);`).
+- **Conflicts follow the sched1 order, and sched2 runs before jump2.** Loop-note barriers
+  and the no-op moves jump2 deletes are still present in sched2.
+
 - **Read GCC's source for the blocking rule.** Wave 8 matched 5 of the hardest by finding
   the exact rule in cc1's source (local-alloc.c combine_regs, loop.c invariant_p, jump.c
   cross-jumping, sched.c alias analysis) and writing C that sidesteps it.
