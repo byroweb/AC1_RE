@@ -58,6 +58,21 @@ Other agents work in the same checkout at the same time.
 
 ## Levers that matched in the tail (newest first)
 
+- **Global moved behind a pointer.** If a near-copy is longer and its extra words are
+  `lui`/`lw X` loads before field accesses, a block of absolute globals became
+  `ptr->field` there (ovl202 reads 0x80040FA0 directly; ovl203/204 go through
+  D_80039D18). Rewrite the globals as `*(T *)(ptr + off)`. If the pointer load then
+  schedules too late, take the pointer into a local first.
+- **Jump-table padding.** When the table offsets in `lw ...(at)` differ by multiples of
+  4, retail kept cc1's `.align 3` padding between tables: try `--no-rodata-align-fix`.
+- **Rewrite m2c gotos as real structure.** For a big switch-heavy function, write every
+  arm out in full as switch/if code and let cross-jumping recreate the shared tails.
+  This took a 6.3 KB function from 1360 words off to 0, in 46 compiles.
+- **Statement after the call.** To place a register copy in the middle of a call's
+  argument setup, write it *after* the call; inside an argument it changes nothing.
+- **Reuse a multi-block variable.** When a temp ties to its input in local-alloc and
+  retail's doesn't, reuse a variable already assigned in another block. It becomes
+  global-allocated and cannot tie.
 - **Port by delta.** When a twin replay misses only in lui/addiu immediates, subtract the
   two values. A constant delta points to one struct field whose offset differs between
   overlays (DrawWork.vtx sits at +0xB24 in ovl202 and +0x674 in ovl203/204). Fix that pad.
