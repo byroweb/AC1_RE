@@ -2617,3 +2617,5 @@ ovl204	0x80061AD4	name	vs_draw_split_frame	2026-10-25T16:31:44Z
 ovl204	0x80061AD4	hint	2-player frame: updates both views, draws each half via SetDrawEnv/AddPrim into its own OT, then the shared HUD (timer digits, prompts)	2026-10-25T16:31:44Z
 ovl202	0x8008080C	name	pad_boost_input_state	2026-10-25T16:35:47Z
 ovl202	0x8008080C	hint	msg 0 handler: kind 0xB0 boost (timer 0x80040FB2), 0xC0 airborne 0x41..0x4B, else walking 1..10 from key map 0x80041230..; boosting twin of 0x8008238C	2026-10-25T16:35:47Z
+ovl202	0x8008080C	name	pad_boost_input_state	2026-10-25T16:36:08Z
+ovl202	0x8008080C	hint	msg 0 handler: kind 0xB0 boost (timer 0x80040FB2), 0xC0 airborne 0x41..0x4B, else walking 1..10 from key map 0x80041230..; boosting twin of 0x8008238C	2026-10-25T16:36:08Z
