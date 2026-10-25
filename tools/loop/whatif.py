@@ -26,7 +26,8 @@ Knobs (environment variables read by cc1-whatif; KEY = pseudo regno or insn uid)
   WHATIF_LPRIO=R:pct   local-alloc priority of the quantity headed by pseudo R
   WHATIF_NOTIE=R       local-alloc never ties pseudo R to another register (combine_regs)
   WHATIF_NOFOLD=R      cse never replaces pseudo R by its constant (equiv_constant)
-  WHATIF_SCHED1=U:d    sched1 priority of insn U plus d (sched2: WHATIF_SCHED2)
+  WHATIF_SCHED1=U:d    sched1 priority of insn U plus d (sched2: WHATIF_SCHED2); the search
+                       tries d = +-1, +-2, +-15 (a positive d places the insn later)
   WHATIF_NOMOVE=U      loop never hoists insn U
   WHATIF_NOXJUMP=1     no cross-jumping (jump.c)
   WHATIF_MEMDEP=1      the scheduler treats every pair of memory references as dependent
@@ -134,7 +135,7 @@ def order_score(ours, retail):
     for i in range(n):
         a = int.from_bytes(ours[4 * i:4 * i + 4], "little")
         b = int.from_bytes(retail[4 * i:4 * i + 4], "little")
-        m = 0xFC00F83F if a >> 26 == 0 else 0xFC00FFFF        # R-type: drop rs/rt/rd; else rs/rt
+        m = 0xFC0007FF if a >> 26 == 0 else 0xFC00FFFF        # R-type: drop rs/rt/rd; else rs/rt
         if a & m != b & m:
             bad += 1
     return bad + abs(len(ours) - len(retail)) // 2
@@ -201,9 +202,9 @@ def candidates(info, retail, window):
         out += [{"WHATIF_GPRIO": "%d:300" % r}, {"WHATIF_GPRIO": "%d:30" % r},
                 {"WHATIF_LPRIO": "%d:300" % r}, {"WHATIF_LPRIO": "%d:30" % r},
                 {"WHATIF_NOTIE": "%d" % r}, {"WHATIF_NOFOLD": "%d" % r}]
-    for u in sorted(near):
-        out += [{"WHATIF_SCHED1": "%d:15" % u}, {"WHATIF_SCHED1": "%d:-15" % u},
-                {"WHATIF_SCHED2": "%d:15" % u}, {"WHATIF_SCHED2": "%d:-15" % u}]
+    for u in sorted(near):                  # small nudges break ties, big ones jump past chains
+        for var in ("WHATIF_SCHED1", "WHATIF_SCHED2"):
+            out += [{var: "%d:%d" % (u, d)} for d in (1, -1, 2, -2, 15, -15)]
     for u in sorted(movables):
         out.append({"WHATIF_NOMOVE": "%d" % u})
     return out, len(pseudos), len(near), len(movables)
