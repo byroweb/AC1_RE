@@ -56,6 +56,16 @@ Other agents work in the same checkout at the same time.
    frame size.
 6. Read the diff yourself. The tools tell you *where*; you supply the *what*.
 
+## When the levers run out: ask the what-if compiler
+
+`python tools/loop/whatif.py search <unit> <vaddr> <file> [--rodata VA]` compiles your C
+with a cc1 that can flip single decisions: a pseudo's allocation priority, a tie, a cse
+fold, an insn's schedule slot, a loop hoist, cross-jumping. It tells you which flips bring
+the function closer, for example "local-alloc does not tie pseudo 87; sched2 priority of
+insn 142 +15". Read the `-dl` / `-dp` dumps to see which variable and statement those are,
+then write C that provokes the same decision. It runs a few hundred compiles: one search
+at a time, `-j 2`.
+
 ## Levers that matched in the tail (newest first)
 
 - **Global moved behind a pointer.** If a near-copy is longer and its extra words are
