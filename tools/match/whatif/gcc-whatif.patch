@@ -1,0 +1,253 @@
+diff --git a/cse.c b/cse.c
+index efd05de..1d1e3ff 100644
+--- a/cse.c
++++ b/cse.c
+@@ -5695,10 +5695,15 @@ fold_rtx (x, insn)
+ /* Return a constant value currently equivalent to X.
+    Return 0 if we don't know one.  */
+ 
++extern int whatif_value ();
++extern int whatif_flag ();
++
+ static rtx
+ equiv_constant (x)
+      rtx x;
+ {
++  if (GET_CODE (x) == REG && whatif_value ("WHATIF_NOFOLD", REGNO (x), 0))
++    return 0;
+   if (GET_CODE (x) == REG
+       && REGNO_QTY_VALID_P (REGNO (x))
+       && qty_const[reg_qty[REGNO (x)]])
+diff --git a/global.c b/global.c
+index e9941e6..1d3ff20 100644
+--- a/global.c
++++ b/global.c
+@@ -252,6 +252,9 @@ static int n_regs_set;
+ static HARD_REG_SET eliminable_regset;
+ 
+ static int allocno_compare	PROTO((int *, int *));
++extern int whatif_value ();
++extern int whatif_flag ();
++
+ static void global_conflicts	PROTO((void));
+ static void expand_preferences	PROTO((void));
+ static void prune_preferences	PROTO((void));
+@@ -599,6 +602,8 @@ allocno_compare (v1, v2)
+     = (((double) (floor_log2 (allocno_n_refs[*v2]) * allocno_n_refs[*v2])
+ 	/ allocno_live_length[*v2])
+        * 10000 * allocno_size[*v2]);
++  pri1 = (int) ((double) pri1 * whatif_value ("WHATIF_GPRIO", allocno_reg[*v1], 100) / 100);
++  pri2 = (int) ((double) pri2 * whatif_value ("WHATIF_GPRIO", allocno_reg[*v2], 100) / 100);
+   if (pri2 - pri1)
+     return pri2 - pri1;
+ 
+diff --git a/jump.c b/jump.c
+index 88a6c3a..ef0a575 100644
+--- a/jump.c
++++ b/jump.c
+@@ -134,6 +134,9 @@ static void redirect_tablejump		PROTO((rtx, rtx));
+    It works because `delete_insn' checks the value of `optimize'
+    and refrains from actually deleting when that is 0.  */
+ 
++extern int whatif_value ();
++extern int whatif_flag ();
++
+ void
+ jump_optimize (f, cross_jump, noop_moves, after_regscan)
+      rtx f;
+@@ -148,6 +151,8 @@ jump_optimize (f, cross_jump, noop_moves, after_regscan)
+   rtx last_insn;
+ 
+   cross_jump_death_matters = (cross_jump == 2);
++  if (whatif_flag ("WHATIF_NOXJUMP"))
++    cross_jump = 0;
+ 
+   /* Initialize LABEL_NUSES and JUMP_LABEL fields.  Delete any REG_LABEL
+      notes whose labels don't occur in the insn any more.  */
+diff --git a/local-alloc.c b/local-alloc.c
+index 647b2d5..40d1389 100644
+--- a/local-alloc.c
++++ b/local-alloc.c
+@@ -176,6 +176,9 @@ static char *qty_changes_size;
+    register should be the head of the chain maintained in reg_next_in_qty.  */
+ 
+ static int *qty_first_reg;
++extern int whatif_value ();
++extern int whatif_flag ();
++
+ 
+ /* If (REG N) has been assigned a quantity number, is a register number
+    of another register assigned the same quantity number, or -1 for the
+@@ -1591,6 +1594,8 @@ qty_compare (q1, q2)
+     = (((double) (floor_log2 (qty_n_refs[q2]) * qty_n_refs[q2] * qty_size[q2])
+ 	/ (qty_death[q2] - qty_birth[q2]))
+        * 10000);
++  pri1 = (int) ((double) pri1 * whatif_value ("WHATIF_LPRIO", qty_first_reg[q1], 100) / 100);
++  pri2 = (int) ((double) pri2 * whatif_value ("WHATIF_LPRIO", qty_first_reg[q2], 100) / 100);
+   return pri2 - pri1;
+ }
+ 
+@@ -1614,6 +1619,8 @@ qty_compare_1 (q1, q2)
+ 		  * qty_size[*q2])
+ 	/ (qty_death[*q2] - qty_birth[*q2]))
+        * 10000);
++  pri1 = (int) ((double) pri1 * whatif_value ("WHATIF_LPRIO", qty_first_reg[*q1], 100) / 100);
++  pri2 = (int) ((double) pri2 * whatif_value ("WHATIF_LPRIO", qty_first_reg[*q2], 100) / 100);
+ 
+   tem = pri2 - pri1;
+   if (tem != 0) return tem;
+@@ -1759,6 +1766,9 @@ combine_regs (usedreg, setreg, may_save_copy, insn_number, insn, already_dead)
+   sreg = REGNO (setreg);
+   ssize = REG_SIZE (setreg);
+ 
++  if (whatif_value ("WHATIF_NOTIE", ureg, 0) || whatif_value ("WHATIF_NOTIE", sreg, 0))
++    return 0;
++
+   /* If UREG is a pseudo-register that hasn't already been assigned a
+      quantity number, it means that it is not local to this block or dies
+      more than once.  In either event, we can't do anything with it.  */
+diff --git a/loop.c b/loop.c
+index 8711cc0..e58cfe5 100644
+--- a/loop.c
++++ b/loop.c
+@@ -454,6 +454,9 @@ loop_optimize (f, dumpfile)
+    before the write occurs.  If there is a read of this address after the
+    write, then we can also mark the memory read as invariant.  */
+ 
++extern int whatif_value ();
++extern int whatif_flag ();
++
+ static void
+ scan_loop (loop_start, end, nregs)
+      rtx loop_start, end;
+@@ -646,7 +649,8 @@ scan_loop (loop_start, end, nregs)
+       if (GET_CODE (p) == INSN
+ 	  && (set = single_set (p))
+ 	  && GET_CODE (SET_DEST (set)) == REG
+-	  && ! may_not_optimize[REGNO (SET_DEST (set))])
++	  && ! may_not_optimize[REGNO (SET_DEST (set))]
++	  && ! whatif_value ("WHATIF_NOMOVE", INSN_UID (p), 0))
+ 	{
+ 	  int tem1 = 0;
+ 	  int tem2 = 0;
+diff --git a/sched.c b/sched.c
+index 81d77bf..4db2bd5 100644
+--- a/sched.c
++++ b/sched.c
+@@ -813,11 +813,16 @@ read_dependence (mem, x)
+ 
+ /* True dependence: X is read after store in MEM takes place.  */
+ 
++extern int whatif_value ();
++extern int whatif_flag ();
++
+ int
+ true_dependence (mem, x)
+      rtx mem;
+      rtx x;
+ {
++  if (whatif_flag ("WHATIF_MEMDEP"))
++    return 1;
+   /* If X is an unchanging read, then it can't possibly conflict with any
+      non-unchanging store.  It may conflict with an unchanging write though,
+      because there may be a single store to this address to initialize it.
+@@ -846,6 +851,8 @@ anti_dependence (mem, x)
+      rtx mem;
+      rtx x;
+ {
++  if (whatif_flag ("WHATIF_MEMDEP"))
++    return 1;
+   /* If MEM is an unchanging read, then it can't possibly conflict with
+      the store to X, because there is at most one store to MEM, and it must
+      have occurred somewhere before MEM.  */
+@@ -1493,6 +1500,10 @@ priority (insn)
+ 	}
+ 
+       prepare_unit (insn_unit (insn));
++      max_priority += whatif_value (reload_completed ? "WHATIF_SCHED2" : "WHATIF_SCHED1",
++				    INSN_UID (insn), 0);
++      if (max_priority < 1)
++	max_priority = 1;
+       INSN_PRIORITY (insn) = max_priority;
+       return INSN_PRIORITY (insn);
+     }
+diff --git a/toplev.c b/toplev.c
+index bd4e650..e54f770 100644
+--- a/toplev.c
++++ b/toplev.c
+@@ -4034,3 +4034,75 @@ print_switch_values ()
+ 
+   fprintf (stderr, "\n");
+ }
++
++/* What-if knobs (tools/match/whatif/README.md).  Each reads one environment variable
++   holding `KEY[:VALUE],...` (KEY a pseudo register number or an insn uid, decimal or
++   0x hex; a bare KEY means VALUE 1).  With the variables unset cc1 behaves exactly
++   like the pinned build: these are diagnostics, never part of a match.  */
++extern char *getenv ();
++
++static char *
++whatif_num (s, v)
++     char *s;
++     long *v;
++{
++  int neg = 0, base = 10;
++  long n = 0;
++  if (*s == '-')
++    neg = 1, s++;
++  else if (*s == '+')
++    s++;
++  if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X'))
++    base = 16, s += 2;
++  for (;;)
++    {
++      int c = *s, d;
++      if (c >= '0' && c <= '9')
++	d = c - '0';
++      else if (base == 16 && c >= 'a' && c <= 'f')
++	d = c - 'a' + 10;
++      else if (base == 16 && c >= 'A' && c <= 'F')
++	d = c - 'A' + 10;
++      else
++	break;
++      n = n * base + d;
++      s++;
++    }
++  *v = neg ? -n : n;
++  return s;
++}
++
++/* VALUE for KEY in the list in environment variable VAR, or DFLT.  */
++int
++whatif_value (var, key, dflt)
++     char *var;
++     int key, dflt;
++{
++  char *s = getenv (var);
++  long k, v;
++  if (s == 0)
++    return dflt;
++  while (*s)
++    {
++      s = whatif_num (s, &k);
++      v = 1;
++      if (*s == ':')
++	s = whatif_num (s + 1, &v);
++      if (k == key)
++	return (int) v;
++      while (*s && *s != ',')
++	s++;
++      if (*s == ',')
++	s++;
++    }
++  return dflt;
++}
++
++/* Nonzero when environment variable VAR is set to something other than "" or "0".  */
++int
++whatif_flag (var)
++     char *var;
++{
++  char *s = getenv (var);
++  return s != 0 && *s != 0 && !(s[0] == '0' && s[1] == 0);
++}

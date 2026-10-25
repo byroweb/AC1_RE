@@ -50,6 +50,8 @@ one function, starting out ──► .claude/skills/match-function/SKILL.md
         │                        ├─ structure / size ───────────────► structdiff.py [--fix]
         │                        └─ constants / schedule ───────────► levers by hand (BRIEF.md list)
         │
+        ├─ stuck after all that ► whatif.py search   (which cc1 decision, flipped, closes it)
+        │
         ├─ just matched ──────► twins.py replay       (credit identical copies)
         │                       nearport.py port      (port to near-copies)
         │
