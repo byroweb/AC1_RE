@@ -108,12 +108,12 @@ class Fn:
                 fh.write(permute.maspsx_inproc(self.tools["maspsx"], fixed))
             permute.run([self.tools["as"]] + match_fn.AS_FLAGS + ["-o", "fn.o", "fn.maspsx.s"], work)
             blob, _unres = permute.resolve_object(os.path.join(work, "fn.o"), None, self.meta, self.syms)
-            info = {"order": order_score(blob, self.retail)}
+            info = {"order": order_score(blob, self.retail), "bytes": blob}
             if dumps:
                 def dump(ext):
                     f = os.path.join(work, "fn.i." + ext)
                     return open(f, encoding="utf-8", errors="replace").read() if os.path.isfile(f) else ""
-                info.update(asm=asm, lreg=dump("lreg"), loop=dump("loop"), bytes=blob)
+                info.update(asm=asm, lreg=dump("lreg"), loop=dump("loop"))
             return permute.word_score(blob, self.retail), info
         except (RuntimeError, match_fn.ToolError, OSError, ValueError):
             return None, {}
@@ -175,7 +175,12 @@ def describe(knobs):
 def merge(a, b):
     out = dict(a)
     for k, v in b.items():
-        out[k] = v if k not in out or k in ("WHATIF_NOXJUMP", "WHATIF_MEMDEP") else out[k] + "," + v
+        if k not in out or k in ("WHATIF_NOXJUMP", "WHATIF_MEMDEP"):
+            out[k] = v
+        else:
+            have = out[k].split(",")
+            keys = {i.partition(":")[0] for i in have}
+            out[k] = ",".join(have + [i for i in v.split(",") if i.partition(":")[0] not in keys])
     return out
 
 
@@ -206,10 +211,12 @@ def cmd_search(args):
     va = int(args.vaddr, 16)
     fn = Fn(args.unit, va, args.cfile, args.rodata, args.no_rodata_align_fix)
     try:
-        base, info = fn.compile({}, dumps=True)
-        if base is None:
+        base, plain = fn.compile({})                # the score: a plain compile, like every knob run
+        _w, info = fn.compile({}, dumps=True)       # dumps only name the pseudos and insns (-dp
+        if base is None or not info:                # comments can change what maspsx emits)
             print("does not build")
             return 2
+        info["bytes"], info["order"] = plain["bytes"], plain["order"]
         print("%s 0x%08X: %d words off with no knobs" % (args.unit, va, base))
         if base == 0:
             return 0
