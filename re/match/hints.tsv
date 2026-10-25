@@ -2623,3 +2623,5 @@ ovl201	0x8007053C	name	emb_draw_pixel_tiles	2026-10-25T16:48:13Z
 ovl201	0x8007053C	hint	adds a 1x1 TILE at (x+ox+40,y+oy+48) (preview) and, if big and (x,y) inside the zoomed view, a zoom x zoom TILE at ((x-vx)*zoom+ox+172,(y-vy)*zoom+oy+36); both to cursor->ot[player][layer]	2026-10-25T16:48:13Z
 ovl201	0x80086FFC	name	garage_build_visible_list	2026-10-25T17:04:02Z
 ovl201	0x80086FFC	hint	fills D_801F3750.order[] with entries 0..63 whose lo/hi rank window, kind (by sign of w28 once rank>=26) and flags bit 2 allow them; bumps rank (mod 64, calling func_80086EC8 on wrap to the start rank) until the list is non-empty	2026-10-25T17:04:02Z
+ovl202	0x8007D2F8	name	weapon_fire_player	2026-10-25T23:43:38Z
+ovl202	0x8007D2F8	hint	player-side twin of fdat000 func_801C7DA8 (enemy weapon fire): same 6-byte spec table 0x8008E658, func_800745D0 muzzle, VectorNormalSS recoil, switch on am->id launching 85E98/889B4/86448/8840C/915C, cool-down 0x3F dispatch to 8007A160/8007A17C	2026-10-25T23:43:38Z
