@@ -2609,3 +2609,7 @@ fdat022	0x801C60B0	name	fdat022_carrier_think	2026-10-25T07:10:58Z
 fdat022	0x801C60B0	hint	lowers carried units to the floor, then flies keyframed path records at 0x801C7538 (interp by countdown +0x44), engine sound, spawns next unit at events	2026-10-25T07:10:58Z
 ovl201	0x800B3748	name	ovl201_ac_part_obj_new	2026-10-25T07:10:58Z
 ovl201	0x800B3748	hint	ctor of the AC preview part object: ui_obj_alloc, sets ctor/update/destroy, places it at the core attach point (D_800BC428/D_800BC440 tables) by part kind, mirrors x on flag bit 0	2026-10-25T07:10:58Z
+ovl204	0x80061AD4	name	vs_draw_split_frame	2026-10-25T07:17:05Z
+ovl204	0x80061AD4	hint	2-player frame: updates both views, draws each half via SetDrawEnv/AddPrim, then shared HUD	2026-10-25T07:17:05Z
+ovl201	0x8006BA08	name	emb_edit_update_palette	2026-10-25T07:17:05Z
+ovl201	0x8006BA08	hint	uploads image + 16-colour CLUT from D_8017E5D8 (LoadImage), fades bg colour D_800B7E48 toward/away from palette[0], sets light matrix 10 by brightness of the colour under the cursor	2026-10-25T07:17:05Z
