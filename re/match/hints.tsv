@@ -2627,3 +2627,11 @@ ovl202	0x8007D2F8	name	weapon_fire_player	2026-10-25T23:43:38Z
 ovl202	0x8007D2F8	hint	player-side twin of fdat000 func_801C7DA8 (enemy weapon fire): same 6-byte spec table 0x8008E658, func_800745D0 muzzle, VectorNormalSS recoil, switch on am->id launching 85E98/889B4/86448/8840C/915C, cool-down 0x3F dispatch to 8007A160/8007A17C	2026-10-25T23:43:38Z
 ovl202	0x8008CC88	name	world_draw_object_meshes	2026-10-25T23:46:41Z
 ovl202	0x8008CC88	hint	loops g_world_structs (id!=-1, flag 0x10000 at +0x30 or 0x1000000 at +0x34), GTE-transforms the model verts of mesh +0x1E, emits NCCS-lit POLY_F3/POLY_F4 (len 4/5, codes 0x20/0x28) into the OT at scratchpad +0x140	2026-10-25T23:46:41Z
+ovl203	0x80050D78	name	hud_draw_status_2p	2026-10-25T23:46:58Z
+ovl203	0x80050D78	hint	draws energy bar + damage blink, heat counter (body+0x160/0x162), timer D_8019B494 MM:SS, radar frame/blips, weapon list (pilot+0x2DA, 0x3C records), compass strip	2026-10-25T23:46:58Z
+ovl203	0x80051E1C	name	hud_draw_text	2026-10-25T23:46:58Z
+ovl203	0x80051E1C	hint	(x, y, w, h, color, str) - every caller passes a string buffer last	2026-10-25T23:46:58Z
+ovl203	0x8005DFF8	name	hud_fill_rect	2026-10-25T23:46:58Z
+ovl203	0x8005DFF8	hint	(x0, y0, x1, y1, color, a, b) - energy bar segments 8..194	2026-10-25T23:46:58Z
+ovl203	0x800608C4	name	hud_draw_polyline	2026-10-25T23:46:58Z
+ovl203	0x800608C4	hint	(DVECTOR *pts, color, n=4, ...) - closed 5-point radar frame	2026-10-25T23:46:58Z
