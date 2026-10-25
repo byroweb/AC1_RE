@@ -2515,3 +2515,59 @@ ovl202	0x80067BE0	name	gte_project_verts_clip	2026-10-24T18:19:48Z
 ovl202	0x80067BE0	hint	projects vertex list into D_801A6A48 with near (z<1000/80) and screen-edge clip codes	2026-10-24T18:19:48Z
 ovl202	0x8004D044	name	snd_chan_alloc	2026-10-24T18:19:48Z
 ovl202	0x8004D044	hint	picks a sound channel: free voice, else the one playing id (stopped via func_8004CF0C), else lowest-priority idle; called by func_8004D178 with (id, vl, vr)	2026-10-24T18:19:48Z
+ovl202	0x8005277C	name	msg_open_box_from_header	2026-10-24T23:08:13Z
+ovl202	0x8005277C	hint	parses M/L/W/C/P header, measures text (6px ascii, 12px sjis), calls func_80052650	2026-10-24T23:08:13Z
+ovl202	0x8004EADC	name	anim_frame_in_mid_key	2026-10-24T23:08:13Z
+ovl202	0x8004EADC	hint	AnimSt clip lookup like 0x8004E22C: is the current frame between the keys around the clip midpoint (dir>0) / from the end (dir<0)	2026-10-24T23:08:13Z
+ovl203	0x8004BF94	name	vs_link_battle_main	2026-10-24T23:08:13Z
+ovl203	0x8004BF94	hint	link-cable twin of ovl204 0x8004BF3C (VS battle main loop): handshake via func_80029B70/80 write/read, then round loop	2026-10-24T23:08:13Z
+ovl201	0x800ADB40	name	ui_row_scroll_spawn	2026-10-24T23:13:21Z
+ovl201	0x800ADB40	hint	allocs UiObj with update func_800ADC20 (pos.vy = y + *src*0x18), stores src/x/y/arg in work	2026-10-24T23:13:21Z
+ovl202	0x8008AD80	name	hud_draw_number_right	2026-10-24T23:13:21Z
+ovl202	0x8008AD80	hint	func_8008ACE4 formats n into buf, draws digit sprites from D_800907A0 right-aligned in 9 cells at 8 px pitch	2026-10-24T23:13:21Z
+ovl201	0x8005F260	name	font_draw_sjis_string	2026-10-24T23:13:21Z
+ovl201	0x8005F260	hint	draws > -terminated SJIS string via glyph block table D_800B7470 and func_8005F49C, then LoadImage of 16x1 CLUT	2026-10-24T23:13:21Z
+ovl202	0x800826FC	name	ac_ground_tilt_step	2026-10-24T23:13:21Z
+ovl202	0x800826FC	hint	twin of ovl203 0x80081358: engine sound, 4 foot probes func_80082654, plane fit func_8001467C, ease tilt +0x108	2026-10-24T23:13:21Z
+ovl202	0x8007DF98	name	ac_player_control_step	2026-10-24T23:13:21Z
+ovl202	0x8007DF98	hint	near-copy of ovl203 0x8007CB90 (sparks when dead, missile intercept, energy, weapon switch/fire, dash) on side struct D_80040FA0	2026-10-24T23:13:21Z
+ovl203	0x8004F3C4	name	link_exchange_pairs	2026-10-24T23:13:24Z
+ovl203	0x8004F3C4	hint	per pair: writes R..C 8-byte tx packet, read()/write() on link fds at +0x2F4/+0x2F8, copies rx.a/rx.b out; aborts on D_800895C8 or func_8004BEB0()==0	2026-10-24T23:13:24Z
+ovl201	0x8005F5E8	name	ui_draw_window_box	2026-10-24T23:13:24Z
+ovl201	0x8005F5E8	hint	draft comment: panel FT4/G4 quad clipped to the box draw area (D_801BCE88 env clip), then frame style switch (+0x84) to func_8006035C..func_80063F64	2026-10-24T23:13:24Z
+ovl201	0x8006E148	name	ovl201_emblem_image_scroll	2026-10-24T23:13:24Z
+ovl201	0x8006E148	hint	scrolls the 64x64 4bpp image at +0x88 by one pixel per dir U/D/L/R with wrap-around	2026-10-24T23:13:24Z
+ovl202	0x8007C02C	name	player_multilock_aim	2026-10-24T23:13:24Z
+ovl202	0x8007C02C	hint	twin of ovl203 func_8007AB4C (versus multi-lock aim) on the fixed player block D_80040FA0: g_target_list/g_target_head, lock tones 43/44/47	2026-10-24T23:13:25Z
+ovl202	0x80059198	name	render_draw_part_depthcue	2026-10-24T23:13:26Z
+ovl202	0x80059198	hint	draws model part with func_80058E04 vertex lighting, NCS+DPCS for 0x25/0x2D, NCDS 0x35/0x3D, sibling of func_8005804C	2026-10-24T23:13:26Z
+ovl202	0x80054750	name	anim_update_state	2026-10-24T23:13:26Z
+ovl202	0x80054750	hint	skeletal animation state update: alloc state+parts, pose apply/drop, anim2 switch, blend start, func_80053A54/80053FAC streams, GPF blend, RotMatrix per part	2026-10-24T23:13:26Z
+ovl203	0x80058B88	name	render_draw_part_depthcue	2026-10-24T23:23:51Z
+ovl203	0x80058B88	hint	byte-identical port of ovl202 0x80059198	2026-10-24T23:23:51Z
+ovl204	0x8005833C	name	render_draw_part_depthcue	2026-10-24T23:23:52Z
+ovl204	0x8005833C	hint	byte-identical port of ovl202 0x80059198	2026-10-24T23:23:52Z
+ovl202	0x8006611C	name	render_draw_part_depthcue_b	2026-10-24T23:23:52Z
+ovl202	0x8006611C	hint	same body as 0x80059198 but calls func_800672CC then 3-arg lighter func_80065CF8; scratch col/sv at 0x1F8000E0/E4	2026-10-24T23:23:52Z
+ovl203	0x800655BC	name	render_draw_part_depthcue_b	2026-10-24T23:23:52Z
+ovl203	0x800655BC	hint	port of ovl202 0x8006611C	2026-10-24T23:23:52Z
+ovl204	0x800653F8	name	render_draw_part_depthcue_b	2026-10-24T23:23:52Z
+ovl204	0x800653F8	hint	port of ovl202 0x8006611C	2026-10-24T23:23:52Z
+ovl201	0x8007AD64	name	asm_screen_draw_warnings	2026-10-24T23:25:39Z
+ovl201	0x8007AD64	hint	draft header: assembly screen draws warning icons (part missing, credits < 0, arm/leg overload) and part names	2026-10-24T23:25:39Z
+ovl201	0x800A4A74	name	movie_upload_slice	2026-10-24T23:25:39Z
+ovl201	0x800A4A74	hint	draft header: movie player per-frame upload, swaps decode buffers, LoadImage of the slice	2026-10-24T23:25:39Z
+ovl201	0x8009C6DC	name	pilot_new_reset_name	2026-10-24T23:25:40Z
+ovl201	0x8009C6DC	hint	draft header: new pilot bumps counter, copies name template, appends three random SJIS digits, plays movie 6	2026-10-24T23:25:40Z
+ovl202	0x8008D3B0	name	view_overlay_setup_draw	2026-10-24T23:25:40Z
+ovl202	0x8008D3B0	hint	draft header: scratchpad light/scaled matrices for a player-centred overlay view, then draws it	2026-10-24T23:25:40Z
+ovl202	0x80085AFC	name	coll_sweep_mover	2026-10-24T23:25:40Z
+ovl202	0x80085AFC	hint	draft header: sweeps a moving point against world collision (one or two segment probes), stores hit point and frames-to-impact, returns hit world struct	2026-10-24T23:25:40Z
+ovl203	0x8007CB90	name	ac_player_ctrl_update	2026-10-24T23:46:03Z
+ovl203	0x8007CB90	hint	per-frame AC control for side D_80039D18: wreck sparks, energy recharge, weapon switch/fire, dash (twin of ovl202 0x8007DF98)	2026-10-24T23:46:03Z
+ovl204	0x8007C83C	name	ac_player_ctrl_update	2026-10-24T23:46:03Z
+ovl204	0x8007C83C	hint	ovl204 twin of ovl203 0x8007CB90	2026-10-24T23:46:03Z
+ovl202	0x8007C02C	name	ac_player_multilock_aim	2026-10-24T23:46:03Z
+ovl202	0x8007C02C	hint	player multi-lock missile aim on D_80040FA0 slots; twin of ovl203 0x8007AB4C (versus)	2026-10-24T23:46:03Z
+ovl202	0x8007ACC0	name	ac_player_hover_step	2026-10-24T23:46:03Z
+ovl202	0x8007ACC0	hint	player hover mover step with lock target; twin of ovl203 0x800797D0 (versus)	2026-10-24T23:46:03Z
