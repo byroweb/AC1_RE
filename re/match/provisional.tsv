@@ -9,6 +9,7 @@ ovl201	0x8004E2BC	ovl201/func_8004E2BC.c	register pin x1
 ovl201	0x8007AD64	ovl201/func_8007AD64.c	register pin x1
 ovl201	0x8009C6DC	ovl201/func_8009C6DC.c	register pin x1, empty asm x1
 ovl202	0x8004D044	ovl202/func_8004D044.c	register pin x2
+ovl202	0x80052440	ovl202/func_80052440.c	register pin x1, empty asm x1
 ovl202	0x80085AFC	ovl202/func_80085AFC.c	register pin x15, empty asm x1
 ovl202	0x8008D3B0	ovl202/func_8008D3B0.c	empty asm x2
 ovl203	0x8004D260	ovl202/func_8004D044.c	register pin x2
