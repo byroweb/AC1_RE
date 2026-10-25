@@ -33,6 +33,7 @@ regtie.py     -> re/match          register-tie tier: read cc1's allocation dump
 structdiff.py -> stdout, re/match  where the shape differs, in C lines (object line table), + structural moves
 nearport.py   -> stdout, OUTDIR    near-copies twins.py misses: families of open bodies, auto-port from a matched copy
 provisional.py -> re/match/provisional.tsv  matches whose C steers the compiler with asm pins (counted apart)
+whatif.py     -> stdout, JSON      which single cc1 decision, flipped, closes a near miss (cc1-whatif knobs)
 wave/wave.py  -> OUT (outside repo) a wave of matching agents: per-family lists + best drafts, brief, status, promote
                                  (see wave/README.md)
 m2cfix.py     (library)          sweep.py's draft fix-ups: stack locals, frame union, casts, cc1-driven repair
@@ -1293,6 +1294,23 @@ Provisional matches stay in the manifest and are verified like any other.
 runs `scan` before it commits and tags each provisional match. `wave.py build` writes
 the originals to `OUT/rework.tsv`, so a later wave can rewrite them without asm. First
 scan (2026-10-24): 16 rows from 7 C files.
+
+## whatif.py (what-if compiler)
+
+```
+whatif.py search UNIT VADDR CFILE [--rodata VA] [--no-rodata-align-fix] [-j 2] [--json OUT]
+whatif.py selftest [--n 300]
+```
+
+Compiles the same C with `tools/match/vendor/cc1-whatif.exe`, the pinned cc1 plus knobs
+that flip one decision each (see `tools/match/whatif/README.md`). The knobs cover a
+pseudo's global or local allocation priority, never tying a pseudo, never folding a
+pseudo into its constant, one insn's sched1 or sched2 priority, never hoisting an insn,
+no cross-jumping, and every memory pair dependent. `search` tries every knob on the
+function's pseudos and on the insns near each differing word, pairs order knobs with
+allocation knobs, and stacks the helpful ones. The result names the decisions the C has
+to provoke; it is never a match itself. `selftest` checks that with no knobs set,
+cc1-whatif writes the pinned cc1's exact assembly.
 
 ## golem.py (local LLM tier)
 

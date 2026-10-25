@@ -6,6 +6,7 @@ fdat042	0x801C65CC	fdat004/func_801C5EA8.c	register pin x1
 fdat052	0x801C5948	fdat004/func_801C5EA8.c	register pin x1
 fdat072	0x801C5600	fdat004/func_801C5EA8.c	register pin x1
 ovl201	0x8004E2BC	ovl201/func_8004E2BC.c	register pin x1
+ovl201	0x8006BA08	ovl201/func_8006BA08.c	empty asm x2
 ovl201	0x8007AD64	ovl201/func_8007AD64.c	register pin x1
 ovl201	0x8009C6DC	ovl201/func_8009C6DC.c	register pin x1, empty asm x1
 ovl202	0x8004D044	ovl202/func_8004D044.c	register pin x2

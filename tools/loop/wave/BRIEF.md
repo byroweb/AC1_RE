@@ -56,8 +56,36 @@ Other agents work in the same checkout at the same time.
    frame size.
 6. Read the diff yourself. The tools tell you *where*; you supply the *what*.
 
+## When the levers run out: ask the what-if compiler
+
+`python tools/loop/whatif.py search <unit> <vaddr> <file> [--rodata VA]` compiles your C
+with a cc1 that can flip single decisions: a pseudo's allocation priority, a tie, a cse
+fold, an insn's schedule slot, a loop hoist, cross-jumping. It tells you which flips bring
+the function closer, for example "local-alloc does not tie pseudo 87; sched2 priority of
+insn 142 +15". Read the `-dl` / `-dp` dumps to see which variable and statement those are,
+then write C that provokes the same decision. It runs a few hundred compiles: one search
+at a time, `-j 2`.
+
 ## Levers that matched in the tail (newest first)
 
+- **Read GCC's source for the blocking rule.** Wave 8 matched 5 of the hardest by finding
+  the exact rule in cc1's source (local-alloc.c combine_regs, loop.c invariant_p, jump.c
+  cross-jumping, sched.c alias analysis) and writing C that sidesteps it.
+- **Identical arms on a free test.** `if ((s32)p < 0) f(...); else f(...);` makes the
+  variables multi-block, so local-alloc cannot tie them. jump2 then merges the arms and
+  the branch disappears. `if (z)` does not work: the else arm folds z = 0.
+- **Dead store in a loop exit path.** `rk = 0;` makes rk non-invariant for loop.c, so
+  only the index is strength-reduced and `rk + off` stays an add at each use. Flow
+  deletes the store later.
+- **A volatile store/load pair orders just those two accesses in both sched passes.** It
+  is a lighter barrier than do/while(0), which fences everything.
+- **Store in each arm, then goto.** If retail branches to a shared store with the
+  constant in the delay slot, write `o->f = N; goto L;` in each arm and let
+  cross-jumping merge the stores.
+- **A variable that dies twice is global-allocated.** Reuse a load variable for a later
+  temp (`q = dir.vx; ...; q = d >> 12;`) so it cannot tie in local-alloc.
+- **Cross-jumping needs at least 2 matching insns before two jumps to one label.** To
+  keep two identical tails apart, make them jump to different labels.
 - **Global moved behind a pointer.** If a near-copy is longer and its extra words are
   `lui`/`lw X` loads before field accesses, a block of absolute globals became
   `ptr->field` there (ovl202 reads 0x80040FA0 directly; ovl203/204 go through
