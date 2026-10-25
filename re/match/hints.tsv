@@ -2583,3 +2583,7 @@ fdat022	0x801C60B0	name	fdat022_dropship_think	2026-10-25T04:16:54Z
 fdat022	0x801C60B0	hint	draft: lowers carried units until landed, flies keyframed path (14-byte keys at 0x801C7538), engine sound, spawns next unit at path events	2026-10-25T04:16:54Z
 ovl201	0x800B3748	name	ui_acpreview_part_create	2026-10-25T04:16:54Z
 ovl201	0x800B3748	hint	ctor stores itself, places part object at core attach point from per-part offset tables, mirrors x on flag&1	2026-10-25T04:16:54Z
+ovl202	0x8007ACC0	name	ai_hover_chase_step	2026-10-25T05:41:24Z
+ovl202	0x8007ACC0	hint	steers toward target D_80041024 (func_80015258 intercept point, ratan2 yaw turn), clamps vel x/z by max speed 0x800411AE, sink/climb vel y	2026-10-25T05:41:24Z
+ovl202	0x8008080C	name	player_input_boost_state	2026-10-25T05:41:24Z
+ovl202	0x8008080C	hint	msg-0 handler that maps held pad keys (0x80041230..) to movement state +0x41; kind 0xB0 uses the boost timer 0x80040FB2; twin of 0x8008238C	2026-10-25T05:41:24Z
