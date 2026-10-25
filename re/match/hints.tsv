@@ -2587,3 +2587,9 @@ ovl202	0x8007ACC0	name	ai_hover_chase_step	2026-10-25T05:41:24Z
 ovl202	0x8007ACC0	hint	steers toward target D_80041024 (func_80015258 intercept point, ratan2 yaw turn), clamps vel x/z by max speed 0x800411AE, sink/climb vel y	2026-10-25T05:41:24Z
 ovl202	0x8008080C	name	player_input_boost_state	2026-10-25T05:41:24Z
 ovl202	0x8008080C	hint	msg-0 handler that maps held pad keys (0x80041230..) to movement state +0x41; kind 0xB0 uses the boost timer 0x80040FB2; twin of 0x8008238C	2026-10-25T05:41:24Z
+ovl203	0x8007F414	name	ac_legs_jump_pad_action	2026-10-25T05:42:23Z
+ovl203	0x8007F414	hint	msg handler (msg 0 only); picks o->act from D_80039D18 held-button masks k_up/k_down/k_left/k_right (+0x290..+0x2A4), kind 0xB0 jump timer h12	2026-10-25T05:42:23Z
+ovl201	0x800B3748	name	acprev_part_obj_create	2026-10-25T05:42:23Z
+ovl201	0x800B3748	hint	ctor of a UiObj that places an AC part model at its core attach point (D_800BC428/D_800BC440 core points, D_80031A58 equipped parts, flag bit0 mirrors x)	2026-10-25T05:42:23Z
+ovl201	0x8006BA08	name	emb_edit_update_palette	2026-10-25T05:42:23Z
+ovl201	0x8006BA08	hint	emblem editor: LoadImage pixels + 16-colour CLUT from D_8017E5D8, fades bg colour D_800B7E48 in/out (img fade +0x13), cursor-colour light matrix D_800B8DC4[10]	2026-10-25T05:42:23Z
