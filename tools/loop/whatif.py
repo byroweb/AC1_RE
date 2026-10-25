@@ -75,6 +75,8 @@ class Fn:
 
     def __init__(self, unit, va, cfile, rodata=None, noalign=False):
         self.unit, self.va = unit, va
+        # knobs set in the caller's environment are pinned: every compile, the baseline too
+        self.pinned = {k: os.environ[k] for k in KNOB_VARS if os.environ.get(k)}
         self.tools = dict(permute.tools_once(), cc1=CC1_WHATIF)
         self.base = tempfile.mkdtemp(prefix="whatif_")
         self.meta = permute.setup_dir(unit, va, cfile, os.path.join(self.base, "setup"), rodata=rodata,
@@ -93,7 +95,7 @@ class Fn:
         """-> (words, info) for one knob set {VAR: 'K:V,...'}; words None on a build error."""
         work = tempfile.mkdtemp(prefix="k_", dir=self.base)
         env = {k: v for k, v in os.environ.items() if k not in KNOB_VARS}
-        env.update(knobs)
+        env.update(merge(self.pinned, knobs))
         try:
             shutil.copyfile(self.fni, os.path.join(work, "fn.i"))
             extra = ["-dp", "-dl", "-dS", "-dR", "-dL"] if dumps else []
@@ -217,7 +219,8 @@ def cmd_search(args):
             print("does not build")
             return 2
         info["bytes"], info["order"] = plain["bytes"], plain["order"]
-        print("%s 0x%08X: %d words off with no knobs" % (args.unit, va, base))
+        print("%s 0x%08X: %d words off with %s" % (args.unit, va, base,
+                                                  "pinned " + describe(fn.pinned) if fn.pinned else "no knobs"))
         if base == 0:
             return 0
         cands, npse, nnear, nmov = candidates(info, fn.retail, args.window)

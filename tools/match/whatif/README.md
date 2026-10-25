@@ -24,14 +24,16 @@ counts as a match.** The oracle (`match_fn.py`, `drive.py try`) always uses the 
 | `WHATIF_NOXJUMP=1` | jump.c `jump_optimize` | no cross-jumping |
 | `WHATIF_MEMDEP=1` | sched.c `true_dependence` / `anti_dependence` | every pair of memory references is dependent |
 
-R is a pseudo register number, as in the `-dl` dump (`Register R used ...`). U is an insn
+R is a pseudo register number, as in the `-dl` dump (`Register R used ...`). For
+`WHATIF_LPRIO`, R is the quantity's head: the pseudo the others were tied *to*, not
+necessarily the one born first. U is an insn
 uid, as in `-dp` assembly comments and the `-dS` / `-dR` / `-dL` dumps.
 
 ## Use
 
 ```bash
 python tools/loop/whatif.py search ovl201 0x800B3748 path/to/best.c          # which knobs help
-WHATIF_NOTIE=87 python tools/loop/whatif.py search ...                       # pin one, search the rest
+WHATIF_NOTIE=87 python tools/loop/whatif.py search ...                       # pin one: every candidate stacks on it
 ```
 
 `search` compiles the C once with dumps and tries every knob:
