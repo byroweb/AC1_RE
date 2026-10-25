@@ -103,3 +103,20 @@ def test_repair_declares_and_casts():
                                     (4, "`sp10' undeclared (first use this function)")])
     assert "    M2C_UNK sp10;" in out and "a = *(M2C_UNK *)(arg0 + 4);" in out
     assert m2cfix.repair(text, "f", [(3, "something else")]) is None
+
+
+def test_unaligned_copies():
+    text = "\n".join([
+        "    M2C_FIELD(arg1, s16 *, 0) = M2C_UNALIGNED32(sp10);",
+        "    M2C_FIELD(arg1, s16 *, 4) = M2C_UNALIGNED32(sp14);",
+        "    temp_s3->unk8 = (unaligned s32) temp_s3->unk0;",
+        "    temp_s3->unkC = (unaligned s32) temp_s3->unk4;",
+        "    sp60 = M2C_UNALIGNED32(sp50);",
+        "    sp70 = M2C_UNALIGNED32(sp58);",
+        "    x = M2C_UNALIGNED32(M2C_ERROR(/* Unable to handle lwr */));"])
+    out = m2cfix.unaligned_copies(text).split("\n")
+    assert out == ["    *(SVECTOR *)&M2C_FIELD(arg1, s16 *, 0) = *(SVECTOR *)&sp10;",
+                   "    *(SVECTOR *)&temp_s3->unk8 = *(SVECTOR *)&temp_s3->unk0;",
+                   "    *(DVECTOR *)&sp60 = *(DVECTOR *)&sp50;",      # sp70 is not sp60 + 4
+                   "    *(DVECTOR *)&sp70 = *(DVECTOR *)&sp58;",
+                   "    x = M2C_UNALIGNED32(M2C_ERROR(/* Unable to handle lwr */));"]

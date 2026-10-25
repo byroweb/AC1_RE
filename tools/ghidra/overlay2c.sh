@@ -47,4 +47,4 @@ dd if="$BIN" of="$tmp/slice.bin" bs=1 skip="$off" count="$len" status=none
 "$PY" "$HERE/tools/ghidra/objdump2m2c.py" "$(printf 0x%x "$addr")" < "$tmp/dump.txt" > "$tmp/fn.s"
 
 # 4. decompile
-"$M2C_PY" "$M2C/m2c.py" -t mips-gcc-c "$tmp/fn.s"
+"$M2C_PY" "$M2C/m2c.py" -t mipsel-gcc-c "$tmp/fn.s"

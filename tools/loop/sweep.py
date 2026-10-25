@@ -168,6 +168,7 @@ def draft(row, variant, cache=None):
     if not out.strip():
         raise ctx.CtxError("m2c printed nothing")
     name = drive.fn_name(row["vaddr"])
+    out = m2cfix.unaligned_copies(out)
     for f in fixups:
         out = f(out, name, row)
     if SS in args:                       # the template's types are used; drop the struct

@@ -230,13 +230,14 @@ def m2c_draft(gas):
     fd, path = tempfile.mkstemp(suffix=".s", prefix="drive_")
     with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(gas)
-    base = cmd + ["-t", "mips-gcc-c", "--valid-syntax", "--deterministic-vars", "--stop-on-error"]
+    base = cmd + ["-t", "mipsel-gcc-c", "--valid-syntax", "--deterministic-vars", "--stop-on-error"]
     errs = []
     try:
         for extra in ([], ["--no-andor"]):
             res = subprocess.run(base + extra + [path], capture_output=True, text=True, errors="replace")
             if res.returncode == 0 and res.stdout.strip():
-                return res.stdout, None
+                import m2cfix
+                return m2cfix.unaligned_copies(res.stdout), None
             errs.append((res.stderr or res.stdout).strip()[-1500:])
     finally:
         try:

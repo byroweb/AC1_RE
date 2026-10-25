@@ -85,7 +85,7 @@ the field-level evidence: `include/ac1/README.md`):
    ```
    It carves the bytes (length from `tools/loop/functions.tsv`, or pass it), turns
    `jal` targets and `lui`/`%lo` pairs found in `symbols.tsv` into names, and runs
-   m2c (`mips-gcc-c`) with `ac1/ac1.h` as context, so fields print as `o->update`
+   m2c (`mipsel-gcc-c`) with `ac1/ac1.h` as context, so fields print as `o->update`
    instead of `*(s32 *)(arg0 + 0x74)`. `--proto` types the function itself; use
    `UiObj *` in 201, `AcEntity *` or `Projectile *` in 202. `--raw` gives the
    untyped draft that `tools/ghidra/overlay2c.sh` prints. Keep the raw disassembly

@@ -68,6 +68,20 @@ at a time, `-j 2`.
 
 ## Levers that matched in the tail (newest first)
 
+- **Unaligned copies are struct assignments (wave 11).** `lwl`/`lwr` loads then
+  `swl`/`swr` stores (`lwl v0,3(x); lwr v0,0(x); ...; swl v0,3(y); swr v0,0(y)`) are
+  GCC's block move for a 2-aligned struct. Write `*dst = *src;` on an SVECTOR (8 bytes,
+  two words) or a DVECTOR (4 bytes, one word), cast if you must:
+  `*(SVECTOR *)((u8 *)p + 0x10) = *(SVECTOR *)&q->pos;`. Drafts made since wave 11 do
+  this already. An older draft with `M2C_ERROR(/* ... lwr ... */)` or `M2C_UNALIGNED32`
+  needs it by hand.
+- **GTE code: use `#include "ac1/gte.h"` and `python tools/loop/gtemap.py <unit> <vaddr>`.**
+  m2c prints every GTE instruction as `M2C_ERROR(/* unknown instruction */)`. gtemap
+  names the gte.h macro for each GTE run in the retail asm, with the register that
+  carries each argument (`8008cd44 gte_SetRotMatrix($10)`), so you can place the
+  calls. Each macro is one asm block, so cc1 schedules C code around it but never into
+  it. Match the C value that feeds the argument register.
+
 - **Free refs (wave 10).** flow counts reg_n_refs before combine, and combine never lowers
   the count for uses it deletes. A redundant self-cast right after the set,
   `v = (s16)x; v = (s16)v;`, raises v's allocation priority by a floor_log2 step with no

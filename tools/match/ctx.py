@@ -577,7 +577,7 @@ def decompile(vaddr, length, unit, protos=(), raw=False, ctx_path=None, m2c_args
             raise CtxError("objdump2m2c failed:\n" + asm.stderr)
         sys.stderr.write(asm.stderr)
         text = asm.stdout
-        cmd = m2c_cmd() + ["-t", "mips-gcc-c"] + list(m2c_args)
+        cmd = m2c_cmd() + ["-t", "mipsel-gcc-c"] + list(m2c_args)
         if not raw:
             row = function_row(vaddr, unit_key(unit))
             jts = row[1] if row else []
