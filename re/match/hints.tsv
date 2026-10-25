@@ -2601,3 +2601,7 @@ ovl201	0x80066898	name	ui_obj_add_drawmode	2026-10-25T05:47:26Z
 ovl201	0x80066898	hint	sets DR_MODE via SetDrawMode(p,0,0,7,0) and addPrim into o->ot[idx]+unk14	2026-10-25T05:47:26Z
 ovl201	0x80086FFC	name	garage_build_visible_list	2026-10-25T05:47:26Z
 ovl201	0x80086FFC	hint	fills D_801F3750.order[] with the entries 0..63 whose lo/hi rank window and flags allow them, bumping rank until at least one is found	2026-10-25T05:47:26Z
+ovl201	0x80066F90	name	fe_card_write_save	2026-10-25T07:07:13Z
+ovl201	0x80066F90	hint	opens bu00/bu10:BASCUS-94182+letter, builds 0xE80 save (SC header, icon, title), writes, re-reads and compares checksum	2026-10-25T07:07:13Z
+ovl201	0x8007053C	name	emblem_draw_cursor_tile	2026-10-25T07:07:13Z
+ovl201	0x8007053C	hint	draws a 1x1 TILE at (x,y) of the 64x64 emblem canvas and, if big and inside the zoomed view, a zoom x zoom TILE	2026-10-25T07:07:13Z
