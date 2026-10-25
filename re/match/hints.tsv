@@ -2605,3 +2605,7 @@ ovl201	0x80066F90	name	fe_card_write_save	2026-10-25T07:07:13Z
 ovl201	0x80066F90	hint	opens bu00/bu10:BASCUS-94182+letter, builds 0xE80 save (SC header, icon, title), writes, re-reads and compares checksum	2026-10-25T07:07:13Z
 ovl201	0x8007053C	name	emblem_draw_cursor_tile	2026-10-25T07:07:13Z
 ovl201	0x8007053C	hint	draws a 1x1 TILE at (x,y) of the 64x64 emblem canvas and, if big and inside the zoomed view, a zoom x zoom TILE	2026-10-25T07:07:13Z
+fdat022	0x801C60B0	name	fdat022_carrier_think	2026-10-25T07:10:58Z
+fdat022	0x801C60B0	hint	lowers carried units to the floor, then flies keyframed path records at 0x801C7538 (interp by countdown +0x44), engine sound, spawns next unit at events	2026-10-25T07:10:58Z
+ovl201	0x800B3748	name	ovl201_ac_part_obj_new	2026-10-25T07:10:58Z
+ovl201	0x800B3748	hint	ctor of the AC preview part object: ui_obj_alloc, sets ctor/update/destroy, places it at the core attach point (D_800BC428/D_800BC440 tables) by part kind, mirrors x on flag bit 0	2026-10-25T07:10:58Z
