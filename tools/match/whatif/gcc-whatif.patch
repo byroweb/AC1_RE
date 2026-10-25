@@ -1,8 +1,16 @@
 diff --git a/cse.c b/cse.c
-index efd05de..1d1e3ff 100644
+index efd05de..62c822b 100644
 --- a/cse.c
 +++ b/cse.c
-@@ -5695,10 +5695,15 @@ fold_rtx (x, insn)
+@@ -5171,6 +5171,7 @@ fold_rtx (x, insn)
+ 	    /* This is the same as calling equiv_constant; it is duplicated
+ 	       here for speed.  */
+ 	    if (REGNO_QTY_VALID_P (REGNO (arg))
++		&& ! whatif_value ("WHATIF_NOFOLD", REGNO (arg), 0)
+ 		&& qty_const[reg_qty[REGNO (arg)]] != 0
+ 		&& GET_CODE (qty_const[reg_qty[REGNO (arg)]]) != REG
+ 		&& GET_CODE (qty_const[reg_qty[REGNO (arg)]]) != PLUS)
+@@ -5695,10 +5696,15 @@ fold_rtx (x, insn)
  /* Return a constant value currently equivalent to X.
     Return 0 if we don't know one.  */
  
