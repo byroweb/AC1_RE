@@ -2613,3 +2613,5 @@ ovl204	0x80061AD4	name	vs_draw_split_frame	2026-10-25T07:17:05Z
 ovl204	0x80061AD4	hint	2-player frame: updates both views, draws each half via SetDrawEnv/AddPrim, then shared HUD	2026-10-25T07:17:05Z
 ovl201	0x8006BA08	name	emb_edit_update_palette	2026-10-25T07:17:05Z
 ovl201	0x8006BA08	hint	uploads image + 16-colour CLUT from D_8017E5D8 (LoadImage), fades bg colour D_800B7E48 toward/away from palette[0], sets light matrix 10 by brightness of the colour under the cursor	2026-10-25T07:17:05Z
+ovl204	0x80061AD4	name	vs_draw_split_frame	2026-10-25T16:31:44Z
+ovl204	0x80061AD4	hint	2-player frame: updates both views, draws each half via SetDrawEnv/AddPrim into its own OT, then the shared HUD (timer digits, prompts)	2026-10-25T16:31:44Z
