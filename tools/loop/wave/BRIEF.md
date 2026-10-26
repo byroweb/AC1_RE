@@ -68,6 +68,53 @@ at a time, `-j 2`.
 
 ## Levers that matched in the tail (newest first)
 
+- **Unaligned copies are struct assignments (wave 11).** `lwl`/`lwr` loads then
+  `swl`/`swr` stores (`lwl v0,3(x); lwr v0,0(x); ...; swl v0,3(y); swr v0,0(y)`) are
+  GCC's block move for a 2-aligned struct. Write `*dst = *src;` on an SVECTOR (8 bytes,
+  two words) or a DVECTOR (4 bytes, one word), cast if you must:
+  `*(SVECTOR *)((u8 *)p + 0x10) = *(SVECTOR *)&q->pos;`. Drafts made since wave 11 do
+  this already. An older draft with `M2C_ERROR(/* ... lwr ... */)` or `M2C_UNALIGNED32`
+  needs it by hand.
+- **GTE code: use `#include "ac1/gte.h"` and `python tools/loop/gtemap.py <unit> <vaddr>`.**
+  m2c prints every GTE instruction as `M2C_ERROR(/* unknown instruction */)`. gtemap
+  names the gte.h macro for each GTE run in the retail asm, with the register that
+  carries each argument (`8008cd44 gte_SetRotMatrix($10)`), so you can place the
+  calls. Each macro is one asm block, so cc1 schedules C code around it but never into
+  it. Match the C value that feeds the argument register.
+- **One `lui`, many `reg+offset` fields: a local pointer (wave 11).** Retail reaching
+  the scratchpad (0x1F800000) or a global block as `t2+offset` after a single `lui` came
+  from `T *sp = (T *)0x1F800000;`. A cast macro gives every access its own `lui`.
+- **Loops over records are pointer walks.** `o++` / `w++` over a struct array lets
+  loop.c strength-reduce every field access into one giv; an index `a[i]` did not.
+- **`x * 28` written as shifts.** `sll 5; addu; sll 2; subu` is the source's
+  `(x<<5) - (x<<2)`. GCC's own multiply by a 0x1C stride gives `sll 3; subu; sll 2`.
+- **A count-down loop needs at most one store.** loop.c turns a loop into a count-down
+  loop only if the body has at most one memory store (`num_mem_sets <= 1` in
+  check_dbra_loop). With two stores, write `n = 256; do {...} while (--n != 0);` and
+  index with a separate `j++`.
+- **Keep a constant in the inner preheader.** Each movable already moved doubles
+  insn_count for the later ones, so a constant shared by inner loops (`-1`) gets hoisted
+  to the outer loop. `neg = -1;` in the arm that uses it, as a user variable used in more
+  than one block, keeps it inside.
+- **Switch cases that stay separate.** When every case ends in the same call, write the
+  call in each case. `k = N; break;` before one shared call lets jump2 cross-jump two
+  cases that differ only in an early constant. The same goes for if/else arms: a call
+  written in both arms keeps its argument setup inside the arms.
+- **Register updates around calls.** sched1 moves plain updates (`j++; i--;`) across a
+  call's argument setup. Write them after the call to land before the jal, as in retail.
+  A `y = 130;` written after a call can fill its delay slot.
+- **A counter loaded straight into a saved register** (`lbu s0; addiu s0,s0,-1`) is
+  `i = p->n; i--;`. Written as `i = p->n - 1` it cannot tie.
+- **t0 instead of v0.** One variable reused for two unrelated temps, neither of which
+  crosses a call, becomes global-allocated and gets t0.
+- **Compare operand order picks the load order.** `top <= y` and `y >= top` put the two
+  sign-extending loads in opposite orders: combine merges each load into its extension
+  at the compare. whatif has no knob for this.
+- **Spill choice by refs.** `landed = top >= y - h` counts the scc expansion's two sets.
+  `ok = ...; landed = ok;` cuts the refs, so landed becomes the spilled pseudo.
+- **Operand order of `addu` with a spilled base.** `(T *)(idx * sizeof(T) + (u32)base)`
+  gives `addu d, prod, base`; `&base[idx]` gives the reverse.
+
 - **Free refs (wave 10).** flow counts reg_n_refs before combine, and combine never lowers
   the count for uses it deletes. A redundant self-cast right after the set,
   `v = (s16)x; v = (s16)v;`, raises v's allocation priority by a floor_log2 step with no

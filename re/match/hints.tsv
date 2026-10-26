@@ -2623,3 +2623,17 @@ ovl201	0x8007053C	name	emb_draw_pixel_tiles	2026-10-25T16:48:13Z
 ovl201	0x8007053C	hint	adds a 1x1 TILE at (x+ox+40,y+oy+48) (preview) and, if big and (x,y) inside the zoomed view, a zoom x zoom TILE at ((x-vx)*zoom+ox+172,(y-vy)*zoom+oy+36); both to cursor->ot[player][layer]	2026-10-25T16:48:13Z
 ovl201	0x80086FFC	name	garage_build_visible_list	2026-10-25T17:04:02Z
 ovl201	0x80086FFC	hint	fills D_801F3750.order[] with entries 0..63 whose lo/hi rank window, kind (by sign of w28 once rank>=26) and flags bit 2 allow them; bumps rank (mod 64, calling func_80086EC8 on wrap to the start rank) until the list is non-empty	2026-10-25T17:04:02Z
+ovl202	0x8007D2F8	name	weapon_fire_player	2026-10-25T23:43:38Z
+ovl202	0x8007D2F8	hint	player-side twin of fdat000 func_801C7DA8 (enemy weapon fire): same 6-byte spec table 0x8008E658, func_800745D0 muzzle, VectorNormalSS recoil, switch on am->id launching 85E98/889B4/86448/8840C/915C, cool-down 0x3F dispatch to 8007A160/8007A17C	2026-10-25T23:43:38Z
+ovl202	0x8008CC88	name	world_draw_object_meshes	2026-10-25T23:46:41Z
+ovl202	0x8008CC88	hint	loops g_world_structs (id!=-1, flag 0x10000 at +0x30 or 0x1000000 at +0x34), GTE-transforms the model verts of mesh +0x1E, emits NCCS-lit POLY_F3/POLY_F4 (len 4/5, codes 0x20/0x28) into the OT at scratchpad +0x140	2026-10-25T23:46:41Z
+ovl203	0x80050D78	name	hud_draw_status_2p	2026-10-25T23:46:58Z
+ovl203	0x80050D78	hint	draws energy bar + damage blink, heat counter (body+0x160/0x162), timer D_8019B494 MM:SS, radar frame/blips, weapon list (pilot+0x2DA, 0x3C records), compass strip	2026-10-25T23:46:58Z
+ovl203	0x80051E1C	name	hud_draw_text	2026-10-25T23:46:58Z
+ovl203	0x80051E1C	hint	(x, y, w, h, color, str) - every caller passes a string buffer last	2026-10-25T23:46:58Z
+ovl203	0x8005DFF8	name	hud_fill_rect	2026-10-25T23:46:58Z
+ovl203	0x8005DFF8	hint	(x0, y0, x1, y1, color, a, b) - energy bar segments 8..194	2026-10-25T23:46:58Z
+ovl203	0x800608C4	name	hud_draw_polyline	2026-10-25T23:46:58Z
+ovl203	0x800608C4	hint	(DVECTOR *pts, color, n=4, ...) - closed 5-point radar frame	2026-10-25T23:46:58Z
+ovl202	0x8008B380	name	mission_vm_tick	2026-10-26T00:14:38Z
+ovl202	0x8008B380	hint	walks g_mission_ctl.vm_thread_tab (vm_threads records of 24 bytes), fetches u16 opcodes from vm_blob until 0xFFF0 wait / 0xFFFF end, then per-tick interpolation (LoadAverageShort12) and entity updates	2026-10-26T00:14:38Z

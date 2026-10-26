@@ -478,7 +478,7 @@ A matcher's turn is `next` -> edit the C -> `try` until exit 0 -> (`--commit`) -
 **`next`** prints a work package and exits 0, or exits 3 when nothing is open:
 the `functions.tsv` row with its score, the retail disassembly (`objdump -m
 mips:3000`), the GAS that `tools/ghidra/objdump2m2c.py` makes from the
-`mips:isa32` listing, the m2c draft (`-t mips-gcc-c --valid-syntax
+`mips:isa32` listing, the m2c draft (`-t mipsel-gcc-c --valid-syntax
 --deterministic-vars --stop-on-error`, retried with `--no-andor`; a failure is
 printed and skipped), the exact oracle command line (`--expect-size` from the
 row, `--rodata <first jt_addrs>` marked *verify* when the function has a jump
@@ -794,6 +794,15 @@ starting draft for an agent.
 
 `tools/match/include/m2c_compat.h` also gained `u64`/`s64` (m2c names soft-float
 double values that way).  Tests: `tools/match/tests/test_m2cfix.py` (text only).
+
+Every variant (and `drive.py next`'s draft) also gets `unaligned_copies()`. GCC copies
+a 2-aligned struct (`*a = *b` on an SVECTOR or DVECTOR) with `lwl`/`lwr` then
+`swl`/`swr`. m2c prints each word as `dst = M2C_UNALIGNED32(src);`, which cc1 rejects.
+Two consecutive words become one SVECTOR copy and a lone word a DVECTOR copy, which
+compile back to the same instructions. This needs m2c's little-endian target
+`mipsel-gcc-c`, which every m2c call uses since 2026-10-25. The big-endian
+`mips-gcc-c` looked for each `lwl` at the wrong offset and printed `M2C_ERROR`
+instead; only the `lwl`/`lwr` sites change between the two.
 
 **Fix-up sweep (2026-10-20)**: the 1236 open bodies of `queue-S1..S6.tsv` (all
 sizes; 3 of the 1239 had matched in an aborted first run, all `ctx-spframe`),
@@ -1311,6 +1320,25 @@ function's pseudos and on the insns near each differing word, pairs order knobs 
 allocation knobs, and stacks the helpful ones. The result names the decisions the C has
 to provoke; it is never a match itself. `selftest` checks that with no knobs set,
 cc1-whatif writes the pinned cc1's exact assembly.
+
+## gtemap.py (GTE macros in retail asm)
+
+```
+gtemap.py UNIT VADDR [--size N]
+```
+
+m2c does not decode GTE (coprocessor 2) instructions. It prints each `lwc2`, `ctc2`,
+`mtc2` or `cop2` command as `M2C_ERROR(/* unknown instruction */)`. `gtemap.py` matches
+every macro in `include/ac1/gte.h` against the retail words, longest first: a GCC
+`asm volatile` block is one contiguous run. It prints each GTE run as the macro call to
+write, with the register that carries each argument, for example
+`gte_SetRotMatrix($10)` or `gte_rtps()`. It exits 1 when some GTE instruction matches no
+macro (`??`): write a local macro from the retail words and propose it for gte.h.
+
+`gte.h` holds 51 PsyQ `inline_c.h` macros, taken from the forms matched C defines
+locally. Names and cop2 words follow PsyQ, so a local `gte_rtv0` that emits 0x4A480012
+is gte.h's `gte_rtv0tr`. Over all 432 functions with GTE ops, 89% of the 3,320 GTE
+runs map to a macro. Most of the rest is hand-written PsyQ library code.
 
 ## golem.py (local LLM tier)
 

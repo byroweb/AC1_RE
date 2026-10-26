@@ -51,6 +51,7 @@ one function, starting out ──► .claude/skills/match-function/SKILL.md
         │                        └─ constants / schedule ───────────► levers by hand (BRIEF.md list)
         │
         ├─ stuck after all that ► whatif.py search   (which cc1 decision, flipped, closes it)
+        ├─ GTE (lwc2/ctc2/cop2) ► gtemap.py         (names the gte.h macro for each GTE run)
         │
         ├─ just matched ──────► twins.py replay       (credit identical copies)
         │                       nearport.py port      (port to near-copies)

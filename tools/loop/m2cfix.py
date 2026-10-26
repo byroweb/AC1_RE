@@ -5,6 +5,8 @@ Two kinds:
 
   * whole-text fix-ups, run on m2c's output before the first compile:
       knr_externs    `/* extern */` prototypes m2c guessed -> unprototyped `T f();`
+      unaligned_copies  `dst = M2C_UNALIGNED32(src)` words (lwl/lwr) -> SVECTOR /
+                     DVECTOR struct copies (run on every draft)
       declare_locals declare the m2c names it uses but never declares (`sp1A` next to an
                      address-taken `sp18`, `saved_reg_s2`, `unksp3E`), typed from the
                      --stack-structs template when m2c printed one (else M2C_UNK)
@@ -42,6 +44,53 @@ def knr_externs(text):
     unprototyped instead (`s32 SquareRoot0();`): any call compiles, int-sized
     arguments are passed exactly as before."""
     return EXTERN_PROTO.sub(r"\1();\2", text)
+
+
+UNALIGNED = re.compile(r"^(\s*)(.+?) = (?:M2C_UNALIGNED32\((.+)\)|\(unaligned s32\) (.+));(\s*/\*.*\*/)?$")
+FIELD_OFF = re.compile(r"(?:M2C_FIELD\((.+), [^,]+, (0x[0-9A-Fa-f]+|\d+)\)|(.*?)(?:->unk|\.unk|\bsp)([0-9A-F]+))$")
+
+
+def _field_off(expr):
+    """(base text, byte offset) of `M2C_FIELD(b, T *, N)`, `b->unkN`, `spN`, else None."""
+    m = FIELD_OFF.match(expr.strip())
+    if not m:
+        return None
+    if m.group(1) is not None:
+        return m.group(1), int(m.group(2), 0)
+    return m.group(3), int(m.group(4), 16)
+
+
+def _next4(a, b):
+    """True unless both sides parse and b is not a+4 on the same base."""
+    a, b = _field_off(a), _field_off(b)
+    return a is None or b is None or (a[0] == b[0] and b[1] == a[1] + 4)
+
+
+def unaligned_copies(text, name=None, row=None):
+    """m2c prints GCC's block move of a 2-aligned struct (lwl/lwr then swl/swr, from
+    `*a = *b` on an SVECTOR or DVECTOR) as one `dst = M2C_UNALIGNED32(src);` per word,
+    which cc1 cannot compile.  Two consecutive words (dst and src both +4) become an
+    8-byte SVECTOR copy, a lone word a 4-byte DVECTOR copy: GCC 2.7.2 emits exactly
+    those lwl/lwr/swl/swr sequences for them.  Needs m2c's little-endian target
+    (mipsel-gcc-c); the big-endian one cannot pair the halves (M2C_ERROR instead)."""
+    lines = text.split("\n")
+    out, i = [], 0
+    while i < len(lines):
+        m = UNALIGNED.match(lines[i])
+        if not m or "M2C_ERROR" in lines[i]:
+            out.append(lines[i])
+            i += 1
+            continue
+        ind, dst, src = m.group(1), m.group(2), m.group(3) or m.group(4)
+        n = UNALIGNED.match(lines[i + 1]) if i + 1 < len(lines) else None
+        if n and "M2C_ERROR" not in lines[i + 1] and _next4(dst, n.group(2)) \
+                and _next4(src, n.group(3) or n.group(4)):
+            out.append("%s*(SVECTOR *)&%s = *(SVECTOR *)&%s;" % (ind, dst, src))
+            i += 2
+        else:
+            out.append("%s*(DVECTOR *)&%s = *(DVECTOR *)&%s;" % (ind, dst, src))
+            i += 1
+    return "\n".join(out)
 
 
 # ----------------------------------------------------------------------------

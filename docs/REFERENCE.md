@@ -85,7 +85,8 @@ rules out GCC 2.8.x).
 -O2 -mips1 -mcpu=3000 -w -funsigned-char -fpeephole -ffunction-cse -fpcc-struct-return -fcommon -msoft-float -mgas -fgnu-linker -gcoff -G0 -quiet
 ```
 
-Practical consequences: m2c runs with `-t mips-gcc-c` (the code is GCC, not IDO);
+Practical consequences: m2c runs with `-t mipsel-gcc-c` (the code is GCC, not IDO, and little-endian: the
+big-endian `mips-gcc-c` cannot pair the `lwl`/`lwr` halves of a struct copy);
 the modern `mipsel` GCC in §7 is for *patches* only and will never byte-match the
 retail output. See `tools/README.md` → *Byte-matching toolchain* for obtaining the
 period compiler.

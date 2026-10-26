@@ -90,7 +90,7 @@ installs/verifies the Ghidra PSX loader + PSYQ signatures, and confirms the
 overlay-import script. Safe to re-run; only fetches what's missing.
 
 ## `overlay2c.sh <hex_addr> <len> [binfile] [base]`  — the daily workhorse
-Decompiles a slice of MIPS to C via `objdump` + **m2c** (target `mips-gcc-c`: the
+Decompiles a slice of MIPS to C via `objdump` + **m2c** (target `mipsel-gcc-c`: the
 retail code is GCC 2.7.2, see *Byte-matching toolchain* below — the old `mips-ido-c`
 target produced IDO-style output for a compiler the game never used). The name/menu
 code lives in a runtime overlay Ghidra's base project doesn't cover, so this turns a

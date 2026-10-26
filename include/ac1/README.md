@@ -93,7 +93,7 @@ m2c line. To use the context with it by hand, write the context, then add the fl
 its last line:
 
 ```
-"$M2C_PY" "$M2C/m2c.py" -t mips-gcc-c --context build/ac1_ctx.c "$tmp/fn.s"
+"$M2C_PY" "$M2C/m2c.py" -t mipsel-gcc-c --context build/ac1_ctx.c "$tmp/fn.s"
 ```
 
 `python tools/match/ctx.py check` verifies that `symbols.h` is current, that no header
