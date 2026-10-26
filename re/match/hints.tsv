@@ -2635,3 +2635,5 @@ ovl203	0x8005DFF8	name	hud_fill_rect	2026-10-25T23:46:58Z
 ovl203	0x8005DFF8	hint	(x0, y0, x1, y1, color, a, b) - energy bar segments 8..194	2026-10-25T23:46:58Z
 ovl203	0x800608C4	name	hud_draw_polyline	2026-10-25T23:46:58Z
 ovl203	0x800608C4	hint	(DVECTOR *pts, color, n=4, ...) - closed 5-point radar frame	2026-10-25T23:46:58Z
+ovl202	0x8008B380	name	mission_vm_tick	2026-10-26T00:14:38Z
+ovl202	0x8008B380	hint	walks g_mission_ctl.vm_thread_tab (vm_threads records of 24 bytes), fetches u16 opcodes from vm_blob until 0xFFF0 wait / 0xFFFF end, then per-tick interpolation (LoadAverageShort12) and entity updates	2026-10-26T00:14:38Z
