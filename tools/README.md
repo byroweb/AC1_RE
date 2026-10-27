@@ -57,10 +57,16 @@ Everything here runs under **Git Bash** (MSYS2); PowerShell/cmd are not supporte
       --disc ~/dev/ac1_dub.cue --capture out/dub.mp4 --take take.wav \
       --shutdown --boot-after "${AC1_BIN%.bin}.cue" --load-after 3 --delete-slot
   ```
-- **`coverage_tag.py`** — tags open functions with the screen they run on while you
-  play: execute breakpoints through the MCP server, overlay-aware, labels typed in the
-  terminal; writes `re/match/coverage.tsv` and `hint` rows in `re/match/hints.tsv`.
-  See `tools/match/README.md` (Coverage tagging from play). Test:
+- **`coverage_tag.py`**: tags functions with the screen they run on while you play.
+  It sets execute breakpoints through the MCP server, switches between overlays by
+  itself, and takes labels typed in the terminal.
+  - By default it watches every unit and every function.
+  - `--set unseen` / `--set unnamed` narrow that down.
+  - `--capture` records arguments and return values.
+
+  It writes `re/match/coverage.tsv`, `hint` rows in `re/match/hints.tsv`, and
+  `re/match/calls.tsv`.  What to play: `docs/PLAY_COVERAGE_SWEEP.md`.  Options:
+  `tools/match/README.md` (Coverage tagging from play).  Test:
   `python -m pytest tools/duckstation/test_coverage_tag.py`.
 - **`live_probe.py`**: checks the struct layouts the matching agents proposed against
   the running game.  You do one thing (buy a part, swap the head, hold X), and it diffs or
