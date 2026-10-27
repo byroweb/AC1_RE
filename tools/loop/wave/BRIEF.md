@@ -68,6 +68,26 @@ at a time, `-j 2`.
 
 ## Levers that matched in the tail (newest first)
 
+- **Giants: rewrite top-down, one section at a time (wave 12).** ovl201 0x80078D84
+  (7.3 KB, 9 jump tables) went from an m2c draft at 1,647 words off to a match in 35
+  tries. Keep the whole function compiling, fix the frame first, and give each block its
+  own locals. One variable shared across the pad-handling blocks made a long-lived
+  pseudo that outranked the loop pointer, which caused a 600-word s1/s2 swap.
+- **Several jump tables may need `--no-rodata-align-fix`.** Retail kept the `.align 3`
+  padding between them.
+- **Byte globals at consecutive addresses are one array.** Index `D_80031A58[i]` rather
+  than declaring D_80031A59..63 separately: cse then derives one address from another,
+  as retail does.
+- **A flag store that loads must not pass is a struct member.** `pad[-6] |= 0x40` through
+  `u32 *pad = &D_801A2568` still folds to a direct `lui` address, but the access stays
+  in_struct, so later loads are not scheduled above it. A plain scalar store lets them
+  move up.
+- **A load in both arms, one call after.** `nm = T[idx];` at the end of both arms,
+  then one call after the if/else: the setup stays in order and jump2 merges the tails.
+- **whatif on a giant:** a full `search` lists thousands of knobs. Set single knobs by
+  hand instead (`WHATIF_SCHED1=U:d` with `match_fn.py --cc1 tools/match/vendor/cc1-whatif.exe`)
+  on the insns next to the diff.
+
 - **Unaligned copies are struct assignments (wave 11).** `lwl`/`lwr` loads then
   `swl`/`swr` stores (`lwl v0,3(x); lwr v0,0(x); ...; swl v0,3(y); swr v0,0(y)`) are
   GCC's block move for a 2-aligned struct. Write `*dst = *src;` on an SVECTOR (8 bytes,
