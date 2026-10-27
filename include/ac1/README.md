@@ -11,9 +11,21 @@ Everything compiles with the retail compiler (GCC 2.7.2: no `//`, no C99).
 | `entity.h` | overlay 202 actor `AcEntity` (0x170), `AcPos`, `AcMover` (0x50 at +0x64), radar/lock list `TargetSlot` (0x30) |
 | `projectile.h` | overlay 202 `Projectile` (0xE0), `WeaponDef` (0x1C) |
 | `mission.h` | overlay 202 mission control block `MissionCtl` (0x28 at 0x801D0B40), `WorldStruct` (0x40) |
+| `vsplayer.h` * | per-player record `VsPlayer` (0x39C × 2 at 0x80040FA0; `g_player`, `g_vs_sides`), weapon slot `VsWeapon` (0x3C) |
+| `frontend.h` * | overlay 201 pad block `PadState` (0x2C at 0x801A2550), `AC_PART_*` slots of the equipped-parts bytes `g_ac_parts` (0x80031A58) |
+| `vm.h` * | overlay 202 script VM `VmThread` (0x18) / `VmState` (0x28), map objects `MapObj` (0x34 × 512 at 0x80198B08), spawn templates `SpawnTmpl` (0x2C × 256 at 0x8019FAB8), `SpawnBlock` |
+| `ovl202_view.h` * | scratchpad view of the overlay 202 world-object renderers `ViewSpad`, `ViewModel`, `ViewVtx` |
 | `symbols.tsv` | address, name, C type, unit — the single source for named globals and functions |
 | `symbols.h` | **generated** from `symbols.tsv` by `tools/match/ctx.py gen`; do not edit |
 | `ac1.h` | umbrella: includes all of the above (`tools/match/include/ac1/ac1.h` forwards here) |
+
+\* **Opt-in** headers: `ac1.h` does not include them, because their type names clash
+with local typedefs in matched sources (`PadState` alone is declared in 25 of them).
+Include one after `ac1/ac1.h`.  A `symbols.tsv` row typed with an opt-in header's type
+is declared in the generated block at the end of that header (`ctx.py gen` writes it),
+not in `symbols.h`.  `projectile.h` also gained `WeaponSpread` (0x8008E610) and
+`WeaponSpec` (0x8008E658); those names were free, so they stay in the umbrella.
+`docs/STRUCT_SURVEY.md` lists every local layout that is still a candidate.
 
 Every struct ends in `AC1_ASSERT_SIZE(T, size)`, so a wrong pad is a compile error.
 Unknown bytes are `unkNN` / `padNN` arrays named by their offset. A field gets a

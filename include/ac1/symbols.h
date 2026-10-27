@@ -10,10 +10,21 @@
 #include "mission.h"
 
 /* --- exe --- */
+extern u8 g_ac_parts[12];                                /* 0x80031A58 */
 extern TargetSlot *g_target_head;                        /* 0x80041020 */
 extern TargetSlot g_target_list[8];                      /* 0x80041024 */
 
 /* --- overlay 201 --- */
+extern u8 g_parts_head[];                                /* 0x800B91F4 */
+extern u8 g_parts_core[];                                /* 0x800B944C */
+extern u8 g_parts_legs[];                                /* 0x800B94F4 */
+extern u8 g_parts_arms[];                                /* 0x800B9DF4 */
+extern u8 g_parts_arm_weapon[];                          /* 0x800BA134 */
+extern u8 g_parts_back[];                                /* 0x800BA3F4 */
+extern u8 g_parts_blade[];                               /* 0x800BAADC */
+extern u8 g_parts_booster[];                             /* 0x800BABAC */
+extern u8 g_parts_fcs[];                                 /* 0x800BACCC */
+extern u8 g_parts_gen[];                                 /* 0x800BAFCC */
 extern UiView g_ui_views[10];                            /* 0x801A2320 */
 extern UiObj g_ui_pool[510];                             /* 0x801A25E8 */
 extern UiObj g_ui_pool_k2[20];                           /* 0x801A36F8 */
@@ -38,7 +49,10 @@ void ui_obj_nop2(UiObj *o);                              /* 0x800507FC */
 
 /* --- overlay 202 --- */
 extern WeaponDef g_weapon_defs[20];                      /* 0x8008E530 */
+extern WeaponSpread g_weapon_spreads[9];                 /* 0x8008E610 */
+extern WeaponSpec g_weapon_specs[7];                     /* 0x8008E658 */
 extern Projectile g_proj_none;                           /* 0x8008EC88 */
+extern u16 g_map_obj_count;                              /* 0x8019F508 */
 extern void *g_objective_obj;                            /* 0x8019F51C */
 extern u32 g_mission_flags;                              /* 0x8019F524 */
 extern u16 g_mission_end_timer;                          /* 0x8019F528 */

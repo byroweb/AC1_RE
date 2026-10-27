@@ -63,4 +63,26 @@ typedef struct WeaponDef {
 } WeaponDef;
 AC1_ASSERT_SIZE(WeaponDef, 0x1C);
 
+/* g_weapon_spreads (0x8008E610): 9 rows, indexed by the low nibble of a unit weapon's
+ * type (fdat000 func_801C88EC) or by the player weapon kind (func_8007D068). */
+typedef struct WeaponSpread {
+    u8 shot_a;                  /* +0x00 copied into the shot record (func_801C88EC) */
+    u8 shot_c;                  /* +0x01 */
+    u8 burst[2];                /* +0x02 rounds per barrel, both barrels (func_8007D068) */
+    u16 spread_x;               /* +0x04 random spread, centred: rand(n) - n / 2 */
+    u16 spread_y;               /* +0x06 */
+} WeaponSpread;
+AC1_ASSERT_SIZE(WeaponSpread, 8);
+
+/* g_weapon_specs (0x8008E658): 7 rows, indexed by the player's arm-weapon id
+ * (func_8007D2F8) and by the low nibble of a unit weapon's type (fdat000
+ * func_801C7DA8).  Retail rows: range 500 or 600, kick 32 or 256. */
+typedef struct WeaponSpec {
+    u16 range;                  /* +0x00 aim range */
+    u16 kick;                   /* +0x02 recoil, times VsPlayer.kick_scale >> 8 */
+    u8 trig;                    /* +0x04 0 = semi-automatic, 1 = automatic */
+    u8 cool;                    /* +0x05 cool-down (2, or 36 for row 3) */
+} WeaponSpec;
+AC1_ASSERT_SIZE(WeaponSpec, 6);
+
 #endif
