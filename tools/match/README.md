@@ -350,27 +350,53 @@ objdiff's percentage is a guide, not a verdict: only `match_fn.py` exit 0 (throu
 ## Coverage tagging from play (`tools/duckstation/coverage_tag.py`)
 
 Which screen a function runs on is a strong naming hint, and you know the game.  This
-script puts execute breakpoints on the open functions while you play and tags each one
-with the activity you type.
+script puts execute breakpoints on functions while you play and tags each one with the
+activity you type.  What to play and which labels to type: `docs/PLAY_COVERAGE_SWEEP.md`.
 
 ```
-python tools/duckstation/coverage_tag.py --check                  # MCP up? which overlay is loaded? call latency
-python tools/duckstation/coverage_tag.py --context garage         # ovl201 (default); type labels as you play
-python tools/duckstation/coverage_tag.py --unit ovl202 --unit fdat060 --minutes 10
+python tools/duckstation/coverage_tag.py --check                  # MCP up? which units are loaded? call latency
+python tools/duckstation/coverage_tag.py --context title          # every unit, every function; type labels as you play
+python tools/duckstation/coverage_tag.py --set unseen --context garage           # only functions never seen yet
+python tools/duckstation/coverage_tag.py --unit mission --max-armed 300 --context combat
+python tools/duckstation/coverage_tag.py --context assembly --capture ac_calc_performance
 ```
 
 Start DuckStation (the MCP fork, port 2346, see `tools/README.md`) with the game running,
 then the script in a terminal.  Type a label and Enter when the screen changes
-(`garage`, `shop`, `mission briefing`, `combat`), `?` for status, `q` to stop.
+(`garage`, `shop buy`, `briefing`, `boost`), `?` for status, `q` to stop.
 
-- Every open function of the chosen units gets an execute breakpoint; a hit is counted
-  under the current label and the breakpoint comes off after `--hits` hits (default 1),
-  so the game stutters only while new code runs.  A new label re-arms everything, so a
-  function that runs on several screens gets one row per screen.
-- Overlays share load addresses (ovl201..204 at `0x8004ADA0`, mission overlays at theirs).
-  A unit is armed only while a 64-byte probe window of its image (where it differs from
-  its slot mates) is in RAM, checked every `--sync` seconds, and a hit only counts when
-  the word at the PC is that unit's retail word.
+- **Which functions** (`--set`): `all` (default), `unnamed` (no `name` row in hints.tsv and
+  no function entry in `include/ac1/symbols.tsv`), `unseen` (no coverage.tsv row yet), or
+  `open` (not in the manifest; the old default, empty now).  PsyQ library code never.
+- **Which units** (`--unit`, repeatable): `all` (default), `front` (exe + ovl201), `mission`
+  (exe + ovl202 + the story mission overlays), `vs` (exe + ovl203/204 + the arena
+  overlays), or unit names (`exe`, `ovl202`, `fdat060`).  Units whose image is identical to
+  another (fdat168 = fdat166) are counted under the first.
+- Each chosen function of a loaded unit gets an execute breakpoint.  A hit is counted
+  under the current label, and the breakpoint comes off after `--hits` hits (default 1),
+  so the game stutters only while new code runs.
+- A new label re-arms the functions, so a function that runs on several screens gets one
+  row per screen.  Re-arming skips:
+  - functions that already have a row under that label, in this run or an earlier one;
+  - functions seen under `--max-contexts` labels already (default 8, the number at which
+    the hint says "broad").
+- Overlays share load addresses: ovl201..204 at `0x8004ADA0`; story missions at
+  `0x801C4B40`, mode2 at `0x801C8460`, mode1 at `0x801B80C8`.
+  - A unit is armed only while a 64-byte probe window of its image is in RAM. The window
+    is picked where the image differs from its slot mates.
+  - The check runs every `--sync` seconds, with one read per slot when its windows fit in
+    64 KB.
+  - A hit only counts when the word at the PC is that unit's retail word.
+- `--max-armed N` keeps at most N coverage breakpoints in place and rotates the rest in
+  every `--rotate` seconds. Functions seen on the fewest screens go first.  Use it if the
+  game crawls with a whole overlay armed.
+- `--capture` (repeatable: `unit:0xADDR`, an exe address, or a name from hints.tsv)
+  records arguments and return values:
+  - on entry, a0..a3 and `--deref` bytes (default 16) behind each argument that points
+    into RAM;
+  - then a breakpoint on `ra`; when it fires with the entry `sp`, v0/v1 and the same bytes
+    again.
+  - Up to `--captures` calls (default 5) per function per label are recorded.
 - A pause that is not on one of its breakpoints (yours, from the emulator menu) is left
   alone.  On exit it removes its breakpoints and resumes the game if it stopped on one.
 
@@ -379,7 +405,10 @@ Output, merged with what is there:
   `--hits 1`, the number of labels/re-arms the function ran under);
 - `re/match/hints.tsv` (`unit vaddr kind text timestamp`, shared with the match viewer):
   one `hint` row per function hit in this run, `play coverage: garage (3), shop (1)`,
-  skipped when that function's newest play-coverage row already says the same.
+  skipped when that function's newest play-coverage row already says the same;
+- `re/match/calls.tsv` (`--capture`): `unit vaddr context a0 a1 a2 a3 v0 v1 ra in out
+  timestamp`, one row per recorded call (`in`/`out`: `a0:hex;a2:hex` bytes behind
+  pointer arguments, read on entry and on return).
 
 The script talks to `http://127.0.0.1:2346/mcp`, not `localhost`: on Windows `localhost`
 tries IPv6 first and every call then waits ~2 s for that to fail (2074 ms vs 33 ms per call
