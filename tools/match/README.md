@@ -435,6 +435,27 @@ needs no change.  Only `CONFIRMED` layouts should move into `include/ac1`.  Test
 Like `coverage_tag.py`, it starts a new MCP session.  That ends any other client's
 session, so don't run the two at the same time.
 
+## Struct survey (`structsurvey.py`)
+
+Matched sources declare the layouts they needed as local typedefs (agents may not edit
+`include/ac1`).  `structsurvey.py` reads every `re/match/**/*.c`, lays each local
+struct out with the MIPS rules (sizes of `include/ac1` types from their headers), and
+finds the ones bound to a fixed address (`extern T D_X;`, `extern T *D_X;`,
+`(T *)0x...` / `(T *)&D_X` casts, names from `symbols.tsv`).
+
+```bash
+python tools/match/structsurvey.py merge 0x801A2550   # one row per (offset, width): every name, file count
+python tools/match/structsurvey.py fields 0x80039D18  # each file's declaration of one global (or type name)
+python tools/match/structsurvey.py table -o FILE.md   # the survey tables in docs/STRUCT_SURVEY.md
+python tools/match/structsurvey.py report             # long form, widest layout per address in full
+```
+
+`merge` is the consolidation view: a row marked `~` overlaps another named row of a
+different width (two views of the same bytes, or a conflict to settle).  Computed
+offsets are checked against the sources' own `+0xNN` comments (`!` in `fields`).
+Its output is a starting point: settle names from the code before a layout goes into
+`include/ac1`.
+
 ## Codegen probes
 
 `probes/pNN_*.c` are A/B pairs of tiny functions, one per row of the "GCC 2.7.2
@@ -475,6 +496,8 @@ include the delay slot after the final `jr ra`.
 - `objdiff_prep.py` — objdiff project + per-function target/base objects (objdiff workstation)
 - `ctx.py` — keeps `include/ac1/symbols.h` in step with `symbols.tsv`, writes the m2c
   context, and decompiles one function with it (`ctx.py m2c VADDR --unit 201`)
+- `structsurvey.py` — the struct layouts matched sources declare locally, merged per
+  global address or by shape (Struct survey)
 - `tests/` — pytest suite, shell runner, the two sources
 - `probes/` — A/B codegen probes behind the skill table, `run_probes.py`
 - `vendor/` — gitignored toolchain (`cc1[.exe]`, `maspsx/`, `toolchain.json`, `VERSIONS.txt`, `cache/`)

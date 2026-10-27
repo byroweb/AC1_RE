@@ -10,6 +10,7 @@
 #include "mission.h"
 
 /* --- exe --- */
+extern u8 g_ac_parts[12];                                /* 0x80031A58 */
 extern TargetSlot *g_target_head;                        /* 0x80041020 */
 extern TargetSlot g_target_list[8];                      /* 0x80041024 */
 
@@ -38,7 +39,10 @@ void ui_obj_nop2(UiObj *o);                              /* 0x800507FC */
 
 /* --- overlay 202 --- */
 extern WeaponDef g_weapon_defs[20];                      /* 0x8008E530 */
+extern WeaponSpread g_weapon_spreads[9];                 /* 0x8008E610 */
+extern WeaponSpec g_weapon_specs[7];                     /* 0x8008E658 */
 extern Projectile g_proj_none;                           /* 0x8008EC88 */
+extern u16 g_map_obj_count;                              /* 0x8019F508 */
 extern void *g_objective_obj;                            /* 0x8019F51C */
 extern u32 g_mission_flags;                              /* 0x8019F524 */
 extern u16 g_mission_end_timer;                          /* 0x8019F528 */

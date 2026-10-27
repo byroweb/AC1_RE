@@ -63,6 +63,7 @@ many functions at once:
 
 watch / steer:           browser-tools/match-viewer (live view, leave hints for a function)
 what's left, by family:  nearport.py scan
+struct layouts:          tools/match/structsurvey.py merge ADDR   (every local view of one global)
 how far along:           progress.py   (matched, and clean = matched minus provisional)
 asm-steered matches:     provisional.py list   (rework list: wave.py build writes OUT/rework.tsv)
 check everything:        drive.py verify -j 4   (must end N/N matched)

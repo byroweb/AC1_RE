@@ -8,11 +8,16 @@
 # Function names already in ac1_markup.tsv are repeated here only to give them a C type.
 #
 # --- exe data ---
+0x80031A58	g_ac_parts	u8[12]	exe
+0x80039D18	g_player	VsPlayer *	exe
+0x80039D30	g_vs_sides	VsPlayer *[2]	exe
+0x80040FA0	g_players	VsPlayer[2]	exe
 0x80041020	g_target_head	TargetSlot *	exe
 0x80041024	g_target_list	TargetSlot[8]	exe
 #
 # --- overlay 201 (front end) ---
 0x801A2320	g_ui_views	UiView[10]	201
+0x801A2550	g_fe_pad	PadState	201
 0x801A25E8	g_ui_pool	UiObj[510]	201
 0x801A36F8	g_ui_pool_k2	UiObj[20]	201
 0x801A48D8	g_ui_pool_k4	UiObj[50]	201
@@ -36,12 +41,18 @@
 #
 # --- overlay 202 (mission) ---
 0x8008E530	g_weapon_defs	WeaponDef[20]	202
+0x8008E610	g_weapon_spreads	WeaponSpread[9]	202
+0x8008E658	g_weapon_specs	WeaponSpec[7]	202
 0x8008EC88	g_proj_none	Projectile	202
+0x80198B08	g_map_objs	MapObj[512]	202
+0x8019F308	g_map_obj_list	MapObj *[128]	202
+0x8019F508	g_map_obj_count	u16	202
 0x8019F51C	g_objective_obj	void *	202
 0x8019F524	g_mission_flags	u32	202
 0x8019F528	g_mission_end_timer	u16	202
 0x8019F52A	g_mission_end_seq	u16	202
 0x8019F52C	g_mission_timer	u16	202
+0x8019FAB8	g_spawn_tmpl	SpawnTmpl[256]	202
 0x801A26B8	g_ac_entities	AcEntity[16]	202
 0x801A5DBC	g_ac_cur	AcEntity *	202
 0x801AEB3C	g_proj_pool	Projectile[256]	202
