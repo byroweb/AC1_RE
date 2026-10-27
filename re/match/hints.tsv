@@ -2639,3 +2639,7 @@ ovl202	0x8008B380	name	mission_vm_tick	2026-10-26T00:14:38Z
 ovl202	0x8008B380	hint	walks g_mission_ctl.vm_thread_tab (vm_threads records of 24 bytes), fetches u16 opcodes from vm_blob until 0xFFF0 wait / 0xFFFF end, then per-tick interpolation (LoadAverageShort12) and entity updates	2026-10-26T00:14:38Z
 ovl201	0x80078D84	name	asm_screen_update	2026-10-26T01:59:35Z
 ovl201	0x80078D84	hint	installed as o->update by 0x80078AAC (assembly screen init); handles pad L/R category step, part select, confirm (0x40) and cancel (0x20)	2026-10-26T01:59:35Z
+ovl201	0x80075898	name	asm_draw_part_specs	2026-10-27T01:19:33Z
+ovl201	0x80075898	hint	draws spec panel of selected part per category (names at +0/+0x12, price +0x24, stats) via func_80074F5C into D_8017EE80[][10] and func_8005D80C at x=122; pad 0x10 toggles help window obj 9	2026-10-27T01:19:33Z
+ovl201	0x80090E88	name	shop_draw_part_stats	2026-10-27T01:34:39Z
+ovl201	0x80090E88	hint	called only by shop_show_part_stats (0x80093A20) with (kind, id); draws the label column (x 8) from per-kind label lists and the value column (x 122) of part id via func_80090D60 number formatting into 10-byte slots at D_8017F358; id 0xFF draws "------"	2026-10-27T01:34:39Z
