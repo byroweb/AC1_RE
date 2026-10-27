@@ -1,4 +1,4 @@
-/* ovl201 0x8009C6DC: matched (no extra flags). Loops 2/3 are call + while; q pinned to s1 and made opaque with an empty asm so q->lo stays 1(s1); 0x82 bound before the asm so li s0 fills the loop delay slot */
+/* ovl201 0x8009C6DC: matched (no extra flags). Loops 2/3 are call + while; hi/q are set in both arms of a free (s8)v < 0 test (jump2 merges the arms): the join hides q's constant from cse so q->lo stays 1(s1), and hi is an explicit variable reused in the switch */
 #include "ac1/ac1.h"
 /* ovl201 0x8009C6DC - new pilot: bump the D_80039D20 counter, reset the pilot
  * name (D_80031BE6, 18 bytes) from the template at D_8004D150 and append three
@@ -22,7 +22,8 @@ void func_8009C6DC(void)
 {
     u8 *p = &D_80039D20;
     u8 v;
-    register SjisCh *q asm("$17");
+    u8 hi;
+    SjisCh *q;
 
     if (*p != 0xFF) {
         *p = *p + 1;
@@ -43,44 +44,47 @@ void func_8009C6DC(void)
     while ((v = D_80039D14 & 0xF) >= 10) {
         func_8009C928();
     }
-    {
-        u8 hi = 0x82;
-        __asm__("" : "=r"(q) : "0"(&D_80031BF4));
-        q->hi = hi;
+    if ((s8)v < 0) {
+        hi = 0x82;
+        q = &D_80031BF4;
+    } else {
+        hi = 0x82;
+        q = &D_80031BF4;
     }
+    q->hi = hi;
     q->lo = v + 0x4F;
     func_8009C928();
     switch ((u32)(D_80039D14 & 0xF)) {
     case 0:
         D_80031BF1 = 0x51;
-        D_80031BF0 = 0x82;
-        D_80031BF2 = 0x82;
+        D_80031BF0 = hi;
+        D_80031BF2 = hi;
         D_80031BF3 = 0x55;
-        q->hi = 0x82;
+        q->hi = hi;
         q->lo = 0x55;
         break;
     case 4:
         D_80031BF1 = 0x53;
         D_80031BF3 = 0x50;
-        D_80031BF0 = 0x82;
-        D_80031BF2 = 0x82;
-        q->hi = 0x82;
+        D_80031BF0 = hi;
+        D_80031BF2 = hi;
+        q->hi = hi;
         q->lo = 0x56;
         break;
     case 1:
         D_80031BF1 = 0x52;
         D_80031BF3 = 0x52;
-        D_80031BF0 = 0x82;
-        D_80031BF2 = 0x82;
-        q->hi = 0x82;
+        D_80031BF0 = hi;
+        D_80031BF2 = hi;
+        q->hi = hi;
         q->lo = 0x50;
         break;
     case 5:
         D_80031BF1 = 0x57;
         D_80031BF3 = 0x51;
-        D_80031BF0 = 0x82;
-        D_80031BF2 = 0x82;
-        q->hi = 0x82;
+        D_80031BF0 = hi;
+        D_80031BF2 = hi;
+        q->hi = hi;
         q->lo = 0x50;
         break;
     }

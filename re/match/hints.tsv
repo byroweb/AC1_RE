@@ -2647,3 +2647,9 @@ ovl201	0x800B3748	name	ui_acpreview_part_create	2026-10-27T05:26:43Z
 ovl201	0x800B3748	hint	ctor stores itself; places the part object at its core attach point (D_800BC428/D_800BC440 per core, D_800BCAC4 per-kind offsets), mirrors x on flag bit 0	2026-10-27T05:26:43Z
 ovl201	0x8009C964	name	ac_calc_performance	2026-10-27T05:35:55Z
 ovl201	0x8009C964	hint	fills the AC record at 0x800411F4+i*0x39C from the equipped part ids 0x80031A58[12]: weight/load cap, stats as soft-float doubles, weapon slots at +0x86 (0x3C each); caller func_80085640 (performance screen)	2026-10-27T05:35:55Z
+ovl202	0x8004D044	name	snd_pick_channel	2026-10-27T06:46:50Z
+ovl202	0x8004D044	hint	free voice, else channel already playing id, else idle channel with lowest prio/vol; caller func_8004D178 keys it on	2026-10-27T06:46:50Z
+ovl201	0x8009C6DC	name	pilot_new_random_name	2026-10-27T06:46:50Z
+ovl201	0x8009C6DC	hint	copies name template D_8004D150 to D_80031BE6 and appends three random SJIS digits, then plays movie 6	2026-10-27T06:46:50Z
+ovl201	0x8007AD64	name	garage_assembly_draw_status	2026-10-27T06:46:50Z
+ovl201	0x8007AD64	hint	sets two 128x144 draw envs, warning icons (missing part, credits<0, overload), part names or NO EQUIP	2026-10-27T06:46:50Z

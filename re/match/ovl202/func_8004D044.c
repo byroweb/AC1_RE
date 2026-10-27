@@ -2,8 +2,10 @@
 /* ovl202 0x8004D044 - pick a sound channel for sound id: a free channel
  * (voice -1), else the one already playing id (stopped first), else the
  * idle channel with the lowest priority below the sound's own.
- * vol/end are pinned to $5/$6: they make i and prio conflict with a1/a2 in the
- * last loop, which is how retail ends up with i=a3, prio=t0. */
+ * The unused vl/vr parameters are reused as the min-volume and loop-end
+ * values via (u8)x >> 8 (combine folds it to 0 after flow): the entry copies
+ * stay live, so i and prio avoid a1/a2 (regs_someone_prefers) as in retail.
+ */
 
 typedef struct {
     u16 busy;       /* +0x00 key | 0x8000 */
@@ -63,25 +65,23 @@ SndChan *func_8004D044(s32 id, s32 vl, s32 vr)
     } while (--i != -1);
     prio = D_80041BD0.defs[id].prio;
     {
-    register s32 vol asm("$5");
-    register s32 end asm("$6");
-    vol = 0;
+    vl = (u8)vl >> 8;
     best = 0;
     c = D_80041DE0;
     i = 22;
-    end = -1;
+    vr = ((u8)vr >> 8) - 1;
     do {
         if (c->busy == 0) {
             if (c->prio < prio) {
                 prio = c->prio;
                 best = c;
-            } else if (c->prio == prio && c->vol < vol) {
-                vol = c->vol;
+            } else if (c->prio == prio && c->vol < vl) {
+                vl = c->vol;
                 best = c;
             }
         }
         c++;
-    } while (--i != end);
+    } while (--i != vr);
     }
     if (best == 0) {
         return 0;
