@@ -68,6 +68,31 @@ at a time, `-j 2`.
 
 ## Levers that matched in the tail (newest first)
 
+- **Copy a matched sibling's declarations first (wave 14).** ovl201 0x800B3748 sat at
+  6 words through ~12k knob compiles; its sibling 0x80072C80 has the same case code with
+  `s16 x, y, z`, `u8 id`, `x += T[t].pts[id].x;` and `x *= -1;`. Copying those types
+  matched it and dropped every do/while nest, extra temp and goto: HImode variables
+  change priorities and conflicts by themselves.
+- **Copy direction of a libcall result (wave 14):** `dd2 = expr; dd1 = dd2;` instead of
+  `dd1 = expr; do { dd2 = dd1; } while (0);` fixed the first section of 0x8009C964
+  (do/while fixed the registers but its loop notes broke scheduling).
+- **Reuse double variables as retail's source did.** Partials in one shared `bz` fixed
+  the clamp-block register pairs; the final product of a block goes into a fresh
+  variable (writing it back into an operand swaps the multiply operands).
+- **A one-statement barrier:** `do { x = 1018.0/(double)m; } while (0);` keeps sched2
+  from hoisting the next load over the result copy. Wrap only the one statement.
+- **Cheap extra reference:** `{ u32 t; do { t = pp[0]; } while (0); ... }` adds a ref
+  without lengthening the life (self-casts leave a USE that does), flipping a
+  local-alloc tie.
+- **Late store-flag:** `n = 0; if (x != 255) n++;` gives retail's `xor` after loop.c
+  has put 255 in a register.
+- **Typed sign extension:** `s16 e = hE; sl->h16 = e; x = e;` keeps the extension a
+  separate value so combine cannot fold it into `lh`.
+- **`__fixunsdfsi` means an unsigned field:** a double stored through `__fixunsdfsi`
+  needs a `u16`/`u32` destination, not `s16`.
+- **WHATIF_LPRIO / WHATIF_GPRIO point at the fix; WHATIF_SCHED1/2 may do nothing** even
+  at ±1000 on the right uids.
+
 - **Slots m2c named separately may be one array (wave 13).** m2c printed D_8017F380,
   D_8017F38A, ... as separate symbols; the source had `&D_8017F358[k]`. Deriving every
   slot from one base gives that base register the refs it needs. Slots without a saved
