@@ -25,6 +25,7 @@ without a fixed address.
 | 0x80198B08 map objects ×512, list 0x8019F308, count 0x8019F508 | `MapObj` 0x34 (`vm.h`); `g_map_objs`, `g_map_obj_list`, `g_map_obj_count` | 26 sources (`VmNode`, `WObj`, `Zone`, `Slot34`, `MapMark`, `Node`, fdat `*Node`) | Object kinds read +0x10..+0x17 differently: drawn objects as a scale `SVECTOR`, destructibles as +0x14 handler. They are a union. Map markers read +0x22 as a name. The code indexes 0x34-byte records; `ENTITY_TYPES.md`'s 0x6C row stride is still open (LIVE_CHECKLIST ENT-10) |
 | 0x8019FAB8 spawn templates ×256 | `SpawnTmpl` 0x2C, `SpawnBlock` (`vm.h`); `g_spawn_tmpl` | 19 sources (`VmSpawn`, `Slot`, `Slot2C`, `Rec2C`, nine `World`-style blocks that run on into `g_ac_entities`) | +0x04.. are the spawn record's halfwords hw0..hw19 (from `func_80073B74`), named where the docs or code say what they hold: pos, kind (-1 = none), section, flags, map-object index, HP seed, world-struct index |
 | 0x8008E658 weapon spec ×7, 0x8008E610 spread ×9 | `WeaponSpec` 6, `WeaponSpread` 8 (`projectile.h`); `g_weapon_specs`, `g_weapon_spreads` | ovl202 `func_8007D2F8` / `func_8007D068`, fdat000 `func_801C7DA8` / `func_801C88EC` | Row counts read from the retail ovl202 bytes. Spec row 7 is other data; the rows are range 500/600, kick 32/256, trigger, cool-down 2/36 |
+| 0x800B91F4..0x800BAFCC part-spec tables (10 categories) | `PartHdr` 0x28 prefix, `PART_CAT_*` (`frontend.h`); `g_parts_head`, `g_parts_core`, ... `g_parts_gen` (u8[]) | reported from the wave-13 match of ovl201 `func_80075898` (not yet on main), plus 5 matched sources | Every row opens with two 18-byte names and an s32 price at +0x24 (checked against the retail rows: "XCA-00" / "CORE UNIT" / 61500). Strides differ per category (44..96), so the tables stay u8[] and the stride table is in the header. Not modelled yet: the 24-byte weapon stat records at 0x800BB300 and the string-pointer tables 0x800BBA34..0x800BBAD8 |
 | 0x1F800000 scratchpad | `ViewSpad` (`ovl202_view.h`) for the ovl202 world-object view only | 81 sources, about 50 layouts | Not one structure. Each routine (and its copies in the other overlays) keeps a private scratch layout. Only `func_8008CC88` and `func_8008D3B0` share this one |
 
 `vsplayer.h`, `frontend.h`, `vm.h` and `ovl202_view.h` are **opt-in**: `ac1.h` does not
@@ -140,7 +141,7 @@ to an address.
 | 0x80040FEC (ptr) | 5 | ovl202 | SndCtx x3, Rec20, Rec20b | 0x2 0x5 0x12 0x14 | +1 snd, +11 id |  |
 | 0x80041BD0 | 5 | exe ovl202 | SndBank x2, Ent8, Func8004CF0CEntB, SndVab | 0x8 0x4C0 | +0 v, +0 vabs, +4B6 defs |  |
 | 0x800B7E48 | 5 | ovl201 | EmbRgb x3, CVECTOR x2 | 0x4 | +0 r, +1 g |  |
-| 0x800BA134 | 5 | ovl201 | Part2C x3, Part44, PartRec44 | 0x2C | +0 name, +0 name, +24 price, +28 weight, +2A s2a |  |
+| 0x800BA134 | 5 | ovl201 | Part2C x3, Part44, PartRec44 | 0x2C | +0 name, +0 name, +24 price, +28 weight, +2A s2a | `g_parts_arm_weapon` u8[] |
 | 0x8017F584 | 5 | ovl201 | RankEnt x5 | 0x10 | +0 name, +4 sub, +8 kind, +8 kind, +C points |  |
 | 0x8019B550 | 5 | ovl203 | VsEnt, V718Ent, V71DEnt, V72Ent, ... | 0x170 | +8 x, +8 pos, +A y, +C z, +28 r, +2A h |  |
 | 0x8019DF80 | 5 | ovl203 | Rec28 x5 | 0x28 | +0 state |  |
@@ -172,12 +173,12 @@ to an address.
 | 0x8008FC48 | 3 | ovl202 | SpreadDef x2, WDef40 | 0x28 0x34 0x38 | +0 speed, +2 jitter, +4 ang1, +6 ang0, +8 arc, +A sfx |  |
 | 0x8008FEE8 | 3 | ovl202 | MissileDef24 x2, WDef36 | 0x24 | +0 speed, +2 size, +6 model, +8 sfx, +A burst, +B spread |  |
 | 0x80090928 | 3 | ovl202 | Col4 x2, CVec | 0x4 | +0 r, +1 g |  |
-| 0x800B9DF4 | 3 | ovl201 | Part34, PartArms, PartRec52 | 0x34 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c |  |
-| 0x800BA3F4 | 3 | ovl201 | Part34, PartArms, PartRec52 | 0x34 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c |  |
-| 0x800BAADC | 3 | ovl201 | Part34, PartArms, PartRec52 | 0x34 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c |  |
-| 0x800BABAC | 3 | ovl201 | Part30, Part48, PartRec48 | 0x30 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c |  |
-| 0x800BACCC | 3 | ovl201 | Part60, Part96, PartRec96 | 0x60 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c |  |
-| 0x800BAFCC | 3 | ovl201 | Part30, Part48, PartRec48 | 0x30 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c |  |
+| 0x800B9DF4 | 3 | ovl201 | Part34, PartArms, PartRec52 | 0x34 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c | `g_parts_arms` u8[] |
+| 0x800BA3F4 | 3 | ovl201 | Part34, PartArms, PartRec52 | 0x34 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c | `g_parts_back` u8[] |
+| 0x800BAADC | 3 | ovl201 | Part34, PartArms, PartRec52 | 0x34 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c | `g_parts_blade` u8[] |
+| 0x800BABAC | 3 | ovl201 | Part30, Part48, PartRec48 | 0x30 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c | `g_parts_booster` u8[] |
+| 0x800BACCC | 3 | ovl201 | Part60, Part96, PartRec96 | 0x60 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c | `g_parts_fcs` u8[] |
+| 0x800BAFCC | 3 | ovl201 | Part30, Part48, PartRec48 | 0x30 | +0 name, +0 name, +24 price, +28 weight, +2A s2a, +2C s2c | `g_parts_gen` u8[] |
 | 0x800BCAC0 | 3 | ovl201 | FlySet, PartSet, ModelGroup | 0x10 | +0 lims |  |
 | 0x8019B484 (ptr) | 3 | ovl203 | VScene4, ModeDef, ScriptHost | 0x4 0xC 0x18 | +0 frame, +8 fn8, +14 start |  |
 | 0x8019B48C | 3 | ovl203 | VsState4, LinkErr, Flags32 | 0x4 0x8 0xC | +0 flags, +4 phase, +6 elapsed, +8 clock |  |
@@ -211,9 +212,9 @@ to an address.
 | 0x80090354 | 2 | ovl202 | MissileDef x2 | 0xE | +4 glow, +9 col |  |
 | 0x80090A28 | 2 | ovl202 | Col4 x2 | 0x4 |  |  |
 | 0x800B6E4C | 2 | ovl201 | Entry0C x2 | 0xC | +0 raw |  |
-| 0x800B91F4 | 2 | ovl201 | PartHead, PartRec60 | 0x3C | +0 name, +0 name, +24 price, +28 weight |  |
-| 0x800B944C | 2 | ovl201 | PartCore, PartRec56 | 0x38 | +0 name, +0 name, +24 price, +28 weight, +32 maxload |  |
-| 0x800B94F4 | 2 | ovl201 | PartLegs, PartRec72 | 0x48 | +0 name, +0 name, +24 price, +28 weight, +32 maxload |  |
+| 0x800B91F4 | 2 | ovl201 | PartHead, PartRec60 | 0x3C | +0 name, +0 name, +24 price, +28 weight | `g_parts_head` u8[] |
+| 0x800B944C | 2 | ovl201 | PartCore, PartRec56 | 0x38 | +0 name, +0 name, +24 price, +28 weight, +32 maxload | `g_parts_core` u8[] |
+| 0x800B94F4 | 2 | ovl201 | PartLegs, PartRec72 | 0x48 | +0 name, +0 name, +24 price, +28 weight, +32 maxload | `g_parts_legs` u8[] |
 | 0x800BB140 | 2 | ovl201 | OptRow, Func8008F08CRec44 | 0x2C | +0 price |  |
 | 0x800BC428 | 2 | ovl201 | Vec3u, SVECTOR | 0x8 | +0 x, +2 y, +4 z |  |
 | 0x800BC440 | 2 | ovl201 | CoreJoints, Func80080224Ofs | 0x28 | +0 j |  |

@@ -16,6 +16,16 @@
 0x80041024	g_target_list	TargetSlot[8]	exe
 #
 # --- overlay 201 (front end) ---
+0x800B91F4	g_parts_head	u8[]	201
+0x800B944C	g_parts_core	u8[]	201
+0x800B94F4	g_parts_legs	u8[]	201
+0x800B9DF4	g_parts_arms	u8[]	201
+0x800BA134	g_parts_arm_weapon	u8[]	201
+0x800BA3F4	g_parts_back	u8[]	201
+0x800BAADC	g_parts_blade	u8[]	201
+0x800BABAC	g_parts_booster	u8[]	201
+0x800BACCC	g_parts_fcs	u8[]	201
+0x800BAFCC	g_parts_gen	u8[]	201
 0x801A2320	g_ui_views	UiView[10]	201
 0x801A2550	g_fe_pad	PadState	201
 0x801A25E8	g_ui_pool	UiObj[510]	201
