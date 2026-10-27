@@ -1,7 +1,1 @@
 # unit	vaddr	source	reason   (matches whose C uses register asm pins or empty asm statements; tools/loop/provisional.py scan)
-fdat004	0x801C5EA8	fdat004/func_801C5EA8.c	register pin x1
-fdat012	0x801C6454	fdat004/func_801C5EA8.c	register pin x1
-fdat016	0x801C6B10	fdat004/func_801C5EA8.c	register pin x1
-fdat042	0x801C65CC	fdat004/func_801C5EA8.c	register pin x1
-fdat052	0x801C5948	fdat004/func_801C5EA8.c	register pin x1
-fdat072	0x801C5600	fdat004/func_801C5EA8.c	register pin x1
