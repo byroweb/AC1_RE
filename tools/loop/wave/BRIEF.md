@@ -68,6 +68,33 @@ at a time, `-j 2`.
 
 ## Levers that matched in the tail (newest first)
 
+- **Identical arms of a free test replace empty asm (wave 15, found by all 3 agents).**
+  `if ((s32)p < 0) { v = K; stmt; } else { v = K; stmt; }` puts a join label where you need
+  it: cse's path ends there, so a constant or symbol is not folded into later uses (the
+  base register survives), and a constant set twice gets its own pseudo (global alloc then
+  gives it the argument register). jump2 deletes the branch afterwards. Each arm needs two
+  or more real statements (a dead one is fine), or jump if-converts it and leaves a `bgez`.
+  This removed every empty `__asm__` barrier in the provisional rework.
+- **Make a dead read live, then erase the use (wave 15).** Write the read into a variable
+  that holds the compare value on the other path, and use it as `x + (v >> 8)` on a byte
+  load: flow keeps it live, combine folds the use to 0 later, and both sets share one
+  pseudo and one register. This replaced a `volatile` alias plus a register pin.
+- **Unused parameters reserve their registers (wave 15):** `vl = (u8)vl >> 8;` (folds to
+  0 after flow) keeps the entry copy live with its a1/a2 preference, so higher-priority
+  pseudos avoid that register (regs_someone_prefers). Replaced 2 register pins.
+- **Extra refs combine erases:** `(x | K) | (x & K)` folds back to `x | K` but flow has
+  already counted the refs, raising x's local-alloc priority.
+- **A multi-block destination blocks a tie:** reusing a variable in an unrelated block
+  stops local-alloc tying an operation's result to its input.
+- **A dead self-cast after a copy's last use (`vx = (s16)vx;`)** keeps the source as cse's
+  canonical register, so the load and its copy stay in separate registers.
+- **Update in place to move a load (wave 15):** `py = e->pos.y; py += dy; e->pos.y = py;`
+  (py set twice) stops sched1 giving the load top launch priority, so it lands above the
+  add; reading a call argument into a variable before that load lowers the load's insn
+  number and shortens a competing life, flipping a local-alloc tie (fdat004 0x801C5EA8).
+- **A block-ending branch moves early sets:** sched1 puts a set of a register live at the
+  branch next to the branch; `do { call(); } while (0);` around the next call holds it.
+
 - **Copy a matched sibling's declarations first (wave 14).** ovl201 0x800B3748 sat at
   6 words through ~12k knob compiles; its sibling 0x80072C80 has the same case code with
   `s16 x, y, z`, `u8 id`, `x += T[t].pts[id].x;` and `x *= -1;`. Copying those types
