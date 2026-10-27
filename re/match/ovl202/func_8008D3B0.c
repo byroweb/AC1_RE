@@ -1,5 +1,7 @@
 #include "ac1/ac1.h"
-/* ovl202 0x8008D3B0 (matched, no extra flags; opaque asm on &SCR->rot and D_8004C1AC, vx/vy loaded before the vx store, entity +0x2A read as an in-struct field): set up the scratchpad matrices for a player-centred overlay view
+/* ovl202 0x8008D3B0 (matched, no extra flags, no asm: rp is set in identical arms of a free `(s32)&p < 0` test so cse
+ * forgets its constant and keeps the a2 copy (jump2 merges the arms and deletes the branch); a do/while(0) around the
+ * first call keeps sched1 from launching sc's `lui s1` next to that branch; vx/vy loaded before the vx store, entity +0x2A read as an in-struct field): set up the scratchpad matrices for a player-centred overlay view
  * (light matrix, per-level scaled copies), then draw it (0x8008CA14 / D288 / CB5C / CC88). */
 typedef struct {
     MATRIX m[9];        /* +0x000 */
@@ -38,7 +40,9 @@ void func_8008D3B0(void)
     int i;
     Scr8008D3B0 *sc = SCR;
 
-    func_8005715C();
+    do {
+        func_8005715C();
+    } while (0);
     SetColorMatrix(&D_8009089C);
     SetBackColor(128, 128, 128);
     SCR->m[5] = D_8009087C;
@@ -47,8 +51,13 @@ void func_8008D3B0(void)
     func_800135E8(&SCR->m[7], &SCR->m[8], 1);
     {
         SVECTOR *rp;
-        __asm__("" : "=r"(rp) : "0"(&SCR->rot));
-        *(AcPos *)rp = g_ac_entities[0].pos;
+        if ((s32)&p < 0) {
+            rp = &SCR->rot;
+            *(AcPos *)rp = g_ac_entities[0].pos;
+        } else {
+            rp = &SCR->rot;
+            *(AcPos *)rp = g_ac_entities[0].pos;
+        }
         {
             s16 tx = rp->vx;
             s16 ty = SCR->rot.vy;
@@ -74,7 +83,7 @@ void func_8008D3B0(void)
         u8 *tb;
         u8 *c;
         u32 *ot;
-        __asm__("" : "=r"(tb) : "0"(D_8004C1AC));
+        tb = D_8004C1AC;
         c = D_801A5F24.buf->cur;
         ot = D_801A5F24.ot;
         p = g_ac_entities[0].pos;
