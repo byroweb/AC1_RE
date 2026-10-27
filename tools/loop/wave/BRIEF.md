@@ -68,6 +68,31 @@ at a time, `-j 2`.
 
 ## Levers that matched in the tail (newest first)
 
+- **Slots m2c named separately may be one array (wave 13).** m2c printed D_8017F380,
+  D_8017F38A, ... as separate symbols; the source had `&D_8017F358[k]`. Deriving every
+  slot from one base gives that base register the refs it needs. Slots without a saved
+  register still come out as direct `lui/addiu` (reload rebuilds them from REG_EQUIV).
+  This one change took ovl201 0x80090E88 from 1,347 words to 0.
+- **Index tables at every use (`T[id].field`), not through a `T *p` local**, when
+  retail recomputes `lui at; addu at,at,prod; lw %lo(sym+off)(at)` for each field.
+- **Compute a derived index once (`s16 n = id - 8;`) and index with `(u8)n`.**
+  `(u8)(id - 8)` at each use keeps the raw id alive and shifts the s-registers.
+- **A string literal before the jump table moves `--rodata`.** If a placeholder like
+  "------" sits just before the jump table, write it as a literal and set `--rodata` to
+  the literal's address.
+- **A 3-way string select is one call per arm:** `if (f&0x10) draw(A); else if (f&0x20)
+  draw(B); else draw("------");`, not `s = ...; draw(s);`.
+- **Soft-float doubles: one temporary per section** (dd1, dd2, ...) instead of one
+  variable for the whole function. Assign libcall chains step by step (`d = conv; d =
+  d * 64.0; d = d / 1000.0;`) so the partial result stays in a saved register.
+  `(double)u16var` gives the +65536 fixup; plain promotion does not.
+- **A call fixes the cross-jump direction.** An empty stub call at the end of some
+  if/else variants decides which way jump2 merges their tails.
+- **A separate extern for a field address** (`extern u8 X_s[] asm("D_80031A63");`)
+  keeps cse from tying a pointer to an earlier address pseudo, giving retail's `la` form.
+- **A dead test can still shape code:** a second read of a global in a range test whose
+  result is unused can restore retail's `la` form and a sign extension.
+
 - **Giants: rewrite top-down, one section at a time (wave 12).** ovl201 0x80078D84
   (7.3 KB, 9 jump tables) went from an m2c draft at 1,647 words off to a match in 35
   tries. Keep the whole function compiling, fix the frame first, and give each block its
