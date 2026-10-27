@@ -1,5 +1,7 @@
 #include "ac1/ac1.h"
-/* PROVISIONAL MATCH (wave7 a1): register asm("$4") pin + empty asm barrier order a0=0 before the *lp store; rest is plain C. */
+/* wave15 a3: clean match, no asm. z = 0 and the *lp store sit in both arms of a free
+ * `(s32)w < 0` test: z is multi-set, so cse/combine cannot fold it into the a0 copy;
+ * global alloc gives z a0, its set stays before the store, and jump2 cross-jumps the arms. */
 /* ovl202 0x80052440 - mission script VM: stop every thread of lower priority than me,
  * pack the surviving threads towards the ring start, then move the ring start to the
  * first live thread and the current thread to the first free slot after it. */
@@ -22,7 +24,7 @@ typedef struct {
 extern ScrVM D_801ED7A0;
 
 ScrThread *func_800523BC(ScrThread *t);
-void func_8005239C(s16 a);
+void func_8005239C();
 
 void func_80052440(ScrThread *me)
 {
@@ -33,6 +35,7 @@ void func_80052440(ScrThread *me)
     s32 killed;
     s32 gap;
     ScrThread **lp;
+    s32 z;
 
     t = D_801ED7A0.last;
     killed = 0;
@@ -84,12 +87,14 @@ void func_80052440(ScrThread *me)
         lp = &D_801ED7A0.last;
         do {
             if (w->state != 0) {
-                {
-                    register s32 z asm("$4") = 0;
-                    __asm__ volatile("" : : "r"(z));
+                if ((s32)w < 0) {
+                    z = 0;
                     *lp = w;
-                    func_8005239C(z);
+                } else {
+                    z = 0;
+                    *lp = w;
                 }
+                func_8005239C(z);
                 goto test;
             body:
                 w = func_800523BC(w);
