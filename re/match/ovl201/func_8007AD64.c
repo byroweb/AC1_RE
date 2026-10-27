@@ -1,4 +1,7 @@
-/* ovl201 0x8007AD64: matched (--defsym D_80031A5F_v=0x80031A5F); arm pinned to v1 with a register asm local so the dead volatile read lands in v1 like retail */
+/* ovl201 0x8007AD64: matched, no asm, no extra flags. arm is an s32 that takes (u8)D_80031A5E inside the || test
+ * (so the compare temp is arm itself: andi v1,a0) and D_80031A5F in the then-arm; `grey = 21 + (arm >> 8);` keeps
+ * the then-read live at flow time (combine folds arm >> 8 to 0, arm's sets are byte loads), so arm is one global
+ * pseudo in v1 and the read needs no volatile. */
 #include "ac1/ac1.h"
 /* ovl201 0x8007AD64 - assembly screen: once the func_8005BA2C object is gone,
  * set up the two 128 x 144 draw environments, show the warning icons
@@ -31,7 +34,6 @@ extern u8 D_80031A5C;
 extern u8 D_80031A5D;
 extern u8 D_80031A5E;
 extern u8 D_80031A5F;
-extern volatile u8 D_80031A5F_v;   /* same byte, read once as volatile */
 extern u8 D_80031A60;
 extern u8 D_80031A61;   /* FCS */
 extern u8 D_80031A63;   /* legs */
@@ -60,7 +62,7 @@ extern void func_8007B850(UiObj *o);
 
 void func_8007AD64(UiObj *o)
 {
-    register u8 arm asm("$3");
+    s32 arm;
     s16 grey;
     u16 w;
     u16 total;
@@ -72,12 +74,10 @@ void func_8007AD64(UiObj *o)
         D_801BD018.ofs[1] = D_801BD018.clip.y + (D_801BD018.clip.h - 240) / 2;
         D_801D6470.ofs[0] = D_801D6470.clip.x + (D_801D6470.clip.w - 320) / 2;
         D_801D6470.ofs[1] = D_801D6470.clip.y + (D_801D6470.clip.h - 240) / 2;
-        if ((D_80031A5E >= 24 && D_80031A5E < 31) || D_80031A5E == 255) {
-            arm = D_80031A5F_v;
-        } else {
-            arm = D_80031A5E;
+        if ((D_80031A5E >= 24 && D_80031A5E < 31) || (arm = D_80031A5E) == 255) {
+            arm = D_80031A5F;
         }
-        grey = 21;
+        grey = 21 + (arm >> 8);
         if (D_80031A5A == 255 || D_80031A58 == 255 || D_80031A5B == 255 || D_80031A60 == 255
             || D_80031A61 == 255 || D_80031A63 == 255 || (D_80031A63 < 27 && D_80031A59 == 255)) {
             func_8005CAE0(D_800B840C, 20, 8, 10);
