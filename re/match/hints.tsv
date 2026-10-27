@@ -2643,3 +2643,5 @@ ovl201	0x80075898	name	asm_draw_part_specs	2026-10-27T01:19:33Z
 ovl201	0x80075898	hint	draws spec panel of selected part per category (names at +0/+0x12, price +0x24, stats) via func_80074F5C into D_8017EE80[][10] and func_8005D80C at x=122; pad 0x10 toggles help window obj 9	2026-10-27T01:19:33Z
 ovl201	0x80090E88	name	shop_draw_part_stats	2026-10-27T01:34:39Z
 ovl201	0x80090E88	hint	called only by shop_show_part_stats (0x80093A20) with (kind, id); draws the label column (x 8) from per-kind label lists and the value column (x 122) of part id via func_80090D60 number formatting into 10-byte slots at D_8017F358; id 0xFF draws "------"	2026-10-27T01:34:39Z
+ovl201	0x800B3748	name	ui_acpreview_part_create	2026-10-27T05:26:43Z
+ovl201	0x800B3748	hint	ctor stores itself; places the part object at its core attach point (D_800BC428/D_800BC440 per core, D_800BCAC4 per-kind offsets), mirrors x on flag bit 0	2026-10-27T05:26:43Z
