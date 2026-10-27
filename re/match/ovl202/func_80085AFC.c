@@ -1,4 +1,8 @@
-/* ovl202 0x80085AFC: matched (no extra flags). register asm locals pin the abs temps, big/axis, r and the arm operands; a memory-clobber asm before the dispatch stops CSE of d->vz; the div tail lives in the z-arm (goto common) and return hit->ws sits after the arms. */
+/* ovl202 0x80085AFC: matched (no extra flags), no asm. The arms compute q = out->v - p->v and dd = d->v and share
+ * `common: r = q / dd;`. Abs temps: `vx = d->vx; ax2 = vx; if (vx < 0) ax2 = -vx;` plus a dead `vx = (s16)vx;` after the
+ * last use of ax2 (vx then outlives ax2, so cse keeps vx canonical: separate load reg + copy, as retail); same for vz.
+ * The z-arm loads out->vz / p->z in identical arms of a free `(s32)d < 0` test: the join label ends cse2's block, so
+ * d->vz is reloaded for the divisor (retail lh a1,4(s1)); jump2 merges the arms and deletes the branch. */
 #include "ac1/ac1.h"
 /* ovl202 0x80085AFC: sweep a moving point (pos, velocity d) against the world collision:
  * probe pos(-back*k) .. pos + d*n (in two halves when range > 15000); on a hit store the
@@ -24,12 +28,13 @@ WorldStruct *func_80085AFC(Mover85 *p, SVECTOR *d, SVECTOR *b, s32 k, s32 range,
     CollHit *hit;
     s32 len, n;
     s32 ax, ay, az, sx, sy, sz;
-    register s32 axis asm("$5");
+    s32 axis;
     s32 t;
-    register s32 big asm("$4");
-    register s32 r asm("$2");
+    s32 big;
+    s32 r;
     s32 v;
     s32 o, q, dd;
+    s32 zz;
     s32 px, py, pz;
 
     len = SquareRoot0(d->vx * d->vx + d->vy * d->vy + d->vz * d->vz);
@@ -83,12 +88,14 @@ found:
     }
     out->pad = v;
     {
-        register s32 ax2 asm("$3");
-        ax2 = d->vx;
-        if (d->vx < 0) {
-            ax2 = -d->vx;
+        s32 ax2;
+        s32 vx = d->vx;
+        ax2 = vx;
+        if (vx < 0) {
+            ax2 = -vx;
         }
         big = ax2;
+        vx = (s16)vx;
     }
     axis = 0;
     if (d->vy >= 0) {
@@ -101,22 +108,27 @@ found:
         axis = 1;
     }
     {
-        register s32 az2 asm("$3");
-        register s32 lt asm("$2");
-        az2 = d->vz;
-        if (d->vz < 0) {
-            az2 = -d->vz;
+        s32 az2;
+        s32 lt;
+        s32 vz = d->vz;
+        az2 = vz;
+        if (vz < 0) {
+            az2 = -vz;
         }
-        __asm__ volatile("" : : : "memory");
         lt = big < az2;
+        vz = (s16)vz;
         if (lt) {
-            {
-                register s32 o_ asm("$3") = out->vz;
-                register s32 p_ asm("$2") = p->z;
-                register s32 d_ asm("$5") = d->vz;
-                r = (o_ - p_) / d_;
+            if ((s32)d < 0) {
+                o = out->vz;
+                zz = p->z;
+            } else {
+                o = out->vz;
+                zz = p->z;
             }
+            dd = d->vz;
+            q = o - zz;
 common:
+            r = q / dd;
             p->n = r;
             if ((s16)r < 0) {
                 p->n = 0;
@@ -125,19 +137,11 @@ common:
         }
     }
     if (axis != 0) {
-        {
-                register s32 o_ asm("$3") = out->vy;
-                register s32 p_ asm("$2") = p->y;
-                register s32 d_ asm("$5") = d->vy;
-                r = (o_ - p_) / d_;
-            }
+        q = out->vy - p->y;
+        dd = d->vy;
     } else {
-        {
-                register s32 o_ asm("$3") = out->vx;
-                register s32 p_ asm("$2") = p->x;
-                register s32 d_ asm("$5") = d->vx;
-                r = (o_ - p_) / d_;
-            }
+        q = out->vx - p->x;
+        dd = d->vx;
     }
     goto common;
 done:

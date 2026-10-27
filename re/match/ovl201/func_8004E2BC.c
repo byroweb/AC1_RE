@@ -1,5 +1,8 @@
 #include "ac1/ac1.h"
-/* ovl201 0x8004E2BC: matched (--rodata 0x8004ADFC); *flags value pinned to v0 with a register asm local */
+/* ovl201 0x8004E2BC: matched (--rodata 0x8004ADFC), no asm. The flag OR result goes through nf, a variable reused for
+ * the func_8007AA04 result in case 0, so it is global-allocated and cannot tie with the loaded fv in local-alloc;
+ * `(fv | 0x40) | (fv & 0x40)` (combine folds it to fv | 0x40) gives fv the extra refs that make it outrank the
+ * lbu/sll quantity for v0. */
 /* ovl201 0x8004E2BC - garage main menu ring, idle step: confirm opens the item
  * at the front (per-item setup, then the panels fall into rank order behind
  * it), left/right start a ring turn (func_8004E894). */
@@ -51,6 +54,7 @@ void func_8004E2BC(UiObj *o)
     s8 prev;
     s16 j;
     s32 *flags;
+    s32 nf;
 
     o->w.ring.arrow[0]->visible = 1;
     o->w.ring.arrow[1]->visible = 1;
@@ -58,9 +62,9 @@ void func_8004E2BC(UiObj *o)
         flags = &D_801A2550;
         i = o->w.ring.front;
         {
-            register s32 fv asm("$2");
-            fv = *flags;
-            *flags = fv | 0x40;
+            s32 fv = *flags;
+            nf = (fv | 0x40) | (fv & 0x40);
+            *flags = nf;
         }
         rank = 1;
         switch (i) {
@@ -76,7 +80,8 @@ void func_8004E2BC(UiObj *o)
                 func_8005EE90(0);
                 func_8005F054(0);
                 if (D_80031A58[0] == 0xFF) {
-                    D_80031A58[0] = func_8007AA04(0);
+                    nf = func_8007AA04(0);
+                    D_80031A58[0] = nf;
                 }
             } else {
                 func_8005F1DC(0);

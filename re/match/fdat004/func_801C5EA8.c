@@ -1,4 +1,4 @@
-/* fdat004 0x801C5EA8: matched (--rodata 0x801C4C9C --no-rodata-align-fix); pos.y temp pinned to v0 with a register asm local so the quotient takes v1 like retail */
+/* fdat004 0x801C5EA8 (--rodata 0x801C4C9C --no-rodata-align-fix). wave15 a3: clean match, no asm. py is updated in place (py += dy), so its load is not a "birthing" insn and sched1 puts it before the dy add; e->section is read into sec before the pos.y load, so py has the shorter life and beats the quotient for v0 in local-alloc (quotient and divisor then take v1, the product reload v0). */
 #include "ac1/ac1.h"
 #include "m2c_compat.h"
 
@@ -73,6 +73,7 @@ void func_801C5EA8(AcEntity *e)
     u8 *tbl;
     s32 t;
     s32 dy;
+    s32 sec;
     s32 c0;
     s32 d0;
     s32 c;
@@ -138,12 +139,14 @@ void func_801C5EA8(AcEntity *e)
         d = r->f2;
         {
             s32 qv = (c - d) * M2C_FIELD(e, u16 *, 0x44) / r->dur;
-            register u16 py asm("$2");
+            u16 py;
+            sec = e->section;
             py = e->pos.y;
             dy = d + qv;
-            e->pos.y = py + dy;
+            py += dy;
+            e->pos.y = py;
         }
-        e->section = func_8006E6B4(e->section, &e->pos, dy);
+        e->section = func_8006E6B4(sec, &e->pos, dy);
         func_8004CC30(0x85, D_801A5DC0 + 0x1000, &e->pos,
                       (r[-1].c - r->c) * M2C_FIELD(e, u16 *, 0x44) / r->dur + r->c, 13000, 14000,
                       (r[-1].d - r->d) * M2C_FIELD(e, u16 *, 0x44) / r->dur + r->d);

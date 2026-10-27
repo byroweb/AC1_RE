@@ -1,4 +1,8 @@
 #include "ac1/ac1.h"
+/* wave15 a3: clean match, no asm. pal = D_8017E5D8 is set in both arms of a free
+ * `(s32)img < 0` test (with a dead second statement so jump1 keeps the if/else):
+ * the join label ends cse's path, so pal->g / pal->b stay pal-relative (retail's
+ * la + 1(v1)/2(v1)), and jump2 cross-jumps the identical arms away. */
 
 typedef struct { u8 r, g, b, a; } EmbRgb;
 
@@ -83,7 +87,13 @@ void func_8006BA08(EmbEd *e)
     D_800B7E54.b += 24;
     if (img->fade == 1) {
         u32 sr, sg, sb;
-        __asm__("" : "=r"(pal) : "0"(D_8017E5D8));
+        if ((s32)img < 0) {
+            pal = D_8017E5D8;
+            t = 0;
+        } else {
+            pal = D_8017E5D8;
+            t = 0;
+        }
         r0 = pal->r;
         t = r0 >> 4;
         sr = 1;
@@ -120,8 +130,13 @@ void func_8006BA08(EmbEd *e)
         }
     } else {
         u32 sr, sg, sb;
-        __asm__("" : "=r"(pal) : "0"(D_8017E5D8));
-        t = pal->r >> 4;
+        if ((s32)img < 0) {
+            pal = D_8017E5D8;
+            t = pal->r >> 4;
+        } else {
+            pal = D_8017E5D8;
+            t = pal->r >> 4;
+        }
         sr = 1;
         if (t) {
             sr = t;
