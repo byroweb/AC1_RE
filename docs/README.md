@@ -97,6 +97,10 @@ facts from open questions:
 - [MATCHING_LONG_TAIL.md](MATCHING_LONG_TAIL.md) — why the last functions are the
   hardest to byte-match (size, loops, register pressure), what blocked the near
   misses, and advice for the next matching project.
+- [FULL_LINK_PLAN.md](FULL_LINK_PLAN.md) — plan for rebuilding every code unit from
+  source with `make verify` (phases P0–P7), with the reports
+  [FULL_LINK_P0.md](FULL_LINK_P0.md) and [FULL_LINK_P1.md](FULL_LINK_P1.md) (the exe
+  shell: `make verify` matches the exe's SHA-1).
 - [CODE_ARCHAEOLOGY.md](CODE_ARCHAEOLOGY.md) — inferred TU map, style clusters A/B/C, mission-unit lineage, 202/203/204 divergences, matching priors (`tools/archaeology/`).
 
 ### Downstream consumers (not RE)

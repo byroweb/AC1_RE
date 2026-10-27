@@ -1,13 +1,16 @@
 # Full-link build and byte-provenance audit — scoping plan
 
-Status (2026-10-22): **P0 done**; see [FULL_LINK_P0.md](FULL_LINK_P0.md). P0
+Status (2026-10-27): **P0 and P1 done.** `make verify` rebuilds the exe with a
+matching SHA-1 from per-function asm objects; see [FULL_LINK_P1.md](FULL_LINK_P1.md).
+P1 also found that the exe ↔ ovl201 cycle includes three soft-float helpers
+linked into ovl201. **P2 is next**, and needs the PsyQ 3.7 SDK (Q1).
+
+P0 (2026-10-22, [FULL_LINK_P0.md](FULL_LINK_P0.md))
 changed three things:
 - D4 (bss order) is now the main risk: about 1,100 bss symbols in the program
   overlays, and the mission buffer is itself overlay bss.
 - D5 (fixed RAM) is empty.
 - D6 gains an exe ↔ ovl201 link cycle and a 64th unit (`fdat188`).
-
-P1 is next.
 
 ## Goal
 
