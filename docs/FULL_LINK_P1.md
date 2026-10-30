@@ -89,13 +89,13 @@ right. P2 should mark them as data in `functions.tsv`.
   mission-unit link uses it.
 - [ ] fdat074 boundary (`text_off` 0x210, `text_va` 0x801C4D50): moved to P4, same
   generator change. `functions.tsv` already starts fdat074 text at `0x801C4D50`.
-- [ ] PsyQ 3.7 SDK path: still needed for P2 (Q1 option A).
+- [x] PsyQ 3.7 SDK: not needed. Q1 changed to B′ on 2026-10-29: the library stays asm.
 
 ## Next: P2
 
 - Swap the matched game functions' asm objects for compiled C objects: the
   matcher's compile path, factored out of `match_fn.py` (D1).
-- Link the PsyQ `.LIB`s for the 563 library functions (needs the SDK).
+- Keep the 563 PsyQ library functions as asm (Q1 = B′; no SDK needed).
 - Move `re/match` into one `src/` tree (Q3).
 - The P2 row in the plan says "125 matched game functions". That number dates from
   before matching finished: every one of the 131 exe game functions is now matched.
