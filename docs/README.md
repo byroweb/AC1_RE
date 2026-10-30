@@ -3,6 +3,8 @@
 Reverse-engineering reference for Armored Core (SLUS-01323 v1.1). Start with
 [REFERENCE.md](REFERENCE.md).
 
+Where the project is going, and what is done: [ROADMAP.md](ROADMAP.md).
+
 This page is the hub for the per-subsystem write-ups in `docs/`. Deeper hunt logs
 and breadcrumbs live in [`disc_map/trace/`](../disc_map/trace/) (linked from the
 relevant docs below), and the tooling that produced these findings lives in

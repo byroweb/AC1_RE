@@ -3,7 +3,8 @@
 Status (2026-10-27): **P0 and P1 done.** `make verify` rebuilds the exe with a
 matching SHA-1 from per-function asm objects; see [FULL_LINK_P1.md](FULL_LINK_P1.md).
 P1 also found that the exe ↔ ovl201 cycle includes three soft-float helpers
-linked into ovl201. **P2 is next**, and needs the PsyQ 3.7 SDK (Q1).
+linked into ovl201. **P2 is next.** Q1 changed on 2026-10-29: no SDK is needed
+(see Decisions).
 
 P0 (2026-10-22, [FULL_LINK_P0.md](FULL_LINK_P0.md))
 changed three things:
@@ -144,7 +145,7 @@ addresses in the original too, written as `#define` casts.
 5. Build `fdat168` from the same objects as `fdat166` and check its hash
    separately.
 
-### D7 — PsyQ libraries (needs your decision; Q1 below)
+### D7 — PsyQ libraries (decided: B′, see Q1)
 
 The 563 library functions (~108 KB, ~4 % of all code bytes) aren't game code.
 The choices:
@@ -153,6 +154,7 @@ The choices:
 |---|---|---|---|
 | **A** (recommended to start) | Link the official PsyQ 3.7 `.LIB` files (`libsnd` 3.5, `CARD.OBJ` 3.0), converted to ELF with a psyq-obj-parser-style tool | their own copy of the SDK | SDK |
 | B | Take the library block's bytes from the user's own disc exe | their disc | SDK-from-disc (red under the strict bar) |
+| **B′** (chosen 2026-10-29) | Like B, but the library functions stay the splat-disassembled, relocatable asm that P1 links (one object per function), split from the user's own disc at build time | their disc | `sdk-asm`, on its own line |
 | C | Matched library sources: C where Sony wrote C, `.s` where the original module was hand-written asm (libapi stubs, parts of libgte/libetc). Reuse public PSX decomp work where the library versions agree | nothing extra | green / original-asm |
 
 **Recommendation:** use **A or B** to reach the first full exe hash, and present
@@ -178,6 +180,7 @@ of it is legitimately asm.
 | `gte-inline` | COP2 words from the whitelisted `gte.h` macros (all inside `c-text`) | ok |
 | `asm-data` | T1 symbolised data | ok, reported |
 | `asm-stub` | `INCLUDE_ASM` placeholder for a still-unmatched function | must reach 0 |
+| `sdk-asm` | PsyQ library functions kept as disassembled asm (Q1 = B′) | reported on its own line |
 | `retail-slice` | T0 or any `.incbin` of retail bytes in a code unit | **fail** |
 | `sdk` | PsyQ library code/data, by option A/B/C | reported on its own line |
 | `generated` | exe header, overlay checksum, zero padding | ok |
@@ -219,7 +222,7 @@ isn't counted here.
 |---|---|---|---|
 | P0 | **Readiness audit.** (a) Run `drive.py verify` and confirm zero masked matches. (b) Sort every `--defsym D_…` into own-rodata / own-data / own-bss / other-unit / fixed-RAM. (c) Look for any `D_` landing mid-object, which signals a wrong function size. (d) Decide Q1–Q3 | a report table; decisions recorded | S |
 | P1 | **Exe shell.** Splitter config, linker script, PS-X EXE header generator, `make verify`, with everything at T0 / `INCLUDE_ASM` | exe SHA-1 matches with 0 % C | M |
-| P2 | **Exe with source.** Swap in the 125 matched game functions as one object per function, merging TUs where rodata order demands; libraries per D7 | exe SHA-1 matches; audit runs | M |
+| P2 | **Exe with source.** Swap in the 131 matched game functions as one object per function, merging TUs where rodata order demands; the PsyQ library stays asm (D7 B′) | exe SHA-1 matches; audit runs | M |
 | P3 | **Program overlays 201–204.** Header struct, `--just-symbols` link against the exe, checksum post-step; 201 first (1,091 functions, the largest) | 4 SHA-1 matches | L |
 | P4 | **Mission overlays.** Template-generate the 57 configs; one shared library-family source; the 0x120 header as C | 58 SHA-1 matches (alias included) | M |
 | P5 | **Data and bss.** T0 → T1 everywhere (mechanical); infer the COMMON order; then T1 → T2 by subsystem | zero `retail-slice`; pinned-in-range count → 0 | XL (the long tail) |
@@ -253,8 +256,12 @@ count in the audit becomes the progress number.
 ## Decisions
 
 Decided 2026-10-22:
-- **Q1:** option **A**. The first exe hash links your own PsyQ 3.7 `.LIB`s; C
-  stays optional (P7).
+- **Q1:** ~~option **A**~~ → **B′** (revised 2026-10-29: no PsyQ SDK is available).
+  The 563 library functions stay splat-disassembled asm from your own disc, as in
+  P1. They are relocatable, so they move with the link, and the repo ships none of
+  their bytes. The audit reports them as `sdk-asm`, and the public claim is "100 %
+  of the **game code**". The cost: PsyQ labels inside library functions (P1 found
+  4) stay pinned until P7. Matched library source stays optional (P7).
 - **Q2:** large asset-like tables may stay **T1** symbolised data. Nothing stays
   T0.
 - **Q3:** the matched C moves once, in P2, into one `src/` tree that both the
