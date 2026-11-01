@@ -25,7 +25,7 @@ addresses will not match.
 
 | Path | Description |
 | --- | --- |
-| `docs/` | **The RE write-ups.** Start at the [documentation index](docs/README.md); the master reference is [`docs/REFERENCE.md`](docs/REFERENCE.md) (functions, RAM map, `.T` container format, checksum, disc sectors). Subsystem docs: `LEVEL_LOADING.md` (mission→geometry pipeline, placement SOLVED), `MXT_LOADER.md`, `PA_FORMAT.md`, `MISSION_SYSTEM.md`, `MISSION_SCRIPT_VM.md`, `COMBAT_PHYSICS.md`, `ENTITY_AI_FRAMEWORK.md`, `AC1_TEXT_SYSTEM.md`, … |
+| `docs/` | **The RE write-ups.** Start at the [documentation index](docs/README.md); the plan and status are in the [roadmap](docs/ROADMAP.md); the master reference is [`docs/REFERENCE.md`](docs/REFERENCE.md) (functions, RAM map, `.T` container format, checksum, disc sectors). Subsystem docs: `LEVEL_LOADING.md` (mission→geometry pipeline, placement SOLVED), `MXT_LOADER.md`, `PA_FORMAT.md`, `MISSION_SYSTEM.md`, `MISSION_SCRIPT_VM.md`, `COMBAT_PHYSICS.md`, `ENTITY_AI_FRAMEWORK.md`, `AC1_TEXT_SYSTEM.md`, … |
 | `re/` | **Behavioral C reference models** — portable, host-side re-implementations of game subsystems, verified against your extracted data. Flagship: `re/ac1_mxt` (container + overlay + checksum). See [`re/README.md`](re/README.md) |
 | `re/match/`, `tools/match/`, `tools/loop/` | **Matching decompilation**: C that the retail compiler turns into the game's exact bytes, plus the tools and agents that produce it. Start at [`docs/MATCHING_GUIDE.md`](docs/MATCHING_GUIDE.md) (glossary, which tool when, rules) |
 | `tools/` | All tooling, grouped by subsystem — see [`tools/README.md`](tools/README.md) |
