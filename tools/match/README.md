@@ -351,7 +351,7 @@ objdiff's percentage is a guide, not a verdict: only `match_fn.py` exit 0 (throu
 
 Which screen a function runs on is a strong naming hint, and you know the game.  This
 script puts execute breakpoints on functions while you play and tags each one with the
-activity you type.  What to play and which labels to type: `docs/PLAY_COVERAGE_SWEEP.md`.
+activity you type.  What to play and which labels to type: `docs/LIVE_CHECKLIST.md` section NAM.
 
 ```
 python tools/duckstation/coverage_tag.py --check                  # MCP up? which units are loaded? call latency
