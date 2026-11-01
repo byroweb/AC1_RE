@@ -65,7 +65,7 @@ Everything here runs under **Git Bash** (MSYS2); PowerShell/cmd are not supporte
   - `--capture` records arguments and return values.
 
   It writes `re/match/coverage.tsv`, `hint` rows in `re/match/hints.tsv`, and
-  `re/match/calls.tsv`.  What to play: `docs/PLAY_COVERAGE_SWEEP.md`.  Options:
+  `re/match/calls.tsv`.  What to play: `docs/LIVE_CHECKLIST.md` (NAM).  Options:
   `tools/match/README.md` (Coverage tagging from play).  Test:
   `python -m pytest tools/duckstation/test_coverage_tag.py`.
 - **`live_probe.py`**: checks the struct layouts the matching agents proposed against

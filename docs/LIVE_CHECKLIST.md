@@ -150,6 +150,69 @@ the rest can be done in any order.
 
 ---
 
+## NAM. Naming evidence (coverage sweep + arg/return probes)
+
+Every function is byte-matched. The C shows *how* each one works, but often not *what it
+is for* in the game. These rows record which functions run in which situation, for the
+naming and commenting pass. That pass sorts functions into three tiers:
+- **confirmed**: play and code agree;
+- **static**: clear from code alone (maths, draw and sound helpers);
+- **unclear**: needs more play.
+
+Only confirmed and static names go into `include/ac1/symbols.tsv`.
+
+**Before you start**
+- Start DuckStation (MCP fork, port 2346), with no other client on that port.
+- Run `python tools/duckstation/coverage_tag.py --check`. It shows whether the MCP is up
+  and which units are loaded.
+- Start the tagger once per sitting with the label of where you are:
+  `python tools/duckstation/coverage_tag.py --context <label>`. One run covers the exe,
+  ovl201..204 and all 58 mission overlays, and switches between them by itself.
+
+**While you play**
+- Type the row's label in the tagger's terminal + Enter **each time the situation
+  changes**, word for word. The pass groups rows by label.
+- Labels name the **activity**, not the mission: the loaded mission overlay is already
+  recorded.
+- `?` shows a status line; `q` stops the tagger, removes its breakpoints and resumes
+  the game.
+- A short stutter after each new label is the data arriving.
+- If the game crawls for more than a few seconds, restart with `--max-armed 300`.
+
+Options: `tools/match/README.md` "Coverage tagging from play". Output:
+- `re/match/coverage.tsv` (`unit vaddr context hits`);
+- one `play coverage: …` hint per function in `re/match/hints.tsv`;
+- `re/match/calls.tsv` for NAM-22.
+
+The tagger never commits. After a sitting, Claude commits the three files.
+
+| ID | Status | Do | Look for | Settles |
+|---|---|---|---|---|
+| NAM-1 | [ ] | Start the tagger with `--context boot` **before** powering on. Labels: `boot` (logos, opening movie), then `title` at the title screen. | New hits per label in the terminal. | Boot, movie and title code: `re/match/coverage.tsv` + `hints.tsv` → naming pass. |
+| NAM-2 | [ ] | New game up to the first garage screen. Labels: `new game`, `pilot name` (typing the pilot name), `ac name` (typing the AC name). | Hits under each label. | New-game flow and name entry (ovl201): coverage.tsv / hints.tsv → naming pass. |
+| NAM-3 | [ ] | Memory card. Labels: `load` (load a game), `save` (save one). | Hits under each label. | Save/load screens and card I/O (ovl201 + exe): coverage.tsv / hints.tsv → naming pass. |
+| NAM-4 | [ ] | Options. Labels: `options` (options menu), `controller config` (change one button assignment). | Hits under each label. | Options and pad-map code: coverage.tsv / hints.tsv → naming pass. |
+| NAM-5 | [ ] | Garage menus. Labels: `garage` (top menu), `mail` (list + read one), `ranking` (if the game has one). | Hits under each label. | Garage menu, mail and ranking modules (ovl201): coverage.tsv / hints.tsv → naming pass. |
+| NAM-6 | [ ] | Assembly. Labels: `assembly` (browse parts, swap several), `check performance` (the AC spec screen). | Hits under each label. | Assembly screen, part specs, `ac_calc_performance` neighbours: coverage.tsv / hints.tsv → naming pass. |
+| NAM-7 | [ ] | Parts shop. Labels: `shop buy` (buy a part), `shop sell` (sell one). | Hits under each label. | Shop module (ovl201): coverage.tsv / hints.tsv → naming pass. |
+| NAM-8 | [ ] | Labels: `paint` (change colours), `emblem` (open the emblem editor, draw a few pixels). | Hits under each label. | Paint and emblem modules (ovl201): coverage.tsv / hints.tsv → naming pass. |
+| NAM-9 | [ ] | Label `ac test`: the AC test arena, walk, boost and fire a little. | Hits in the exe and the test overlay. | AC test code (exe, ovl202 shared combat): coverage.tsv / hints.tsv → naming pass. |
+| NAM-10 | [ ] | Labels: `mission list` (choosing a mission), `briefing` (the briefing up to accept). | Hits under each label. | Mission choice and briefing (ovl201): coverage.tsv / hints.tsv → naming pass. |
+| NAM-11 | [ ] | Accept a mission. Label `mission load` from accept until you have control. | The terminal shows `ovl202 loaded` and `fdatNNN loaded`. | Mission loader and scene setup (exe, ovl202, mission overlay): coverage.tsv / hints.tsv → naming pass. |
+| NAM-12 | [ ] | Movement. Labels: `walking` (no enemy in range), `boost` (ground and air), `jump` (jump / fly). | Hits under each label. | Player control and physics (ovl202): coverage.tsv / hints.tsv → naming pass; cross-check `PLAYER_CONTROL.md`. |
+| NAM-13 | [ ] | Weapons. Labels: `lock on`, `fire weapon` (right arm), `fire back weapon` (missiles, cannons), `blade`, `switch weapon`. | Hits under each label. | Lock-on, weapons, projectiles (ovl202): coverage.tsv / hints.tsv → naming pass; cross-check `COMBAT_PHYSICS.md`. |
+| NAM-14 | [ ] | Labels: `taking damage` (get hit), `enemy destroyed` (type it, then destroy one). | Hits under each label. | Damage and destruction paths (ovl202 + mission overlay): coverage.tsv / hints.tsv → naming pass; cross-check `MISSION_DAMAGE_EVENTS.md`. |
+| NAM-15 | [ ] | Mission events. Labels: `radio` (a radio / voice line), `objective done` (an objective completes), `leaving area` (the area border warning), `pause menu` (in-mission pause). | Hits under each label. | Radio/XA, objective and area-border code, pause menu: coverage.tsv / hints.tsv → naming pass. |
+| NAM-16 | [ ] | Mission end. Labels: `mission complete` (end until the results screen), `results` (pay, repair and ammo costs). | Hits under each label. | Mission end and payout code (ovl202 → ovl201): coverage.tsv / hints.tsv → naming pass. |
+| NAM-17 | [ ] | Failure. Labels: `low hp` (damage warning), `death` (AC destroyed until the game over / retry screen), `mission failed` (an objective failed, e.g. the timer runs out), `retry`. | Hits under each label. | Failure and retry paths: coverage.tsv / hints.tsv → naming pass. |
+| NAM-18 | [ ] | Special objectives. Labels: `boss` (a boss or special enemy fight), `defend` (a defend / escort objective in progress). | Hits under each label, mostly in the mission overlay. | Per-mission script code (`fdatNNN`): coverage.tsv / hints.tsv → naming pass. |
+| NAM-19 | [ ] | Play as **many different missions** as you can, with the NAM-11..18 labels. Each mission loads its own overlay of 30–70 functions (mission N = `fdat` 2N). Locked missions: stage an archived state (`tools/duckstation/states.py list`, `states.py stage <id> <slot>`; missions 20, 24, 28, 30, 34 and the garage are in `disc_map/states/STATES.tsv`), or ask Claude to force one from the garage. | A new `fdatNNN loaded` line per mission. | Mission-overlay functions (49 story overlays): coverage.tsv / hints.tsv → naming pass. |
+| NAM-20 | [ ] | Versus. Labels: `vs menu` (menus and AC choice), `vs fight` (a split-screen fight; a second pad, or a pad bound to the keyboard), `vs results`. Skip link cable (needs two consoles). | `ovl203`/`ovl204` and `fdat16x` loaded lines. | Versus code (ovl203/ovl204 + arena overlays): coverage.tsv / hints.tsv → naming pass. |
+| NAM-21 | [ ] | Later passes. Start with `--set unseen` (only functions with no coverage row yet) or `--set unnamed` (only functions with no name yet) and repeat the rows with gaps. | Far fewer breakpoints, all on new code. | Gaps left by NAM-1..20: coverage.tsv / hints.tsv → naming pass. |
+| NAM-22 | [ ] | **Arg/return probes for the unclear tier**: `python tools/duckstation/coverage_tag.py --context <label> --capture <name or unit:0xADDR> [--capture ...]`, then do what the label says. E.g. `--context assembly --capture ac_calc_performance`, then swap parts. | One `call … -> v0=…` line per call (up to 5 per function per label). Arguments, return value, and 16 bytes behind each pointer argument on entry and return. E.g. a function that returns 412 right after equipping a part weighing 412 is a weight getter. | `re/match/calls.tsv` → naming pass (unclear → confirmed). |
+
+---
+
 ## Results log
 
 Append one line per session: date · items closed · **state IDs archived** (from
