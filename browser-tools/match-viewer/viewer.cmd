@@ -5,5 +5,5 @@ rem browser; a second launch just opens the page of the one already running.  Ar
 rem through, e.g.  viewer.cmd --replay C:\path\to\work_dir
 title AC1 match viewer
 cd /d "%~dp0..\.."
-python tools\loop\viewer.py --open %*
+python browser-tools\match-viewer\viewer.py --open %*
 if errorlevel 1 pause
